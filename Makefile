@@ -27,6 +27,8 @@ all: $(ROM)
 	@sha1sum -c checksum.sha1
 
 split:
+	# apaga o asm antigo para nao sobrarem arquivos de segmentos que viraram C
+	rm -rf asm
 	$(PYTHON) -m splat split $(BASENAME).yaml
 	# .sbss/.bss do original ficam em enderecos fixos (alinhamento que o splat nao reproduz)
 	sed -i -e 's/^\(\s*\)\.cod_bss (NOLOAD) :/\1.cod_bss 0x00399000 (NOLOAD) :/' \
@@ -47,7 +49,7 @@ $(BUILD_DIR)/%.o: %.s
 	$(AS) $(ASFLAGS) -o $@ $<
 	$(OBJCOPY) $(SECTALIGN) $@
 
-$(BUILD_DIR)/src/%.o: src/%.c
+$(BUILD_DIR)/src/%.o: src/%.c $(shell find include -name "*.h")
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -S -o $(BUILD_DIR)/src/$*.s0 $<
 	$(FIX_ASM) $(BUILD_DIR)/src/$*.s0 $(BUILD_DIR)/src/$*.s

@@ -2,7 +2,6 @@
 #include "engine/cmd.h"
 #include "engine/model.h"
 
-void *memset(void *, int, int);
 void *Mem_DbgCalloc(int num, int size, const char *file, int line);
 
 extern byte mod_novis[MODEL_MAX_PVS];
@@ -12,6 +11,7 @@ extern model_t *sv_worldmodel;
 
 byte *gPAS = NULL;
 byte *gPVS = NULL;
+int D_00331C14 = 0; /* sem referências; pode ser de outro arquivo */
 
 void Mod_Init(void)
 {

@@ -84,7 +84,8 @@ char *strcat(char *, const char *);
 int strcmp(const char *, const char *);
 char *strstr(const char *, const char *);
 int strcasecmp(const char *, const char *);
-void *memcpy(void *, const void *, int);
+void *memcpy(void *, const void *, unsigned int);
+void *memset(void *, int, unsigned int);
 
 /* host */
 extern qboolean host_initialized;
@@ -107,7 +108,9 @@ typedef struct client_static_s
     cactive_t state;            /* 0x0000 */
     byte unk_0004[0x50];
     sizebuf_t message;          /* 0x0054: netchan.message */
-    byte unk_0068[0x7F18 - 0x68];
+    byte unk_0068[0x73C8 - 0x68];
+    int signon;                 /* 0x73C8 */
+    byte unk_73CC[0x7F18 - 0x73CC];
     int state2;                 /* 0x7F18 */
     byte unk_7F1C[0x50];
     sizebuf_t message2;         /* 0x7F6C */

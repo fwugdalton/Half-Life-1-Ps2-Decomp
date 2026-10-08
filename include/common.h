@@ -8,6 +8,8 @@
 
 typedef unsigned char byte;
 typedef int qboolean;
+#define false 0
+#define true 1
 
 #ifndef NULL
 #define NULL ((void *)0)
