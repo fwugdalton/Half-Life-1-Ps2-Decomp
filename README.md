@@ -1,4 +1,4 @@
-# Half-Life (USA) PS2 — descompilação
+# Half-Life (USA) PS2: descompilação
 
 Alvo: `SLUS_200.66` (Half-Life, PS2, NTSC-U), port da Gearbox Software, build de 19/out/2001.
 
@@ -11,6 +11,7 @@ Alvo: `SLUS_200.66` (Half-Life, PS2, NTSC-U), port da Gearbox Software, build de
 - SDK Sony 2.1 (`PsIIlibgraph2100`, `PsIIlibcdvd 2130`). O compilador confirmado é o **ee-gcc 2.95.2 (SCE, build 274) com `-O2 -G0`**: o `engine/Cmd.c` casa byte a byte com ele.
 - As strings de assert revelam a árvore de código (`Gbx/*.cpp`, `Launcher/*.cpp`, `Gbx/Jade/*`), além de zlib 1.1.3 embutida.
 - Há microcódigo VU (`.vutext`, overlays `.DVP.overlay*`), que por enquanto é tratado como binário.
+- Cerca de 8,5 mil funções no `.text` (0x1F5980 bytes).
 
 ## Requisitos
 
