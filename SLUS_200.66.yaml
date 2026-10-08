@@ -73,7 +73,8 @@ segments:
       - [0x15CF10, c, engine/Cmd]
       - [0x15E2D8, c, engine/cmodel]
       - [0x15E850, c, engine/Console]
-      - [0x15FD80, asm, cod/15FD80]
+      - [0x15FD80, c, engine/crc]
+      - [0x1614D0, asm, cod/1614D0]
       - [0x1F5980, textbin, cod/1F5980] # .vutext
       - [0x201B00, data, cod/201B00] # .data
       - [0x231C00, .data, engine/Cmd]
@@ -85,6 +86,8 @@ segments:
       - [0x28B538, rodata, cod/28B538]
       - [0x28B598, .rodata, engine/Console]
       - [0x28B748, rodata, cod/28B748]
+      - [0x28B750, .rodata, engine/crc]
+      - [0x28BBA8, rodata, cod/28BBA8]
       - [0x298E80, gcc_except_table, cod/298E80] # .gcc_except_table
       - [0x298F80, sdata, cod/298F80] # .sdata
       - { type: sbss, vram: 0x00399000, name: cod/00399000 } # .sbss
