@@ -13,7 +13,11 @@ re_data = re.compile(r'^\s+/\* \w+ ([0-9A-F]{8})(?: [0-9A-F]+)? \*/\s+\.(\w+)\s+
 def parse():
     funcs = {}   # name -> dict(addr, size, refs:set, calls:set)
     cur = None
-    with open(os.path.join(ROOT, 'asm/cod/000000.s')) as f:
+    import glob
+    text_files = [p for p in glob.glob(os.path.join(ROOT, 'asm/**/*.s'), recursive=True)
+                  if '/asm/data/' not in p]
+    for path in sorted(text_files):
+      with open(path) as f:
         for line in f:
             m = re_glabel.match(line)
             if m:
@@ -31,9 +35,11 @@ def parse():
                 for s in re_sym.findall(args): cur['refs'].add(s)
                 if op == 'jal': cur['calls'].add(args.strip())
     data = {}    # name -> dict(addr, kind, items)
-    for fn in ('asm/data/cod/236C80.rodata.s', 'asm/data/cod/201B00.data.s', 'asm/data/cod/298F80.sdata.s'):
+    data_files = [p for p in glob.glob(os.path.join(ROOT, 'asm/data/**/*.s'), recursive=True)
+                  if re.search(r'\.(rodata|data|sdata)\.s$', p)]
+    for fn in sorted(data_files):
         cur = None
-        with open(os.path.join(ROOT, fn)) as f:
+        with open(fn) as f:
             for line in f:
                 m = re_dlabel.match(line)
                 if m:
@@ -51,7 +57,8 @@ def parse():
     return funcs, data
 
 def load():
-    if os.path.exists(CACHE):
+    stamp = os.path.join(ROOT, 'SLUS_200.66.ld')
+    if os.path.exists(CACHE) and os.path.getmtime(CACHE) > os.path.getmtime(stamp):
         return pickle.load(open(CACHE, 'rb'))
     db = parse()
     os.makedirs(os.path.dirname(CACHE), exist_ok=True)

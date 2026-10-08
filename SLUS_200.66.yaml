@@ -41,7 +41,7 @@ options:
   rodata_string_guesser_level: 2
   data_string_guesser_level: 2
 
-  named_regs_for_c_funcs: True
+  named_regs_for_c_funcs: False
 
   section_order:
     - .text
@@ -71,11 +71,13 @@ segments:
     subsegments:
       - [0x000000, asm, cod/000000] # .text
       - [0x15CF10, c, engine/Cmd]
-      - [0x15E2D8, asm, cod/15E2D8]
+      - [0x15E2D8, c, engine/cmodel]
+      - [0x15E850, asm, cod/15E850]
       - [0x1F5980, textbin, cod/1F5980] # .vutext
       - [0x201B00, data, cod/201B00] # .data
       - [0x231C00, .data, engine/Cmd]
-      - [0x231C0C, data, cod/231C0C]
+      - [0x231C0C, .data, engine/cmodel]
+      - [0x231C14, data, cod/231C14]
       - [0x236C80, rodata, cod/236C80] # .rodata
       - [0x28B158, .rodata, engine/Cmd]
       - [0x28B538, rodata, cod/28B538]

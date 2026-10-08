@@ -85,3 +85,22 @@ strcpy = 0x002E5E34; // type:func
 strlen = 0x002E5F48; // type:func
 memcpy = 0x002E45F4; // type:func
 strstr = 0x002E6730; // type:func
+
+// engine/cmodel.c
+Mod_Init = 0x0025E2D8; // type:func
+Mod_DecompressVis = 0x0025E300; // type:func
+Mod_LeafPVS = 0x0025E350; // type:func
+CM_DecompressPVS = 0x0025E3A0; // type:func
+CM_LeafPVS = 0x0025E420; // type:func
+CM_LeafPAS = 0x0025E450; // type:func
+CM_FreePAS = 0x0025E480; // type:func
+CM_CalcPAS = 0x0025E4D8; // type:func
+CM_HeadnodeVisible = 0x0025E7B0; // type:func
+gPAS = 0x00331C0C; // size:0x4
+gPVS = 0x00331C10; // size:0x4
+cm_decompressed = 0x003FE3E8; // size:0x400
+gPVSRowBytes = 0x003FE7E8; // size:0x4
+mod_novis = 0x003FE7F0; // size:0x400
+Mem_DbgCalloc = 0x00225E70; // type:func
+memset = 0x002E47A8; // type:func
+sv_worldmodel = 0x004A9790; // size:0x4
