@@ -307,7 +307,6 @@ void Cvar_PrintCvar(cvar_t *var, FileHandle_t f)
         func_00222500(f, "%s", szOutstr);
 }
 
-#ifdef NON_MATCHING
 void Cmd_CvarList_f(void)
 {
     cvar_t *var;
@@ -381,11 +380,19 @@ void Cmd_CvarList_f(void)
             continue;
         if (bSOnly && !(var->flags & FCVAR_SERVER))
             continue;
-        if (partial && Q_strncasecmp(var->name, partial, ipLen))
-            continue;
-
-        Cvar_PrintCvar(var, f);
-        iCvars++;
+        if (partial)
+        {
+            if (!Q_strncasecmp(var->name, partial, ipLen))
+            {
+                Cvar_PrintCvar(var, f);
+                iCvars++;
+            }
+        }
+        else
+        {
+            Cvar_PrintCvar(var, f);
+            iCvars++;
+        }
     }
 
     if (iArgs == 2 && partial && *partial)
@@ -396,9 +403,6 @@ void Cmd_CvarList_f(void)
     if (bLogging)
         func_002224C8(f);
 }
-#else
-INCLUDE_ASM("asm/nonmatchings/engine/cvar", Cmd_CvarList_f);
-#endif
 
 int Cvar_CountServerVariables(void)
 {
