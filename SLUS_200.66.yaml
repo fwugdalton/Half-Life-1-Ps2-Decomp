@@ -1,0 +1,80 @@
+# name: Half-Life (USA) - SLUS-20066
+sha1: f93030a659d13cbf8cc6b911a4d98a2a66fb4b29
+options:
+  basename: SLUS_200.66
+  target_path: SLUS_200.66.rom
+  elf_path: build/SLUS_200.66.elf
+  base_path: .
+  platform: ps2
+  compiler: EEGCC
+
+  gp_value: 0x003A0F70
+  ld_gp_expression: cod_SDATA_START + 0x7FF0
+
+  # asm_path: asm
+  # src_path: src
+  # build_path: build
+
+  ld_script_path: SLUS_200.66.ld
+  ld_dependencies: True
+  ld_wildcard_sections: True
+  ld_bss_contains_common: True
+
+  create_asm_dependencies: True
+
+  find_file_boundaries: False
+
+  o_as_suffix: True
+
+  symbol_addrs_path:
+    - symbol_addrs.txt
+  reloc_addrs_path:
+    - reloc_addrs.txt
+
+  # undefined_funcs_auto_path: undefined_funcs_auto.txt
+  # undefined_syms_auto_path: undefined_syms_auto.txt
+
+  extensions_path: tools/splat_ext
+
+  string_encoding: ASCII
+  data_string_encoding: ASCII
+  rodata_string_guesser_level: 2
+  data_string_guesser_level: 2
+
+  named_regs_for_c_funcs: False
+
+  section_order:
+    - .text
+    # - .vutext
+    - .data
+    - .rodata
+    - .gcc_except_table
+    - .sdata
+    - .sbss
+    - .bss
+
+  auto_link_sections:
+    - .data
+    - .rodata
+    - .gcc_except_table
+    - .sdata
+    - .sbss
+    - .bss
+
+segments:
+  - name: cod
+    type: code
+    start: 0x000000
+    vram: 0x00100000
+    bss_size: 0x1D12B8
+    subalign: null
+    subsegments:
+      - [0x000000, asm, cod/000000] # .text
+      - [0x1F5980, textbin, cod/1F5980] # .vutext
+      - [0x201B00, data, cod/201B00] # .data
+      - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x298E80, gcc_except_table, cod/298E80] # .gcc_except_table
+      - [0x298F80, sdata, cod/298F80] # .sdata
+      - { type: sbss, vram: 0x00399000, name: cod/00399000 } # .sbss
+      - { type: bss, vram: 0x00399900, name: cod/00399900 } # .bss
+  - [0x298F84]

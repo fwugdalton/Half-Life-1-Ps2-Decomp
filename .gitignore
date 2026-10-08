@@ -1,0 +1,9 @@
+build/
+*.rom
+SLUS_200.66
+*.d
+__pycache__/
+asm/
+assets/
+SLUS_200.66.ld
+undefined_*_auto.txt
