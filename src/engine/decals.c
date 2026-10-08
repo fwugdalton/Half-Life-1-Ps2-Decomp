@@ -2,13 +2,9 @@
 #include "engine/cmd.h"
 #include "engine/cvar.h"
 #include "engine/decals.h"
+#include "engine/server.h"
 
-typedef void (*cachebuild_t)(void *data);
-typedef void (*cachecallback_t)(cache_user_t *c, int mode);
-
-int sprintf(char *, const char *, ...);
-char *strncpy(char *, const char *, unsigned int);
-int strncmp(const char *, const char *, unsigned int);
+typedef void (*cachecallback_t)(cache_user_t *c, unsigned int mode);
 
 void Pak_Open(pakfile_t *pak, char *path);
 void Pak_Close(pakfile_t *pak, char *path);
@@ -18,30 +14,16 @@ void *Cache_Check(cache_user_t *c);
 void *Cache_Alloc(cache_user_t *c, int size, char *name);
 void COM_FileBase(char *in, char *out);
 void W_CleanupName(char *in, char *out);
-void GL_BuildDecal(void *data);
 int GL_LoadDecalTexture(decalheader_t *header, int type, int width, int height, byte *pixels, byte *palette, int format);
 void GL_FreeDecalTexture(decalheader_t *header);
-void DecalsWad_Init(void);
-void DecalsWad_SetName(int num, char *name);
-int DecalsWad_Index(int id);
-void *DecalsWad_Texture(int index);
-int DecalsWad_Size(int number);
-int DecalsWad_IndexFromName(char *name);
 void R_DrawVLs_f(void);
 void R_DrawDecals_f(void);
 
-extern pakfile_t decal_pak;
 extern char decal_names[MAX_DECALS][16];
 extern cachebuild_t decal_pfnCacheBuild;
 extern cachepic_t *decal_cache;
 extern byte *decal_offsets;
 extern cachecallback_t cache_callback;
-typedef struct server_s
-{
-    qboolean active;
-} server_t;
-
-extern server_t sv;
 extern cvar_t violence_hblood;
 
 int Draw_CacheReload(int index, char *clean);
@@ -91,7 +73,6 @@ void Draw_DecalSetName(int num, char *name)
     }
 }
 
-#ifdef NON_MATCHING
 int Draw_DecalIndex(int id)
 {
     char tmp[32];
@@ -99,10 +80,10 @@ int Draw_DecalIndex(int id)
 
     if (id < decal_pak.count)
     {
-        pName = decal_names[id];
-        if (!pName[0])
+        if (!decal_names[id][0])
             Sys_Error("Used decal #%d without a name\n", id);
 
+        pName = decal_names[id];
         if (!sv.active && violence_hblood.value == 0.0f && !strncmp(pName, "{blood", 6))
         {
             sprintf(tmp, "{yblood%s", pName + 6);
@@ -115,9 +96,6 @@ int Draw_DecalIndex(int id)
 
     return DecalsWad_Index(id - decal_pak.count);
 }
-#else
-INCLUDE_ASM("asm/nonmatchings/engine/decals", Draw_DecalIndex);
-#endif
 
 #ifdef NON_MATCHING
 int Draw_DecalSize(int number)
@@ -273,7 +251,6 @@ void Draw_DecalCacheCallback(cache_user_t *c, unsigned int mode)
     }
 }
 
-#ifdef NON_MATCHING
 int Draw_CacheReload(int index, char *clean)
 {
     int count;
@@ -282,7 +259,8 @@ int Draw_CacheReload(int index, char *clean)
     byte *buf;
 
     count = CD_SectorCount(decal_pak.lumps[index].size);
-    sector = decal_pak.sector + decal_pak.lumps[index].filepos / 2048;
+    sector = decal_pak.sector;
+    sector += decal_pak.lumps[index].filepos / 2048;
 
     cache_callback = Draw_DecalCacheCallback;
     dat = Cache_Alloc(&decal_cache[index].cache, (count << 11) | 0x11, clean);
@@ -297,6 +275,3 @@ int Draw_CacheReload(int index, char *clean)
     decal_pfnCacheBuild(buf);
     return 1;
 }
-#else
-INCLUDE_ASM("asm/nonmatchings/engine/decals", Draw_CacheReload);
-#endif

@@ -13,11 +13,17 @@ typedef struct
     int size;     /* 0x3C */
 } paklump_t;
 
+typedef void (*cachebuild_t)(void *data);
+
 typedef struct
 {
     int count;
     paklump_t *lumps;
-    int sector;   /* setor inicial do pak no CD */
+    int sector;                 /* setor inicial do pak no CD */
+    int unk_0C;
+    int unk_10;
+    byte *data;                 /* 0x14: pak inteiro na memória */
+    qboolean inMemory;          /* 0x18 */
 } pakfile_t;
 
 typedef struct cache_user_s
@@ -66,10 +72,20 @@ typedef struct
     byte pixels[1];         /* 0x460 */
 } decaltex_t;
 
+extern pakfile_t decal_pak;
 extern int sv_decalnamecount;
 extern decalname_t sv_decalnames[MAX_DECALS];
 
 void Decal_Init(void);
 int Draw_CacheIndex(cachewad_t *wad, char *path);
+
+void DecalsWad_Init(void);
+void DecalsWad_SetName(int num, char *name);
+int DecalsWad_Index(int id);
+void *DecalsWad_Texture(int index);
+int DecalsWad_Size(int number);
+int DecalsWad_IndexFromName(char *name);
+
+void GL_BuildDecal(void *data);
 
 #endif /* ENGINE_DECALS_H */

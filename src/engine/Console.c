@@ -20,7 +20,6 @@ typedef void *FILE_t;
 int atoi(const char *);
 int sprintf(char *, const char *, ...);
 int vsprintf(char *, const char *, va_list);
-char *strncpy(char *, const char *, int);
 int COM_CheckParm(char *parm);
 char *va(char *format, ...);
 void *Hunk_AllocName(int size, char *name);
