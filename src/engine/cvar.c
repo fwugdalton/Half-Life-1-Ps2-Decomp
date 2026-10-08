@@ -11,12 +11,12 @@ char *va(char *format, ...);
 char *func_00241578(void);
 void func_00245170(char *s, char *key, char *value, int maxsize);
 void func_00282170(char *fmt, ...);
-void func_002654F8(char *fmt, ...);
-void func_00263790(char *fmt, ...);
-void func_0022BD28(FileHandle_t f, char *fmt, ...);
+void Log_Printf(char *fmt, ...);
+void SV_BroadcastPrintf(char *fmt, ...);
+void FS_FPrintf(FileHandle_t f, char *fmt, ...);
 void func_00222500(FileHandle_t f, char *fmt, ...);
-FileHandle_t func_002224B8(char *name, char *mode);
-void func_002224C8(FileHandle_t f);
+FileHandle_t FS_Open(char *name, char *mode);
+void FS_Close(FileHandle_t f);
 qboolean Cmd_Exists(char *cmd_name);
 void Cmd_CvarList_f(void);
 
@@ -171,8 +171,8 @@ void Cvar_Set(char *var_name, char *value)
 
     if ((var->flags & FCVAR_SERVER) && changed)
     {
-        func_002654F8("\"%s\" = \"%s\"\n", var_name, value);
-        func_00263790("\"%s\" changed to \"%s\"\n", var_name, value);
+        Log_Printf("\"%s\" = \"%s\"\n", var_name, value);
+        SV_BroadcastPrintf("\"%s\" changed to \"%s\"\n", var_name, value);
     }
 
     Z_Free(var->string);
@@ -268,7 +268,7 @@ void Cvar_WriteVariables(FileHandle_t f, int flags)
     for (var = cvar_vars; var; var = var->next)
     {
         if ((var->flags & flags) == flags)
-            func_0022BD28(f, "%s \"%s\"\r\n", var->name, var->string);
+            FS_FPrintf(f, "%s \"%s\"\r\n", var->name, var->string);
     }
 }
 
@@ -279,7 +279,7 @@ void func_00261BD8(FileHandle_t f, int flags)
     for (var = cvar_vars; var; var = var->next)
     {
         if ((var->flags & flags) == flags)
-            func_0022BD28(f, "%s", var->string);
+            FS_FPrintf(f, "%s", var->string);
     }
 }
 
@@ -340,7 +340,7 @@ void Cmd_CvarList_f(void)
         if (!Q_strcasecmp(Cmd_Argv(1), "log"))
         {
             sprintf(szTemp, "c:\\%s", Cmd_Argv(2));
-            f = func_002224B8(szTemp, "wt");
+            f = FS_Open(szTemp, "wt");
             if (f)
             {
                 bLogging = true;
@@ -348,7 +348,7 @@ void Cmd_CvarList_f(void)
             else
             {
                 Con_Printf("Couldn't open [%s] for writing!\n", Cmd_Argv(2));
-                func_002224C8(f);
+                FS_Close(f);
             }
 
             if (iArgs == 4)
@@ -401,7 +401,7 @@ void Cmd_CvarList_f(void)
         Con_Printf("--------------\n%3i Total CVars\nCvarList ? for syntax\n", iCvars);
 
     if (bLogging)
-        func_002224C8(f);
+        FS_Close(f);
 }
 
 int Cvar_CountServerVariables(void)

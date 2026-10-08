@@ -105,18 +105,26 @@ typedef enum
 /* client_static_t (parcial; offsets vistos no binário). Há um por jogador (tela dividida). */
 #define MAX_INFO_STRING 196
 
+typedef struct netadr_s
+{
+    int type;
+    byte ip[4];
+} netadr_t;
+
 /* netchan_t (parcial) */
 typedef struct netchan_s
 {
-    byte unk_00[0x50];
+    netadr_t remote_address;    /* 0x00 */
+    byte unk_08[0x50 - 0x08];
     sizebuf_t message;          /* 0x50 */
-} netchan_t;
+    byte unk_64[0x73B0 - 0x64];
+} netchan_t;                    /* 0x73B0 */
 
 typedef struct client_static_s
 {
     cactive_t state;            /* 0x0000 */
     netchan_t netchan;          /* 0x0004 */
-    byte unk_0068[0x73C8 - 0x68];
+    byte unk_73B4[0x73C8 - 0x73B4];
     int signon;                 /* 0x73C8 */
     byte unk_73CC[0x7D14 - 0x73CC];
     char userinfo[MAX_INFO_STRING]; /* 0x7D14 */

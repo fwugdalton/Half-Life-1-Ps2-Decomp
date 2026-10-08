@@ -32,8 +32,8 @@ int Draw_String(int x, int y, char *str);
 void Draw_ConsoleBackground(int lines);
 int func_00234F20(void *font);
 int func_00234F58(void *font, char *str);
-FILE_t func_002224B8(char *name, char *mode);
-void func_002224C8(FILE_t f);
+FILE_t FS_Open(char *name, char *mode);
+void FS_Close(FILE_t f);
 int func_002224D8(void *buf, int size, int count, FILE_t f);
 
 extern int key_dest;
@@ -43,7 +43,7 @@ extern char key_lines[][256];
 extern cvar_t developer;
 extern float D_003995E0;
 extern int D_00399798;
-extern int D_00399774;
+extern int giActive;
 extern char message_type[32];
 extern int chat_bufferlen;
 extern char chat_buffer[];
@@ -138,7 +138,7 @@ void Con_ToggleConsole_f(void)
         }
         else
         {
-            D_00399774 = 2;
+            giActive = 2;
         }
     }
     else
@@ -371,9 +371,9 @@ void Con_DebugLog(char *file, char *fmt, ...)
     va_start(argptr, fmt);
     vsprintf(con_debuglog_data, fmt, argptr);
     va_end(argptr);
-    fd = func_002224B8(file, "wa");
+    fd = FS_Open(file, "wa");
     func_002224D8(con_debuglog_data, strlen(con_debuglog_data), 1, fd);
-    func_002224C8(fd);
+    FS_Close(fd);
 }
 
 void Con_Printf(const char *fmt, ...)

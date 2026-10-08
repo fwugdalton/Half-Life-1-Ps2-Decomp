@@ -7,7 +7,9 @@
 - em modo reorder, o ee-as não move mflo/mfhi para o delay slot de um desvio;
   nesses casos o desvio é emitido em noreorder com um nop explícito.
 - também não preenche o delay slot quando a penúltima instrução é sdl/sdr/swl/swr
-  (visto em strcpy inline seguido de jr $31).
+  (visto em strcpy inline seguido de jr $31), nem com macros uld/usd/ulw/usw.
+- depois de mtc1 (inclusive o li.s expandido), o ee-as põe um nop se a instrução
+  seguinte lê o mesmo par de registradores de FPU ($f2 e $f3 contam como o mesmo).
 """
 import sys, re
 
@@ -17,6 +19,26 @@ out = []
 reorder = True
 prev_real = None   # índice em out da última instrução real (modo reorder)
 prev_prev = None   # índice da penúltima
+FPWRITE = re.compile(r'^\s+(li\.s|mtc1)\s')
+
+def fp_reads(line):
+    """Registradores de FPU lidos pela instrução (só os pares importam)."""
+    m = re.match(r'^\s+([\w.]+)\s+(.*)$', line)
+    if not m:
+        return set()
+    op, args = m.group(1), m.group(2)
+    regs = [int(r) for r in re.findall(r'\$f(\d+)', args)]
+    if not regs:
+        return set()
+    if op in ('s.s', 'swc1', 's.d', 'sdc1', 'mfc1', 'cfc1') or op.startswith('c.'):
+        return set(regs)
+    if op in ('l.s', 'lwc1', 'l.d', 'ldc1', 'li.s', 'li.d', 'mtc1', 'ctc1'):
+        return set()
+    if op.endswith(('.s', '.d', '.w')) or op.startswith(('madd', 'msub')):
+        return set(regs[1:])
+    return set()
+
+pending_fpr = None
 for line in lines:
     s = line.strip()
     if s == '.set\tnoreorder' or s == '.set noreorder':
@@ -35,7 +57,7 @@ for line in lines:
     if m:
         line = '%s.word\t0x%08X' % (m.group(1), 0x46000024 | (int(m.group(3)) << 11) | (int(m.group(2)) << 6))
     if reorder and BRANCH.match(line) and prev_real is not None and (
-            re.match(r'^\s+mf(lo|hi)\s', out[prev_real]) or
+            re.match(r'^\s+(mf(lo|hi)|u(ld|sd|lw|sw|lh|lhu|sh))\s', out[prev_real]) or
             (prev_prev is not None and re.match(r'^\s+s[dw][lr]\s', out[prev_prev]))):
         out.append('\t.set\tnoreorder')
         out.append(line)
@@ -44,9 +66,18 @@ for line in lines:
         prev_real = prev_prev = None
         continue
     if s and not s.startswith(('.', '#', '$L')) and not s.endswith(':'):
+        if reorder and pending_fpr is not None and any((r & ~1) == pending_fpr for r in fp_reads(line)):
+            out.append('\tnop')
+        pending_fpr = None
+        m = FPWRITE.match(line)
+        if m and reorder:
+            r = re.findall(r'\$f(\d+)', line)
+            if r:
+                pending_fpr = int(r[0]) & ~1
         prev_prev = prev_real
         prev_real = len(out)
     elif s.endswith(':'):
         prev_real = prev_prev = None
+        pending_fpr = None
     out.append(line)
 open(sys.argv[2], 'w').write('\n'.join(out))

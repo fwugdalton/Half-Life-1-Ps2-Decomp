@@ -77,7 +77,8 @@ segments:
       - [0x1614D0, c, engine/cvar]
       - [0x1620A8, c, engine/decals]
       - [0x1628F8, c, engine/DecalsWad]
-      - [0x162D58, asm, cod/162D58]
+      - [0x162D58, c, engine/Host]
+      - [0x165E18, asm, cod/165E18]
       - [0x1F5980, textbin, cod/1F5980] # .vutext
       - [0x201B00, data, cod/201B00] # .data
       - [0x231C00, .data, engine/Cmd]
@@ -86,7 +87,8 @@ segments:
       - [0x231C50, .data, engine/cvar]
       - [0x231C54, data, cod/231C54]
       - [0x231C5C, .data, engine/DecalsWad]
-      - [0x231C60, data, cod/231C60]
+      - [0x231C60, .data, engine/Host]
+      - [0x231D80, data, cod/231D80]
       - [0x236C80, rodata, cod/236C80] # .rodata
       - [0x28B158, .rodata, engine/Cmd]
       - [0x28B538, rodata, cod/28B538]
@@ -96,7 +98,8 @@ segments:
       - [0x28BBA8, .rodata, engine/cvar]
       - [0x28BEE0, .rodata, engine/decals]
       - [0x28C008, .rodata, engine/DecalsWad]
-      - [0x28C090, rodata, cod/28C090]
+      - [0x28C090, .rodata, engine/Host]
+      - [0x28C9C8, rodata, cod/28C9C8]
       - [0x298E80, gcc_except_table, cod/298E80] # .gcc_except_table
       - [0x298F80, sdata, cod/298F80] # .sdata
       - { type: sbss, vram: 0x00399000, name: cod/00399000 } # .sbss

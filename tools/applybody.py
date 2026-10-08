@@ -6,4 +6,5 @@ import sys, re
 src, fn, v = sys.argv[1:4]
 s = open(src).read()
 m = re.search(r'^[^\n]*\b%s\([^)]*\)\n\{.*?^\}\n' % re.escape(fn), s, re.S | re.M)
-open(src, 'w').write(s[:m.start()] + open(v).read() + s[m.end():])
+body = open(v).read()
+open(src, 'w').write(s[:m.start()] + body + s[m.end():])

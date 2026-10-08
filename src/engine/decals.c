@@ -97,20 +97,17 @@ int Draw_DecalIndex(int id)
     return DecalsWad_Index(id - decal_pak.count);
 }
 
-#ifdef NON_MATCHING
 int Draw_DecalSize(int number)
 {
-    paklump_t *lump;
-    if (number < decal_pak.count)
-    {
-        lump = &decal_pak.lumps[number];
-        return lump->size;
-    }
-    return DecalsWad_Size(number - decal_pak.count);
+    int size;
+
+    if (number >= decal_pak.count)
+        size = DecalsWad_Size(number - decal_pak.count);
+    else
+        size = decal_pak.lumps[number].size;
+
+    return size;
 }
-#else
-INCLUDE_ASM("asm/nonmatchings/engine/decals", Draw_DecalSize);
-#endif
 
 void *Draw_DecalTexture(int index)
 {
@@ -183,8 +180,11 @@ void *Draw_CacheGet(int index)
     char clean[16];
 
     pic = &decal_cache[index];
-    dat = NULL;
-    if (pic->name[0])
+    if (!pic->name[0])
+    {
+        dat = NULL;
+    }
+    else
     {
         dat = Cache_Check(&pic->cache);
         if (!dat)
