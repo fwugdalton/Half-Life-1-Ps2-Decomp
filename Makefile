@@ -4,14 +4,23 @@ AS        := $(CROSS)as
 LD        := $(CROSS)ld
 OBJCOPY   := $(CROSS)objcopy
 PYTHON    ?= python3
+WIBO      := tools/compilers/wibo
+CC        := $(WIBO) tools/compilers/ee-gcc2.95.2-274/bin/ee-gcc.exe
 
 BUILD_DIR := build
 ROM_SIZE  := 2723716 # 0x298F84
 ASFLAGS   := -EL -march=r5900 -mabi=eabi -G0 -no-pad-sections -I include -I .
 LDFLAGS   := -EL --no-check-sections -T undefined_syms_auto.txt -T undefined_funcs_auto.txt -T linker_script_extra.ld -Map $(BUILD_DIR)/$(BASENAME).map
 
-S_FILES   := $(shell find asm -name '*.s')
-O_FILES   := $(S_FILES:%.s=$(BUILD_DIR)/%.o)
+CFLAGS    := -O2 -G0 -Iinclude -Isrc
+# o ee-as original codifica "move" como daddu; o gas moderno usaria "or"
+# e o gcc 2.95 coloca literais em .rdata, que o linker script trata como .rodata
+FIX_ASM   := sed -E -e 's/^([[:space:]]+)move[[:space:]]+(\$$[0-9a-z]+),[[:space:]]*(\$$[0-9a-z]+)/\1daddu\t\2,\3,$$0/' \
+                    -e 's/^[[:space:]]+\.rdata$$/\t.section .rodata/'
+
+S_FILES   := $(shell find asm -name '*.s' -not -path 'asm/nonmatchings/*')
+C_FILES   := $(shell find src -name '*.c')
+O_FILES   := $(S_FILES:%.s=$(BUILD_DIR)/%.o) $(C_FILES:%.c=$(BUILD_DIR)/%.o)
 
 ELF       := $(BUILD_DIR)/$(BASENAME).elf
 ROM       := $(BUILD_DIR)/$(BASENAME).rom
@@ -30,9 +39,22 @@ setup: $(BASENAME).rom split
 $(BASENAME).rom: $(BASENAME)
 	$(OBJCOPY) -O binary --gap-fill=0x00 $< $@
 
+# o gas alinha .text/.data/.rodata em 16; o original tem fronteiras de arquivo em 8 (texto) e 4 (dados)
+SECTALIGN := --set-section-alignment .text=8 --set-section-alignment .data=4 --set-section-alignment .rodata=4 \
+             --set-section-alignment .bss=4 --set-section-alignment .sbss=4
+SECTALIGN_C := --set-section-alignment .text=8 --set-section-alignment .data=4 --set-section-alignment .rodata=8
+
 $(BUILD_DIR)/%.o: %.s
 	@mkdir -p $(dir $@)
 	$(AS) $(ASFLAGS) -o $@ $<
+	$(OBJCOPY) $(SECTALIGN) $@
+
+$(BUILD_DIR)/src/%.o: src/%.c
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -S -o $(BUILD_DIR)/src/$*.s0 $<
+	$(FIX_ASM) $(BUILD_DIR)/src/$*.s0 > $(BUILD_DIR)/src/$*.s
+	$(AS) $(ASFLAGS) -o $@ $(BUILD_DIR)/src/$*.s
+	$(OBJCOPY) $(SECTALIGN_C) $@
 
 $(ELF): $(O_FILES) $(BASENAME).ld
 	$(LD) $(LDFLAGS) -T $(BASENAME).ld -o $@

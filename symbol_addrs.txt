@@ -1,2 +1,87 @@
 // Visit https://github.com/ethteck/splat/wiki/Adding-Symbols for documentation about this file
 _start = 0x00100008; // type:func
+
+// engine/Cmd.c
+Cmd_Wait_f = 0x0025CF10; // type:func
+Cbuf_Init = 0x0025CF20; // type:func
+Cbuf_AddText = 0x0025CF48; // type:func
+Cbuf_InsertText = 0x0025CFC0; // type:func
+Cbuf_InsertTextLines = 0x0025D068; // type:func
+Cbuf_Execute = 0x0025D128; // type:func
+Cmd_StuffCmds_f = 0x0025D258; // type:func
+Cmd_Exec_f = 0x0025D498; // type:func
+Cmd_Echo_f = 0x0025D5B0; // type:func
+CopyString = 0x0025D620; // type:func
+Cmd_Alias_f = 0x0025D668; // type:func
+Cmd_Init = 0x0025D7F8; // type:func
+Cmd_Argc = 0x0025D8B0; // type:func
+Cmd_Argv = 0x0025D8C0; // type:func
+Cmd_Args = 0x0025D8F8; // type:func
+Cmd_TokenizeString = 0x0025D908; // type:func
+Cmd_AddCommand = 0x0025DA78; // type:func
+Cmd_AddMallocCommand = 0x0025DB68; // type:func
+Cmd_RemoveMallocedCmds = 0x0025DC48; // type:func
+Cmd_Exists = 0x0025DCC0; // type:func
+Cmd_CompleteCommand = 0x0025DD20; // type:func
+Cmd_ExecuteString = 0x0025DDC0; // type:func
+Cmd_ForwardToServer = 0x0025DEC0; // type:func
+Cmd_ForwardToServerUnreliable = 0x0025DFD8; // type:func
+Cmd_CheckParm = 0x0025E0F0; // type:func
+Cmd_CmdList_f = 0x0025E170; // type:func
+cmd_wait = 0x00399290; // size:0x4
+cmd_text = 0x00475CA8; // size:0x14
+cmd_argc = 0x003FE2A0; // size:0x4
+cmd_argv = 0x003FE2A8; // size:0x140
+cmd_null_string = 0x00331C00; // size:0x4
+cmd_args = 0x00331C04; // size:0x4
+cmd_functions = 0x00331C08; // size:0x4
+cmd_alias = 0x00399288; // size:0x4
+cmd_source = 0x0039928C; // size:0x4
+
+// engine/common.c
+Q_strcpy = 0x002415F8; // type:func
+Q_strlen = 0x00241680; // type:func
+Q_strcat = 0x00241720; // type:func
+Q_strcmp = 0x00241760; // type:func
+Q_strncmp = 0x00241790; // type:func
+Q_strncasecmp = 0x002417D8; // type:func
+Q_strcasecmp = 0x00241850; // type:func
+MSG_WriteByte = 0x00241EF0; // type:func
+COM_Parse = 0x002441C0; // type:func
+SZ_Alloc = 0x00243D60; // type:func
+SZ_Clear = 0x00243DB8; // type:func
+SZ_Write = 0x00243E88; // type:func
+SZ_Print = 0x00243ED0; // type:func
+com_argc = 0x003990D0; // size:0x4
+com_argv = 0x003990E4; // size:0x4
+com_token = 0x0046E0E8; // size:0x400
+
+// engine/Zone.c
+Z_Free = 0x00292198; // type:func
+Z_Malloc = 0x00292298; // type:func
+Hunk_LowMark = 0x00292AC0; // type:func
+Hunk_FreeToLowMark = 0x00292AE8; // type:func
+
+// engine (outros)
+Con_Printf = 0x0025F3B0; // type:func
+Con_DPrintf = 0x0025F540; // type:func
+Cvar_VariableString = 0x002615A0; // type:func
+Cvar_Command = 0x00261A98; // type:func
+Sys_Error = 0x002C5CA8; // type:func
+COM_LoadHunkFile = 0x002CF5A0; // type:func
+host_initialized = 0x00331C78; // size:0x4
+cls = 0x0055A3C8;
+cls_demoplayback = 0x0039975C; // size:0x4
+
+// Gbx
+Mem_DbgMalloc = 0x00225C58; // type:func
+Mem_Free = 0x002261A8; // type:func
+
+// libc
+strcasecmp = 0x002E5980; // type:func
+strcat = 0x002E5A34; // type:func
+strcmp = 0x002E5CF0; // type:func
+strcpy = 0x002E5E34; // type:func
+strlen = 0x002E5F48; // type:func
+memcpy = 0x002E45F4; // type:func
+strstr = 0x002E6730; // type:func

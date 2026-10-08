@@ -11,9 +11,9 @@ options:
   gp_value: 0x003A0F70
   ld_gp_expression: cod_SDATA_START + 0x7FF0
 
-  # asm_path: asm
-  # src_path: src
-  # build_path: build
+  asm_path: asm
+  src_path: src
+  build_path: build
 
   ld_script_path: SLUS_200.66.ld
   ld_dependencies: True
@@ -41,7 +41,7 @@ options:
   rodata_string_guesser_level: 2
   data_string_guesser_level: 2
 
-  named_regs_for_c_funcs: False
+  named_regs_for_c_funcs: True
 
   section_order:
     - .text
@@ -70,9 +70,15 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x15CF10, c, engine/Cmd]
+      - [0x15E2D8, asm, cod/15E2D8]
       - [0x1F5980, textbin, cod/1F5980] # .vutext
       - [0x201B00, data, cod/201B00] # .data
+      - [0x231C00, .data, engine/Cmd]
+      - [0x231C0C, data, cod/231C0C]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x28B158, .rodata, engine/Cmd]
+      - [0x28B538, rodata, cod/28B538]
       - [0x298E80, gcc_except_table, cod/298E80] # .gcc_except_table
       - [0x298F80, sdata, cod/298F80] # .sdata
       - { type: sbss, vram: 0x00399000, name: cod/00399000 } # .sbss
