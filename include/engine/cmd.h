@@ -73,9 +73,6 @@ void Con_Printf(const char *fmt, ...);
 void Con_DPrintf(const char *fmt, ...);
 void Sys_Error(const char *error, ...);
 
-/* cvar.c */
-char *Cvar_VariableString(char *var_name);
-qboolean Cvar_Command(void);
 
 /* libc */
 unsigned int strlen(const char *);
@@ -102,21 +99,28 @@ typedef enum
     ca_active
 } cactive_t;
 
-/* client_static_t (parcial; offsets vistos no binário) */
+/* client_static_t (parcial; offsets vistos no binário). Há um por jogador (tela dividida). */
+#define MAX_INFO_STRING 196
+
+/* netchan_t (parcial) */
+typedef struct netchan_s
+{
+    byte unk_00[0x50];
+    sizebuf_t message;          /* 0x50 */
+} netchan_t;
+
 typedef struct client_static_s
 {
     cactive_t state;            /* 0x0000 */
-    byte unk_0004[0x50];
-    sizebuf_t message;          /* 0x0054: netchan.message */
+    netchan_t netchan;          /* 0x0004 */
     byte unk_0068[0x73C8 - 0x68];
     int signon;                 /* 0x73C8 */
-    byte unk_73CC[0x7F18 - 0x73CC];
-    int state2;                 /* 0x7F18 */
-    byte unk_7F1C[0x50];
-    sizebuf_t message2;         /* 0x7F6C */
-} client_static_t;
+    byte unk_73CC[0x7D14 - 0x73CC];
+    char userinfo[MAX_INFO_STRING]; /* 0x7D14 */
+    byte unk_7DD8[0x7F18 - 0x7DD8];
+} client_static_t;              /* 0x7F18 */
 
-extern client_static_t cls;
+extern client_static_t cls[2];
 extern int cls_demoplayback;
 
 /* cmd.c */

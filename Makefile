@@ -40,7 +40,7 @@ $(BASENAME).rom: $(BASENAME)
 	$(OBJCOPY) -O binary --gap-fill=0x00 $< $@
 
 # o gas alinha .text/.data/.rodata em 16; o original tem fronteiras de arquivo em 8 (texto) e 4 (dados)
-SECTALIGN := --set-section-alignment .text=8 --set-section-alignment .data=4 --set-section-alignment .rodata=4 \
+SECTALIGN := --set-section-alignment .text=8 --set-section-alignment .data=4 --set-section-alignment .rodata=8 \
              --set-section-alignment .bss=4 --set-section-alignment .sbss=4
 SECTALIGN_C := --set-section-alignment .text=8 --set-section-alignment .data=4 --set-section-alignment .rodata=8
 

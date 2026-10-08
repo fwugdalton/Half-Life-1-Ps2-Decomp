@@ -1,5 +1,6 @@
 #include "common.h"
 #include "engine/cmd.h"
+#include "engine/cvar.h"
 #include <stdarg.h>
 
 #define CON_TEXTSIZE 16384
@@ -7,15 +8,6 @@
 
 #define key_console 1
 #define key_message 2
-
-typedef struct cvar_s
-{
-    char *name;
-    char *string;
-    int flags;
-    float value;
-    struct cvar_s *next;
-} cvar_t;
 
 typedef struct
 {
@@ -32,7 +24,6 @@ char *strncpy(char *, const char *, int);
 int COM_CheckParm(char *parm);
 char *va(char *format, ...);
 void *Hunk_AllocName(int size, char *name);
-void Cvar_RegisterVariable(cvar_t *variable);
 void Sys_Printf(char *fmt, ...);
 void SV_FlushRedirect(void);
 void SCR_UpdateScreen(void);
@@ -140,7 +131,7 @@ void Con_ToggleConsole_f(void)
 {
     if (key_dest == key_console)
     {
-        if (cls.state == ca_active || cls.state == ca_connected || cls.state == ca_uninitialized)
+        if (cls[0].state == ca_active || cls[0].state == ca_connected || cls[0].state == ca_uninitialized)
         {
             key_dest = 0;
             key_lines[edit_line][1] = 0;
@@ -411,13 +402,13 @@ void Con_Printf(const char *fmt, ...)
     if (!con_initialized)
         return;
 
-    if (cls.state == ca_dedicated)
+    if (cls[0].state == ca_dedicated)
         return;
 
     if ((!D_00331C18 && !(D_00399798 & 4)) || con_dprintf)
         Con_Print(msg);
 
-    if (cls.signon != 3 && !scr_disabled_for_loading)
+    if (cls[0].signon != 3 && !scr_disabled_for_loading)
     {
         if (!con_inupdate)
         {
@@ -436,7 +427,7 @@ void Con_DPrintf(const char *fmt, ...)
     if (!developer.value)
         return;
 
-    if (D_003995E0 && cls.state == ca_active)
+    if (D_003995E0 && cls[0].state == ca_active)
         return;
 
     va_start(argptr, fmt);

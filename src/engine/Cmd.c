@@ -1,5 +1,6 @@
 #include "common.h"
 #include "engine/cmd.h"
+#include "engine/cvar.h"
 
 
 extern int cmd_wait;
@@ -519,13 +520,13 @@ void Cmd_ExecuteString(char *text, cmd_source_t src)
     if (Cvar_Command())
         return;
 
-    if (cls.state == ca_active || cls.state == ca_connected || cls.state == ca_uninitialized)
+    if (cls[0].state == ca_active || cls[0].state == ca_connected || cls[0].state == ca_uninitialized)
         Cmd_ForwardToServer();
 }
 
 void Cmd_ForwardToServer(void)
 {
-    if (cls.state != ca_connected && cls.state != ca_uninitialized && cls.state != ca_active)
+    if (cls[0].state != ca_connected && cls[0].state != ca_uninitialized && cls[0].state != ca_active)
     {
         if (strcasecmp(Cmd_Argv(0), "setinfo"))
             Con_Printf("Can't \"%s\", not connected\n", Cmd_Argv(0));
@@ -535,21 +536,21 @@ void Cmd_ForwardToServer(void)
     if (cls_demoplayback)
         return;
 
-    MSG_WriteByte(&cls.message, clc_stringcmd);
+    MSG_WriteByte(&cls[0].netchan.message, clc_stringcmd);
     if (Q_strcasecmp(Cmd_Argv(0), "cmd"))
     {
-        SZ_Print(&cls.message, Cmd_Argv(0));
-        SZ_Print(&cls.message, " ");
+        SZ_Print(&cls[0].netchan.message, Cmd_Argv(0));
+        SZ_Print(&cls[0].netchan.message, " ");
     }
     if (Cmd_Argc() > 1)
-        SZ_Print(&cls.message, Cmd_Args());
+        SZ_Print(&cls[0].netchan.message, Cmd_Args());
     else
-        SZ_Print(&cls.message, "\n");
+        SZ_Print(&cls[0].netchan.message, "\n");
 }
 
 void Cmd_ForwardToServerUnreliable(void)
 {
-    if (cls.state2 != ca_connected && cls.state2 != ca_uninitialized && cls.state2 != ca_active)
+    if (cls[1].state != ca_connected && cls[1].state != ca_uninitialized && cls[1].state != ca_active)
     {
         if (strcasecmp(Cmd_Argv(0), "setinfo"))
             Con_Printf("Can't \"%s\", not connected\n", Cmd_Argv(0));
@@ -559,16 +560,16 @@ void Cmd_ForwardToServerUnreliable(void)
     if (cls_demoplayback)
         return;
 
-    MSG_WriteByte(&cls.message2, clc_stringcmd);
+    MSG_WriteByte(&cls[1].netchan.message, clc_stringcmd);
     if (Q_strcasecmp(Cmd_Argv(0), "cmd2"))
     {
-        SZ_Print(&cls.message2, Cmd_Argv(0));
-        SZ_Print(&cls.message2, " ");
+        SZ_Print(&cls[1].netchan.message, Cmd_Argv(0));
+        SZ_Print(&cls[1].netchan.message, " ");
     }
     if (Cmd_Argc() > 1)
-        SZ_Print(&cls.message2, Cmd_Args());
+        SZ_Print(&cls[1].netchan.message, Cmd_Args());
     else
-        SZ_Print(&cls.message2, "\n");
+        SZ_Print(&cls[1].netchan.message, "\n");
 }
 
 int Cmd_CheckParm(char *parm)
