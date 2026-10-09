@@ -859,7 +859,8 @@ typedef struct
 {
     byte pad0[0x13EC];
     model_t *worldmodel;        /* 0x13EC */
-    byte pad13F0[0x212C - 0x13F0];
+    byte pad13F0[0x2128 - 0x13F0];
+    int unk_2128;               /* 0x2128 */
 } client_state_t;
 
 extern client_state_t cl[2];
@@ -1978,34 +1979,240 @@ void PF_WriteEntity_I(int iValue)
 void func_00276270(void) {
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00276278);
+char *va(char *format, ...);
+void func_002817E0(void);
+void MSG_WriteCoord(sizebuf_t *sb, float f);
+void MSG_WriteShort(sizebuf_t *sb, int c);
+void MSG_WriteChar(sizebuf_t *sb, int c);
+void MSG_WriteFloat(sizebuf_t *sb, float f);
+void SV_BuildSoundMsg(edict_t *entity, int channel, const char *sample, int volume, float attenuation, int fFlags, int pitch, const float *origin, sizebuf_t *buffer);
+extern int last_spawncount_changelevel;
+extern int last_spawncount_map;
+extern int idum;
+extern int iy_ran1;
+extern int iv_ran1[32];
+extern int cls_demoplayback;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00276338);
+void PF_StaticDecal(const float *origin, int decalIndex, int entityIndex, int modelIndex)
+{
+    MSG_WriteByte(&sv.signon, 23);
+    MSG_WriteByte(&sv.signon, 13);
+    MSG_WriteCoord(&sv.signon, origin[0]);
+    MSG_WriteCoord(&sv.signon, origin[1]);
+    MSG_WriteCoord(&sv.signon, origin[2]);
+    MSG_WriteShort(&sv.signon, decalIndex);
+    MSG_WriteShort(&sv.signon, entityIndex);
+    if (entityIndex)
+        MSG_WriteShort(&sv.signon, modelIndex);
+    func_002817E0();
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00276380);
+void func_00276338(edict_t *e)
+{
+    int i = NUM_FOR_EDICT(e);
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00276420);
+    if (i < 1 || i > svs.maxclients)
+        Host_Error("Entity is not a client");
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00276468);
+void PF_changelevel_I(char *s1, char *s2)
+{
+    if (svs.spawncount == last_spawncount_changelevel)
+        return;
+    last_spawncount_changelevel = svs.spawncount;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00276478);
+    if (!s2)
+        Cbuf_AddText(va("changelevel %s\n", s1));
+    else if ((int)gGlobalVariables.serverflags & 0x30)
+        Cbuf_AddText(va("changelevel %s %s\n", s1, s2));
+    else
+        Cbuf_AddText(va("changelevel2 %s %s\n", s1, s2));
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_002765E0);
+void func_00276420(char *s1)
+{
+    if (svs.spawncount == last_spawncount_map)
+        return;
+    last_spawncount_map = svs.spawncount;
+    Cbuf_AddText(va("map %s\n", s1));
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", RandomFloat);
+#define IA 16807
+#define IM 2147483647
+#define IQ 127773
+#define IR 2836
+#define NTAB 32
+#define NDIV (1 + (IM - 1) / NTAB)
+#define MAX_RANDOM_RANGE 0x7FFFFFFFU
+#define AM (1.0 / IM)
+#define EPS 1.2e-7
+#define RNMX (1.0 - EPS)
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", RandomLong);
+void SeedRandomNumberGenerator(void)
+{
+    idum = -2249;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00276710);
+int ran1(void)
+{
+    int j;
+    int k;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_002767F0);
+    if (idum <= 0 || !iy_ran1)
+    {
+        if (-(idum) < 1)
+            idum = 1;
+        else
+            idum = -(idum);
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_002768A8);
+        for (j = NTAB + 7; j >= 0; j--)
+        {
+            k = (idum) / IQ;
+            idum = IA * (idum - k * IQ) - IR * k;
+            if (idum < 0)
+                idum += IM;
+            if (j < NTAB)
+                iv_ran1[j] = idum;
+        }
+        iy_ran1 = iv_ran1[0];
+    }
+    k = (idum) / IQ;
+    idum = IA * (idum - k * IQ) - IR * k;
+    if (idum < 0)
+        idum += IM;
+    j = iy_ran1 / NDIV;
+    iy_ran1 = iv_ran1[j];
+    iv_ran1[j] = idum;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00276918);
+    return iy_ran1;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00276998);
+float fran1(void)
+{
+    float temp = (float)AM * ran1();
+    if (temp > (float)RNMX)
+        return (float)RNMX;
+    else
+        return temp;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00276A58);
+float RandomFloat(float flLow, float flHigh)
+{
+    float fl = fran1();
+    return (fl * (flHigh - flLow)) + flLow;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00276A68);
+int RandomLong(int lLow, int lHigh)
+{
+    unsigned int maxAcceptable;
+    unsigned int x = lHigh - lLow + 1;
+    unsigned int n;
+
+    if (x <= 0 || MAX_RANDOM_RANGE < x - 1)
+        return lLow;
+
+    maxAcceptable = MAX_RANDOM_RANGE - ((MAX_RANDOM_RANGE + 1) % x);
+    do
+    {
+        n = ran1();
+    } while (n > maxAcceptable);
+
+    return lLow + (n % x);
+}
+
+void PF_FadeVolume(const edict_t *clientent, int fadePercent, int fadeOutSeconds, int holdTime, int fadeInSeconds)
+{
+    int entnum;
+    client_t *client;
+
+    entnum = NUM_FOR_EDICT(clientent);
+    if (entnum < 1 || entnum > svs.maxclients)
+    {
+        Con_Printf("tried to PF_FadeVolume a non-client\n");
+        return;
+    }
+
+    client = &svs.clients[entnum - 1];
+    if (client->fakeclient)
+        return;
+
+    MSG_WriteChar(&client->netchan.message, 51);
+    MSG_WriteByte(&client->netchan.message, (byte)fadePercent);
+    MSG_WriteByte(&client->netchan.message, (byte)holdTime);
+    MSG_WriteByte(&client->netchan.message, (byte)fadeOutSeconds);
+    MSG_WriteByte(&client->netchan.message, (byte)fadeInSeconds);
+}
+
+void PF_SetClientMaxspeed(const edict_t *clientent, float fNewMaxspeed)
+{
+    int entnum;
+    client_t *client;
+
+    entnum = NUM_FOR_EDICT(clientent);
+    if (entnum < 1 || entnum > svs.maxclients)
+    {
+        Con_Printf("tried to PF_SetClientMaxspeed a non-client\n");
+        return;
+    }
+
+    client = &svs.clients[entnum - 1];
+    client->maxspeed = fNewMaxspeed;
+    if (client->fakeclient)
+        return;
+
+    MSG_WriteChar(&sv.reliable_datagram, 52);
+    MSG_WriteByte(&sv.reliable_datagram, (byte)(entnum - 1));
+    MSG_WriteFloat(&sv.reliable_datagram, fNewMaxspeed);
+}
+
+int PF_GetPlayerUserId(edict_t *e)
+{
+    client_t *cl;
+    int i;
+
+    if (!sv.active || !e)
+        return -1;
+
+    for (i = 0, cl = svs.clients; i < svs.maxclients; i++, cl++)
+    {
+        if (cl->edict == e)
+            return cl->userid;
+    }
+
+    return -1;
+}
+
+unsigned int PF_GetPlayerWONId(edict_t *e)
+{
+    client_t *cl;
+    int i;
+
+    if (!sv.active)
+        return -1;
+    if (!e)
+        return -1;
+    for (i = 0, cl = svs.clients; i < svs.maxclients; i++, cl++)
+    {
+        if (cl->edict == e)
+            return cl->WONid;
+    }
+
+    return -1;
+}
+
+void PF_BuildSoundMsg_I(edict_t *entity, int channel, const char *sample, float volume, float attenuation, int fFlags, int pitch, int msg_dest, int msg_type, const float *pOrigin, edict_t *ed)
+{
+    PF_MessageBegin_I(msg_dest, msg_type, pOrigin, ed);
+    SV_BuildSoundMsg(entity, channel, sample, (int)volume, attenuation, fFlags, pitch, pOrigin, &gMsgBuffer);
+    PF_MessageEnd_I();
+}
+
+int PF_IsDemoPlayback(void)
+{
+    return cls_demoplayback;
+}
+
+void func_00276A68(int nClient, int value)
+{
+    cl[nClient != 1].unk_2128 = value;
+}

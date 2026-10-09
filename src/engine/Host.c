@@ -570,7 +570,7 @@ void SV_DropClient(client_t *cl, qboolean crash)
     cl->spawned = false;
     cl->name[0] = 0;
     cl->connection_started = realtime;
-    cl->unk_7444 = 0;
+    cl->maxspeed = 0;
     cl->edict = NULL;
     memset(cl->userinfo, 0, sizeof(cl->userinfo));
     SV_FullClientUpdate(cl, &sv.reliable_datagram);

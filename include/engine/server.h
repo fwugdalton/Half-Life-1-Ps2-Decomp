@@ -165,14 +165,14 @@ typedef struct client_s
     byte unk_73E0[0x73E4 - 0x73E0];
     usercmd_t lastcmd;          /* 0x73E4 */
     byte unk_7408[0x7444 - 0x7408];
-    int unk_7444;               /* 0x7444 */
+    float maxspeed;             /* 0x7444 */
     byte unk_7448[0x8408 - 0x7448];
     float connection_started;   /* 0x8408 */
     byte unk_840C[0x8410 - 0x840C];
     edict_t *edict;             /* 0x8410 */
     edict_t *pViewEntity;       /* 0x8414 */
     int userid;                 /* 0x8418 */
-    byte unk_841C[0x8420 - 0x841C];
+    unsigned int WONid;         /* 0x841C */
     char userinfo[MAX_INFO_STRING]; /* 0x8420 */
     qboolean sendinfo;          /* 0x84E4 */
     float sendinfo_time;        /* 0x84E8 */
@@ -199,7 +199,8 @@ typedef struct server_static_s
 {
     int maxclients;             /* 0x000 */
     int maxclientslimit;        /* 0x004 */
-    byte unk_008[0x110 - 0x008];
+    int spawncount;             /* 0x008 */
+    byte unk_00C[0x110 - 0x00C];
     client_t *clients;          /* 0x110 */
     byte unk_114[0x118 - 0x114];
     server_log_t log;           /* 0x118 */
