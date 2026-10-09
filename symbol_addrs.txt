@@ -566,3 +566,5 @@ PM_HullForBsp = 0x00270408; // type:func
 PM_HullPointContents = 0x0026FA28; // type:func
 PM_RecursiveHullCheck = 0x00290150; // type:func
 PM_LadderMove = 0x0026E160; // type:func
+PM_FixPlayerCrouchStuck = 0x0026E6C8; // type:func
+PM_Duck = 0x0026E818; // type:func

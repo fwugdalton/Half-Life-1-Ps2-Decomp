@@ -1661,9 +1661,133 @@ void PM_LadderMove(physent_t *pLadder, int clientId)
 	}
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/pmove", func_0026E6C8);
+void PM_FixPlayerCrouchStuck(int clientId)
+{
+	int i;
+	vec3_t test;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pmove", func_0026E818);
+	if (PM_TestPlayerPosition(pmove[clientId].origin, clientId) == -1)
+		return;
+
+	VectorCopy(pmove[clientId].origin, test);
+	for (i = 0; i < 18; i++)
+	{
+		pmove[clientId].origin[2] += 1;
+		if (PM_TestPlayerPosition(pmove[clientId].origin, clientId) == -1)
+		{
+			Con_Printf(" fix %i", i);
+			return;
+		}
+	}
+
+	Con_Printf(" stuck");
+	VectorCopy(test, pmove[clientId].origin);
+}
+
+#define PLAYER_DUCKING_MULTIPLIER 0.333f
+#define TIME_TO_DUCK 0.4f
+#define VEC_DUCK_VIEW 12
+#define VEC_VIEW 28
+
+void PM_Duck(int clientId)
+{
+	int i;
+	float time;
+	float duckFraction;
+
+	int buttonsChanged = (pmove[clientId].oldbuttons ^ pmove[clientId].cmd.buttons);
+	int nButtonPressed = buttonsChanged & pmove[clientId].cmd.buttons;
+
+	int duckchange = buttonsChanged & IN_DUCK ? 1 : 0;
+	int duckpressed = nButtonPressed & IN_DUCK ? 1 : 0;
+
+	Con_Printf("btn %i bInDuck %i FL_DUCKING %i ofs %.2f h %i ch %i pr %i",
+	           pmove[clientId].cmd.buttons & IN_DUCK ? 1 : 0,
+	           pmove[clientId].bInDuck ? 1 : 0,
+	           pmove[clientId].flags & FL_DUCKING ? 1 : 0,
+	           pmove[clientId].view_ofs[2],
+	           pmove[clientId].usehull,
+	           duckchange,
+	           duckpressed);
+
+	if ((pmove[clientId].cmd.buttons & IN_DUCK) || pmove[clientId].bInDuck || (pmove[clientId].flags & FL_DUCKING))
+	{
+		if (pmove[clientId].cmd.buttons & IN_DUCK)
+		{
+			pmove[clientId].cmd.forwardmove *= PLAYER_DUCKING_MULTIPLIER;
+			pmove[clientId].cmd.sidemove *= PLAYER_DUCKING_MULTIPLIER;
+			pmove[clientId].cmd.upmove *= PLAYER_DUCKING_MULTIPLIER;
+
+			if ((nButtonPressed & IN_DUCK) && !(pmove[clientId].flags & FL_DUCKING))
+			{
+				pmove[clientId].flDuckTime = pmove[clientId].time;
+				pmove[clientId].bInDuck = 1;
+				Con_Printf("(new)");
+			}
+
+			time = pmove[clientId].time - pmove[clientId].flDuckTime;
+			time *= 0.001f;
+			Con_Printf("e %.2f", time);
+
+			if (pmove[clientId].bInDuck)
+			{
+				if (time >= TIME_TO_DUCK || pm_onground[clientId] == -1)
+				{
+					if (pm_onground[clientId] != -1)
+					{
+						for (i = 0; i < 3; i++)
+							pmove[clientId].origin[i] -= (player_mins[1][i] - player_mins[0][i]);
+						PM_FixPlayerCrouchStuck(clientId);
+					}
+					pmove[clientId].usehull = 1;
+					pmove[clientId].view_ofs[2] = VEC_DUCK_VIEW;
+					pmove[clientId].flags |= FL_DUCKING;
+					pmove[clientId].bInDuck = 0;
+				}
+				else
+				{
+					float fMore = 0;
+
+					if (pmove[clientId].server)
+						fMore = 18;
+
+					duckFraction = PM_SplineFraction(time, (1.0f / TIME_TO_DUCK));
+					pmove[clientId].view_ofs[2] = ((VEC_DUCK_VIEW - fMore) * duckFraction) + (VEC_VIEW * (1 - duckFraction));
+				}
+			}
+		}
+		else
+		{
+			pmtrace_t trace;
+			vec3_t newOrigin;
+
+			VectorCopy(pmove[clientId].origin, newOrigin);
+
+			if (pm_onground[clientId] != -1)
+			{
+				for (i = 0; i < 3; i++)
+					newOrigin[i] += (player_mins[1][i] - player_mins[0][i]);
+			}
+
+			trace = PM_PlayerTrace(newOrigin, newOrigin, PM_NORMAL, clientId);
+
+			if (!trace.startsolid)
+			{
+				pmove[clientId].flags &= ~FL_DUCKING;
+				pmove[clientId].bInDuck = 0;
+				pmove[clientId].view_ofs[2] = VEC_VIEW;
+				pmove[clientId].usehull = 0;
+				VectorCopy(newOrigin, pmove[clientId].origin);
+			}
+			else
+			{
+				Con_Printf("Stuck on up\n");
+			}
+		}
+	}
+
+	Con_Printf("\n");
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/pmove", func_0026ED00);
 

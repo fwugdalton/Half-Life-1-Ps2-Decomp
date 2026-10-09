@@ -78,6 +78,16 @@ for line in lines:
     m = re.match(r'^(\s+)move\s+(\$\w+),\s*(\$\w+)\s*$', line)
     if m:
         line = '%sdaddu\t%s,%s,$0' % m.groups()
+    m = re.match(r'^(\s+)la\s+(\$\w+),\s*([\w$.]+)\s*$', line)
+    if m:
+        # o gas moderno expande la com daddiu; o ee-as com lui/addiu
+        ind, r, sym = m.groups()
+        pending_fpr = None
+        label_at = None
+        prev_prev = prev_real
+        prev_real = len(out)
+        out.append('%slui\t%s,%%hi(%s)' % (ind, r, sym))
+        line = '%saddiu\t%s,%s,%%lo(%s)' % (ind, r, r, sym)
     if re.match(r'^\s+\.rdata\s*$', line):
         line = '\t.section .rodata'
     m = re.match(r'^(\s+)break\s+(\d+)\s*$', line)

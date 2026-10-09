@@ -36,12 +36,14 @@
 #define MOVETYPE_BOUNCEMISSILE 11
 
 #define IN_JUMP (1 << 1)
+#define IN_DUCK (1 << 2)
 #define IN_FORWARD (1 << 3)
 #define IN_BACK (1 << 4)
 #define IN_MOVELEFT (1 << 9)
 #define IN_MOVERIGHT (1 << 10)
 
 #define FL_WATERJUMP (1 << 11)
+#define FL_DUCKING (1 << 14)
 
 #define MAX_CLIP_PLANES 5
 
@@ -115,14 +117,15 @@ typedef struct playermove_s
 {
 	int player_index;               /* 0x00 */
 	qboolean server;                /* 0x04 */
-	int unk_08;
+	float time;                     /* 0x08 */
 	vec3_t origin;                  /* 0x0C */
 	vec3_t angles;                  /* 0x18 */
 	vec3_t velocity;                /* 0x24 */
 	vec3_t movedir;                 /* 0x30 */
 	vec3_t basevelocity;            /* 0x3C */
 	vec3_t view_ofs;                /* 0x48 */
-	byte unk_54[0x5C - 0x54];
+	float flDuckTime;               /* 0x54 */
+	qboolean bInDuck;               /* 0x58 */
 	int flags;                      /* 0x5C */
 	int usehull;                    /* 0x60 */
 	float gravity;                  /* 0x64 */
