@@ -12,7 +12,7 @@ void PM_Init(void);
 void PM_CheckVelocity(int clientId);
 int PM_ClipVelocity(vec3_t in, vec3_t normal, vec3_t out, float overbounce);
 int PM_FlyMove(int clientId);
-void PM_CheckWater(int clientId);
+qboolean PM_CheckWater(int clientId);
 void PM_Accelerate(vec3_t wishdir, float wishspeed, float accel, int clientId);
 void PM_AirAccelerate(vec3_t wishdir, float wishspeed, float accel, int clientId);
 
@@ -304,13 +304,6 @@ void PM_ViewEntity(void)
 			func_00249868(&cl_entities[pmove[0].physents[trace.ent].info]);
 	}
 }
-
-/* direções dos seis eixos, usadas por func_0026C758 */
-vec3_t D_003322A0[6] =
-{
-	{ 1, 0, 0 }, { 0, 1, 0 }, { -1, 0, 0 },
-	{ 0, -1, 0 }, { 0, 0, 1 }, { 0, 0, -1 },
-};
 
 
 
@@ -993,9 +986,97 @@ void PM_Jump(int clientId)
 	pmove[clientId].oldbuttons |= IN_JUMP;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/pmove", func_0026C5D0);
+void PM_CheckWaterJump(int clientId)
+{
+	vec3_t spot;
+	int cont;
+	vec3_t flatforward;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pmove", PM_CheckWater);
+	if (pmove[clientId].waterjumptime)
+		return;
+
+	/* não pula para fora se acabou de entrar */
+	if (pmove[clientId].velocity[2] < -180)
+		return;
+
+	/* vê se está perto de uma borda */
+	flatforward[0] = pm_forward[0];
+	flatforward[1] = pm_forward[1];
+	flatforward[2] = 0;
+	VectorNormalize(flatforward);
+
+	VectorMA(pmove[clientId].origin, 24, flatforward, spot);
+	spot[2] += 8;
+	cont = PM_PointContents(spot, clientId);
+	if (cont != CONTENTS_SOLID)
+		return;
+	spot[2] += 24;
+	cont = PM_PointContents(spot, clientId);
+	if (cont != CONTENTS_EMPTY)
+		return;
+
+	/* pula para fora da água */
+	VectorScale(pm_forward, 200, pmove[clientId].velocity);
+	pmove[clientId].velocity[2] = 225;
+	pmove[clientId].waterjumptime = 2;
+	pmove[clientId].oldbuttons |= IN_JUMP;
+}
+
+qboolean PM_CheckWater(int clientId)
+{
+	vec3_t point;
+	int cont;
+	int truecont;
+	float height;
+	float heightover2;
+
+	/* um ponto logo acima dos pés */
+	point[0] = pmove[clientId].origin[0] + (player_mins[pmove[clientId].usehull][0] + player_maxs[pmove[clientId].usehull][0]) * 0.5f;
+	point[1] = pmove[clientId].origin[1] + (player_mins[pmove[clientId].usehull][1] + player_maxs[pmove[clientId].usehull][1]) * 0.5f;
+	point[2] = pmove[clientId].origin[2] + player_mins[pmove[clientId].usehull][2] + 1;
+
+	pm_waterlevel[clientId] = 0;
+	pm_watertype[clientId] = CONTENTS_EMPTY;
+
+	cont = PM_PointContents(point, clientId);
+	if (cont <= CONTENTS_WATER && cont > CONTENTS_TRANSLUCENT)
+	{
+		truecont = PM_TruePointContents(point, clientId);
+
+		pm_watertype[clientId] = cont;
+		pm_waterlevel[clientId] = 1;
+
+		height = (player_mins[pmove[clientId].usehull][2] + player_maxs[pmove[clientId].usehull][2]);
+		heightover2 = height * 0.5f;
+
+		point[2] = pmove[clientId].origin[2] + heightover2;
+		cont = PM_PointContents(point, clientId);
+		if (cont <= CONTENTS_WATER && cont > CONTENTS_TRANSLUCENT)
+		{
+			pm_waterlevel[clientId] = 2;
+
+			point[2] = pmove[clientId].origin[2] + pmove[clientId].view_ofs[2];
+
+			cont = PM_PointContents(point, clientId);
+			if (cont <= CONTENTS_WATER && cont > CONTENTS_TRANSLUCENT)
+				pm_waterlevel[clientId] = 3;
+		}
+
+		/* correnteza: quanto mais fundo, mais forte */
+		if ((truecont <= CONTENTS_CURRENT_0) && (truecont >= CONTENTS_CURRENT_DOWN))
+		{
+			static vec3_t current_table[] =
+			{
+				{ 1, 0, 0 }, { 0, 1, 0 }, { -1, 0, 0 },
+				{ 0, -1, 0 }, { 0, 0, 1 }, { 0, 0, -1 }
+			};
+
+			VectorMA(pmove[clientId].basevelocity, 50.0f * pm_waterlevel[clientId], current_table[CONTENTS_CURRENT_0 - truecont], pmove[clientId].basevelocity);
+		}
+	}
+
+	return pm_waterlevel[clientId] > 1;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/pmove", PM_Init);
 

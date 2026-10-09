@@ -538,3 +538,6 @@ PM_CatagorizePosition = 0x0026C288; // type:func
 PM_Jump = 0x0026C448; // type:func
 PM_CheckWater = 0x0026C758; // type:func
 pm_watertype = 0x00399320; // size:0x8
+PM_CheckWaterJump = 0x0026C5D0; // type:func
+PM_PointContents = 0x0026FC58; // type:func
+PM_TruePointContents = 0x0026FD88; // type:func

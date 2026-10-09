@@ -102,7 +102,8 @@ typedef struct playermove_s
 	vec3_t velocity;                /* 0x24 */
 	vec3_t unk_30;
 	vec3_t basevelocity;            /* 0x3C */
-	byte unk_48[0x60 - 0x48];
+	vec3_t view_ofs;                /* 0x48 */
+	byte unk_54[0x60 - 0x54];
 	int usehull;                    /* 0x60 */
 	float gravity;                  /* 0x64 */
 	float friction;                 /* 0x68 */
@@ -132,6 +133,8 @@ extern vec3_t player_mins[3];
 extern vec3_t player_maxs[3];
 
 void PM_InitBoxHull(void);
+int PM_PointContents(vec3_t p, int clientId);
+int PM_TruePointContents(vec3_t p, int clientId);
 pmtrace_t PM_PlayerTrace(vec3_t start, vec3_t end, int traceFlags, int clientId);
 qboolean PM_AddToTouched(pmtrace_t tr, vec3_t impactvelocity, int clientId);
 
