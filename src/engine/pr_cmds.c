@@ -3,6 +3,7 @@
 #include "engine/mathlib.h"
 #include "engine/model.h"
 #include "engine/server.h"
+#include "engine/decals.h"
 #include "stdarg.h"
 
 typedef struct
@@ -1179,57 +1180,318 @@ void PR_CheckEmptyString(const char *s)
         Host_Error("Bad string: %s", s);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", PF_precache_sound_I);
+#define ss_loading 1
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", PF_precache_model_I);
+int PF_precache_sound_I(char *s)
+{
+    int i;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", PF_precache_generic_I);
+    if (s && s[0] == '!')
+    {
+        Host_Error("PF_precache_sound_I: '%s' do not precache sentence names!", s);
+        return 0;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", PF_IsMapValid_I);
+    if (sv.state != ss_loading)
+    {
+        for (i = 0; i < 512; i++)
+        {
+            if (sv.sound_precache[i] && !strcasecmp(sv.sound_precache[i], s))
+                return i;
+        }
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00274B40);
+        Host_Error("PF_precache_sound_I: '%s' Precache can only be done in spawn functions", s);
+    }
 
-__asm__(".section .rodata\n.align 3\n.globl D_0038DD48\nD_0038DD48: .asciz \"\"\n.section .text\n");
+    PR_CheckEmptyString(s);
+    sv.sound_precache_hashedlookup_built = false;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00274B88);
+    for (i = 0; i < 512; i++)
+    {
+        if (!sv.sound_precache[i])
+        {
+            sv.sound_precache[i] = s;
+            return i;
+        }
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00274C00);
+        if (!strcasecmp(sv.sound_precache[i], s))
+            return i;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00274C20);
+    Host_Error("PF_precache_sound_I: '%s' overflow", s);
+    return 0;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00274CA8);
+model_t *Mod_ForName(const char *name, qboolean crash);
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00274D80);
+int PF_precache_model_I(char *s)
+{
+    int i;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00274E70);
+    if (sv.state != ss_loading)
+    {
+        for (i = 0; i < 512; i++)
+        {
+            if (sv.model_precache[i] && !strcasecmp(sv.model_precache[i], s))
+                return i;
+        }
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00274F50);
+        Host_Error("PF_precache_model_I: '%s' Precache can only be done in spawn functions", s);
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00274FD8);
+    PR_CheckEmptyString(s);
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_002750E0);
+    for (i = 0; i < 512; i++)
+    {
+        if (!sv.model_precache[i])
+        {
+            sv.model_precache[i] = s;
+            sv.models[i] = Mod_ForName(s, true);
+            return i;
+        }
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00275100);
+        if (!strcasecmp(sv.model_precache[i], s))
+            return i;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00275120);
+    Host_Error("PF_precache_model_I: '%s' overflow", s);
+    return 0;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_002754A8);
+int PF_precache_generic_I(char *s)
+{
+    int i;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_002755A0);
+    if (sv.state != ss_loading)
+    {
+        for (i = 0; i < 512; i++)
+        {
+            if (sv.generic_precache[i] && !strcmp(sv.generic_precache[i], s))
+                return i;
+        }
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00275698);
+        Host_Error("PF_precache_generic_I: '%s' Precache can only be done in spawn functions", s);
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00275748);
+    PR_CheckEmptyString(s);
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00275898);
+    for (i = 0; i < 512; i++)
+    {
+        if (!sv.generic_precache[i])
+        {
+            sv.generic_precache[i] = s;
+            return i;
+        }
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00275A98);
+        if (!Q_strcasecmp(sv.generic_precache[i], s))
+            return i;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00275BF8);
+    Host_Error("PF_precache_generic_I: '%s' overflow", s);
+    return 0;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00275CD8);
+int func_002D04E8(char *name);
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00275DF0);
+int PF_IsMapValid_I(char *mapname)
+{
+    char cBuf[260];
+
+    sprintf(cBuf, "maps/%.32s.bs2", mapname);
+    return func_002D04E8(cBuf) >= 0;
+}
+
+int PF_NumberOfEntities_I(void)
+{
+    int ent_count;
+    int i;
+
+    ent_count = 0;
+    for (i = 0; i < sv.num_edicts; i++)
+    {
+        if (!sv.edicts[i].free)
+            ent_count++;
+    }
+
+    return ent_count;
+}
+
+extern char localinfo[];
+char *Info_Serverinfo(void);
+char *Info_ValueForKey(char *s, char *key);
+
+char *PF_GetInfoKeyBuffer_I(edict_t *e)
+{
+    int e1;
+
+    if (!e)
+        return localinfo;
+
+    e1 = NUM_FOR_EDICT(e);
+    if (!e1)
+        return Info_Serverinfo();
+
+    return (e1 < 4) ? svs.clients[e1 - 1].userinfo : "";
+}
+
+char *PF_InfoKeyValue_I(char *infobuffer, char *key)
+{
+    return Info_ValueForKey(infobuffer, key);
+}
+
+void Info_SetValueForKey(char *s, char *key, char *value, int maxsize);
+
+void PF_SetKeyValue_I(char *infobuffer, char *key, char *value)
+{
+    if (infobuffer == localinfo)
+        Info_SetValueForKey(infobuffer, key, value, 0x8000);
+    else if (infobuffer == Info_Serverinfo())
+        Info_SetValueForKey(infobuffer, key, value, 512);
+    else
+        Sys_Error("Can't set client keys with SetKeyValue");
+}
+
+void PF_SetClientKeyValue_I(int clientIndex, char *infobuffer, char *key, char *value)
+{
+    client_t *pClient;
+
+    if (infobuffer == localinfo || infobuffer == Info_Serverinfo() || clientIndex <= 0 || clientIndex > svs.maxclients)
+        return;
+
+    if (strcmp(Info_ValueForKey(infobuffer, key), value))
+    {
+        Info_SetValueForKey(infobuffer, key, value, MAX_INFO_STRING);
+        pClient = svs.clients + clientIndex - 1;
+        pClient->sendinfo = true;
+        pClient->sendinfo_time = 0;
+    }
+}
+
+#define FL_FLY (1 << 0)
+#define FL_SWIM (1 << 1)
+#define FL_ONGROUND (1 << 9)
+
+qboolean SV_movetest(edict_t *ent, vec3_t move, qboolean relink);
+qboolean SV_movestep(edict_t *ent, vec3_t move, qboolean relink);
+
+int PF_walkmove_I(edict_t *ent, float yaw, float dist, int iMode)
+{
+    vec3_t move;
+    int ret;
+
+    if (!(ent->v.flags & (FL_FLY | FL_SWIM | FL_ONGROUND)))
+        return 0;
+
+    yaw = yaw * M_PI * 2 / 360;
+
+    move[0] = cosf(yaw) * dist;
+    move[1] = sinf(yaw) * dist;
+    move[2] = 0;
+
+    if (iMode == 1)
+        ret = SV_movetest(ent, move, true);
+    else if (iMode == 2)
+        ret = SV_movestep(ent, move, false);
+    else
+        ret = SV_movestep(ent, move, true);
+
+    return ret;
+}
+
+int PF_droptofloor_I(edict_t *ent)
+{
+    vec3_t end;
+    trace_t trace;
+    qboolean monsterClip;
+
+    monsterClip = (ent->v.flags & FL_MONSTERCLIP) > 0;
+
+    VectorCopy(ent->v.origin, end);
+    end[2] -= 256;
+
+    trace = SV_Move(ent->v.origin, ent->v.mins, ent->v.maxs, end, 0, ent, monsterClip);
+    if (trace.allsolid)
+        return -1;
+
+    if (trace.fraction == 1.0f)
+        return 0;
+
+    VectorCopy(trace.endpos, ent->v.origin);
+    SV_LinkEdict(ent, false);
+    ent->v.flags |= FL_ONGROUND;
+    ent->v.groundentity = trace.ent;
+
+    return 1;
+}
+
+int PF_DecalIndex(const char *name)
+{
+    int i;
+
+    for (i = 0; i < sv_decalnamecount; i++)
+    {
+        if (!strcasecmp(sv_decalnames[i].name, name))
+            return i;
+    }
+
+    return -1;
+}
+
+#define ss_active 2
+#define svc_lightstyle 12
+
+void PF_lightstyle_I(int style, char *val)
+{
+    int i;
+    client_t *cl;
+
+    sv.lightstyles[style] = val;
+    if (sv.state != ss_active)
+        return;
+
+    for (i = 0, cl = svs.clients; i < svs.maxclients; i++, cl++)
+    {
+        if ((cl->active || cl->spawned) && !cl->fakeclient)
+        {
+            MSG_WriteChar(&cl->netchan.message, svc_lightstyle);
+            MSG_WriteChar(&cl->netchan.message, style);
+            MSG_WriteString(&cl->netchan.message, val);
+        }
+    }
+}
+
+int SV_CheckBottom(edict_t *ent);
+int SV_PointContents(const vec3_t p);
+
+int PF_checkbottom_I(edict_t *pEdict)
+{
+    return SV_CheckBottom(pEdict);
+}
+
+int PF_pointcontents_I(const float *rgflVector)
+{
+    return SV_PointContents(rgflVector);
+}
+
+INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", PF_aim_I);
+
+INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", PF_changeyaw_I);
+
+INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", PF_changepitch_I);
+
+INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", PF_setview_I);
+
+INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", PF_crosshairangle_I);
+
+INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", PF_CreateFakeClient_I);
+
+INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", PF_RunPlayerMove_I);
+
+INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", WriteDest_Parm);
+
+INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", PF_MessageBegin_I);
+
+INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", PF_MessageEnd_I);
 
 INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00276030);
 

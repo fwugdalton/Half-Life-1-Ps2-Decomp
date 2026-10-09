@@ -168,7 +168,9 @@ typedef struct client_s
     edict_t *edict;             /* 0x8410 */
     byte unk_8414[0x8420 - 0x8414];
     char userinfo[MAX_INFO_STRING]; /* 0x8420 */
-    byte unk_84E4[0x850D - 0x84E4];
+    qboolean sendinfo;          /* 0x84E4 */
+    float sendinfo_time;        /* 0x84E8 */
+    byte unk_84EC[0x850D - 0x84EC];
     char name[32];              /* 0x850D */
     byte unk_852D[0x853C - 0x852D];
     void *unk_853C;             /* 0x853C */
@@ -212,11 +214,14 @@ typedef struct server_s
     char *model_precache[512];  /* 0x190E8 */
     struct model_s *models[512]; /* 0x198E8 */
     char *sound_precache[512];  /* 0x1A0E8 */
-    byte unk_1A8E8[0x1B9EC - 0x1A8E8];
+    short sound_precache_hashedlookup[1023]; /* 0x1A8E8 */
+    qboolean sound_precache_hashedlookup_built; /* 0x1B0E8 */
+    char *generic_precache[512]; /* 0x1B0EC */
+    char *lightstyles[64];      /* 0x1B8EC */
     int num_edicts;             /* 0x1B9EC */
     int max_edicts;             /* 0x1B9F0 */
     edict_t *edicts;            /* 0x1B9F4 */
-    byte unk_1B9F8[0x1B9FC - 0x1B9F8];
+    int state;                  /* 0x1B9F8 */
     sizebuf_t datagram;         /* 0x1B9FC */
     byte datagram_buf[4000];    /* 0x1BA10 */
     sizebuf_t reliable_datagram; /* 0x1C9B0 */

@@ -8,8 +8,8 @@ float Q_atof(char *str);
 int Q_atoi(char *str);
 int sprintf(char *, const char *, ...);
 char *va(char *format, ...);
-char *func_00241578(void);
-void func_00245170(char *s, char *key, char *value, int maxsize);
+char *Info_Serverinfo(void);
+void Info_SetValueForKey(char *s, char *key, char *value, int maxsize);
 void func_00282170(char *fmt, ...);
 void Log_Printf(char *fmt, ...);
 void SV_BroadcastPrintf(char *fmt, ...);
@@ -146,8 +146,8 @@ void Cvar_Set(char *var_name, char *value)
     {
         if (cls[player].state == ca_dedicated)
         {
-            func_00245170(func_00241578(), var_name, value, 512);
-            func_00282170("fullserverinfo \"%s\"\n", func_00241578());
+            Info_SetValueForKey(Info_Serverinfo(), var_name, value, 512);
+            func_00282170("fullserverinfo \"%s\"\n", Info_Serverinfo());
         }
 
         if (cls[player].state != ca_dedicated)
@@ -159,7 +159,7 @@ void Cvar_Set(char *var_name, char *value)
             if (szName[len - 2] == '_')
                 szName[len - 2] = 0;
 
-            func_00245170(cls[player].userinfo, szName, value, MAX_INFO_STRING);
+            Info_SetValueForKey(cls[player].userinfo, szName, value, MAX_INFO_STRING);
 
             if (changed && cls[player].state >= ca_connected)
             {
