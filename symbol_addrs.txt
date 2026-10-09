@@ -392,3 +392,4 @@ info_values = 0x00403070; // size:0x800
 info_valueindex = 0x00403870; // size:0x4
 master_string = 0x00403878; // size:0x800
 log_string = 0x00404078; // size:0x400
+bInitialized = 0x00331D68; // size:0x4

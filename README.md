@@ -58,5 +58,11 @@ O `make` termina com `build/SLUS_200.66.rom: OK` quando o rebuild é idêntico a
 - `engine/Console.c`: 20 de 21 funções, `.rodata` e `.data` (falta `Con_DrawNotify`)
 - `engine/crc.c`: 100% (CRC32 e MD5, com a tabela)
 - `engine/cvar.c`: 100% (código, `.rodata` e `.data`)
+- `engine/decals.c`: 12 de 13 funções (falta `Draw_CacheGet`, uma instrução)
+- `engine/DecalsWad.c`: 100%
+- `engine/Host.c`: 42 de 47 funções, `.rodata` e `.data` (faltam `SV_SetMaxclients`, `Host_WriteControls`, `Master_RequestHeartbeats`, `Master_SetMaster_f`, `Master_Init`)
 
-Funções que ainda não casam ficam com o C em `#ifdef NON_MATCHING` e o asm original via `INCLUDE_ASM`.
+Funções que ainda não casam ficam com o C em `#ifdef NON_MATCHING` e o asm original via `INCLUDE_ASM`
+(`tools/wrap.py` envolve, `tools/unwrap.py` desfaz; depois `make split` com o venv). Strings que o splat não
+leva para o `.s` porque são compartilhadas com outra função são emitidas à mão no `#else` ou definidas
+como símbolo absoluto em `linker_script_extra.ld` (ver `Host.c`).

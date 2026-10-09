@@ -276,6 +276,7 @@ void Host_Error(char *error, ...)
     longjmp(host_abortserver, 1);
 }
 
+#ifdef NON_MATCHING
 void SV_SetMaxclients(void)
 {
     int i;
@@ -329,6 +330,9 @@ void SV_SetMaxclients(void)
     if (svs.maxclients > svs.maxclientslimit)
         svs.maxclients = svs.maxclientslimit;
 }
+#else
+INCLUDE_ASM("asm/nonmatchings/engine/Host", SV_SetMaxclients);
+#endif
 
 void Host_InitLocal(void)
 {
@@ -404,6 +408,7 @@ void func_00263328(FileHandle_t f)
     func_00261BD8(f, 0x400);
 }
 
+#ifdef NON_MATCHING
 void Host_WriteControls(FileHandle_t f)
 {
     int i;
@@ -465,6 +470,9 @@ void Host_WriteControls(FileHandle_t f)
             FS_FPrintf(f, "-rightStickSideMove %d\r\n", i);
     }
 }
+#else
+INCLUDE_ASM("asm/nonmatchings/engine/Host", Host_WriteControls);
+#endif
 
 void SV_ClientPrintf(char *fmt, ...)
 {
@@ -780,6 +788,7 @@ void Master_Heartbeat(master_t *p)
     NET_SendPacket(NS_SERVER, strlen(master_string), master_string, p->adr, 0);
 }
 
+#ifdef NON_MATCHING
 void Master_RequestHeartbeats(void)
 {
     master_t *p;
@@ -817,6 +826,9 @@ void Master_RequestHeartbeats(void)
         NET_SendPacket(NS_SERVER, 1, &c, p->adr, 0);
     }
 }
+#else
+INCLUDE_ASM("asm/nonmatchings/engine/Host", Master_RequestHeartbeats);
+#endif
 
 void Master_Shutdown(qboolean bVerbose)
 {
@@ -883,6 +895,7 @@ void Master_AddServer(netadr_t *adr)
     valvemaster_adr = n;
 }
 
+#ifdef NON_MATCHING
 void Master_SetMaster_f(void)
 {
     char szMasterAddress[128];
@@ -1009,6 +1022,17 @@ void Master_SetMaster_f(void)
         }
     }
 }
+#else
+INCLUDE_ASM("asm/nonmatchings/engine/Host", Master_SetMaster_f);
+/* strings que o splat não levou para o .s (a primeira é compartilhada com Master_Init) */
+__asm__(".section .rodata\n"
+        ".align 3\n.globl D_0038C550\nD_0038C550: .asciz \"%s:%i\"\n"
+        ".align 3\n.globl D_0038C558\nD_0038C558: .asciz \" Invalid address \\\"%s\\\", setmaster command ignored\\n\"\n"
+        ".align 3\n.globl D_0038C590\nD_0038C590: .asciz \"Adding master at %s\\n\"\n"
+        ".align 3\n.globl D_0038C5A8\nD_0038C5A8: .asciz \"Can't remove master, list is empty\\n\"\n"
+        ".align 3\n.globl D_0038C5D0\nD_0038C5D0: .asciz \"Can't remove master %s, not in list\\n\"\n"
+        ".section .text\n");
+#endif
 
 void Master_ResetHeartbeats(void)
 {
@@ -1028,6 +1052,7 @@ void Master_UseDefault(void)
         Master_AddServer(&adr);
 }
 
+#ifdef NON_MATCHING
 void Master_Init(void)
 {
     static qboolean bInitialized = false;
@@ -1149,6 +1174,11 @@ void Master_Init(void)
 
     Mem_Free(pData);
 }
+#else
+qboolean bInitialized = false;
+__asm__(".section .rodata\n.align 3\n.globl D_0038C618\nD_0038C618: .asciz \"%s\"\n.section .text\n");
+INCLUDE_ASM("asm/nonmatchings/engine/Host", Master_Init);
+#endif
 
 void Host_SetRollingFPS(float fps)
 {
@@ -1381,6 +1411,14 @@ void Host_PrintServerCvars(void)
     }
 }
 
+#ifdef NON_MATCHING
+#define STR_S "%s"
+#else
+/* emitida junto com Master_Init (INCLUDE_ASM); usar o literal geraria uma cópia nova */
+extern char D_0038C618[];
+#define STR_S D_0038C618
+#endif
+
 void Log_Printf(char *fmt, ...)
 {
     va_list argptr;
@@ -1404,10 +1442,10 @@ void Log_Printf(char *fmt, ...)
     va_end(argptr);
 
     if (mp_logecho.value != 0)
-        Con_Printf("%s", log_string);
+        Con_Printf(STR_S, log_string);
 
     if (svs.log.file && mp_logfile.value != 0)
-        func_00222500(svs.log.file, "%s", log_string);
+        func_00222500(svs.log.file, STR_S, log_string);
 
     if (svs.log.net_log)
         Netchan_OutOfBandPrint(NS_SERVER, svs.log.net_address, 0, "log %s", log_string);
