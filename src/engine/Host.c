@@ -863,11 +863,14 @@ void Master_AddServer(netadr_t *adr)
 
     Master_Init();
 
-    for (n = valvemaster_adr; n; n = n->next)
+    for (n = valvemaster_adr; n != NULL; n = n->next)
     {
         if (NET_CompareAdr(n->adr, *adr))
-            return;
+            break;
     }
+
+    if (n)
+        return;
 
     n = (master_t *)Mem_DbgMalloc(sizeof(master_t), "engine/Host.c", 1262);
     if (!n)
@@ -900,15 +903,20 @@ void Master_SetMaster_f(void)
     if (argc < 2 || argc > 4)
     {
         Con_Printf("Usage:\nSetmaster <add | remove | enable | disable> <IP:port>\n");
-        if (!valvemaster_adr)
+        p = valvemaster_adr;
+        if (!p)
         {
             Con_Printf("Current:  None\n");
         }
         else
         {
             Con_Printf("Current:\n");
-            for (i = 1, p = valvemaster_adr; p; p = p->next, i++)
-                Con_Printf("  %i:  %s\n", i, NET_AdrToString(p->adr));
+            i = 1;
+            while (p)
+            {
+                Con_Printf("  %i:  %s\n", i++, NET_AdrToString(p->adr));
+                p = p->next;
+            }
         }
         return;
     }
@@ -1025,9 +1033,10 @@ void Master_Init(void)
     static qboolean bInitialized = false;
     char szDefault[256];
     char szFile[256];
+    char szPort[16];
+    netadr_t adr;
     char szAdr[64];
     char szValue[256];
-    netadr_t adr;
     char *pData;
     char *pStart;
     int nCount;
@@ -1174,7 +1183,6 @@ void Host_GetHostInfo(float *fps, int *nActive, int *nSpectators, int *nMaxPlaye
 void Host_Speeds(float time1, float time2, float time3, float time4)
 {
     float pass1, pass2, pass3;
-    float frameTime;
     float fps;
     int i, ent_count;
 
@@ -1182,11 +1190,11 @@ void Host_Speeds(float time1, float time2, float time3, float time4)
     pass2 = (time3 - time2) * 1000.0f;
     pass3 = (time4 - time3) * 1000.0f;
 
-    frameTime = pass1 + pass2 + pass3;
-    if (frameTime < 1.0f)
+    fps = pass1 + pass2 + pass3;
+    if (fps < 1.0f)
         fps = 100.0f;
     else
-        fps = 1000.0f / frameTime;
+        fps = 1000.0f / fps;
 
     Host_SetRollingFPS(fps);
 
@@ -1377,6 +1385,7 @@ void Log_Printf(char *fmt, ...)
 {
     va_list argptr;
     int ltime;
+    int len;
     tm_t *today;
 
     if (!svs.log.active)
@@ -1389,8 +1398,9 @@ void Log_Printf(char *fmt, ...)
     sprintf(log_string, "L %02i/%02i/%04i - %02i:%02i:%02i: ", today->tm_mon + 1, today->tm_mday,
             today->tm_year + 1900, today->tm_hour, today->tm_min, today->tm_sec);
 
+    len = strlen(log_string);
     va_start(argptr, fmt);
-    vsprintf(&log_string[strlen(log_string)], fmt, argptr);
+    vsprintf(&log_string[len], fmt, argptr);
     va_end(argptr);
 
     if (mp_logecho.value != 0)
@@ -1437,10 +1447,14 @@ void Log_Open(void)
         if (!fp)
         {
             fp = FS_Open(szTestFile, "wt");
-            if (fp)
-                Con_Printf("Server logging data to file %s\n", szTestFile);
-            else
+            if (!fp)
+            {
                 i = 1000;
+            }
+            else
+            {
+                Con_Printf("Server logging data to file %s\n", szTestFile);
+            }
             break;
         }
         FS_Close(fp);
@@ -1469,7 +1483,10 @@ void Host_Version(void)
 int Host_Init(quakeparms_t *parms)
 {
     int i;
+    int j;
+    int k;
     byte *pb;
+    byte *pal;
     short *pw;
 
     host_parms = *parms;
@@ -1513,13 +1530,14 @@ int Host_Init(quakeparms_t *parms)
 
     if (cls[0].state != ca_dedicated)
     {
-        pb = COM_LoadHunkFile("gfx/palette.lmp");
-        if (!pb)
+        pal = COM_LoadHunkFile("gfx/palette.lmp");
+        if (!pal)
             Sys_Error("Couldn't load gfx/palette.lmp");
 
         host_basepal = Hunk_AllocName(256 * 4 * sizeof(short), "palette.lmp");
         pw = host_basepal;
-        for (i = 0; i < 256; i++)
+        pb = pal;
+        for (k = 0; k < 256; k++)
         {
             pw[0] = (char)pb[2];
             pw[1] = (char)pb[1];
@@ -1539,8 +1557,8 @@ int Host_Init(quakeparms_t *parms)
         S_Init(0);
         func_00235798();
 
-        for (i = 0; i < 2; i++)
-            CL_Init(i);
+        for (j = 0; j < 2; j++)
+            CL_Init(j);
 
         func_002C5430();
         D_003997D8();
