@@ -10,6 +10,7 @@
   (visto em strcpy inline seguido de jr $31), nem com macros uld/usd/ulw/usw.
 - depois de mtc1 (inclusive o li.s expandido), o ee-as põe um nop se a instrução
   seguinte lê o mesmo par de registradores de FPU ($f2 e $f3 contam como o mesmo).
+- cvt.w.s (.word) logo depois de mfc1 vai em noreorder: o gas poria um nop entre os dois.
 """
 import sys, re
 
@@ -56,6 +57,12 @@ for line in lines:
     m = re.match(r'^(\s+)cvt\.w\.s\s+\$f(\d+),\s*\$f(\d+)\s*$', line)
     if m:
         line = '%s.word\t0x%08X' % (m.group(1), 0x46000024 | (int(m.group(3)) << 11) | (int(m.group(2)) << 6))
+        if reorder and prev_real == len(out) - 1 and re.match(r'^\s+mfc1\s', out[prev_real]):
+            # o gas põe um nop entre mfc1 e um .word que ele não conhece; o ee-as não
+            out.insert(prev_real, '\t.set\tnoreorder')
+            out.append(line)
+            out.append('\t.set\treorder')
+            continue
     if reorder and BRANCH.match(line) and prev_real is not None and (
             re.match(r'^\s+(mf(lo|hi)|u(ld|sd|lw|sw|lh|lhu|sh))\s', out[prev_real]) or
             (prev_prev is not None and re.match(r'^\s+s[dw][lr]\s', out[prev_prev]))):

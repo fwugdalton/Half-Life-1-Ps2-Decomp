@@ -90,7 +90,7 @@ segments:
       - [0x231C54, data, cod/231C54]
       - [0x231C5C, .data, engine/DecalsWad]
       - [0x231C60, .data, engine/Host]
-      - [0x231D80, data, cod/231D80]
+      - [0x231D80, .data, engine/unk_265E18]
       - [0x231DA8, .data, engine/keys]
       - [0x2320D0, data, cod/2320D0]
       - [0x236C80, rodata, cod/236C80] # .rodata
