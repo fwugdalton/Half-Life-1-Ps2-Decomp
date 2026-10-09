@@ -62,7 +62,7 @@ typedef struct physent_s
 	vec3_t angles;                  /* 0x30 */
 	int solid;                      /* 0x3C */
 	int skin;                       /* 0x40 */
-	int unk_44;
+	int rendermode;                 /* 0x44 */
 	float frame;                    /* 0x48 */
 	int sequence;                   /* 0x4C */
 	byte controller[4];             /* 0x50 */

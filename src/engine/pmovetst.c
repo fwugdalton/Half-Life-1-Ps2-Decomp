@@ -1,4 +1,5 @@
 #include "common.h"
+#include "engine/cvar.h"
 #include "engine/model.h"
 #include "engine/pmove.h"
 #include "engine/server.h"
@@ -399,10 +400,448 @@ int PM_TestPlayerPosition(vec3_t pos, int clientId)
 INCLUDE_ASM("asm/nonmatchings/engine/pmovetst", PM_TestPlayerPosition);
 #endif
 
+void *memset(void *s, int c, unsigned int n);
+#define PM_GLASS_IGNORE 4
+
+int SV_HitgroupForStudioHull(int index);
+
+#ifdef NON_MATCHING
+pmtrace_t PM_PlayerTrace(vec3_t start, vec3_t end, int traceFlags, int clientId)
+{
+	pmtrace_t total;
+	pmtrace_t trace;
+	vec3_t offset;
+	vec3_t start_l, end_l;
+	vec3_t mins, maxs;
+	hull_t *hull;
+	physent_t *pe;
+	int i, j;
+	int numhulls;
+	int rotated;
+	int closest;
+
+	memset(&trace, 0, sizeof(trace));
+	trace.fraction = 1.0f;
+	trace.ent = -1;
+	VectorCopy(end, trace.endpos);
+
+	for (i = 0; i < pmove[clientId].numphysent; i++)
+	{
+		pe = &pmove[clientId].physents[i];
+
+		if (pe->model && !pe->solid && pe->skin)
+			continue;
+
+		if ((traceFlags & PM_GLASS_IGNORE) && pe->rendermode)
+			continue;
+
+		VectorCopy(pe->origin, offset);
+		numhulls = 1;
+
+		if (pe->model)
+		{
+			switch (pmove[clientId].usehull)
+			{
+			case 0:
+				hull = &pmove[clientId].physents[i].model->hulls[1];
+				break;
+			case 1:
+				hull = &pmove[clientId].physents[i].model->hulls[3];
+				break;
+			case 2:
+				hull = &pmove[clientId].physents[i].model->hulls[0];
+				break;
+			default:
+				hull = NULL;
+				break;
+			}
+
+			VectorSubtract(hull->clip_mins, player_mins[pmove[clientId].usehull], offset);
+			VectorAdd(offset, pe->origin, offset);
+		}
+		else
+		{
+			if (pe->studiomodel)
+			{
+				if (traceFlags & PM_STUDIO_IGNORE)
+					continue;
+
+				if (pe->studiomodel->type == mod_studio &&
+				    ((pe->studiomodel->flags & STUDIO_TRACE_HITBOX) ||
+				     (pmove[clientId].usehull == 2 && !(traceFlags & PM_STUDIO_BOX))))
+				{
+					hull = PM_HullForStudioModel(pe->studiomodel, offset, pe->frame, pe->sequence, pe->angles, pe->origin,
+					                             pe->controller, pe->blending, &numhulls, clientId);
+				}
+				else
+				{
+					VectorSubtract(pe->mins, player_maxs[pmove[clientId].usehull], mins);
+					VectorSubtract(pe->maxs, player_mins[pmove[clientId].usehull], maxs);
+					hull = PM_HullForBox(mins, maxs);
+				}
+			}
+			else
+			{
+				VectorSubtract(pe->mins, player_maxs[pmove[clientId].usehull], mins);
+				VectorSubtract(pe->maxs, player_mins[pmove[clientId].usehull], maxs);
+				hull = PM_HullForBox(mins, maxs);
+			}
+		}
+
+		VectorSubtract(start, offset, start_l);
+		VectorSubtract(end, offset, end_l);
+
+		if (pe->solid == SOLID_BSP && (pe->angles[0] != 0 || pe->angles[1] != 0 || pe->angles[2] != 0))
+			rotated = 1;
+		else
+			rotated = 0;
+
+		if (rotated)
+		{
+			vec3_t forward, right, up;
+			vec3_t temp;
+
+			AngleVectors(pe->angles, forward, right, up);
+
+			VectorCopy(start_l, temp);
+			start_l[0] = DotProduct(temp, forward);
+			start_l[1] = -DotProduct(temp, right);
+			start_l[2] = DotProduct(temp, up);
+
+			VectorCopy(end_l, temp);
+			end_l[0] = DotProduct(temp, forward);
+			end_l[1] = -DotProduct(temp, right);
+			end_l[2] = DotProduct(temp, up);
+		}
+
+		memset(&total, 0, sizeof(total));
+		VectorCopy(end, total.endpos);
+		total.fraction = 1.0f;
+		total.allsolid = 1;
+
+		if (numhulls == 1)
+		{
+			PM_RecursiveHullCheck(hull, hull->firstclipnode, 0, 1, start_l, end_l, &total);
+		}
+		else
+		{
+			closest = 0;
+			for (j = 0; j < numhulls; j++)
+			{
+				pmtrace_t testtrace;
+
+				memset(&testtrace, 0, sizeof(testtrace));
+				VectorCopy(end, testtrace.endpos);
+				testtrace.fraction = 1.0f;
+				testtrace.allsolid = 1;
+				PM_RecursiveHullCheck(&hull[j], hull[j].firstclipnode, 0, 1, start_l, end_l, &testtrace);
+				if (j == 0 || testtrace.allsolid || testtrace.startsolid || testtrace.fraction < total.fraction)
+				{
+					if (total.startsolid)
+					{
+						total = testtrace;
+						total.startsolid = 1;
+					}
+					else
+					{
+						total = testtrace;
+					}
+					closest = j;
+				}
+				total.hitgroup = SV_HitgroupForStudioHull(closest);
+			}
+		}
+
+		if (total.allsolid)
+			total.startsolid = 1;
+
+		if (total.startsolid)
+			total.fraction = 0;
+
+		if (total.fraction != 1.0f)
+		{
+			if (rotated)
+			{
+				vec3_t forward, right, up;
+				vec3_t temp;
+
+				AngleVectorsTranspose(pe->angles, forward, right, up);
+
+				VectorCopy(total.plane.normal, temp);
+				total.plane.normal[0] = DotProduct(temp, forward);
+				total.plane.normal[1] = DotProduct(temp, right);
+				total.plane.normal[2] = DotProduct(temp, up);
+			}
+
+			total.endpos[0] = start[0] + total.fraction * (end[0] - start[0]);
+			total.endpos[1] = start[1] + total.fraction * (end[1] - start[1]);
+			total.endpos[2] = start[2] + total.fraction * (end[2] - start[2]);
+		}
+
+		if (total.fraction < trace.fraction)
+		{
+			trace = total;
+			trace.ent = i;
+		}
+	}
+
+	return trace;
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/pmovetst", PM_PlayerTrace);
+#endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/pmovetst", func_00271398);
+void PM_SortBounds(vec3_t a, vec3_t b, vec3_t mins, vec3_t maxs)
+{
+	int i;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pmovetst", func_002713E0);
+	for (i = 0; i < 3; i++)
+	{
+		mins[i] = (a[i] < b[i]) ? a[i] : b[i];
+		maxs[i] = (a[i] > b[i]) ? a[i] : b[i];
+	}
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/pmovetst", func_002717C0);
+pmtrace_t PM_WorldTrace(vec3_t start, vec3_t end, int clientId)
+{
+	pmtrace_t trace;
+	vec3_t offset;
+	vec3_t start_l, end_l;
+	hull_t *hull;
+	physent_t *pe;
+
+	memset(&trace, 0, sizeof(trace));
+	trace.fraction = 1.0f;
+	trace.ent = -1;
+	VectorCopy(end, trace.endpos);
+
+	pe = &pmove[clientId].physents[0];
+	VectorCopy(pe->origin, offset);
+
+	if (!pe->model)
+	{
+		Con_DPrintf("No world in PM_Worldtrace!!!\n");
+		return trace;
+	}
+
+	switch (pmove[clientId].usehull)
+	{
+	case 0:
+		hull = &pe->model->hulls[1];
+		break;
+	case 1:
+		hull = &pe->model->hulls[3];
+		break;
+	case 2:
+		hull = &pe->model->hulls[0];
+		break;
+	default:
+		hull = NULL;
+		break;
+	}
+
+	VectorSubtract(hull->clip_mins, player_mins[pmove[clientId].usehull], offset);
+	VectorAdd(offset, pe->origin, offset);
+
+	VectorSubtract(start, offset, start_l);
+	VectorSubtract(end, offset, end_l);
+
+	PM_RecursiveHullCheck(hull, hull->firstclipnode, 0, 1, start_l, end_l, &trace);
+
+	if (trace.allsolid)
+		trace.startsolid = 1;
+
+	if (trace.startsolid)
+		trace.fraction = 0;
+
+	if (trace.fraction != 1.0f)
+	{
+		trace.endpos[0] = start[0] + trace.fraction * (end[0] - start[0]);
+		trace.endpos[1] = start[1] + trace.fraction * (end[1] - start[1]);
+		trace.endpos[2] = start[2] + trace.fraction * (end[2] - start[2]);
+	}
+
+	return trace;
+}
+
+extern cvar_t pm_worldonly, pm_nostudio, pm_nocomplex;
+void SV_MoveBounds(vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, vec3_t boxmins, vec3_t boxmaxs);
+
+#ifdef NON_MATCHING
+pmtrace_t PM_PlayerTraceFast(vec3_t start, vec3_t end, int clientId)
+{
+	pmtrace_t total;
+	pmtrace_t trace;
+	vec3_t offset;
+	vec3_t start_l, end_l;
+	vec3_t mins, maxs;
+	vec3_t boxmins, boxmaxs;
+	hull_t *hull;
+	physent_t *pe;
+	int i, j;
+	int numhulls;
+	int rotated;
+	int closest;
+
+	trace = PM_WorldTrace(start, end, clientId);
+
+	if (pm_worldonly.value)
+		return trace;
+
+	if (trace.fraction == 0)
+		return trace;
+
+	SV_MoveBounds(start, player_mins[pmove[clientId].usehull], player_maxs[pmove[clientId].usehull], total.endpos, boxmins, boxmaxs);
+
+	for (i = 1; i < pmove[clientId].numphysent; i++)
+	{
+		pe = &pmove[clientId].physents[i];
+
+		if (pe->model && !pe->solid && pe->skin)
+			continue;
+
+		if (pm_nostudio.value && pe->studiomodel)
+			continue;
+
+		if (pm_nocomplex.value && pe->studiomodel && (pe->studiomodel->flags & STUDIO_TRACE_HITBOX))
+			continue;
+
+		VectorCopy(pe->origin, offset);
+		numhulls = 1;
+
+		if (pe->model)
+		{
+			switch (pmove[clientId].usehull)
+			{
+			case 0:
+				hull = &pe->model->hulls[1];
+				break;
+			case 1:
+				hull = &pe->model->hulls[3];
+				break;
+			case 2:
+				hull = &pe->model->hulls[0];
+				break;
+			default:
+				hull = NULL;
+				break;
+			}
+
+			VectorSubtract(hull->clip_mins, player_mins[pmove[clientId].usehull], offset);
+			VectorAdd(offset, pe->origin, offset);
+		}
+		else if (pe->studiomodel && pe->studiomodel->type == mod_studio &&
+		         ((pe->studiomodel->flags & STUDIO_TRACE_HITBOX) || pmove[clientId].usehull == 2))
+		{
+			hull = PM_HullForStudioModel(pe->studiomodel, offset, pe->frame, pe->sequence, pe->angles, pe->origin,
+			                             pe->controller, pe->blending, &numhulls, clientId);
+		}
+		else
+		{
+			VectorSubtract(pe->mins, player_maxs[pmove[clientId].usehull], mins);
+			VectorSubtract(pe->maxs, player_mins[pmove[clientId].usehull], maxs);
+			hull = PM_HullForBox(mins, maxs);
+		}
+
+		VectorSubtract(start, offset, start_l);
+		VectorSubtract(end, offset, end_l);
+
+		if (pe->solid == SOLID_BSP && (pe->angles[0] != 0 || pe->angles[1] != 0 || pe->angles[2] != 0))
+			rotated = 1;
+		else
+			rotated = 0;
+
+		if (rotated)
+		{
+			vec3_t forward, right, up;
+			vec3_t temp;
+
+			AngleVectors(pe->angles, forward, right, up);
+
+			VectorCopy(start_l, temp);
+			start_l[0] = DotProduct(temp, forward);
+			start_l[1] = -DotProduct(temp, right);
+			start_l[2] = DotProduct(temp, up);
+
+			VectorCopy(end_l, temp);
+			end_l[0] = DotProduct(temp, forward);
+			end_l[1] = -DotProduct(temp, right);
+			end_l[2] = DotProduct(temp, up);
+		}
+
+		memset(&total, 0, sizeof(total));
+		VectorCopy(end, total.endpos);
+		total.fraction = 1.0f;
+		total.allsolid = 1;
+
+		if (numhulls == 1)
+		{
+			PM_RecursiveHullCheck(hull, hull->firstclipnode, 0, 1, start_l, end_l, &total);
+		}
+		else
+		{
+			closest = 0;
+			for (j = 0; j < numhulls; j++)
+			{
+				pmtrace_t testtrace;
+
+				memset(&testtrace, 0, sizeof(testtrace));
+				VectorCopy(end, testtrace.endpos);
+				testtrace.fraction = 1.0f;
+				testtrace.allsolid = 1;
+				PM_RecursiveHullCheck(&hull[j], hull[j].firstclipnode, 0, 1, start_l, end_l, &testtrace);
+				if (j == 0 || testtrace.allsolid || testtrace.startsolid || testtrace.fraction < total.fraction)
+				{
+					if (total.startsolid)
+					{
+						total = testtrace;
+						total.startsolid = 1;
+					}
+					else
+					{
+						total = testtrace;
+					}
+					closest = j;
+				}
+				total.hitgroup = SV_HitgroupForStudioHull(closest);
+			}
+		}
+
+		if (total.allsolid)
+			total.startsolid = 1;
+
+		if (total.startsolid)
+			total.fraction = 0;
+
+		if (total.fraction != 1.0f)
+		{
+			if (rotated)
+			{
+				vec3_t forward, right, up;
+				vec3_t temp;
+
+				AngleVectorsTranspose(pe->angles, forward, right, up);
+
+				VectorCopy(total.plane.normal, temp);
+				total.plane.normal[0] = DotProduct(temp, forward);
+				total.plane.normal[1] = DotProduct(temp, right);
+				total.plane.normal[2] = DotProduct(temp, up);
+			}
+
+			total.endpos[0] = start[0] + total.fraction * (end[0] - start[0]);
+			total.endpos[1] = start[1] + total.fraction * (end[1] - start[1]);
+			total.endpos[2] = start[2] + total.fraction * (end[2] - start[2]);
+		}
+
+		if (total.fraction < trace.fraction)
+		{
+			trace = total;
+			trace.ent = i;
+		}
+	}
+
+	return trace;
+}
+#else
+INCLUDE_ASM("asm/nonmatchings/engine/pmovetst", PM_PlayerTraceFast);
+#endif
