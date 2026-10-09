@@ -28,9 +28,11 @@
 #define PM_STUDIO_IGNORE 1
 #define PM_STUDIO_BOX 2
 
+#define MOVETYPE_NONE 0
 #define MOVETYPE_WALK 3
 #define MOVETYPE_NOCLIP 8
 #define MOVETYPE_FLY 5
+#define MOVETYPE_TOSS 6
 #define MOVETYPE_FLYMISSILE 9
 #define MOVETYPE_BOUNCE 10
 #define MOVETYPE_BOUNCEMISSILE 11
@@ -39,11 +41,13 @@
 #define IN_DUCK (1 << 2)
 #define IN_FORWARD (1 << 3)
 #define IN_BACK (1 << 4)
+#define IN_USE (1 << 5)
 #define IN_MOVELEFT (1 << 9)
 #define IN_MOVERIGHT (1 << 10)
 
 #define FL_WATERJUMP (1 << 11)
 #define FL_DUCKING (1 << 14)
+#define FL_ONTRAIN (1 << 24)
 
 #define MAX_CLIP_PLANES 5
 
@@ -100,8 +104,7 @@ typedef struct movevars_s
 
 typedef struct usercmd_s
 {
-	short lerp_msec;
-	byte msec;
+	byte msec;                      /* 0x00 */
 	vec3_t viewangles;              /* 0x04 */
 	float forwardmove;              /* 0x10 */
 	float sidemove;                 /* 0x14 */

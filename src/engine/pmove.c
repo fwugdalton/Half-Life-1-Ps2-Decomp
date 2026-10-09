@@ -1789,6 +1789,233 @@ void PM_Duck(int clientId)
 	Con_Printf("\n");
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/pmove", func_0026ED00);
+extern cvar_t cl_dumpents;
+extern vec3_t pm_sv_origin;
+extern vec3_t pm_cl_origin;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pmove", PM_AddToTouched);
+void PM_PlayerMove(qboolean server, int clientId)
+{
+	physent_t *pLadder = NULL;
+
+	pmove[clientId].server = server;
+
+	pm_frametime = pmove[clientId].cmd.msec * 0.001f;
+
+	pmove[clientId].numtouch = 0;
+
+	AngleVectors(pmove[clientId].angles, pm_forward, pm_right, pm_up);
+
+	if (!server && cl_dumpents.value)
+	{
+		Cvar_SetValue("cl_dumpents", 0);
+		PM_PrintPhysEnts();
+	}
+
+	if (pmove[clientId].spectator)
+	{
+		PM_SpectatorMove(clientId);
+		return;
+	}
+
+	if (pmove[clientId].movetype != MOVETYPE_NOCLIP)
+	{
+		if (PM_CheckStuck(clientId))
+			return;
+	}
+
+	PM_CatagorizePosition(clientId);
+
+	if (pmove[clientId].server)
+	{
+		VectorCopy(pmove[clientId].origin, pm_sv_origin);
+	}
+	else
+	{
+		VectorCopy(pmove[clientId].origin, pm_cl_origin);
+	}
+
+	if (!pmove[clientId].dead && !(pmove[clientId].flags & FL_ONTRAIN))
+	{
+		pLadder = PM_Ladder(clientId);
+		if (pLadder)
+		{
+			PM_LadderMove(pLadder, clientId);
+		}
+		else if (pmove[clientId].movetype != MOVETYPE_WALK &&
+		         pmove[clientId].movetype != MOVETYPE_NOCLIP)
+		{
+			pmove[clientId].movetype = MOVETYPE_WALK;
+		}
+	}
+
+	if (pm_onground[clientId] != -1 && (pmove[clientId].cmd.buttons & IN_USE))
+		VectorScale(pmove[clientId].velocity, 0.3f, pmove[clientId].velocity);
+
+	switch (pmove[clientId].movetype)
+	{
+	default:
+		Con_DPrintf("Bogus pmove[clientId] player movetype %i on (%i) 0=cl 1=sv\n", pmove[clientId].movetype, pmove[clientId].server);
+		break;
+
+	case MOVETYPE_NONE:
+		break;
+
+	case MOVETYPE_NOCLIP:
+		PM_NoClip(clientId);
+		break;
+
+	case MOVETYPE_TOSS:
+	case MOVETYPE_BOUNCE:
+		PM_Physics_Toss(clientId);
+		break;
+
+	case MOVETYPE_FLY:
+		PM_CheckWater(clientId);
+
+		if (pmove[clientId].cmd.buttons & IN_JUMP)
+		{
+			if (!pLadder)
+				PM_Jump(clientId);
+		}
+		else
+		{
+			pmove[clientId].oldbuttons &= ~IN_JUMP;
+		}
+
+		VectorAdd(pmove[clientId].velocity, pmove[clientId].basevelocity, pmove[clientId].velocity);
+		PM_FlyMove(clientId);
+		VectorSubtract(pmove[clientId].velocity, pmove[clientId].basevelocity, pmove[clientId].velocity);
+		break;
+
+	case MOVETYPE_WALK:
+		if (!PM_CheckWater(clientId) && !pmove[clientId].waterjumptime)
+			PM_AddCorrectGravity(clientId);
+
+		PM_CheckVelocity(clientId);
+
+		PM_CatagorizePosition(clientId);
+
+		if (pmove[clientId].waterjumptime)
+		{
+			PM_WaterJump(clientId);
+			PM_FlyMove(clientId);
+			return;
+		}
+
+		if (pm_waterlevel[clientId] >= 2)
+		{
+			if (pm_waterlevel[clientId] == 2 && !pmove[clientId].waterjumptime)
+				PM_CheckWaterJump(clientId);
+
+			if (pmove[clientId].velocity[2] < 0 && pmove[clientId].waterjumptime)
+				pmove[clientId].waterjumptime = 0;
+
+			if (pmove[clientId].cmd.buttons & IN_JUMP)
+				PM_Jump(clientId);
+			else
+				pmove[clientId].oldbuttons &= ~IN_JUMP;
+
+			PM_WaterMove(clientId);
+
+			VectorSubtract(pmove[clientId].velocity, pmove[clientId].basevelocity, pmove[clientId].velocity);
+		}
+		else
+		{
+			if (pm_onground[clientId] != -1)
+			{
+				pmove[clientId].velocity[2] = 0;
+				PM_Friction(clientId);
+			}
+
+			if (pmove[clientId].cmd.buttons & IN_JUMP)
+			{
+				if (!pLadder)
+					PM_Jump(clientId);
+			}
+			else
+			{
+				pmove[clientId].oldbuttons &= ~IN_JUMP;
+			}
+
+			PM_CheckVelocity(clientId);
+
+			PM_CatagorizePosition(clientId);
+
+			if (pm_onground[clientId] != -1)
+				PM_WalkMove(clientId);
+			else
+				PM_AirMove(clientId);
+
+			VectorSubtract(pmove[clientId].velocity, pmove[clientId].basevelocity, pmove[clientId].velocity);
+
+			PM_CheckVelocity(clientId);
+
+			if (!PM_CheckWater(clientId) && !pmove[clientId].waterjumptime)
+				PM_FixupGravityVelocity(clientId);
+
+			PM_CatagorizePosition(clientId);
+
+			if (pm_onground[clientId] != -1)
+				pmove[clientId].velocity[2] = 0;
+		}
+		break;
+	}
+}
+
+void SV_Impact(edict_t *e1, edict_t *e2, trace_t *ptrace);
+
+qboolean PM_AddToTouched(pmtrace_t tr, vec3_t impactvelocity, int clientId)
+{
+	int i;
+
+	for (i = 0; i < pmove[clientId].numtouch; i++)
+	{
+		if (pmove[clientId].touchindex[i].ent == tr.ent)
+			break;
+	}
+	if (i != pmove[clientId].numtouch)
+		return 0;
+
+	if (pm_pushfix.value)
+	{
+		if (pmove[clientId].server)
+		{
+			trace_t trace;
+			edict_t *ent;
+			vec3_t oldvel;
+
+			trace.allsolid = tr.allsolid;
+			trace.startsolid = tr.startsolid;
+			trace.inopen = tr.inopen;
+			trace.inwater = tr.inwater;
+			trace.fraction = tr.fraction;
+			VectorCopy(tr.endpos, trace.endpos);
+			VectorCopy(tr.plane.normal, trace.plane.normal);
+			trace.plane.dist = tr.plane.dist;
+			ent = EDICT_NUM(pmove[clientId].physents[pmove[clientId].touchindex[i].ent].info);
+			trace.ent = ent;
+			trace.hitgroup = tr.hitgroup;
+
+			VectorCopy(pmove[clientId].velocity, oldvel);
+			VectorCopy(impactvelocity, sv_player->velocity);
+			if (!(ent->flags & FL_SPECTATOR) && !pmove[clientId].spectator)
+				SV_Impact(ent, sv_player, &trace);
+			VectorSubtract(sv_player->velocity, oldvel, tr.deltavelocity);
+			VectorCopy(oldvel, pmove[clientId].velocity);
+		}
+		else
+		{
+			VectorCopy(vec3_origin, tr.deltavelocity);
+		}
+	}
+	else
+	{
+		VectorCopy(impactvelocity, tr.deltavelocity);
+	}
+
+	if (pmove[clientId].numtouch >= MAX_PHYSENTS)
+		Con_DPrintf("Too many entities were touched!\n");
+
+	pmove[clientId].touchindex[pmove[clientId].numtouch++] = tr;
+	return 1;
+}
