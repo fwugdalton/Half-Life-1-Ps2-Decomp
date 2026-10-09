@@ -68,8 +68,16 @@ for line in lines:
             out.append(line)
             out.append('\t.set\treorder')
             continue
+    m3 = re.match(r'^(\s+)(uld|usd)\s+(\$\w+),\s*%lo\(([^)]+)\)\((\$\w+)\)\s*$', line)
+    if m3:
+        # o ee-as expande uld/usd com %lo() direto em ldl/ldr (sdl/sdr), sem passar por $at
+        ind, op, rt, sym, base = m3.groups()
+        l, r = ('ldl', 'ldr') if op == 'uld' else ('sdl', 'sdr')
+        out.append('%s%s\t%s,%%lo(%s+7)(%s)' % (ind, l, rt, sym, base))
+        line = '%s%s\t%s,%%lo(%s)(%s)\t# %s' % (ind, r, rt, sym, base, op)
     if reorder and BRANCH.match(line) and prev_real is not None and (
             re.match(r'^\s+(mf(lo|hi)|u(ld|sd|lw|sw|lh|lhu|sh))\s', out[prev_real]) or
+            re.search(r'# u(ld|sd)$', out[prev_real]) or
             (prev_prev is not None and re.match(r'^\s+s[dw][lr]\s', out[prev_prev]))):
         out.append('\t.set\tnoreorder')
         out.append(line)

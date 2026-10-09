@@ -100,8 +100,8 @@ void func_00287A40(void);
 void func_0027BCD0(void);
 void func_00281328(void);
 void func_00288A58(void);
-void func_00243358(void);
-void func_002434B8(void);
+void MSG_BeginReading(void);
+int MSG_ReadLong(void);
 char *func_002436B0(void);
 void func_00297D10(netadr_t *adr);
 void func_00247118(int player);
@@ -1243,8 +1243,8 @@ void Host_Speeds(float time1, float time2, float time3, float time4)
 
 void Host_ConnectionlessPacket(void)
 {
-    func_00243358();
-    func_002434B8();
+    MSG_BeginReading();
+    MSG_ReadLong();
     Cmd_TokenizeString(func_002436B0());
 
     if (!strcmp(Cmd_Argv(0), "rcon"))

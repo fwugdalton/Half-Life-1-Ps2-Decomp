@@ -7,8 +7,8 @@ typedef void (*xcommand_t)(void);
 
 typedef struct sizebuf_s
 {
-    const char *buffername;
-    unsigned short flags;
+    qboolean allowoverflow;     /* se falso, estourar é erro fatal */
+    qboolean overflowed;        /* setado quando o buffer enche */
     byte *data;
     int maxsize;
     int cursize;
@@ -111,13 +111,63 @@ typedef struct netadr_s
     byte ip[4];
 } netadr_t;
 
-/* netchan_t (parcial) */
+#define MAX_MSGLEN 14100
+#define MAX_LATENT 32
+#define MAX_LATENCY 64
+
+typedef struct flowstats_s
+{
+    int size;
+    float time;
+} flowstats_t;
+
+typedef struct flow_s
+{
+    flowstats_t stats[MAX_LATENT];
+    int current;                /* 0x100 */
+    float nextcompute;          /* 0x104 */
+    float kbytespersec;         /* 0x108 */
+    float avgkbytespersec;      /* 0x10C */
+} flow_t;                       /* 0x110 */
+
+#define FLOW_OUTGOING 0
+#define FLOW_INCOMING 1
+
+typedef struct netlatency_s
+{
+    int latency;
+    float rate;
+} netlatency_t;
+
 typedef struct netchan_s
 {
     netadr_t remote_address;    /* 0x00 */
-    byte unk_08[0x50 - 0x08];
+    int sock;                   /* 0x08 */
+    qboolean fatal_error;       /* 0x0C */
+    float last_received;        /* 0x10 */
+    float connect_time;         /* 0x14 */
+    float frame_latency;        /* 0x18 */
+    float frame_rate;           /* 0x1C */
+    int drop_count;             /* 0x20 */
+    int good_count;             /* 0x24 */
+    int unk_28;                 /* 0x28 */
+    float cleartime;            /* 0x2C */
+    float rate;                 /* 0x30 */
+    int incoming_sequence;      /* 0x34 */
+    int incoming_acknowledged;  /* 0x38 */
+    int incoming_reliable_acknowledged; /* 0x3C */
+    int incoming_reliable_sequence; /* 0x40 */
+    int outgoing_sequence;      /* 0x44 */
+    int reliable_sequence;      /* 0x48 */
+    int last_reliable_sequence; /* 0x4C */
     sizebuf_t message;          /* 0x50 */
-    byte unk_64[0x73B0 - 0x64];
+    byte message_buf[MAX_MSGLEN]; /* 0x64 */
+    int reliable_length;        /* 0x3778 */
+    byte reliable_buf[MAX_MSGLEN]; /* 0x377C */
+    int outgoing_size[MAX_LATENT]; /* 0x6E90 */
+    float outgoing_time[MAX_LATENT]; /* 0x6F10 */
+    netlatency_t latency[MAX_LATENCY]; /* 0x6F90 */
+    flow_t flow[2];             /* 0x7190 */
 } netchan_t;                    /* 0x73B0 */
 
 typedef struct client_static_s
