@@ -8,7 +8,10 @@
  * (pm_shared): a string "\n" é a mesma entre PM_PrintPhysEnts e pm_shared. */
 
 void Con_Printf(const char *fmt, ...);
-void PM_Init(void);
+void PM_CreateStuckTable(void);
+void *memset(void *s, int c, unsigned int n);
+
+extern vec3_t rgv3tStuckTable[54];
 void PM_CheckVelocity(int clientId);
 int PM_ClipVelocity(vec3_t in, vec3_t normal, vec3_t out, float overbounce);
 int PM_FlyMove(int clientId);
@@ -30,7 +33,7 @@ vec3_t player_maxs[3] = { { 16, 16, 36 }, { 16, 16, 18 }, { 0, 0, 0 } };
 void Pmove_Init(void)
 {
 	PM_InitBoxHull();
-	PM_Init();
+	PM_CreateStuckTable();
 }
 
 float PM_SplineFraction(float value, float scale)
@@ -1078,7 +1081,108 @@ qboolean PM_CheckWater(int clientId)
 	return pm_waterlevel[clientId] > 1;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/pmove", PM_Init);
+void PM_CreateStuckTable(void)
+{
+	float x, y, z;
+	int idx;
+	int i;
+	float zi[3];
+
+	memset(rgv3tStuckTable, 0, 54 * sizeof(vec3_t));
+
+	idx = 0;
+	/* movimentos pequenos */
+	x = y = 0;
+	/* em z */
+	for (z = -0.124f; z <= 0.124f; z += 0.124f)
+	{
+		rgv3tStuckTable[idx][0] = x;
+		rgv3tStuckTable[idx][1] = y;
+		rgv3tStuckTable[idx][2] = z;
+		idx++;
+	}
+	x = z = 0;
+	/* em y */
+	for (y = -0.124f; y <= 0.124f; y += 0.124f)
+	{
+		rgv3tStuckTable[idx][0] = x;
+		rgv3tStuckTable[idx][1] = y;
+		rgv3tStuckTable[idx][2] = z;
+		idx++;
+	}
+	y = z = 0;
+	/* em x */
+	for (x = -0.124f; x <= 0.124f; x += 0.124f)
+	{
+		rgv3tStuckTable[idx][0] = x;
+		rgv3tStuckTable[idx][1] = y;
+		rgv3tStuckTable[idx][2] = z;
+		idx++;
+	}
+
+	/* os demais, em vários eixos */
+	for (x = -0.124f; x <= 0.124f; x += 0.248f)
+	{
+		for (y = -0.124f; y <= 0.124f; y += 0.248f)
+		{
+			for (z = -0.124f; z <= 0.124f; z += 0.248f)
+			{
+				rgv3tStuckTable[idx][0] = x;
+				rgv3tStuckTable[idx][1] = y;
+				rgv3tStuckTable[idx][2] = z;
+				idx++;
+			}
+		}
+	}
+
+	/* movimentos grandes */
+	x = y = 0;
+	zi[0] = 0.0f;
+	zi[1] = 1.0f;
+	zi[2] = 6.0f;
+
+	for (i = 0; i < 3; i++)
+	{
+		z = zi[i];
+		rgv3tStuckTable[idx][0] = x;
+		rgv3tStuckTable[idx][1] = y;
+		rgv3tStuckTable[idx][2] = z;
+		idx++;
+	}
+
+	x = z = 0;
+
+	for (y = -2.0f; y <= 2.0f; y += 2.0f)
+	{
+		rgv3tStuckTable[idx][0] = x;
+		rgv3tStuckTable[idx][1] = y;
+		rgv3tStuckTable[idx][2] = z;
+		idx++;
+	}
+	y = z = 0;
+	for (x = -2.0f; x <= 2.0f; x += 2.0f)
+	{
+		rgv3tStuckTable[idx][0] = x;
+		rgv3tStuckTable[idx][1] = y;
+		rgv3tStuckTable[idx][2] = z;
+		idx++;
+	}
+
+	for (i = 0; i < 3; i++)
+	{
+		z = zi[i];
+		for (x = -2.0f; x <= 2.0f; x += 2.0f)
+		{
+			for (y = -2.0f; y <= 2.0f; y += 2.0f)
+			{
+				rgv3tStuckTable[idx][0] = x;
+				rgv3tStuckTable[idx][1] = y;
+				rgv3tStuckTable[idx][2] = z;
+				idx++;
+			}
+		}
+	}
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/pmove", func_0026CD60);
 

@@ -10,7 +10,8 @@
 - também não preenche o delay slot quando a penúltima instrução é sdl/sdr/swl/swr
   (visto em strcpy inline seguido de jr $31), nem com macros uld/usd/ulw/usw.
 - depois de mtc1 (inclusive o li.s expandido), o ee-as põe um nop se a instrução
-  seguinte lê o mesmo par de registradores de FPU ($f2 e $f3 contam como o mesmo).
+  seguinte lê o mesmo par de registradores de FPU ($f2 e $f3 contam como o mesmo),
+  mesmo com um rótulo no meio (aí o nop fica antes do rótulo).
 - cvt.w.s (.word) logo depois de mfc1 vai em noreorder: o gas poria um nop entre os dois.
 """
 import sys, re
@@ -40,7 +41,28 @@ def fp_reads(line):
         return set(regs[1:])
     return set()
 
+def raw_mtc1(line):
+    """li.s/mtc1 escritos à mão, com o mtc1 como .word."""
+    import struct
+    m = re.match(r'^(\s+)li\.s\s+\$f(\d+),\s*(\S+)\s*$', line)
+    if m:
+        ind, f, val = m.group(1), int(m.group(2)), float(m.group(3))
+        bits = struct.unpack('<I', struct.pack('<f', val))[0]
+        res = ['%slui\t$1,0x%x' % (ind, bits >> 16)]
+        if bits & 0xFFFF:
+            res.append('%sori\t$1,$1,0x%x' % (ind, bits & 0xFFFF))
+        res.append('%s.word\t0x%08X\t# mtc1 $1,$f%d' % (ind, 0x44810000 | (f << 11), f))
+        return res
+    m = re.match(r'^(\s+)mtc1\s+\$(\d+),\s*\$f(\d+)\s*$', line)
+    if m:
+        ind, r, f = m.group(1), int(m.group(2)), int(m.group(3))
+        return ['%s.word\t0x%08X\t# mtc1 $%d,$f%d' % (ind, 0x44800000 | (r << 16) | (f << 11), r, f)]
+    return [line]
+
 pending_fpr = None
+label_at = None
+pending_idx = None
+before = 0
 for line in lines:
     s = line.strip()
     if s == '.set\tnoreorder' or s == '.set noreorder':
@@ -87,17 +109,31 @@ for line in lines:
         continue
     if s and not s.startswith(('.', '#', '$L')) and not s.endswith(':'):
         if reorder and pending_fpr is not None and any((r & ~1) == pending_fpr for r in fp_reads(line)):
-            out.append('\tnop')
+            if label_at is not None:
+                # o gas moderno poria o nop do mtc1 antes do .p2align (o ee-as põe depois):
+                # o mtc1 vira .word para o gas não ver o atraso, e o nop vai junto do rótulo
+                n = len(out)
+                out[pending_idx:pending_idx + 1] = raw_mtc1(out[pending_idx])
+                out.insert(label_at + len(out) - n, '\tnop')
+            else:
+                out.append('\tnop')
         pending_fpr = None
+        label_at = None
         m = FPWRITE.match(line)
         if m and reorder:
             r = re.findall(r'\$f(\d+)', line)
             if r:
                 pending_fpr = int(r[0]) & ~1
+                pending_idx = len(out)
         prev_prev = prev_real
         prev_real = len(out)
     elif s.endswith(':'):
+        if reorder and pending_fpr is not None and label_at is None:
+            # se a instrução depois do rótulo ler o registrador, o nop vai antes do rótulo
+            label_at = len(out)
+            before = len(out)
+        else:
+            pending_fpr = None
         prev_real = prev_prev = None
-        pending_fpr = None
     out.append(line)
 open(sys.argv[2], 'w').write('\n'.join(out))
