@@ -1,9 +1,5 @@
 #include "common.h"
 
-INCLUDE_ASM("asm/nonmatchings/engine/keys", func_00265E18);
-
-INCLUDE_ASM("asm/nonmatchings/engine/keys", func_00266188);
-
 INCLUDE_ASM("asm/nonmatchings/engine/keys", func_002664E0);
 
 INCLUDE_ASM("asm/nonmatchings/engine/keys", func_002665B0);

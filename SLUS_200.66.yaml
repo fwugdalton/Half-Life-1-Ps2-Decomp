@@ -78,7 +78,8 @@ segments:
       - [0x1620A8, c, engine/decals]
       - [0x1628F8, c, engine/DecalsWad]
       - [0x162D58, c, engine/Host]
-      - [0x165E18, c, engine/keys]
+      - [0x165E18, c, engine/unk_265E18]
+      - [0x1664E0, c, engine/keys]
       - [0x167A90, asm, cod/167A90]
       - [0x1F5980, textbin, cod/1F5980] # .vutext
       - [0x201B00, data, cod/201B00] # .data
@@ -90,6 +91,7 @@ segments:
       - [0x231C5C, .data, engine/DecalsWad]
       - [0x231C60, .data, engine/Host]
       - [0x231D80, data, cod/231D80]
+      - [0x231DB0, data, cod/231DB0]
       - [0x2320D8, data, cod/2320D8]
       - [0x236C80, rodata, cod/236C80] # .rodata
       - [0x28B158, .rodata, engine/Cmd]
