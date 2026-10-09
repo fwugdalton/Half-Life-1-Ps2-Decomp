@@ -1523,7 +1523,7 @@ void PM_Physics_Toss(int clientId)
 
 hull_t *PM_HullForBsp(physent_t *pe, vec3_t offset, int clientId);
 int PM_HullPointContents(hull_t *hull, int num, vec3_t p);
-qboolean PM_RecursiveHullCheck(hull_t *hull, int num, float p1f, float p2f, vec3_t p1, vec3_t p2, trace_t *trace);
+qboolean SV_RecursiveHullCheck(hull_t *hull, int num, float p1f, float p2f, vec3_t p1, vec3_t p2, trace_t *trace);
 
 physent_t *PM_Ladder(int clientId)
 {
@@ -1569,7 +1569,7 @@ float PM_TraceModel(physent_t *pEnt, float *start, float *end, trace_t *trace, i
 	VectorSubtract(start, offset, start_l);
 	VectorSubtract(end, offset, end_l);
 
-	PM_RecursiveHullCheck(pHull, pHull->firstclipnode, 0, 1, start_l, end_l, trace);
+	SV_RecursiveHullCheck(pHull, pHull->firstclipnode, 0, 1, start_l, end_l, trace);
 
 	return trace->fraction;
 }

@@ -31,9 +31,15 @@ typedef enum
     mod_studio
 } modtype_t;
 
+typedef struct dclipnode_s
+{
+    int planenum;
+    short children[2];
+} dclipnode_t;
+
 typedef struct hull_s
 {
-    struct dclipnode_s *clipnodes;
+    dclipnode_t *clipnodes;
     struct mplane_s *planes;
     int firstclipnode;          /* 0x08 */
     int lastclipnode;
@@ -54,6 +60,8 @@ typedef struct model_s
     byte unk_6C[0x9C - 0x6C];
     int numleafs;               /* 0x9C */
     mleaf_t *leafs;             /* 0xA0 */
+    byte unk_A4[0xDC - 0xA4];
+    hull_t hulls[4];            /* 0xDC */
 } model_t;
 
 #endif /* ENGINE_MODEL_H */
