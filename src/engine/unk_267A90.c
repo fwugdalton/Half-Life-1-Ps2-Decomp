@@ -73,13 +73,13 @@ void Mod_StudioCacheCallback(cache_user_t *c, unsigned int mode);
 
 extern void (*qglColorTableEXT)(int target, int internalformat, int width, int format, int type, void *table);
 
-#ifdef NON_MATCHING
 void Mod_LoadStudioModel(model_t *mod, void *buffer)
 {
 	studiohdr_t *phdr;
 	mstudiotexture_t *ptexture;
 	studiotex_t *tex;
 	byte *pal;
+	byte *data;
 	int i;
 	char name[256];
 
@@ -87,35 +87,25 @@ void Mod_LoadStudioModel(model_t *mod, void *buffer)
 	mod->type = mod_studio;
 	mod->flags = phdr->flags;
 	mod->cache.data = phdr;
+	ptexture = (mstudiotexture_t *)((byte *)phdr + phdr->textureindex);
 
 	if (phdr->textureindex)
 	{
-		ptexture = (mstudiotexture_t *)((byte *)phdr + phdr->textureindex);
 		for (i = 0; i < phdr->numtextures; i++)
 		{
 			tex = (studiotex_t *)((byte *)phdr + ptexture[i].index);
-			strcpy(name, mod->name);
 			pal = tex->palette;
+			data = tex->pixels;
+			strcpy(name, mod->name);
 			strcat(name, ptexture[i].name);
-			ptexture[i].texture = GL_LoadDecalTexture(name, 3, tex->width, tex->height, tex->pixels, pal, tex->nummips);
+			ptexture[i].texture = GL_LoadDecalTexture(name, 3, tex->width, tex->height, data, pal, tex->nummips);
 		}
 	}
 }
-#else
-INCLUDE_ASM("asm/nonmatchings/engine/unk_267A90", Mod_LoadStudioModel);
-#endif
 
 #ifdef NON_MATCHING
 void Mod_StudioCacheCallback(cache_user_t *c, unsigned int mode)
 {
-	studiohdr_t *phdr;
-	mstudiotexture_t *ptexture;
-	studiotex_t *tex;
-	byte *pixels;
-	byte *pal;
-	byte *data;
-	int i, j, nummips, w, h;
-
 	if (!c)
 		return;
 
@@ -125,6 +115,15 @@ void Mod_StudioCacheCallback(cache_user_t *c, unsigned int mode)
 		break;
 
 	case 1:
+	{
+		studiohdr_t *phdr;
+		mstudiotexture_t *ptexture;
+		studiotex_t *tex;
+		byte *pixels;
+		byte *pal;
+		byte *data;
+		int i, j, nummips, w, h;
+
 		phdr = (studiohdr_t *)c->data;
 		if (!phdr->textureindex)
 			break;
@@ -157,8 +156,14 @@ void Mod_StudioCacheCallback(cache_user_t *c, unsigned int mode)
 			}
 		}
 		break;
+	}
 
 	case 2:
+	{
+		studiohdr_t *phdr;
+		mstudiotexture_t *ptexture;
+		int i;
+
 		phdr = (studiohdr_t *)c->data;
 		if (!phdr->textureindex)
 			break;
@@ -169,6 +174,7 @@ void Mod_StudioCacheCallback(cache_user_t *c, unsigned int mode)
 			ptexture[i].texture = 0;
 		}
 		break;
+	}
 	}
 }
 #else
