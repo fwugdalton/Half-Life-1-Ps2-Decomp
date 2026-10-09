@@ -15,4 +15,9 @@ typedef int qboolean;
 #define NULL ((void *)0)
 #endif
 
+typedef struct cache_user_s
+{
+    void *data;
+} cache_user_t;
+
 #endif /* COMMON_H */

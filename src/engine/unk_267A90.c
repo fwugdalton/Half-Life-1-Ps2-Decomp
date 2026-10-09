@@ -11,11 +11,6 @@
 #define GL_TEXTURE_2D 0xDE1
 #define GL_COLOR_INDEX8_EXT 0x8801 /* valor do PS2 */
 
-typedef struct cache_user_s
-{
-	void *data;
-} cache_user_t;
-
 typedef struct
 {
 	char name[64];

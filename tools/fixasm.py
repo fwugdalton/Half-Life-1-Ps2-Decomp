@@ -14,6 +14,8 @@
   seguinte lê o mesmo par de registradores de FPU ($f2 e $f3 contam como o mesmo),
   mesmo com um rótulo no meio (aí o nop fica antes do rótulo).
 - cvt.w.s (.word) logo depois de mfc1 vai em noreorder: o gas poria um nop entre os dois.
+- o ee-as também não preenche o delay slot de um desvio quando a instrução anterior
+  precisou do nop do mtc1 (visto em conversão unsigned->float seguida de b).
 """
 import sys, re
 
@@ -69,6 +71,7 @@ pending_fpr = None
 label_at = None
 pending_idx = None
 before = 0
+after_nop = set()   # índices em out de instruções que receberam o nop do mtc1
 for line in lines:
     s = line.strip()
     if s == '.set\tnoreorder' or s == '.set noreorder':
@@ -117,7 +120,8 @@ for line in lines:
             re.match(r'^\s+(mf(lo|hi)|u(ld|sd|lw|sw|lh|lhu|sh))\s', out[prev_real]) or
             re.search(r'# u(ld|sd)$', out[prev_real]) or
             (prev_prev is not None and re.match(r'^\s+s[dw][lr]\s', out[prev_prev])) or
-            (prev_prev is not None and fp_load_use(out[prev_prev], out[prev_real]))):
+            (prev_prev is not None and fp_load_use(out[prev_prev], out[prev_real])) or
+            prev_real in after_nop):
         out.append('\t.set\tnoreorder')
         out.append(line)
         out.append('\tnop')
@@ -134,6 +138,7 @@ for line in lines:
                 out.insert(label_at + len(out) - n, '\tnop')
             else:
                 out.append('\tnop')
+            after_nop.add(len(out))
         pending_fpr = None
         label_at = None
         m = FPWRITE.match(line)

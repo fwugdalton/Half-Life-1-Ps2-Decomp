@@ -26,11 +26,6 @@ typedef struct
     qboolean inMemory;          /* 0x18 */
 } pakfile_t;
 
-typedef struct cache_user_s
-{
-    void *data;
-} cache_user_t;
-
 typedef struct cachepic_s
 {
     char name[64];

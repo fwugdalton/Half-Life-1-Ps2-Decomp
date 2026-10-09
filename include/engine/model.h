@@ -92,6 +92,8 @@ typedef struct model_s
     msurface_t *surfaces;       /* 0xC0 */
     byte unk_C4[0xDC - 0xC4];
     hull_t hulls[4];            /* 0xDC */
+    byte unk_17C[0x194 - 0x17C];
+    cache_user_t cache;         /* 0x194 */
 } model_t;
 
 #endif /* ENGINE_MODEL_H */

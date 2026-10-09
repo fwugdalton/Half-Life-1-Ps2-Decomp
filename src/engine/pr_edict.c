@@ -400,7 +400,6 @@ void FreeEntPrivateData(edict_t *pEdict)
     pEdict->pvPrivateData = NULL;
 }
 
-#ifdef NON_MATCHING
 void ED_ReserveLeafs(edict_t *pEdict, int count)
 {
     if (!pEdict->leafnums)
@@ -425,8 +424,8 @@ void ED_ReserveLeafs(edict_t *pEdict, int count)
         {
             ed_leaf_allocs++;
             ed_leaf_reallocs++;
-            memcpy(p, pEdict->leafnums, pEdict->num_leafs * 2);
             pEdict->max_leafs = count;
+            memcpy(p, pEdict->leafnums, pEdict->num_leafs * 2);
             Small_Free(pEdict->leafnums);
             ed_leaf_frees++;
             pEdict->leafnums = p;
@@ -437,9 +436,6 @@ void ED_ReserveLeafs(edict_t *pEdict, int count)
         }
     }
 }
-#else
-INCLUDE_ASM("asm/nonmatchings/engine/pr_edict", ED_ReserveLeafs);
-#endif
 
 void ED_FreeLeafs(edict_t *pEdict)
 {
