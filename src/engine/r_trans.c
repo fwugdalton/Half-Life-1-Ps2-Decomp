@@ -412,14 +412,14 @@ void R_SpriteSetColor(colorVec *color)
 INCLUDE_ASM("asm/nonmatchings/engine/r_trans", R_SpriteSetColor);
 #endif
 
-#ifdef NON_MATCHING
 int R_SpriteSetRenderMode(cl_entity_t *ent, int *pMode)
 {
-    int oldmode = *pMode;
+    int oldmode;
 
     if (ent->rendermode == 0)
         r_blend = 1.0f;
 
+    oldmode = *pMode;
     if (ent->rendermode == 1)
     {
         if (oldmode != 1)
@@ -478,9 +478,6 @@ int R_SpriteSetRenderMode(cl_entity_t *ent, int *pMode)
 
     return oldmode != *pMode;
 }
-#else
-INCLUDE_ASM("asm/nonmatchings/engine/r_trans", R_SpriteSetRenderMode);
-#endif
 
 #ifdef NON_MATCHING
 void R_SpriteInitST(void)
@@ -530,9 +527,10 @@ void R_SpriteFlush(void)
 void R_SpriteBeginQuad(void)
 {
     int done = 0;
+    int n;
 
     D_00331044 = 5;
-    if (sprite_numverts > 0 && sprite_numverts + 4 < SPRITE_BUFVERTS)
+    if (sprite_numverts > 0 && (n = sprite_numverts + 4) < SPRITE_BUFVERTS)
     {
         D_00331038 = &sprite_st[sprite_buffer][sprite_numverts];
         sprite_vertptr = UNCACHED(&sprite_verts[sprite_buffer][sprite_numverts]);
@@ -540,7 +538,7 @@ void R_SpriteBeginQuad(void)
         D_0033103C = 4;
         D_00331030 = &sprite_verts[sprite_buffer][sprite_numverts];
         D_00331034 = &sprite_colors[sprite_buffer][sprite_numverts];
-        sprite_numverts += 4;
+        sprite_numverts = n;
         D_0033102C = 1;
         if (func_0023D5F0() == 1)
         {
