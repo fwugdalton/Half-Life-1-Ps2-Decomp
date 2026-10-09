@@ -9,6 +9,12 @@
 
 void Con_Printf(const char *fmt, ...);
 void PM_Init(void);
+void PM_CheckVelocity(int clientId);
+int PM_ClipVelocity(vec3_t in, vec3_t normal, vec3_t out, float overbounce);
+int PM_FlyMove(int clientId);
+void PM_CheckWater(int clientId);
+void PM_Accelerate(vec3_t wishdir, float wishspeed, float accel, int clientId);
+void PM_AirAccelerate(vec3_t wishdir, float wishspeed, float accel, int clientId);
 
 cvar_t cl_showclip = { "cl_showclip", "0" };
 cvar_t cl_printclip = { "cl_printclip", "0" };
@@ -404,7 +410,6 @@ void PM_FixupGravityVelocity(int clientId)
 }
 
 
-extern int pm_onground[];
 
 /* movimento de corpo sólido que desliza ao longo de vários planos */
 #ifdef NON_MATCHING
@@ -544,7 +549,137 @@ int PM_FlyMove(int clientId)
 INCLUDE_ASM("asm/nonmatchings/engine/pmove", PM_FlyMove);
 #endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/pmove", func_0026B290);
+void PM_WalkMove(int clientId)
+{
+	int clip;
+	int oldonground;
+	int i;
+	vec3_t wishvel;
+	float spd;
+	float fmove, smove;
+	vec3_t wishdir;
+	float wishspeed;
+	vec3_t dest, start;
+	vec3_t original, originalvel;
+	vec3_t down, downvel;
+	float downdist, updist;
+	pmtrace_t trace;
+
+	fmove = pmove[clientId].cmd.forwardmove;
+	smove = pmove[clientId].cmd.sidemove;
+
+	pm_forward[2] = 0;
+	pm_right[2] = 0;
+
+	VectorNormalize(pm_forward);
+	VectorNormalize(pm_right);
+
+	for (i = 0; i < 2; i++)
+		wishvel[i] = pm_forward[i] * fmove + pm_right[i] * smove;
+
+	wishvel[2] = 0;
+
+	VectorCopy(wishvel, wishdir);
+	wishspeed = VectorNormalize(wishdir);
+
+	/* limita à velocidade máxima do servidor */
+	if (wishspeed > pmove[clientId].maxspeed)
+	{
+		VectorScale(wishvel, pmove[clientId].maxspeed / wishspeed, wishvel);
+		wishspeed = pmove[clientId].maxspeed;
+	}
+
+	pmove[clientId].velocity[2] = 0;
+	PM_Accelerate(wishdir, wishspeed, movevars.accelerate, clientId);
+	pmove[clientId].velocity[2] = 0;
+
+	VectorAdd(pmove[clientId].velocity, pmove[clientId].basevelocity, pmove[clientId].velocity);
+
+	spd = Length(pmove[clientId].velocity);
+
+	if (spd < 1.0f)
+	{
+		VectorCopy(vec3_origin, pmove[clientId].velocity);
+		return;
+	}
+
+	oldonground = pm_onground[clientId];
+
+	/* primeiro tenta ir direto ao destino */
+	dest[0] = pmove[clientId].origin[0] + pmove[clientId].velocity[0] * pm_frametime;
+	dest[1] = pmove[clientId].origin[1] + pmove[clientId].velocity[1] * pm_frametime;
+	dest[2] = pmove[clientId].origin[2];
+
+	VectorCopy(dest, start);
+	trace = PM_PlayerTrace(pmove[clientId].origin, dest, PM_NORMAL, clientId);
+
+	if (trace.fraction == 1)
+	{
+		VectorCopy(trace.endpos, pmove[clientId].origin);
+		return;
+	}
+
+	if (oldonground == -1 && pm_waterlevel[clientId] == 0)
+		return;
+
+	if (pmove[clientId].waterjumptime)
+		return;
+
+	VectorCopy(pmove[clientId].origin, original);
+	VectorCopy(pmove[clientId].velocity, originalvel);
+
+	clip = PM_FlyMove(clientId);
+
+	VectorCopy(pmove[clientId].origin, down);
+	VectorCopy(pmove[clientId].velocity, downvel);
+
+	VectorCopy(original, pmove[clientId].origin);
+	VectorCopy(originalvel, pmove[clientId].velocity);
+
+	/* começa um degrau acima */
+	VectorCopy(pmove[clientId].origin, dest);
+	dest[2] += movevars.stepsize;
+
+	trace = PM_PlayerTrace(pmove[clientId].origin, dest, PM_NORMAL, clientId);
+
+	if (!trace.startsolid && !trace.allsolid)
+	{
+		VectorCopy(trace.endpos, pmove[clientId].origin);
+	}
+
+	clip = PM_FlyMove(clientId);
+
+	/* agora desce de volta a altura do degrau */
+	VectorCopy(pmove[clientId].origin, dest);
+	dest[2] -= movevars.stepsize;
+
+	trace = PM_PlayerTrace(pmove[clientId].origin, dest, PM_NORMAL, clientId);
+
+	if (trace.plane.normal[2] < 0.7f)
+		goto usedown;
+
+	if (!trace.startsolid && !trace.allsolid)
+	{
+		VectorCopy(trace.endpos, pmove[clientId].origin);
+	}
+
+	VectorCopy(pmove[clientId].origin, pm_up);
+
+	/* qual dos dois foi mais longe */
+	downdist = (down[0] - original[0]) * (down[0] - original[0])
+		+ (down[1] - original[1]) * (down[1] - original[1]);
+	updist = (pm_up[0] - original[0]) * (pm_up[0] - original[0])
+		+ (pm_up[1] - original[1]) * (pm_up[1] - original[1]);
+
+	if (downdist > updist)
+	{
+usedown:
+		VectorCopy(down, pmove[clientId].origin);
+		VectorCopy(downvel, pmove[clientId].velocity);
+	}
+	else
+		pmove[clientId].velocity[2] = downvel[2];
+}
 
 void PM_Friction(int clientId)
 {
@@ -655,17 +790,212 @@ void PM_AirAccelerate(vec3_t wishdir, float wishspeed, float accel, int clientId
 		pmove[clientId].velocity[i] += accelspeed * wishdir[i];
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/pmove", func_0026BC98);
+void PM_WaterMove(int clientId)
+{
+	int i;
+	vec3_t wishvel;
+	float wishspeed;
+	vec3_t wishdir;
+	vec3_t start, dest;
+	vec3_t temp;
+	pmtrace_t trace;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pmove", func_0026C0C8);
+	float speed, newspeed, addspeed, accelspeed;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pmove", func_0026C288);
+	/* intenção do jogador */
+	for (i = 0; i < 3; i++)
+		wishvel[i] = pm_forward[i] * pmove[clientId].cmd.forwardmove + pm_right[i] * pmove[clientId].cmd.sidemove;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pmove", func_0026C448);
+	/* afunda se não houver outro movimento */
+	if (!pmove[clientId].cmd.forwardmove && !pmove[clientId].cmd.sidemove && !pmove[clientId].cmd.upmove)
+		wishvel[2] -= 60;
+	else
+		wishvel[2] += pmove[clientId].cmd.upmove;
+
+	VectorCopy(wishvel, wishdir);
+	wishspeed = VectorNormalize(wishdir);
+
+	if (wishspeed > pmove[clientId].maxspeed)
+	{
+		VectorScale(wishvel, pmove[clientId].maxspeed / wishspeed, wishvel);
+		wishspeed = pmove[clientId].maxspeed;
+	}
+	wishspeed *= 0.8f;
+
+	VectorAdd(pmove[clientId].velocity, pmove[clientId].basevelocity, pmove[clientId].velocity);
+
+	/* atrito da água */
+	VectorCopy(pmove[clientId].velocity, temp);
+	speed = VectorNormalize(temp);
+	if (speed)
+	{
+		newspeed = speed - pm_frametime * speed * movevars.friction * pmove[clientId].friction;
+
+		if (newspeed < 0)
+			newspeed = 0;
+		VectorScale(pmove[clientId].velocity, newspeed / speed, pmove[clientId].velocity);
+	}
+	else
+		newspeed = 0;
+
+	/* aceleração na água */
+	if (wishspeed < 0.1f)
+		return;
+
+	addspeed = wishspeed - newspeed;
+	if (addspeed > 0)
+	{
+		VectorNormalize(wishvel);
+		accelspeed = movevars.accelerate * wishspeed * pm_frametime * pmove[clientId].friction;
+		if (accelspeed > addspeed)
+			accelspeed = addspeed;
+
+		for (i = 0; i < 3; i++)
+			pmove[clientId].velocity[i] += accelspeed * wishvel[i];
+	}
+
+	/* supõe degrau ou rampa: desce a partir da altura do degrau */
+	VectorMA(pmove[clientId].origin, pm_frametime, pmove[clientId].velocity, dest);
+	VectorCopy(dest, start);
+	start[2] += movevars.stepsize + 1;
+	trace = PM_PlayerTrace(start, dest, PM_NORMAL, clientId);
+	if (!trace.startsolid && !trace.allsolid)
+	{
+		VectorCopy(trace.endpos, pmove[clientId].origin);
+		return;
+	}
+
+	PM_FlyMove(clientId);
+}
+
+void PM_AirMove(int clientId)
+{
+	int i;
+	vec3_t wishvel;
+	float fmove, smove;
+	vec3_t wishdir;
+	float wishspeed;
+
+	fmove = pmove[clientId].cmd.forwardmove;
+	smove = pmove[clientId].cmd.sidemove;
+
+	pm_forward[2] = 0;
+	pm_right[2] = 0;
+
+	VectorNormalize(pm_forward);
+	VectorNormalize(pm_right);
+
+	for (i = 0; i < 2; i++)
+	{
+		wishvel[i] = pm_forward[i] * fmove + pm_right[i] * smove;
+	}
+	wishvel[2] = 0;
+
+	VectorCopy(wishvel, wishdir);
+	wishspeed = VectorNormalize(wishdir);
+
+	if (wishspeed > pmove[clientId].maxspeed)
+	{
+		VectorScale(wishvel, pmove[clientId].maxspeed / wishspeed, wishvel);
+		wishspeed = pmove[clientId].maxspeed;
+	}
+
+	PM_AirAccelerate(wishdir, wishspeed, movevars.airaccelerate, clientId);
+
+	VectorAdd(pmove[clientId].velocity, pmove[clientId].basevelocity, pmove[clientId].velocity);
+
+	PM_FlyMove(clientId);
+}
+
+void PM_CatagorizePosition(int clientId)
+{
+	vec3_t point;
+	pmtrace_t tr;
+
+	PM_CheckWater(clientId);
+
+	point[0] = pmove[clientId].origin[0];
+	point[1] = pmove[clientId].origin[1];
+	point[2] = pmove[clientId].origin[2] - 2;
+
+	if (pmove[clientId].velocity[2] > 180) /* subindo rápido: não está no chão */
+	{
+		pm_onground[clientId] = -1;
+	}
+	else
+	{
+		tr = PM_PlayerTrace(pmove[clientId].origin, point, PM_NORMAL, clientId);
+		if (tr.plane.normal[2] < 0.7f)
+			pm_onground[clientId] = -1; /* íngreme demais */
+		else
+			pm_onground[clientId] = tr.ent;
+
+		if (pm_onground[clientId] != -1)
+		{
+			pmove[clientId].waterjumptime = 0;
+			if (pm_waterlevel[clientId] < 2 && !tr.startsolid && !tr.allsolid)
+				VectorCopy(tr.endpos, pmove[clientId].origin);
+		}
+
+		if (tr.ent > 0)
+		{
+			PM_AddToTouched(tr, pmove[clientId].velocity, clientId);
+		}
+	}
+}
+
+void PM_Jump(int clientId)
+{
+	if (pmove[clientId].dead)
+	{
+		pmove[clientId].oldbuttons |= IN_JUMP; /* não pula de novo até soltar */
+		return;
+	}
+
+	if (pmove[clientId].waterjumptime)
+	{
+		pmove[clientId].waterjumptime -= pm_frametime;
+		if (pmove[clientId].waterjumptime < 0)
+			pmove[clientId].waterjumptime = 0;
+		return;
+	}
+
+	/* nadando, não pulando */
+	if (pm_waterlevel[clientId] >= 2)
+	{
+		pm_onground[clientId] = -1;
+
+		if (pm_watertype[clientId] == CONTENTS_WATER)
+			pmove[clientId].velocity[2] = 100;
+		else if (pm_watertype[clientId] == CONTENTS_SLIME)
+			pmove[clientId].velocity[2] = 80;
+		else
+			pmove[clientId].velocity[2] = 50;
+		return;
+	}
+
+	if (pm_onground[clientId] == -1)
+	{
+		pmove[clientId].oldbuttons |= IN_JUMP;
+		return;
+	}
+
+	if (pmove[clientId].oldbuttons & IN_JUMP)
+		return; /* sem pula-pula */
+
+	pm_onground[clientId] = -1;
+
+	if (pmove[clientId].usehull == 1)
+		pmove[clientId].velocity[2] += sqrtf(2 * 800 * 45.0f);
+	else
+		pmove[clientId].velocity[2] += sqrtf(2 * 800 * 45.0f);
+
+	pmove[clientId].oldbuttons |= IN_JUMP;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/pmove", func_0026C5D0);
 
-INCLUDE_ASM("asm/nonmatchings/engine/pmove", func_0026C758);
+INCLUDE_ASM("asm/nonmatchings/engine/pmove", PM_CheckWater);
 
 INCLUDE_ASM("asm/nonmatchings/engine/pmove", PM_Init);
 

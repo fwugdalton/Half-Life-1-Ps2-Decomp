@@ -29,6 +29,8 @@
 
 #define MOVETYPE_WALK 3
 
+#define IN_JUMP 2
+
 #define MAX_CLIP_PLANES 5
 
 /* layouts parciais: só os campos usados até agora, nos offsets do binário */
@@ -80,6 +82,17 @@ typedef struct movevars_s
 	float maxvelocity;              /* 0x34 */
 } movevars_t;
 
+typedef struct usercmd_s
+{
+	int unk_00;
+	vec3_t viewangles;              /* 0x04 */
+	float forwardmove;              /* 0x10 */
+	float sidemove;                 /* 0x14 */
+	float upmove;                   /* 0x18 */
+	int buttons;                    /* 0x1C */
+	int unk_20;
+} usercmd_t; /* 0x24 */
+
 /* no PS2 há um playermove_t por jogador local (tela dividida): pmove[clientId] */
 typedef struct playermove_s
 {
@@ -98,10 +111,11 @@ typedef struct playermove_s
 	qboolean dead;                  /* 0x74 */
 	int unk_78;
 	int movetype;                   /* 0x7C */
-	byte unk_80[0x84 - 0x80];
+	float maxspeed;                 /* 0x80 */
 	int numphysent;                 /* 0x84 */
 	physent_t physents[MAX_PHYSENTS]; /* 0x88 */
-	byte unk_CEC8[0xD470 - 0xCEC8];
+	byte unk_CEC8[0xD44C - 0xCEC8];
+	usercmd_t cmd;                  /* 0xD44C */
 	int numtouch;                   /* 0xD470 */
 	pmtrace_t touchindex[MAX_PHYSENTS]; /* 0xD474 */
 } playermove_t; /* 0x173D4 */
@@ -109,6 +123,10 @@ typedef struct playermove_s
 extern playermove_t pmove[];
 extern movevars_t movevars;
 extern float pm_frametime;
+extern int pm_onground[];
+extern int pm_waterlevel[];
+extern int pm_watertype[];
+extern vec3_t pm_forward, pm_right, pm_up;
 
 extern vec3_t player_mins[3];
 extern vec3_t player_maxs[3];
