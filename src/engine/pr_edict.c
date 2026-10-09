@@ -3,9 +3,27 @@
 #include "engine/model.h"
 #include "engine/server.h"
 #include "engine/cvar.h"
+#include "engine/progdefs.h"
 
 extern char *pr_strings;
-extern int D_00332374, D_00332378, D_0033237C, D_00332380, D_00332384;
+extern cvar_t deathmatch;
+extern int (*gEntityInterface_pfnSpawn)(edict_t *pent);
+extern void (*gEntityInterface_pfnKeyValue)(edict_t *pentKeyvalue, KeyValueData *pkvd);
+
+#define SF_NOTINDEATHMATCH 0x800
+#define FL_KILLME 0x40000000
+
+double atof(const char *s);
+int sprintf(char *s, const char *fmt, ...);
+char *strcpy(char *d, const char *s);
+int strcmp(const char *a, const char *b);
+void func_002817E0(void);
+void SuckOutClassname(char *szInputStream, edict_t *pEdict);
+int ed_privdata_allocs = 0;
+int ed_privdata_frees = 0;
+int ed_leaf_allocs = 0;
+int ed_leaf_frees = 0;
+int ed_leaf_reallocs = 0;
 
 void Host_Error(const char *error, ...);
 void SV_UnlinkEdict(edict_t *ent);
@@ -21,6 +39,9 @@ void *Small_Calloc(int num, int size);
 void Small_Free(void *p);
 void *memset(void *s, int c, unsigned int n);
 void *memcpy(void *d, const void *s, unsigned int n);
+int strlen(const char *s);
+void *Hunk_SubAllocName(int size, char *name);
+void *Mod_Extradata(model_t *mod);
 
 void ED_ClearEdict(edict_t *e)
 {
@@ -85,13 +106,208 @@ void ED_Free(edict_t *ed)
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_edict", ED_Count);
+void ED_Count(void)
+{
+    int i;
+    edict_t *ent;
+    int active, models, solid, step;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_edict", ED_NewString);
+    active = models = solid = step = 0;
+    for (i = 0; i < sv.num_edicts; i++)
+    {
+        ent = &sv.edicts[i];
+        if (ent->free)
+            continue;
+        active++;
+        if (ent->v.solid)
+            solid++;
+        if (ent->v.model)
+            models++;
+        if (ent->v.movetype == 4)
+            step++;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_edict", ED_ParseEdict);
+    Con_Printf("num_edicts:%3i\n", sv.num_edicts);
+    Con_Printf("active    :%3i\n", active);
+    Con_Printf("view      :%3i\n", models);
+    Con_Printf("touch     :%3i\n", solid);
+    Con_Printf("step      :%3i\n", step);
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_edict", ED_LoadFromFile);
+char *ED_NewString(char *string)
+{
+    char *new_s, *new_p;
+    int i, l;
+
+    l = strlen(string) + 1;
+    new_s = Hunk_SubAllocName(l, "ED_NewString");
+    new_p = new_s;
+
+    for (i = 0; i < l; i++)
+    {
+        if (string[i] == '\\' && i < l - 1)
+        {
+            i++;
+            if (string[i] == 'n')
+                *new_p++ = '\n';
+            else
+                *new_p++ = '\\';
+        }
+        else
+            *new_p++ = string[i];
+    }
+
+    return new_s;
+}
+
+char *ED_ParseEdict(char *data, edict_t *ent)
+{
+    qboolean init;
+    char keyname[256];
+    int n;
+    ENTITYINIT pEntityInit;
+    KeyValueData kvd;
+    float v;
+
+    if (ent != sv.edicts)
+        memset(&ent->v, 0, sizeof(ent->v));
+
+    InitEntityDLLFields(ent);
+    SuckOutClassname(data, ent);
+
+    init = false;
+    pEntityInit = GetEntityInit(pr_strings + ent->v.classname);
+    if (pEntityInit)
+    {
+        pEntityInit(&ent->v);
+        init = true;
+    }
+    else
+    {
+        pEntityInit = GetEntityInit("custom");
+        if (pEntityInit)
+        {
+            pEntityInit(&ent->v);
+            init = true;
+            kvd.szClassName = "custom";
+            kvd.szKeyName = "customclass";
+            kvd.szValue = pr_strings + ent->v.classname;
+            kvd.fHandled = false;
+            gEntityInterface_pfnKeyValue(ent, &kvd);
+        }
+        else
+        {
+            Con_DPrintf("Can't init %s\n", pr_strings + ent->v.classname);
+        }
+    }
+
+    while (1)
+    {
+        data = COM_Parse(data);
+        if (com_token[0] == '}')
+            break;
+        if (!data)
+            Sys_Error("ED_ParseEntity: EOF without closing brace");
+
+        strcpy(keyname, com_token);
+
+        n = strlen(keyname);
+        while (n && keyname[n - 1] == ' ')
+        {
+            keyname[n - 1] = 0;
+            n--;
+        }
+
+        data = COM_Parse(data);
+        if (!data)
+            Sys_Error("ED_ParseEntity: EOF without closing brace");
+
+        if (com_token[0] == '}')
+            Sys_Error("ED_ParseEntity: closing brace without data");
+
+        if (pr_strings + ent->v.classname && !strcmp(pr_strings + ent->v.classname, com_token))
+            continue;
+
+        if (!strcmp(keyname, "angle"))
+        {
+            v = atof(com_token);
+            if (v >= 0)
+                sprintf(com_token, "%f %f %f", ent->v.angles[0], v, ent->v.angles[2]);
+            else if ((int)v == -1)
+                sprintf(com_token, "-90 0 0");
+            else
+                sprintf(com_token, "90 0 0");
+            strcpy(keyname, "angles");
+        }
+
+        kvd.szClassName = pr_strings + ent->v.classname;
+        kvd.szKeyName = keyname;
+        kvd.szValue = com_token;
+        kvd.fHandled = false;
+        gEntityInterface_pfnKeyValue(ent, &kvd);
+    }
+
+    if (!init)
+    {
+        ent->free = true;
+        ent->serialnumber++;
+    }
+    return data;
+}
+
+void ED_LoadFromFile(char *data)
+{
+    edict_t *ent;
+    int inhibit;
+
+    gGlobalVariables.time = sv.time;
+
+    ent = NULL;
+    inhibit = 0;
+    while (1)
+    {
+        data = COM_Parse(data);
+        if (!data)
+            break;
+        if (com_token[0] != '{')
+            Sys_Error("ED_LoadFromFile: found %s when expecting {", com_token);
+
+        if (!ent)
+        {
+            ent = sv.edicts;
+            ReleaseEntityDLLFields(ent);
+            InitEntityDLLFields(ent);
+        }
+        else
+        {
+            ent = ED_Alloc();
+        }
+
+        data = ED_ParseEdict(data, ent);
+        if (ent->free)
+            continue;
+
+        if (deathmatch.value && (ent->v.spawnflags & SF_NOTINDEATHMATCH))
+        {
+            ED_Free(ent);
+            inhibit++;
+            continue;
+        }
+
+        if (!ent->v.classname)
+        {
+            Con_Printf("No classname for:\n");
+            ED_Free(ent);
+            continue;
+        }
+
+        if (gEntityInterface_pfnSpawn(ent) < 0 || (ent->v.flags & FL_KILLME))
+            ED_Free(ent);
+        func_002817E0();
+    }
+
+    Con_DPrintf("%i entities inhibited\n", inhibit);
+}
 
 void PR_Init(void)
 {
@@ -114,7 +330,32 @@ int NUM_FOR_EDICT(const edict_t *e)
     return b;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_edict", SuckOutClassname);
+void SuckOutClassname(char *szInputStream, edict_t *pEdict)
+{
+    char szKeyName[256];
+    KeyValueData kvd;
+
+    while (1)
+    {
+        szInputStream = COM_Parse(szInputStream);
+        if (com_token[0] == '}')
+            return;
+
+        strcpy(szKeyName, com_token);
+        szInputStream = COM_Parse(szInputStream);
+
+        if (!strcmp(szKeyName, "classname"))
+            break;
+    }
+
+    kvd.szClassName = NULL;
+    kvd.szKeyName = szKeyName;
+    kvd.szValue = com_token;
+    kvd.fHandled = false;
+    gEntityInterface_pfnKeyValue(pEdict, &kvd);
+    if (!kvd.fHandled)
+        Host_Error("SuckOutClassname: parse error");
+}
 
 void ReleaseEntityDLLFields(edict_t *pEdict)
 {
@@ -138,7 +379,7 @@ void *PvAllocEntPrivateData(edict_t *pEdict, int cb)
     Mem_SetTag(2);
     pEdict->pvPrivateData = Mem_DbgCalloc(1, cb, "engine/Pr_edict.c", 576);
     Mem_PopTag();
-    D_00332374++;
+    ed_privdata_allocs++;
     return pEdict->pvPrivateData;
 }
 
@@ -154,7 +395,7 @@ void FreeEntPrivateData(edict_t *pEdict)
     if (pEdict->pvPrivateData)
     {
         Mem_Free(pEdict->pvPrivateData);
-        D_00332378++;
+        ed_privdata_frees++;
     }
     pEdict->pvPrivateData = NULL;
 }
@@ -167,7 +408,7 @@ void ED_ReserveLeafs(edict_t *pEdict, int count)
         pEdict->leafnums = Small_Calloc(1, count * 2);
         if (pEdict->leafnums)
         {
-            D_0033237C++;
+            ed_leaf_allocs++;
             pEdict->max_leafs = count;
             pEdict->num_leafs = 0;
             pEdict->unk_14 = 0;
@@ -182,12 +423,12 @@ void ED_ReserveLeafs(edict_t *pEdict, int count)
         short *p = Small_Calloc(1, count * 2);
         if (p)
         {
-            D_0033237C++;
-            D_00332384++;
+            ed_leaf_allocs++;
+            ed_leaf_reallocs++;
             memcpy(p, pEdict->leafnums, pEdict->num_leafs * 2);
             pEdict->max_leafs = count;
             Small_Free(pEdict->leafnums);
-            D_00332380++;
+            ed_leaf_frees++;
             pEdict->leafnums = p;
         }
         else
@@ -205,7 +446,7 @@ void ED_FreeLeafs(edict_t *pEdict)
     if (pEdict->leafnums)
     {
         Small_Free(pEdict->leafnums);
-        D_00332380++;
+        ed_leaf_frees++;
     }
     pEdict->leafnums = NULL;
     pEdict->num_leafs = 0;
@@ -236,7 +477,6 @@ int IndexOfEdict(const edict_t *pEdict)
     return index;
 }
 
-#ifdef NON_MATCHING
 edict_t *PEntityOfEntIndex(int iEntIndex)
 {
     edict_t *pEdict;
@@ -246,16 +486,12 @@ edict_t *PEntityOfEntIndex(int iEntIndex)
 
     pEdict = EDICT_NUM(iEntIndex);
 
-    if (pEdict->free || !pEdict->pvPrivateData)
-    {
-        if (iEntIndex >= svs.maxclients || pEdict->free)
-            return NULL;
-    }
-    return pEdict;
+    if (!pEdict->free && pEdict->pvPrivateData)
+        return pEdict;
+    if (iEntIndex < svs.maxclients && !pEdict->free)
+        return pEdict;
+    return NULL;
 }
-#else
-INCLUDE_ASM("asm/nonmatchings/engine/pr_edict", PEntityOfEntIndex);
-#endif
 
 const char *SzFromIndex(int iString)
 {
@@ -281,21 +517,55 @@ edict_t *FindEntityByVars(entvars_t *pvars)
     return NULL;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_edict", CVarGetFloat);
+float CVarGetFloat(char *szVarName)
+{
+    return Cvar_VariableValue(szVarName);
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_edict", CVarGetString);
+char *CVarGetString(char *szVarName)
+{
+    return Cvar_VariableString(szVarName);
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_edict", CVarGetPointer);
+cvar_t *CVarGetPointer(char *szVarName)
+{
+    return Cvar_FindVar(szVarName);
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_edict", CVarSetFloat);
+void CVarSetFloat(char *szVarName, float flValue)
+{
+    Cvar_SetValue(szVarName, flValue);
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_edict", CVarSetString);
+void CVarSetString(char *szVarName, char *szValue)
+{
+    Cvar_Set(szVarName, szValue);
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_edict", CVarRegister);
+void CVarRegister(cvar_t *pCvar)
+{
+    if (pCvar)
+    {
+        pCvar->flags |= 8;
+        Cvar_RegisterVariable(pCvar);
+    }
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_edict", AllocEngineString);
+int AllocEngineString(char *szValue)
+{
+    return ED_NewString(szValue) - pr_strings;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_edict", SaveSpawnParms);
+void SaveSpawnParms(edict_t *pEdict)
+{
+    int eoffset = NUM_FOR_EDICT(pEdict);
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_edict", GetModelPtr);
+    if (eoffset < 1 || eoffset > svs.maxclients)
+        Host_Error("Entity is not a client");
+}
+
+void *GetModelPtr(edict_t *pEdict)
+{
+    return Mod_Extradata(sv.models[pEdict->v.modelindex]);
+}
 
