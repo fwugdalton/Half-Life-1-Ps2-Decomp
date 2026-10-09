@@ -3,7 +3,7 @@
 #include "engine/model.h"
 #include "engine/pmove.h"
 
-/* pmove.c: movimento do jogador. Num só arquivo estão a parte do motor (cvars,
+/* pmove[0].c: movimento do jogador. Num só arquivo estão a parte do motor (cvars,
  * hulls), a depuração com partículas (pm_debug) e o código compartilhado
  * (pm_shared): a string "\n" é a mesma entre PM_PrintPhysEnts e pm_shared. */
 
@@ -84,12 +84,12 @@ void PM_PrintPhysEnts(void)
 	physent_t *pe;
 
 	Con_Printf("===== PMOVE ======\n");
-	Con_Printf("Origin: %4.2f %4.2f %4.2f\n", pmove.origin[0], pmove.origin[1], pmove.origin[2]);
+	Con_Printf("Origin: %4.2f %4.2f %4.2f\n", pmove[0].origin[0], pmove[0].origin[1], pmove[0].origin[2]);
 	Con_Printf("------------------\n");
 
-	for (i = 0; i < pmove.numphysent; i++)
+	for (i = 0; i < pmove[0].numphysent; i++)
 	{
-		pe = &pmove.physents[i];
+		pe = &pmove[0].physents[i];
 		Con_Printf("Ent:  %i\n", i);
 		Con_Printf("Org:  %4.2f %4.2f %4.2f\n", pe->origin[0], pe->origin[1], pe->origin[2]);
 		Con_Printf("Ang:  %4.2f %4.2f %4.2f\n", pe->angles[0], pe->angles[1], pe->angles[2]);
@@ -109,6 +109,8 @@ void func_00249CE8(vec3_t org, int color, float life, int zpos, int zvel);
 void func_00249868(cl_entity_t *ent);
 
 /* expande as caixas de depuração por essa quantidade de unidades */
+void Con_DPrintf(const char *fmt, ...);
+
 #define BOX_GAP 0.0f
 
 static int PM_boxpnt[6][4] =
@@ -163,10 +165,10 @@ void PM_DrawPhysEntBBox(int num, int pcolor, float life)
 	vec3_t p[8];
 	float gap = BOX_GAP;
 
-	if (num >= pmove.numphysent || num <= 0)
+	if (num >= pmove[0].numphysent || num <= 0)
 		return;
 
-	pe = &pmove.physents[num];
+	pe = &pmove[0].physents[num];
 
 	if (pe->model)
 	{
@@ -275,9 +277,9 @@ void PM_ViewEntity(void)
 	if (!cl_showclip.value)
 		return;
 
-	AngleVectors(pmove.angles, forward, right, up);
+	AngleVectors(pmove[0].angles, forward, right, up);
 
-	VectorCopy(pmove.origin, origin);
+	VectorCopy(pmove[0].origin, origin);
 
 	for (i = 0; i < 3; i++)
 		end[i] = origin[i] + raydist * forward[i];
@@ -293,7 +295,7 @@ void PM_ViewEntity(void)
 		PM_DrawPhysEntBBox(trace.ent, pcolor, 0.3f);
 
 		if (cl_printclip.value)
-			func_00249868(&cl_entities[pmove.physents[trace.ent].info]);
+			func_00249868(&cl_entities[pmove[0].physents[trace.ent].info]);
 	}
 }
 
@@ -304,23 +306,354 @@ vec3_t D_003322A0[6] =
 	{ 0, -1, 0 }, { 0, 0, 1 }, { 0, 0, -1 },
 };
 
-INCLUDE_ASM("asm/nonmatchings/engine/pmove", func_0026A800);
 
-INCLUDE_ASM("asm/nonmatchings/engine/pmove", func_0026A940);
 
-INCLUDE_ASM("asm/nonmatchings/engine/pmove", func_0026AA10);
 
-INCLUDE_ASM("asm/nonmatchings/engine/pmove", func_0026AAC0);
 
-INCLUDE_ASM("asm/nonmatchings/engine/pmove", func_0026AB50);
+void PM_CheckVelocity(int clientId)
+{
+	int i;
+
+	/* limita a velocidade */
+	for (i = 0; i < 3; i++)
+	{
+		/* vê se o valor é lixo */
+		if (IS_NAN(pmove[clientId].velocity[i]))
+		{
+			Con_Printf("PM  Got a NaN velocity %i\n", i);
+			pmove[clientId].velocity[i] = 0;
+		}
+		if (IS_NAN(pmove[clientId].origin[i]))
+		{
+			Con_Printf("PM  Got a NaN origin on %i\n", i);
+			pmove[clientId].origin[i] = 0;
+		}
+
+		if (pmove[clientId].velocity[i] > movevars.maxvelocity)
+		{
+			Con_DPrintf("PM  Got a velocity too high on %i\n", i);
+			pmove[clientId].velocity[i] = movevars.maxvelocity;
+		}
+		else if (pmove[clientId].velocity[i] < -movevars.maxvelocity)
+		{
+			Con_DPrintf("PM  Got a velocity too low on %i\n", i);
+			pmove[clientId].velocity[i] = -movevars.maxvelocity;
+		}
+	}
+}
+
+#define STOP_EPSILON 0.1f
+
+/* desliza no objeto atingido; devolve 1 para chão e 2 para degrau/parede */
+int PM_ClipVelocity(vec3_t in, vec3_t normal, vec3_t out, float overbounce)
+{
+	float backoff;
+	float change;
+	float angle;
+	int i, blocked;
+
+	angle = normal[2];
+
+	blocked = 0;
+	if (angle > 0)
+		blocked |= 0x01;
+	if (!angle)
+		blocked |= 0x02;
+
+	backoff = DotProduct(in, normal) * overbounce;
+
+	for (i = 0; i < 3; i++)
+	{
+		change = normal[i] * backoff;
+		out[i] = in[i] - change;
+		if (out[i] > -STOP_EPSILON && out[i] < STOP_EPSILON)
+			out[i] = 0;
+	}
+
+	return blocked;
+}
+
+void PM_AddCorrectGravity(int clientId)
+{
+	float ent_gravity;
+
+	if (pmove[clientId].gravity)
+		ent_gravity = pmove[clientId].gravity;
+	else
+		ent_gravity = 1.0f;
+
+	pmove[clientId].velocity[2] -= ent_gravity * movevars.gravity * 0.5f * pm_frametime;
+	pmove[clientId].velocity[2] += pmove[clientId].basevelocity[2] * pm_frametime;
+	pmove[clientId].basevelocity[2] = 0;
+
+	PM_CheckVelocity(clientId);
+}
+
+void PM_FixupGravityVelocity(int clientId)
+{
+	float ent_gravity;
+
+	if (pmove[clientId].gravity)
+		ent_gravity = pmove[clientId].gravity;
+	else
+		ent_gravity = 1.0f;
+
+	pmove[clientId].velocity[2] -= ent_gravity * movevars.gravity * pm_frametime * 0.5f;
+
+	PM_CheckVelocity(clientId);
+}
+
+
+extern int pm_onground[];
+
+/* movimento de corpo sólido que desliza ao longo de vários planos */
+#ifdef NON_MATCHING
+int PM_FlyMove(int clientId)
+{
+	int bumpcount, numbumps;
+	vec3_t dir;
+	float d;
+	int numplanes;
+	vec3_t planes[MAX_CLIP_PLANES];
+	vec3_t primal_velocity, original_velocity;
+	vec3_t new_velocity;
+	int i, j;
+	pmtrace_t trace;
+	vec3_t end;
+	float time_left, allFraction;
+	int blocked;
+
+	numbumps = 4;
+
+	blocked = 0;
+	numplanes = 0;
+	VectorCopy(pmove[clientId].velocity, original_velocity);
+	VectorCopy(pmove[clientId].velocity, primal_velocity);
+
+	allFraction = 0;
+	time_left = pm_frametime;
+
+	for (bumpcount = 0; bumpcount < numbumps; bumpcount++)
+	{
+		if (!pmove[clientId].velocity[0] && !pmove[clientId].velocity[1] && !pmove[clientId].velocity[2])
+			break;
+
+		for (i = 0; i < 3; i++)
+			end[i] = pmove[clientId].origin[i] + time_left * pmove[clientId].velocity[i];
+
+		trace = PM_PlayerTrace(pmove[clientId].origin, end, PM_NORMAL, clientId);
+
+		allFraction += trace.fraction;
+
+		if (trace.allsolid)
+		{
+			VectorCopy(vec3_origin, pmove[clientId].velocity);
+			return 4;
+		}
+
+		if (trace.fraction > 0)
+		{
+			VectorCopy(trace.endpos, pmove[clientId].origin);
+			VectorCopy(pmove[clientId].velocity, original_velocity);
+			numplanes = 0;
+		}
+
+		if (trace.fraction == 1)
+			break;
+
+		PM_AddToTouched(trace, pmove[clientId].velocity, clientId);
+
+		if (trace.plane.normal[2] > 0.7f)
+			blocked |= 1; /* chão */
+		if (!trace.plane.normal[2])
+			blocked |= 2; /* degrau ou parede */
+
+		time_left -= time_left * trace.fraction;
+
+		if (numplanes >= MAX_CLIP_PLANES)
+		{
+			VectorCopy(vec3_origin, pmove[clientId].velocity);
+			break;
+		}
+
+		VectorCopy(trace.plane.normal, planes[numplanes]);
+		numplanes++;
+
+		if (pmove[clientId].movetype == MOVETYPE_WALK &&
+			((pm_onground[clientId] == -1) || (pmove[clientId].friction != 1)))
+		{
+			for (i = 0; i < numplanes; i++)
+			{
+				if (planes[i][2] > 0.7f)
+				{
+					PM_ClipVelocity(original_velocity, planes[i], new_velocity, 1);
+					VectorCopy(new_velocity, original_velocity);
+				}
+				else
+					PM_ClipVelocity(original_velocity, planes[i], new_velocity, 1.0f + movevars.bounce * (1 - pmove[clientId].friction));
+			}
+
+			VectorCopy(new_velocity, pmove[clientId].velocity);
+			VectorCopy(new_velocity, original_velocity);
+		}
+		else
+		{
+			for (i = 0; i < numplanes; i++)
+			{
+				PM_ClipVelocity(original_velocity, planes[i], pmove[clientId].velocity, 1);
+				for (j = 0; j < numplanes; j++)
+					if (j != i)
+					{
+						if (DotProduct(pmove[clientId].velocity, planes[j]) < 0)
+							break;
+					}
+				if (j == numplanes)
+					break;
+			}
+
+			if (i != numplanes)
+			{
+				;
+			}
+			else
+			{
+				if (numplanes != 2)
+				{
+					VectorCopy(vec3_origin, pmove[clientId].velocity);
+					break;
+				}
+				CrossProduct(planes[0], planes[1], dir);
+				d = DotProduct(dir, pmove[clientId].velocity);
+				VectorScale(dir, d, pmove[clientId].velocity);
+			}
+
+			if (DotProduct(pmove[clientId].velocity, primal_velocity) <= 0)
+			{
+				VectorCopy(vec3_origin, pmove[clientId].velocity);
+				break;
+			}
+		}
+	}
+
+	if (allFraction == 0)
+		VectorCopy(vec3_origin, pmove[clientId].velocity);
+
+	return blocked;
+}
+#else
+INCLUDE_ASM("asm/nonmatchings/engine/pmove", PM_FlyMove);
+#endif
 
 INCLUDE_ASM("asm/nonmatchings/engine/pmove", func_0026B290);
 
-INCLUDE_ASM("asm/nonmatchings/engine/pmove", func_0026B848);
+void PM_Friction(int clientId)
+{
+	float *vel;
+	float speed, newspeed, control;
+	float friction;
+	float drop;
+	vec3_t newvel;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pmove", func_0026BAA8);
+	/* no pulo da água não há atrito */
+	if (pmove[clientId].waterjumptime)
+		return;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pmove", func_0026BB90);
+	vel = pmove[clientId].velocity;
+
+	speed = sqrtf(vel[0] * vel[0] + vel[1] * vel[1] + vel[2] * vel[2]);
+
+	if (speed < 0.1f)
+		return;
+
+	drop = 0;
+
+	/* atrito do chão */
+	if (pm_onground[clientId] != -1)
+	{
+		vec3_t start, stop;
+		pmtrace_t trace;
+
+		start[0] = stop[0] = pmove[clientId].origin[0] + vel[0] / speed * 16;
+		start[1] = stop[1] = pmove[clientId].origin[1] + vel[1] / speed * 16;
+		start[2] = pmove[clientId].origin[2] + player_mins[pmove[clientId].usehull][2];
+		stop[2] = start[2] - 34;
+
+		trace = PM_PlayerTrace(start, stop, PM_NORMAL, clientId);
+
+		if (trace.fraction == 1.0f)
+			friction = movevars.friction * movevars.edgefriction;
+		else
+			friction = movevars.friction;
+
+		friction *= pmove[clientId].friction;
+
+		control = (speed < movevars.stopspeed) ? movevars.stopspeed : speed;
+		drop += control * friction * pm_frametime;
+	}
+
+	newspeed = speed - drop;
+	if (newspeed < 0)
+		newspeed = 0;
+
+	newspeed /= speed;
+
+	newvel[0] = vel[0] * newspeed;
+	newvel[1] = vel[1] * newspeed;
+	newvel[2] = vel[2] * newspeed;
+
+	VectorCopy(newvel, pmove[clientId].velocity);
+}
+
+void PM_Accelerate(vec3_t wishdir, float wishspeed, float accel, int clientId)
+{
+	int i;
+	float addspeed, accelspeed, currentspeed;
+
+	/* mortos não aceleram */
+	if (pmove[clientId].dead)
+		return;
+
+	if (pmove[clientId].waterjumptime)
+		return;
+
+	currentspeed = DotProduct(pmove[clientId].velocity, wishdir);
+	addspeed = wishspeed - currentspeed;
+	if (addspeed <= 0)
+		return;
+
+	accelspeed = accel * pm_frametime * wishspeed * pmove[clientId].friction;
+	if (accelspeed > addspeed)
+		accelspeed = addspeed;
+
+	for (i = 0; i < 3; i++)
+		pmove[clientId].velocity[i] += accelspeed * wishdir[i];
+}
+
+void PM_AirAccelerate(vec3_t wishdir, float wishspeed, float accel, int clientId)
+{
+	int i;
+	float addspeed, accelspeed, currentspeed, wishspd = wishspeed;
+
+	if (pmove[clientId].dead)
+		return;
+	if (pmove[clientId].waterjumptime)
+		return;
+
+	if (wishspd > 30)
+		wishspd = 30;
+
+	currentspeed = DotProduct(pmove[clientId].velocity, wishdir);
+	addspeed = wishspd - currentspeed;
+	if (addspeed <= 0)
+		return;
+
+	accelspeed = accel * wishspeed * pm_frametime * pmove[clientId].friction;
+	if (accelspeed > addspeed)
+		accelspeed = addspeed;
+
+	for (i = 0; i < 3; i++)
+		pmove[clientId].velocity[i] += accelspeed * wishdir[i];
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/pmove", func_0026BC98);
 
@@ -366,4 +699,4 @@ INCLUDE_ASM("asm/nonmatchings/engine/pmove", func_0026E818);
 
 INCLUDE_ASM("asm/nonmatchings/engine/pmove", func_0026ED00);
 
-INCLUDE_ASM("asm/nonmatchings/engine/pmove", func_0026F490);
+INCLUDE_ASM("asm/nonmatchings/engine/pmove", PM_AddToTouched);
