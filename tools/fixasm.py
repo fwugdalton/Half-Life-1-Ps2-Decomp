@@ -8,7 +8,8 @@
 - em modo reorder, o ee-as não move mflo/mfhi para o delay slot de um desvio;
   nesses casos o desvio é emitido em noreorder com um nop explícito.
 - também não preenche o delay slot quando a penúltima instrução é sdl/sdr/swl/swr
-  (visto em strcpy inline seguido de jr $31), nem com macros uld/usd/ulw/usw.
+  (visto em strcpy inline seguido de jr $31), nem com macros uld/usd/ulw/usw,
+  nem quando a última instrução lê um registrador de FPU carregado pela penúltima.
 - depois de mtc1 (inclusive o li.s expandido), o ee-as põe um nop se a instrução
   seguinte lê o mesmo par de registradores de FPU ($f2 e $f3 contam como o mesmo),
   mesmo com um rótulo no meio (aí o nop fica antes do rótulo).
@@ -40,6 +41,11 @@ def fp_reads(line):
     if op.endswith(('.s', '.d', '.w')) or op.startswith(('madd', 'msub')):
         return set(regs[1:])
     return set()
+
+def fp_load_use(load, use):
+    """l.s/lwc1 seguido de instrução que lê o mesmo registrador de FPU."""
+    m = re.match(r'^\s+(l\.s|lwc1)\s+\$f(\d+),', load)
+    return bool(m) and (int(m.group(2)) & ~1) in set(r & ~1 for r in fp_reads(use))
 
 def raw_mtc1(line):
     """li.s/mtc1 escritos à mão, com o mtc1 como .word."""
@@ -100,7 +106,8 @@ for line in lines:
     if reorder and BRANCH.match(line) and prev_real is not None and (
             re.match(r'^\s+(mf(lo|hi)|u(ld|sd|lw|sw|lh|lhu|sh))\s', out[prev_real]) or
             re.search(r'# u(ld|sd)$', out[prev_real]) or
-            (prev_prev is not None and re.match(r'^\s+s[dw][lr]\s', out[prev_prev]))):
+            (prev_prev is not None and re.match(r'^\s+s[dw][lr]\s', out[prev_prev])) or
+            (prev_prev is not None and fp_load_use(out[prev_prev], out[prev_real]))):
         out.append('\t.set\tnoreorder')
         out.append(line)
         out.append('\tnop')

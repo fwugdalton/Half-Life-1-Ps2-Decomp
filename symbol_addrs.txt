@@ -542,3 +542,6 @@ PM_CheckWaterJump = 0x0026C5D0; // type:func
 PM_PointContents = 0x0026FC58; // type:func
 PM_TruePointContents = 0x0026FD88; // type:func
 rgv3tStuckTable = 0x004A8B80; // size:0x288
+PM_GetRandomStuckOffsets = 0x0026CD60; // type:func
+PM_ResetStuckOffsets = 0x0026CDE8; // type:func
+rgStuckLast = 0x004064C8;

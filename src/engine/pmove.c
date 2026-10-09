@@ -12,6 +12,7 @@ void PM_CreateStuckTable(void);
 void *memset(void *s, int c, unsigned int n);
 
 extern vec3_t rgv3tStuckTable[54];
+extern int rgStuckLast[][2];
 void PM_CheckVelocity(int clientId);
 int PM_ClipVelocity(vec3_t in, vec3_t normal, vec3_t out, float overbounce);
 int PM_FlyMove(int clientId);
@@ -1184,9 +1185,21 @@ void PM_CreateStuckTable(void)
 	}
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/pmove", func_0026CD60);
+int PM_GetRandomStuckOffsets(int nIndex, int server, vec3_t offset)
+{
+	int idx;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pmove", func_0026CDE8);
+	idx = rgStuckLast[nIndex][server]++;
+
+	VectorCopy(rgv3tStuckTable[idx % 54], offset);
+
+	return (idx % 54);
+}
+
+void PM_ResetStuckOffsets(int nIndex, int server)
+{
+	rgStuckLast[nIndex][server] = 0;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/pmove", func_0026CE08);
 
