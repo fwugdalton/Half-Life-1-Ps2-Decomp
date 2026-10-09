@@ -11,7 +11,8 @@
 typedef struct mnode_s
 {
     int contents;               /* 0x00 */
-    byte unk_04[0x0C - 0x04];
+    struct mnode_s *parent;     /* 0x04 */
+    short visframe[2];          /* 0x08: um por jogador local */
     struct mplane_s *plane;     /* 0x0C */
     byte unk_10[0x30 - 0x10];
     struct mnode_s *children[2]; /* 0x30 */

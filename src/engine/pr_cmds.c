@@ -3,6 +3,7 @@
 #include "engine/mathlib.h"
 #include "engine/model.h"
 #include "engine/server.h"
+#include "stdarg.h"
 
 typedef struct
 {
@@ -698,65 +699,493 @@ int TraceMonsterHull(edict_t *pEdict, const float *v1, const float *v2, int fNoM
     return false;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", PF_newcheckclient);
+#define FL_NOTARGET (1 << 7)
+#define MOVETYPE_FOLLOW 12
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", PF_checkclient_I);
+extern byte checkpvs[1024];
+extern int c_notvis;
+extern int c_invis;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", PVSNode);
+mleaf_t *Mod_PointInLeaf(vec3_t p, model_t *model);
+byte *Mod_LeafPVS(mleaf_t *leaf, model_t *model);
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", PVSMark);
+int PF_newcheckclient(int check)
+{
+    int i;
+    byte *pvs;
+    edict_t *ent;
+    mleaf_t *leaf;
+    vec3_t org;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", PVSFindEntities);
+    if (check < 1)
+        check = 1;
+    if (check > svs.maxclients)
+        check = svs.maxclients;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", ValidCmd);
+    if (check == svs.maxclients)
+        i = 1;
+    else
+        i = check + 1;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", PF_stuffcmd_I);
+    for (;; i++)
+    {
+        if (i == svs.maxclients + 1)
+            i = 1;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", PF_localcmd_I);
+        ent = &sv.edicts[i];
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", PF_localexec_I);
+        if (i == check)
+            break;
+        if (ent->free)
+            continue;
+        if (!ent->pvPrivateData)
+            continue;
+        if (ent->v.flags & FL_NOTARGET)
+            continue;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", FindEntityInSphere);
+        break;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00274288);
+    VectorAdd(ent->v.origin, ent->v.view_ofs, org);
+    leaf = Mod_PointInLeaf(org, sv.worldmodel);
+    pvs = Mod_LeafPVS(leaf, sv.worldmodel);
+    memcpy(checkpvs, pvs, (sv.worldmodel->numleafs + 7) >> 3);
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_002742A8);
+    return i;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00274340);
+edict_t *PF_checkclient_I(edict_t *pEdict)
+{
+    edict_t *ent;
+    mleaf_t *leaf;
+    int l;
+    vec3_t view;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00274360);
+    if (sv.time - sv.lastchecktime >= 0.1f)
+    {
+        sv.lastcheck = PF_newcheckclient(sv.lastcheck);
+        sv.lastchecktime = sv.time;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00274468);
+    ent = &sv.edicts[sv.lastcheck];
+    if (ent->free || !ent->pvPrivateData)
+        return sv.edicts;
 
-/* strings de func_00274468 compartilhadas com func_00275898: o splat não as migra */
-__asm__(".section .rodata\n"
-        ".align 3\n.globl D_0038DB10\nD_0038DB10: .asciz \"model\"\n"
-        ".align 3\n.globl D_0038DB18\nD_0038DB18: .asciz \"viewmodel\"\n"
-        ".align 3\n.globl D_0038DB28\nD_0038DB28: .asciz \"weaponmodel\"\n"
-        ".align 3\n.globl D_0038DB38\nD_0038DB38: .asciz \"netname\"\n"
-        ".align 3\n.globl D_0038DB40\nD_0038DB40: .asciz \"target\"\n"
-        ".align 3\n.globl D_0038DB48\nD_0038DB48: .asciz \"targetname\"\n"
-        ".align 3\n.globl D_0038DB58\nD_0038DB58: .asciz \"message\"\n"
-        ".align 3\n.globl D_0038DB60\nD_0038DB60: .asciz \"noise\"\n"
-        ".align 3\n.globl D_0038DB68\nD_0038DB68: .asciz \"noise1\"\n"
-        ".align 3\n.globl D_0038DB70\nD_0038DB70: .asciz \"noise2\"\n"
-        ".align 3\n.globl D_0038DB78\nD_0038DB78: .asciz \"noise3\"\n"
-        ".align 3\n.globl D_0038DB80\nD_0038DB80: .asciz \"globalname\"\n"
-        ".section .text\n");
+    VectorAdd(pEdict->v.origin, pEdict->v.view_ofs, view);
+    leaf = Mod_PointInLeaf(view, sv.worldmodel);
+    l = (leaf - sv.worldmodel->leafs) - 1;
+    if (l < 0 || !(checkpvs[l >> 3] & (1 << (l & 7))))
+    {
+        c_notvis++;
+        return sv.edicts;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00274608);
+    c_invis++;
+    return ent;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00274680);
+extern short r_visframecount[2];
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00274750);
+mnode_t *PVSNode(mnode_t *node, vec_t *emins, vec_t *emaxs, int clientId)
+{
+    mplane_t *splitplane;
+    int sides;
+    mnode_t *splitNode;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00274788);
+    if (node->visframe[clientId] != r_visframecount[clientId])
+        return NULL;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_002748D8);
+    if (node->contents < 0)
+        return node->contents != CONTENTS_SOLID ? node : NULL;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_002749F8);
+    splitplane = node->plane;
+    if (splitplane->type < 3)
+    {
+        if (splitplane->dist > emins[splitplane->type])
+        {
+            if (splitplane->dist >= emaxs[splitplane->type])
+                sides = 2;
+            else
+                sides = 3;
+        }
+        else
+        {
+            sides = 1;
+        }
+    }
+    else
+    {
+        sides = BoxOnPlaneSide(emins, emaxs, splitplane);
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00274B08);
+    splitNode = NULL;
+    if (sides & 1)
+        splitNode = PVSNode(node->children[0], emins, emaxs, clientId);
+
+    if (splitNode)
+        return splitNode;
+
+    if (sides & 2)
+        splitNode = PVSNode(node->children[1], emins, emaxs, clientId);
+
+    return splitNode;
+}
+
+void PVSMark(model_t *pmodel, byte *ppvs, int clientId)
+{
+    int i;
+    mnode_t *node;
+
+    r_visframecount[clientId]++;
+    for (i = 0; i < pmodel->numleafs; i++)
+    {
+        if (!((ppvs[i >> 3] >> (i & 7)) & 1))
+            continue;
+
+        node = (mnode_t *)&pmodel->leafs[i + 1];
+        do
+        {
+            if (node->visframe[clientId] == r_visframecount[clientId])
+                break;
+            node->visframe[clientId] = r_visframecount[clientId];
+            node = node->parent;
+        } while (node);
+    }
+}
+
+typedef struct
+{
+    byte pad0[0x13EC];
+    model_t *worldmodel;        /* 0x13EC */
+    byte pad13F0[0x212C - 0x13F0];
+} client_state_t;
+
+extern client_state_t cl[2];
+extern mleaf_t *r_oldviewleaf;
+void R_MarkLeaves(int clientId);
+
+edict_t *PVSFindEntities(edict_t *pplayer)
+{
+    int i;
+    edict_t *pent;
+    edict_t *pchain;
+    edict_t *pentPVS;
+    vec3_t org;
+    byte *ppvs;
+    mleaf_t *pleaf;
+
+    VectorAdd(pplayer->v.origin, pplayer->v.view_ofs, org);
+    pleaf = Mod_PointInLeaf(org, sv.worldmodel);
+    ppvs = Mod_LeafPVS(pleaf, sv.worldmodel);
+    PVSMark(sv.worldmodel, ppvs, 0);
+    pchain = sv.edicts;
+
+    for (i = 1; i < sv.num_edicts; i++)
+    {
+        pent = &sv.edicts[i];
+        if (pent->free)
+            continue;
+
+        pentPVS = pent;
+        if (pent->v.movetype == MOVETYPE_FOLLOW && pent->v.aiment)
+            pentPVS = pent->v.aiment;
+
+        if (PVSNode(sv.worldmodel->nodes, pentPVS->v.absmin, pentPVS->v.absmax, 0))
+        {
+            pent->v.chain = pchain;
+            pchain = pent;
+        }
+    }
+
+    if (cl[0].worldmodel)
+    {
+        r_oldviewleaf = NULL;
+        R_MarkLeaves(0);
+    }
+
+    return pchain;
+}
+
+qboolean ValidCmd(const char *pCmd)
+{
+    int len;
+
+    len = strlen(pCmd);
+    if (len && (pCmd[len - 1] == '\n' || pCmd[len - 1] == ';'))
+        return true;
+    return false;
+}
+
+int vsprintf(char *, const char *, va_list);
+void Host_ClientCommands(const char *fmt, ...);
+void Cbuf_Execute(void);
+
+extern char szOut_stuffcmd[1024];
+
+void PF_stuffcmd_I(edict_t *pEdict, const char *szFmt, ...)
+{
+    int entnum;
+    client_t *old;
+    va_list argptr;
+
+    entnum = NUM_FOR_EDICT(pEdict);
+    va_start(argptr, szFmt);
+    vsprintf(szOut_stuffcmd, szFmt, argptr);
+    va_end(argptr);
+
+    if (entnum < 1 || entnum > svs.maxclients)
+    {
+        Con_Printf("\n!!!\n\nStuffCmd:  Some entity tried to stuff '%s' to console buffer of entity %i when maxclients was set to %i, ignoring\n\n",
+                   szOut_stuffcmd, entnum, svs.maxclients);
+    }
+    else
+    {
+        if (ValidCmd(szOut_stuffcmd))
+        {
+            old = host_client;
+            host_client = &svs.clients[entnum - 1];
+            Host_ClientCommands("%s", szOut_stuffcmd);
+            host_client = old;
+        }
+        else
+        {
+            Con_Printf("Tried to stuff bad command %s\n", szOut_stuffcmd);
+        }
+    }
+}
+
+void PF_localcmd_I(char *str)
+{
+    if (ValidCmd(str))
+        Cbuf_AddText(str);
+    else
+        Con_Printf("Error, bad server command %s\n", str);
+}
+
+void PF_localexec_I(void)
+{
+    Cbuf_Execute();
+}
+
+edict_t *FindEntityInSphere(edict_t *pEdictStartSearchAfter, const float *org, float rad)
+{
+    edict_t *ent;
+    float eorg;
+    float distSquared;
+    int i, j, e;
+
+    if (pEdictStartSearchAfter)
+        e = NUM_FOR_EDICT(pEdictStartSearchAfter);
+    else
+        e = 0;
+
+    rad = rad * rad;
+
+    for (i = e + 1; i < sv.num_edicts; i++)
+    {
+        ent = &sv.edicts[i];
+        if (ent->free || !ent->v.classname)
+            continue;
+
+        if (i <= svs.maxclients && !svs.clients[i - 1].active)
+            continue;
+
+        distSquared = 0;
+        for (j = 0; j < 3 && distSquared <= rad; j++)
+        {
+            if (org[j] < ent->v.absmin[j])
+                eorg = org[j] - ent->v.absmin[j];
+            else if (org[j] > ent->v.absmax[j])
+                eorg = org[j] - ent->v.absmax[j];
+            else
+                eorg = 0;
+
+            distSquared += eorg * eorg;
+        }
+
+        if (distSquared > rad)
+            continue;
+
+        return ent;
+    }
+
+    return sv.edicts;
+}
+
+edict_t *ED_Alloc(void);
+void ED_Free(edict_t *ed);
+
+edict_t *PF_Spawn_I(void)
+{
+    return ED_Alloc();
+}
+
+typedef void (*ENTITYINIT)(entvars_t *);
+ENTITYINIT GetEntityInit(char *pClassName);
+
+edict_t *CreateNamedEntity(int className)
+{
+    edict_t *pedict;
+    ENTITYINIT pEntityInit;
+
+    if (!className)
+        Sys_Error("Spawned a NULL entity!");
+
+    pedict = ED_Alloc();
+    pedict->v.classname = className;
+    pEntityInit = GetEntityInit(&pr_strings[className]);
+    if (pEntityInit)
+    {
+        pEntityInit(&pedict->v);
+    }
+    else
+    {
+        ED_Free(pedict);
+        pedict = NULL;
+        Con_DPrintf("Can't create entity: %s\n", &pr_strings[className]);
+    }
+
+    return pedict;
+}
+
+void PF_Remove_I(edict_t *ed)
+{
+    ED_Free(ed);
+}
+
+edict_t *PF_find_Shared(int eStartSearchAfter, int iFieldToMatch, const char *szValueToFind)
+{
+    int e;
+    edict_t *ed;
+    char *t;
+
+    for (e = eStartSearchAfter + 1; e < sv.num_edicts; e++)
+    {
+        ed = &sv.edicts[e];
+        if (ed->free)
+            continue;
+
+        t = &pr_strings[*(string_t *)((byte *)&ed->v + iFieldToMatch)];
+        if (t == NULL || t == pr_strings)
+            continue;
+
+        if (!strcmp(t, szValueToFind))
+            return ed;
+    }
+
+    return sv.edicts;
+}
+
+void Q_strlwr(char *s);
+
+int iGetIndex(const char *pszField)
+{
+    char sz[512];
+    entvars_t tempvars;
+    void *p;
+
+    strcpy(sz, pszField);
+    Q_strlwr(sz);
+
+    if (!strcmp(sz, "classname"))
+        p = &tempvars.classname;
+    else if (!strcmp(sz, "model"))
+        p = &tempvars.model;
+    else if (!strcmp(sz, "viewmodel"))
+        p = &tempvars.viewmodel;
+    else if (!strcmp(sz, "weaponmodel"))
+        p = &tempvars.weaponmodel;
+    else if (!strcmp(sz, "netname"))
+        p = &tempvars.netname;
+    else if (!strcmp(sz, "target"))
+        p = &tempvars.target;
+    else if (!strcmp(sz, "targetname"))
+        p = &tempvars.targetname;
+    else if (!strcmp(sz, "message"))
+        p = &tempvars.message;
+    else if (!strcmp(sz, "noise"))
+        p = &tempvars.noise;
+    else if (!strcmp(sz, "noise1"))
+        p = &tempvars.noise1;
+    else if (!strcmp(sz, "noise2"))
+        p = &tempvars.noise2;
+    else if (!strcmp(sz, "noise3"))
+        p = &tempvars.noise3;
+    else if (!strcmp(sz, "globalname"))
+        p = &tempvars.globalname;
+    else
+        return -1;
+
+    return (int)p - (int)&tempvars;
+}
+
+
+edict_t *FindEntityByString(edict_t *pEdictStartSearchAfter, const char *pszField, const char *pszValue)
+{
+    int iField;
+    int e;
+
+    iField = iGetIndex(pszField);
+    if (iField == -1)
+        return NULL;
+
+    if (!pszValue)
+        return NULL;
+
+    if (pEdictStartSearchAfter)
+        e = NUM_FOR_EDICT(pEdictStartSearchAfter);
+    else
+        e = 0;
+
+    return PF_find_Shared(e, iField, pszValue);
+}
+
+typedef struct
+{
+    int r, g, b, a;
+} colorVec;
+
+typedef struct
+{
+    byte pad0[0xE8];
+    colorVec cvFloorColor;      /* 0xE8 */
+    byte padF8[0x1A0 - 0xF8];
+} cl_entity_t; /* 0x1A0 */
+
+extern cl_entity_t *cl_entities;
+
+int GetEntityIllum(edict_t *pEnt)
+{
+    int iNumber;
+    colorVec cvFloorColor;
+
+    if (!pEnt)
+        return -1;
+
+    iNumber = NUM_FOR_EDICT(pEnt);
+    if (iNumber <= svs.maxclients)
+        return pEnt->v.light_level;
+
+    if (cls[0].state != 3 && cls[0].state != 4 && cls[0].state != 5)
+        return 0x80;
+
+    cvFloorColor = cl_entities[iNumber].cvFloorColor;
+    return (cvFloorColor.r + cvFloorColor.g + cvFloorColor.b) / 3;
+}
+
+void PR_CheckEmptyString(const char *s)
+{
+    if (s[0] <= ' ')
+        Host_Error("Bad string: %s", s);
+}
+
+INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", PF_precache_sound_I);
+
+INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", PF_precache_model_I);
+
+INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", PF_precache_generic_I);
+
+INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", PF_IsMapValid_I);
 
 INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00274B40);
 

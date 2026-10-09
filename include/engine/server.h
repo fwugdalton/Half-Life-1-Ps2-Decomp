@@ -84,8 +84,32 @@ typedef struct entvars_s
     struct edict_s *groundentity; /* 0x17C */
     int spawnflags;             /* 0x180 */
     int flags;                  /* 0x184 */
-    byte unk_188[0x1EC - 0x188];
-} entvars_t; /* 0x1EC */
+    int colormap;               /* 0x188 */
+    int team;                   /* 0x18C */
+    float max_health;           /* 0x190 */
+    float teleport_time;        /* 0x194 */
+    float armortype;            /* 0x198 */
+    float armorvalue;           /* 0x19C */
+    int waterlevel;             /* 0x1A0 */
+    int watertype;              /* 0x1A4 */
+    string_t target;            /* 0x1A8 */
+    string_t targetname;        /* 0x1AC */
+    string_t netname;           /* 0x1B0 */
+    string_t message;           /* 0x1B4 */
+    float dmg_take;             /* 0x1B8 */
+    float dmg_save;             /* 0x1BC */
+    float dmg;                  /* 0x1C0 */
+    float dmgtime;              /* 0x1C4 */
+    string_t noise;             /* 0x1C8 */
+    string_t noise1;            /* 0x1CC */
+    string_t noise2;            /* 0x1D0 */
+    string_t noise3;            /* 0x1D4 */
+    float speed;                /* 0x1D8 */
+    float air_finished;         /* 0x1DC */
+    float pain_finished;        /* 0x1E0 */
+    float radsuit_finished;     /* 0x1E4 */
+    struct edict_s *pContainingEntity; /* 0x1E8 */
+} entvars_t; /* 0x1EC: acaba em pContainingEntity (sem playerclass..euser4) */
 
 /* parcial: só os campos já identificados */
 typedef struct edict_s
@@ -93,7 +117,8 @@ typedef struct edict_s
     qboolean free;              /* 0x00 */
     int serialnumber;           /* 0x04 */
     link_t area;                /* 0x08 */
-    byte unk_10[0xB8 - 0x10];
+    byte unk_10[0xB4 - 0x10];
+    void *pvPrivateData;        /* 0xB4 */
     entvars_t v;                /* 0xB8 */
 } edict_t; /* 0x2A4 */
 
@@ -176,7 +201,10 @@ typedef struct server_s
 {
     qboolean active;            /* 0x00000 */
     qboolean paused;            /* 0x00004 */
-    byte unk_00008[0x18 - 0x08];
+    byte unk_00008[0x0C - 0x08];
+    float time;                 /* 0x0000C */
+    int lastcheck;              /* 0x00010 */
+    float lastchecktime;        /* 0x00014 */
     char name[64];              /* 0x00018 */
     byte unk_00058[0xD8 - 0x58];
     struct model_s *worldmodel; /* 0x000D8 */
