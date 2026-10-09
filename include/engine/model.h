@@ -23,6 +23,24 @@ typedef struct mleaf_s
     byte unk_34[0x0C];
 } mleaf_t; /* 0x40 */
 
+typedef enum
+{
+    mod_brush,
+    mod_sprite,
+    mod_alias,
+    mod_studio
+} modtype_t;
+
+typedef struct hull_s
+{
+    struct dclipnode_s *clipnodes;
+    struct mplane_s *planes;
+    int firstclipnode;          /* 0x08 */
+    int lastclipnode;
+    float clip_mins[3];
+    float clip_maxs[3];
+} hull_t; /* 0x28 */
+
 typedef struct model_s
 {
     char name[64];

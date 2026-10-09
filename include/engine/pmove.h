@@ -5,6 +5,7 @@
 #include "engine/mathlib.h"
 
 #define MAX_PHYSENTS 600
+#define MAX_MOVEENTS 16
 
 #define CONTENTS_EMPTY -1
 #define CONTENTS_SOLID -2
@@ -28,8 +29,19 @@
 #define PM_STUDIO_BOX 2
 
 #define MOVETYPE_WALK 3
+#define MOVETYPE_NOCLIP 8
+#define MOVETYPE_FLY 5
+#define MOVETYPE_FLYMISSILE 9
+#define MOVETYPE_BOUNCE 10
+#define MOVETYPE_BOUNCEMISSILE 11
 
-#define IN_JUMP 2
+#define IN_JUMP (1 << 1)
+#define IN_FORWARD (1 << 3)
+#define IN_BACK (1 << 4)
+#define IN_MOVELEFT (1 << 9)
+#define IN_MOVERIGHT (1 << 10)
+
+#define FL_WATERJUMP (1 << 11)
 
 #define MAX_CLIP_PLANES 5
 
@@ -42,7 +54,9 @@ typedef struct physent_s
 	vec3_t mins, maxs;              /* 0x14, 0x20: só para não-bsp */
 	int info;                       /* 0x2C: índice em cl_entities/edicts */
 	vec3_t angles;                  /* 0x30 */
-	byte unk_3C[0x58 - 0x3C];
+	int solid;                      /* 0x3C */
+	int skin;                       /* 0x40 */
+	byte unk_44[0x58 - 0x44];
 } physent_t; /* 0x58 */
 
 typedef struct
@@ -84,38 +98,45 @@ typedef struct movevars_s
 
 typedef struct usercmd_s
 {
-	int unk_00;
+	short lerp_msec;
+	byte msec;
 	vec3_t viewangles;              /* 0x04 */
 	float forwardmove;              /* 0x10 */
 	float sidemove;                 /* 0x14 */
 	float upmove;                   /* 0x18 */
-	int buttons;                    /* 0x1C */
-	int unk_20;
+	byte lightlevel;                /* 0x1C */
+	unsigned short buttons;         /* 0x1E */
+	byte impulse;                   /* 0x20 */
+	byte weaponselect;              /* 0x21 */
 } usercmd_t; /* 0x24 */
 
 /* no PS2 há um playermove_t por jogador local (tela dividida): pmove[clientId] */
 typedef struct playermove_s
 {
-	byte unk_00[0x0C];
+	int player_index;               /* 0x00 */
+	qboolean server;                /* 0x04 */
+	int unk_08;
 	vec3_t origin;                  /* 0x0C */
 	vec3_t angles;                  /* 0x18 */
 	vec3_t velocity;                /* 0x24 */
-	vec3_t unk_30;
+	vec3_t movedir;                 /* 0x30 */
 	vec3_t basevelocity;            /* 0x3C */
 	vec3_t view_ofs;                /* 0x48 */
-	byte unk_54[0x60 - 0x54];
+	byte unk_54[0x5C - 0x54];
+	int flags;                      /* 0x5C */
 	int usehull;                    /* 0x60 */
 	float gravity;                  /* 0x64 */
 	float friction;                 /* 0x68 */
 	int oldbuttons;                 /* 0x6C */
 	float waterjumptime;            /* 0x70 */
 	qboolean dead;                  /* 0x74 */
-	int unk_78;
+	qboolean spectator;             /* 0x78 */
 	int movetype;                   /* 0x7C */
 	float maxspeed;                 /* 0x80 */
 	int numphysent;                 /* 0x84 */
 	physent_t physents[MAX_PHYSENTS]; /* 0x88 */
-	byte unk_CEC8[0xD44C - 0xCEC8];
+	int nummoveent;                 /* 0xCEC8 */
+	physent_t moveents[MAX_MOVEENTS]; /* 0xCECC */
 	usercmd_t cmd;                  /* 0xD44C */
 	int numtouch;                   /* 0xD470 */
 	pmtrace_t touchindex[MAX_PHYSENTS]; /* 0xD474 */

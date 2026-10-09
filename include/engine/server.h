@@ -10,8 +10,33 @@ typedef void *FileHandle_t;
 typedef struct edict_s
 {
     qboolean free;
-    byte unk_04[0x2A4 - 0x04];
+    byte unk_04[0xD8 - 0x04];
+    float velocity[3];          /* 0x0D8 (v.velocity) */
+    byte unk_E4[0x23C - 0xE4];
+    int flags;                  /* 0x23C (v.flags) */
+    byte unk_240[0x2A4 - 0x240];
 } edict_t; /* 0x2A4 */
+
+#define FL_SPECTATOR (1 << 26)
+
+typedef struct
+{
+    float normal[3];
+    float dist;
+} plane_t;
+
+typedef struct
+{
+    qboolean allsolid;
+    qboolean startsolid;
+    qboolean inopen;
+    qboolean inwater;
+    float fraction;
+    float endpos[3];
+    plane_t plane;
+    edict_t *ent;               /* 0x30 */
+    int hitgroup;               /* 0x34 */
+} trace_t; /* 0x38 */
 
 typedef struct resource_s
 {

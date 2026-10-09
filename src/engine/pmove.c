@@ -2,6 +2,7 @@
 #include "engine/cvar.h"
 #include "engine/model.h"
 #include "engine/pmove.h"
+#include "engine/server.h"
 
 /* pmove[0].c: movimento do jogador. Num só arquivo estão a parte do motor (cvars,
  * hulls), a depuração com partículas (pm_debug) e o código compartilhado
@@ -1201,25 +1202,464 @@ void PM_ResetStuckOffsets(int nIndex, int server)
 	rgStuckLast[nIndex][server] = 0;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/pmove", func_0026CE08);
+extern float pm_stucktime[3];
+extern float rgStuckCheckTime[][2];
+extern pmtrace_t pm_stucktrace;
+extern edict_t *sv_player;
+extern byte *D_003329F4;
+extern void (*gEntityInterface_pfnTouch)(edict_t *pentTouched, edict_t *pentOther);
+float Sys_FloatTime(void);
+int PM_TestPlayerPosition(vec3_t pos, int clientId);
+edict_t *EDICT_NUM(int n);
+void SV_SetGlobalTrace(trace_t *ptrace);
 
-INCLUDE_ASM("asm/nonmatchings/engine/pmove", func_0026D2C0);
+int PM_CheckStuck(int clientId)
+{
+	vec3_t base;
+	vec3_t offset;
+	vec3_t test;
+	int hitent;
+	int idx;
+	float fTime;
+	int i;
+	int info;
+	edict_t *ent;
+	trace_t trace;
+	vec3_t oldvel;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pmove", func_0026D5B8);
+	pm_stucktime[0] = Sys_FloatTime();
+	hitent = PM_TestPlayerPosition(pmove[clientId].origin, clientId);
+	pm_stucktime[1] = Sys_FloatTime();
+	if (hitent == -1)
+	{
+		PM_ResetStuckOffsets(pmove[clientId].player_index, pmove[clientId].server);
+		return 0;
+	}
 
-INCLUDE_ASM("asm/nonmatchings/engine/pmove", func_0026D700);
+	VectorCopy(pmove[clientId].origin, base);
 
-INCLUDE_ASM("asm/nonmatchings/engine/pmove", func_0026D7E8);
+	if (!pmove[clientId].server)
+	{
+		if (hitent == 0 || pmove[clientId].physents[hitent].model)
+		{
+			int nReps = 0;
+			PM_ResetStuckOffsets(pmove[clientId].player_index, pmove[clientId].server);
+			do
+			{
+				i = PM_GetRandomStuckOffsets(pmove[clientId].player_index, pmove[clientId].server, offset);
+				VectorAdd(base, offset, test);
+				if (PM_TestPlayerPosition(test, clientId) == -1)
+				{
+					PM_ResetStuckOffsets(pmove[clientId].player_index, pmove[clientId].server);
+					VectorCopy(test, pmove[clientId].origin);
+					return 0;
+				}
+				nReps++;
+			} while (nReps < 54);
+		}
+	}
 
-INCLUDE_ASM("asm/nonmatchings/engine/pmove", func_0026D888);
+	idx = pmove[clientId].server ? 0 : 1;
+	fTime = Sys_FloatTime();
+	if (rgStuckCheckTime[pmove[clientId].player_index][idx] >= fTime - 0.05f)
+		return 1;
+	rgStuckCheckTime[pmove[clientId].player_index][idx] = fTime;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pmove", func_0026DA48);
+	if (pmove[clientId].server && !pmove[clientId].spectator && !pm_nostucktouch.value)
+	{
+		info = pmove[clientId].physents[hitent].info;
+		ent = EDICT_NUM(info);
+		if (!(ent->flags & FL_SPECTATOR) && !((D_003329F4[info / 8] >> (info % 8)) & 1))
+		{
+			trace.allsolid = pm_stucktrace.allsolid;
+			trace.startsolid = pm_stucktrace.startsolid;
+			trace.inopen = pm_stucktrace.inopen;
+			trace.inwater = pm_stucktrace.inwater;
+			trace.fraction = pm_stucktrace.fraction;
+			VectorCopy(pm_stucktrace.endpos, trace.endpos);
+			VectorCopy(pm_stucktrace.plane.normal, trace.plane.normal);
+			trace.plane.dist = pm_stucktrace.plane.dist;
+			trace.ent = ent;
+			trace.hitgroup = pm_stucktrace.hitgroup;
+			VectorCopy(sv_player->velocity, oldvel);
+			VectorCopy(pmove[clientId].velocity, sv_player->velocity);
+			SV_SetGlobalTrace(&trace);
+			gEntityInterface_pfnTouch(ent, sv_player);
+			VectorCopy(oldvel, sv_player->velocity);
+		}
+	}
 
-INCLUDE_ASM("asm/nonmatchings/engine/pmove", func_0026DF08);
+	i = PM_GetRandomStuckOffsets(pmove[clientId].player_index, pmove[clientId].server, offset);
+	VectorAdd(base, offset, test);
+	if (PM_TestPlayerPosition(test, clientId) == -1)
+	{
+		PM_ResetStuckOffsets(pmove[clientId].player_index, pmove[clientId].server);
+		if (i >= 27)
+			VectorCopy(test, pmove[clientId].origin);
+		return 0;
+	}
+	pm_stucktime[2] = Sys_FloatTime();
+	return 1;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/pmove", func_0026E060);
+void PM_SpectatorMove(int clientId)
+{
+	float speed, drop, friction, control, newspeed;
+	float currentspeed, addspeed, accelspeed;
+	int i;
+	vec3_t wishvel;
+	float fmove, smove;
+	vec3_t wishdir;
+	float wishspeed;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pmove", func_0026E160);
+	speed = Length(pmove[clientId].velocity);
+	if (speed < 1)
+	{
+		VectorCopy(vec3_origin, pmove[clientId].velocity);
+	}
+	else
+	{
+		drop = 0;
+		friction = movevars.friction * 1.5f;
+		control = speed < movevars.stopspeed ? movevars.stopspeed : speed;
+		drop += control * friction * pm_frametime;
+		newspeed = speed - drop;
+		if (newspeed < 0)
+			newspeed = 0;
+		newspeed /= speed;
+		VectorScale(pmove[clientId].velocity, newspeed, pmove[clientId].velocity);
+	}
+
+	fmove = pmove[clientId].cmd.forwardmove;
+	smove = pmove[clientId].cmd.sidemove;
+	VectorNormalize(pm_forward);
+	VectorNormalize(pm_right);
+
+	for (i = 0; i < 3; i++)
+		wishvel[i] = pm_forward[i] * fmove + pm_right[i] * smove;
+	wishvel[2] += pmove[clientId].cmd.upmove;
+
+	VectorCopy(wishvel, wishdir);
+	wishspeed = VectorNormalize(wishdir);
+
+	if (wishspeed > movevars.spectatormaxspeed)
+	{
+		VectorScale(wishvel, movevars.spectatormaxspeed / wishspeed, wishvel);
+		wishspeed = movevars.spectatormaxspeed;
+	}
+
+	currentspeed = DotProduct(pmove[clientId].velocity, wishdir);
+	addspeed = wishspeed - currentspeed;
+	if (addspeed <= 0)
+		return;
+	accelspeed = movevars.accelerate * pm_frametime * wishspeed;
+	if (accelspeed > addspeed)
+		accelspeed = addspeed;
+
+	for (i = 0; i < 3; i++)
+		pmove[clientId].velocity[i] += accelspeed * wishdir[i];
+
+	VectorMA(pmove[clientId].origin, pm_frametime, pmove[clientId].velocity, pmove[clientId].origin);
+}
+
+void PM_NoClip(int clientId)
+{
+	int i;
+	vec3_t wishvel;
+	float fmove, smove;
+
+	fmove = pmove[clientId].cmd.forwardmove;
+	smove = pmove[clientId].cmd.sidemove;
+
+	VectorNormalize(pm_forward);
+	VectorNormalize(pm_right);
+
+	for (i = 0; i < 3; i++)
+		wishvel[i] = pm_forward[i] * fmove + pm_right[i] * smove;
+	wishvel[2] += pmove[clientId].cmd.upmove;
+
+	VectorMA(pmove[clientId].origin, pm_frametime, wishvel, pmove[clientId].origin);
+
+	VectorCopy(vec3_origin, pmove[clientId].velocity);
+}
+
+void PM_WaterJump(int clientId)
+{
+	if (pmove[clientId].waterjumptime > 2)
+		pmove[clientId].waterjumptime = 2;
+
+	if (!pmove[clientId].waterjumptime)
+		return;
+
+	pmove[clientId].waterjumptime -= pm_frametime;
+	if (pmove[clientId].waterjumptime <= 0 || !pm_waterlevel[clientId])
+	{
+		pmove[clientId].waterjumptime = 0;
+		pmove[clientId].flags &= ~FL_WATERJUMP;
+	}
+
+	pmove[clientId].velocity[0] = pmove[clientId].movedir[0];
+	pmove[clientId].velocity[1] = pmove[clientId].movedir[1];
+}
+
+void PM_AddGravity(int clientId)
+{
+	float ent_gravity;
+
+	if (pmove[clientId].gravity)
+		ent_gravity = pmove[clientId].gravity;
+	else
+		ent_gravity = 1.0f;
+
+	pmove[clientId].velocity[2] -= (ent_gravity * movevars.gravity * pm_frametime);
+	pmove[clientId].velocity[2] += pmove[clientId].basevelocity[2] * pm_frametime;
+	pmove[clientId].basevelocity[2] = 0;
+	PM_CheckVelocity(clientId);
+}
+
+pmtrace_t PM_PushEntity(vec3_t push, int clientId)
+{
+	pmtrace_t trace;
+	vec3_t end;
+
+	VectorAdd(pmove[clientId].origin, push, end);
+
+	trace = PM_PlayerTrace(pmove[clientId].origin, end, PM_NORMAL, clientId);
+
+	VectorCopy(trace.endpos, pmove[clientId].origin);
+
+	if (trace.fraction < 1.0f && !trace.allsolid)
+		PM_AddToTouched(trace, pmove[clientId].velocity, clientId);
+
+	return trace;
+}
+
+void PM_Physics_Toss(int clientId)
+{
+	pmtrace_t trace;
+	vec3_t move;
+	float backoff;
+
+	PM_CheckWater(clientId);
+
+	if (pmove[clientId].velocity[2] > 0)
+		pm_onground[clientId] = -1;
+
+	if (pm_onground[clientId] != -1)
+	{
+		if (VectorCompare(pmove[clientId].basevelocity, vec3_origin) &&
+		    VectorCompare(pmove[clientId].velocity, vec3_origin))
+			return;
+	}
+
+	PM_CheckVelocity(clientId);
+
+	if (pmove[clientId].movetype != MOVETYPE_FLY &&
+	    pmove[clientId].movetype != MOVETYPE_BOUNCEMISSILE &&
+	    pmove[clientId].movetype != MOVETYPE_FLYMISSILE)
+		PM_AddGravity(clientId);
+
+	VectorAdd(pmove[clientId].velocity, pmove[clientId].basevelocity, pmove[clientId].velocity);
+
+	PM_CheckVelocity(clientId);
+	VectorScale(pmove[clientId].velocity, pm_frametime, move);
+	VectorSubtract(pmove[clientId].velocity, pmove[clientId].basevelocity, pmove[clientId].velocity);
+
+	trace = PM_PushEntity(move, clientId);
+
+	PM_CheckVelocity(clientId);
+
+	if (trace.allsolid)
+	{
+		pm_onground[clientId] = trace.ent;
+		VectorCopy(vec3_origin, pmove[clientId].velocity);
+		return;
+	}
+
+	if (trace.fraction == 1)
+	{
+		PM_CheckWater(clientId);
+		return;
+	}
+
+	if (pmove[clientId].movetype == MOVETYPE_BOUNCE)
+		backoff = 2.0f - pmove[clientId].friction;
+	else if (pmove[clientId].movetype == MOVETYPE_BOUNCEMISSILE)
+		backoff = 2.0f;
+	else
+		backoff = 1;
+
+	PM_ClipVelocity(pmove[clientId].velocity, trace.plane.normal, pmove[clientId].velocity, backoff);
+
+	if (trace.plane.normal[2] > 0.7f)
+	{
+		float vel;
+		vec3_t base;
+
+		VectorCopy(vec3_origin, base);
+		if (pmove[clientId].velocity[2] < movevars.gravity * pm_frametime)
+		{
+			pm_onground[clientId] = trace.ent;
+			pmove[clientId].velocity[2] = 0;
+		}
+
+		vel = DotProduct(pmove[clientId].velocity, pmove[clientId].velocity);
+
+		if (vel < (30 * 30) || (pmove[clientId].movetype != MOVETYPE_BOUNCE && pmove[clientId].movetype != MOVETYPE_BOUNCEMISSILE))
+		{
+			pm_onground[clientId] = trace.ent;
+			VectorCopy(vec3_origin, pmove[clientId].velocity);
+		}
+		else
+		{
+			VectorScale(pmove[clientId].velocity, (1.0f - trace.fraction) * pm_frametime * 0.9f, move);
+			trace = PM_PushEntity(move, clientId);
+		}
+		VectorSubtract(pmove[clientId].velocity, base, pmove[clientId].velocity);
+	}
+
+	PM_CheckWater(clientId);
+}
+
+hull_t *PM_HullForBsp(physent_t *pe, vec3_t offset, int clientId);
+int PM_HullPointContents(hull_t *hull, int num, vec3_t p);
+qboolean PM_RecursiveHullCheck(hull_t *hull, int num, float p1f, float p2f, vec3_t p1, vec3_t p2, trace_t *trace);
+
+physent_t *PM_Ladder(int clientId)
+{
+	int i;
+	physent_t *pe;
+	hull_t *hull;
+	int num;
+	vec3_t test;
+
+	for (i = 0; i < pmove[clientId].nummoveent; i++)
+	{
+		pe = &pmove[clientId].moveents[i];
+
+		if (pe->model && pe->model->type == mod_brush && pe->skin == CONTENTS_LADDER)
+		{
+			hull = PM_HullForBsp(pe, test, clientId);
+			num = hull->firstclipnode;
+
+			VectorSubtract(pmove[clientId].origin, test, test);
+
+			if (PM_HullPointContents(hull, num, test) == CONTENTS_EMPTY)
+				continue;
+
+			return pe;
+		}
+	}
+
+	return NULL;
+}
+
+float PM_TraceModel(physent_t *pEnt, float *start, float *end, trace_t *trace, int clientId)
+{
+	hull_t *pHull;
+	int saveHull;
+	vec3_t start_l, end_l;
+	vec3_t offset;
+
+	saveHull = pmove[clientId].usehull;
+	pmove[clientId].usehull = 2;
+	pHull = PM_HullForBsp(pEnt, offset, clientId);
+	pmove[clientId].usehull = saveHull;
+
+	VectorSubtract(start, offset, start_l);
+	VectorSubtract(end, offset, end_l);
+
+	PM_RecursiveHullCheck(pHull, pHull->firstclipnode, 0, 1, start_l, end_l, trace);
+
+	return trace->fraction;
+}
+
+#define MAX_CLIMB_SPEED 200
+
+extern int D_003316B0[];
+extern int D_003316B8[];
+extern float D_00399158[];
+extern float D_00399148[];
+
+void PM_LadderMove(physent_t *pLadder, int clientId)
+{
+	vec3_t ladderCenter;
+	trace_t trace;
+	qboolean onFloor;
+	vec3_t floor;
+
+	if (pmove[clientId].movetype == MOVETYPE_NOCLIP)
+		return;
+
+	VectorAdd(pLadder->model->mins, pLadder->model->maxs, ladderCenter);
+	VectorScale(ladderCenter, 0.5f, ladderCenter);
+
+	pmove[clientId].movetype = MOVETYPE_FLY;
+
+	VectorCopy(pmove[clientId].origin, floor);
+	floor[2] += player_mins[pmove[clientId].usehull][2] - 1;
+
+	if (PM_PointContents(floor, clientId) == CONTENTS_SOLID)
+		onFloor = 1;
+	else
+		onFloor = 0;
+
+	pmove[clientId].gravity = 0;
+	PM_TraceModel(pLadder, pmove[clientId].origin, ladderCenter, &trace, clientId);
+	if (trace.fraction != 1.0f)
+	{
+		float forward = 0, right = 0;
+		vec3_t vpn, v_right;
+
+		AngleVectors(pmove[clientId].angles, vpn, v_right, NULL);
+		if (pmove[clientId].cmd.buttons & IN_BACK)
+			forward -= (D_003316B0[clientId] == 1) ? D_00399158[clientId] * MAX_CLIMB_SPEED : MAX_CLIMB_SPEED;
+		if (pmove[clientId].cmd.buttons & IN_FORWARD)
+			forward += (D_003316B0[clientId] == 1) ? D_00399158[clientId] * MAX_CLIMB_SPEED : MAX_CLIMB_SPEED;
+		if (pmove[clientId].cmd.buttons & IN_MOVELEFT)
+			right -= (D_003316B8[clientId] == 1) ? D_00399148[clientId] * 50 : 50;
+		if (pmove[clientId].cmd.buttons & IN_MOVERIGHT)
+			right += (D_003316B8[clientId] == 1) ? D_00399148[clientId] * 50 : 50;
+
+		if (pmove[clientId].cmd.buttons & IN_JUMP)
+		{
+			pmove[clientId].movetype = MOVETYPE_WALK;
+			VectorScale(trace.plane.normal, 270, pmove[clientId].velocity);
+		}
+		else
+		{
+			if (forward != 0 || right != 0)
+			{
+				vec3_t velocity, perp, cross, lateral, tmp;
+				float normal;
+
+				VectorScale(vpn, forward, velocity);
+				VectorMA(velocity, right, v_right, velocity);
+
+				VectorCopy(vec3_origin, tmp);
+				tmp[2] = 1;
+				CrossProduct(tmp, trace.plane.normal, perp);
+				VectorNormalize(perp);
+
+				normal = DotProduct(velocity, trace.plane.normal);
+				VectorScale(trace.plane.normal, normal, cross);
+
+				VectorSubtract(velocity, cross, lateral);
+
+				CrossProduct(trace.plane.normal, perp, tmp);
+				VectorMA(lateral, -normal, tmp, pmove[clientId].velocity);
+				if (onFloor && normal > 0)
+				{
+					VectorMA(pmove[clientId].velocity, MAX_CLIMB_SPEED, trace.plane.normal, pmove[clientId].velocity);
+				}
+			}
+			else
+			{
+				VectorCopy(vec3_origin, pmove[clientId].velocity);
+			}
+		}
+	}
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/pmove", func_0026E6C8);
 
