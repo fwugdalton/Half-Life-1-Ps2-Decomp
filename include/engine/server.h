@@ -3,6 +3,7 @@
 
 #include "common.h"
 #include "engine/cmd.h"
+#include "engine/pmove.h"
 
 typedef void *FileHandle_t;
 
@@ -155,18 +156,23 @@ typedef struct client_s
     qboolean active;            /* 0x0000 */
     qboolean spawned;           /* 0x0004 */
     qboolean connected;         /* 0x0008 */
-    byte unk_000C[0x14 - 0x0C];
+    qboolean uploading;         /* 0x000C */
+    byte unk_0010[0x14 - 0x10];
     netchan_t netchan;          /* 0x0014 */
     byte unk_73C4[0x73D8 - 0x73C4];
     qboolean spectator;         /* 0x73D8 */
     qboolean fakeclient;        /* 0x73DC */
-    byte unk_73E0[0x7444 - 0x73E0];
+    byte unk_73E0[0x73E4 - 0x73E0];
+    usercmd_t lastcmd;          /* 0x73E4 */
+    byte unk_7408[0x7444 - 0x7408];
     int unk_7444;               /* 0x7444 */
     byte unk_7448[0x8408 - 0x7448];
     float connection_started;   /* 0x8408 */
     byte unk_840C[0x8410 - 0x840C];
     edict_t *edict;             /* 0x8410 */
-    byte unk_8414[0x8420 - 0x8414];
+    edict_t *pViewEntity;       /* 0x8414 */
+    int userid;                 /* 0x8418 */
+    byte unk_841C[0x8420 - 0x841C];
     char userinfo[MAX_INFO_STRING]; /* 0x8420 */
     qboolean sendinfo;          /* 0x84E4 */
     float sendinfo_time;        /* 0x84E8 */
@@ -225,7 +231,11 @@ typedef struct server_s
     sizebuf_t datagram;         /* 0x1B9FC */
     byte datagram_buf[4000];    /* 0x1BA10 */
     sizebuf_t reliable_datagram; /* 0x1C9B0 */
-    byte unk_1C9C4[0x1ED2C - 0x1C9C4];
+    byte reliable_datagram_buf[4000]; /* 0x1C9C4 */
+    sizebuf_t unk_1D964;        /* 0x1D964 */
+    byte unk_1D978[4000];       /* 0x1D978 */
+    sizebuf_t multicast;        /* 0x1E918 */
+    byte multicast_buf[1024];   /* 0x1E92C */
     sizebuf_t signon;           /* 0x1ED2C */
     byte unk_1ED40[0x2E784 - 0x1ED40];
 } server_t; /* 0x2E784 */

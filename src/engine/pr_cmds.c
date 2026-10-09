@@ -3,6 +3,7 @@
 #include "engine/mathlib.h"
 #include "engine/model.h"
 #include "engine/server.h"
+#include "engine/cvar.h"
 #include "engine/decals.h"
 #include "stdarg.h"
 
@@ -1473,41 +1474,506 @@ int PF_pointcontents_I(const float *rgflVector)
     return SV_PointContents(rgflVector);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", PF_aim_I);
+#define FL_FAKECLIENT (1 << 13)
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", PF_changeyaw_I);
+extern cvar_t sv_aim;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", PF_changepitch_I);
+void PF_aim_I(edict_t *ent, float speed, float *rgflReturn)
+{
+    vec3_t start, dir, end, bestdir;
+    trace_t tr;
+    int i, j;
+    edict_t *check;
+    float dist, bestdist;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", PF_setview_I);
+    if (!ent || (ent->v.flags & FL_FAKECLIENT))
+    {
+        VectorCopy(gGlobalVariables.v_forward, rgflReturn);
+        return;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", PF_crosshairangle_I);
+    VectorCopy(ent->v.origin, start);
+    start[2] += ent->v.view_ofs[2];
+    VectorCopy(gGlobalVariables.v_forward, dir);
+    VectorMA(start, 2048, dir, end);
+    tr = SV_Move(start, vec3_origin, vec3_origin, end, 0, ent, false);
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", PF_CreateFakeClient_I);
+    if (tr.ent && tr.ent->v.takedamage == 2 && (ent->v.team <= 0 || ent->v.team != tr.ent->v.team))
+    {
+        VectorCopy(gGlobalVariables.v_forward, rgflReturn);
+        return;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", PF_RunPlayerMove_I);
+    VectorCopy(dir, bestdir);
+    bestdist = sv_aim.value;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", WriteDest_Parm);
+    for (i = 1; i < sv.num_edicts; i++)
+    {
+        check = &sv.edicts[i];
+        if (check->v.takedamage != 2)
+            continue;
+        if (check->v.flags & FL_FAKECLIENT)
+            continue;
+        if (check == ent)
+            continue;
+        if (ent->v.team > 0 && ent->v.team == check->v.team)
+            continue;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", PF_MessageBegin_I);
+        for (j = 0; j < 3; j++)
+            end[j] = check->v.origin[j] + (check->v.mins[j] + check->v.maxs[j]) * 0.75f;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", PF_MessageEnd_I);
+        VectorSubtract(end, start, dir);
+        VectorNormalize(dir);
+        dist = DotProduct(dir, gGlobalVariables.v_forward);
+        if (dist < bestdist)
+            continue;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00276030);
+        tr = SV_Move(start, vec3_origin, vec3_origin, end, 0, ent, false);
+        if (tr.ent == check)
+        {
+            bestdist = dist;
+            VectorCopy(dir, bestdir);
+        }
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00276078);
+    VectorCopy(bestdir, rgflReturn);
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_002760C0);
+void PF_changeyaw_I(edict_t *ent)
+{
+    float ideal, current, move, speed;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00276108);
+    current = anglemod(ent->v.angles[1]);
+    ideal = ent->v.ideal_yaw;
+    speed = ent->v.yaw_speed;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00276150);
+    if (current == ideal)
+        return;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00276198);
+    move = ideal - current;
+    if (ideal > current)
+    {
+        if (move >= 180)
+            move = move - 360;
+    }
+    else
+    {
+        if (move <= -180)
+            move = move + 360;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_002761E0);
+    if (move > 0)
+    {
+        if (move > speed)
+            move = speed;
+    }
+    else
+    {
+        if (move < -speed)
+            move = -speed;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/pr_cmds", func_00276228);
+    ent->v.angles[1] = anglemod(current + move);
+}
+
+void PF_changepitch_I(edict_t *ent)
+{
+    float ideal, current, move, speed;
+
+    current = anglemod(ent->v.angles[0]);
+    ideal = ent->v.idealpitch;
+    speed = ent->v.pitch_speed;
+
+    if (current == ideal)
+        return;
+
+    move = ideal - current;
+    if (ideal > current)
+    {
+        if (move >= 180)
+            move = move - 360;
+    }
+    else
+    {
+        if (move <= -180)
+            move = move + 360;
+    }
+
+    if (move > 0)
+    {
+        if (move > speed)
+            move = speed;
+    }
+    else
+    {
+        if (move < -speed)
+            move = -speed;
+    }
+
+    ent->v.angles[0] = anglemod(current + move);
+}
+
+#define svc_setview 5
+#define svc_crosshairangle 50
+
+void PF_setview_I(edict_t *clientent, edict_t *viewent)
+{
+    int clientnum;
+    client_t *client;
+
+    clientnum = NUM_FOR_EDICT(clientent);
+    if (clientnum < 1 || clientnum > svs.maxclients)
+        Host_Error("PF_setview_I: not a client");
+
+    client = &svs.clients[clientnum - 1];
+    if (!client->fakeclient)
+    {
+        client->pViewEntity = viewent;
+        MSG_WriteByte(&client->netchan.message, svc_setview);
+        MSG_WriteShort(&client->netchan.message, NUM_FOR_EDICT(viewent));
+    }
+}
+
+void PF_crosshairangle_I(edict_t *clientent, float pitch, float yaw)
+{
+    int clientnum;
+    client_t *client;
+
+    clientnum = NUM_FOR_EDICT(clientent);
+    if (clientnum < 1 || clientnum > svs.maxclients)
+        return;
+
+    client = &svs.clients[clientnum - 1];
+    if (!client->fakeclient)
+    {
+        if (pitch > 180)
+            pitch -= 360;
+        if (pitch < -180)
+            pitch += 360;
+        if (yaw > 180)
+            yaw -= 360;
+        if (yaw < -180)
+            yaw += 360;
+
+        MSG_WriteByte(&client->netchan.message, svc_crosshairangle);
+        MSG_WriteChar(&client->netchan.message, pitch * 5);
+        MSG_WriteChar(&client->netchan.message, yaw * 5);
+    }
+}
+
+#define FL_CLIENT (1 << 3)
+
+extern int g_userid;
+edict_t *EDICT_NUM(int n);
+void SV_ExtractFromUserinfo(client_t *cl);
+
+edict_t *PF_CreateFakeClient_I(const char *netname)
+{
+    client_t *fakeclient;
+    edict_t *ent;
+    int i;
+
+    fakeclient = NULL;
+    for (i = 0; i < svs.maxclients; i++)
+    {
+        fakeclient = &svs.clients[i];
+        if (!fakeclient->active && !fakeclient->spawned && !fakeclient->connected)
+            break;
+    }
+
+    if (i == svs.maxclients)
+        return NULL;
+
+    ent = EDICT_NUM(i + 1);
+
+    memset(fakeclient, 0, sizeof(client_t));
+    fakeclient->resourcesonhand.pPrev = &fakeclient->resourcesonhand;
+    fakeclient->resourcesonhand.pNext = &fakeclient->resourcesonhand;
+    fakeclient->resourcesneeded.pPrev = &fakeclient->resourcesneeded;
+    fakeclient->resourcesneeded.pNext = &fakeclient->resourcesneeded;
+
+    strncpy(fakeclient->name, netname, sizeof(fakeclient->name));
+
+    fakeclient->active = true;
+    fakeclient->spawned = true;
+    fakeclient->connected = true;
+    fakeclient->uploading = false;
+    fakeclient->edict = ent;
+    fakeclient->fakeclient = true;
+    fakeclient->userid = g_userid++;
+
+    ent->v.pContainingEntity = ent;
+    ent->v.netname = fakeclient->name - pr_strings;
+    ent->v.flags = FL_FAKECLIENT | FL_CLIENT;
+
+    Info_SetValueForKey(fakeclient->userinfo, "name", (char *)netname, MAX_INFO_STRING);
+    Info_SetValueForKey(fakeclient->userinfo, "model", "gordon", MAX_INFO_STRING);
+    Info_SetValueForKey(fakeclient->userinfo, "topcolor", "1", MAX_INFO_STRING);
+    Info_SetValueForKey(fakeclient->userinfo, "bottomcolor", "1", MAX_INFO_STRING);
+    fakeclient->sendinfo = true;
+    SV_ExtractFromUserinfo(fakeclient);
+
+    return ent;
+}
+
+extern edict_t *sv_player;
+void SV_PreRunCmd(void);
+void SV_RunCmd(usercmd_t *ucmd, int random_seed);
+
+void PF_RunPlayerMove_I(edict_t *fakeclient, const float *viewangles, float forwardmove, float sidemove, float upmove, unsigned short buttons, byte impulse, byte msec)
+{
+    usercmd_t cmd;
+    edict_t *oldclient;
+    client_t *old;
+    int entnum;
+
+    oldclient = sv_player;
+    old = host_client;
+    entnum = NUM_FOR_EDICT(fakeclient);
+    sv_player = fakeclient;
+    host_client = &svs.clients[entnum - 1];
+
+    cmd.lightlevel = 0;
+    cmd.viewangles[0] = viewangles[0];
+    cmd.viewangles[1] = viewangles[1];
+    cmd.viewangles[2] = viewangles[2];
+    cmd.forwardmove = forwardmove;
+    cmd.sidemove = sidemove;
+    cmd.upmove = upmove;
+    cmd.buttons = buttons;
+    cmd.impulse = impulse;
+    cmd.msec = msec;
+
+    SV_PreRunCmd();
+    SV_RunCmd(&cmd, 0);
+    host_client->lastcmd = cmd;
+
+    sv_player = oldclient;
+    host_client = old;
+}
+
+#define MSG_BROADCAST 0
+#define MSG_ONE 1
+#define MSG_ALL 2
+#define MSG_INIT 3
+#define MSG_PVS 4
+#define MSG_PAS 5
+#define MSG_PVS_R 6
+#define MSG_PAS_R 7
+
+extern edict_t *gMsgEntity;
+
+sizebuf_t *WriteDest_Parm(int dest)
+{
+    int entnum;
+
+    switch (dest)
+    {
+    case MSG_BROADCAST:
+        return &sv.datagram;
+    case MSG_ONE:
+        entnum = NUM_FOR_EDICT(gMsgEntity);
+        if (entnum <= 0 || entnum > svs.maxclients)
+            Host_Error("WriteDest_Parm: not a client");
+        return &svs.clients[entnum - 1].netchan.message;
+    case MSG_ALL:
+        return &sv.reliable_datagram;
+    case MSG_INIT:
+        return &sv.signon;
+    case MSG_PVS:
+    case MSG_PAS:
+        return &sv.multicast;
+    default:
+        Host_Error("WriteDest_Parm: bad destination=%d", dest);
+        return NULL;
+    }
+}
+
+extern sizebuf_t gMsgBuffer;
+extern qboolean gMsgStarted;
+extern int gMsgType;
+extern int gMsgDest;
+extern vec3_t gMsgOrigin;
+qboolean Host_IsSinglePlayerGame(void);
+
+void PF_MessageBegin_I(int msg_dest, int msg_type, const float *pOrigin, edict_t *ed)
+{
+    if (msg_dest == MSG_ONE)
+    {
+        if (!ed)
+            Sys_Error("MSG_ONE with no target entity\n");
+    }
+    else
+    {
+        if (ed)
+            Sys_Error("Invalid message;  cannot use broadcast message with a target entity");
+    }
+
+    if (gMsgStarted)
+        Sys_Error("new message started when msg '%d' has not been sent yet", gMsgType);
+
+    gMsgStarted = true;
+    gMsgType = msg_type;
+    gMsgEntity = ed;
+    gMsgDest = msg_dest;
+
+    if (msg_dest == MSG_PVS || msg_dest == MSG_PAS)
+    {
+        if (pOrigin)
+            VectorCopy(pOrigin, gMsgOrigin);
+        Host_IsSinglePlayerGame();
+    }
+
+    gMsgBuffer.allowoverflow = false;
+    gMsgBuffer.cursize = 0;
+    gMsgBuffer.overflowed = false;
+}
+
+typedef struct _UserMsg
+{
+    int iMsg;                   /* 0x00 */
+    int iSize;                  /* 0x04 */
+    char szName[12];            /* 0x08 */
+    struct _UserMsg *next;      /* 0x14 */
+} UserMsg;
+
+#define svc_startofusermessages 53
+#define MSG_FL_PVS 1
+#define MSG_FL_PAS 2
+
+extern UserMsg *sv_gpUserMsgs;
+void MSG_WriteBuf(sizebuf_t *sb, int iSize, void *buf);
+void SV_Multicast(vec3_t origin, int to, qboolean reliable);
+
+void PF_MessageEnd_I(void)
+{
+    qboolean isVariableLengthMsg;
+    UserMsg *pUserMsg;
+    sizebuf_t *pBuffer;
+
+    isVariableLengthMsg = false;
+
+    if (!gMsgStarted)
+        Sys_Error("MESSAGE_END called with no active message\n");
+
+    gMsgStarted = false;
+
+    if (gMsgEntity && (gMsgEntity->v.flags & FL_FAKECLIENT))
+        return;
+
+    if (gMsgType > svc_startofusermessages)
+    {
+        pUserMsg = sv_gpUserMsgs;
+        while (pUserMsg && pUserMsg->iMsg != gMsgType)
+            pUserMsg = pUserMsg->next;
+
+        if (!pUserMsg)
+        {
+            Con_DPrintf("Illegal User Msg %d\n", gMsgType);
+            return;
+        }
+
+        if (pUserMsg->iSize == -1)
+        {
+            isVariableLengthMsg = true;
+        }
+        else if (pUserMsg->iSize != gMsgBuffer.cursize)
+        {
+            Sys_Error("User Msg '%s': %d bytes written, expected %d\n", pUserMsg->szName, gMsgBuffer.cursize, pUserMsg->iSize);
+            return;
+        }
+    }
+
+    pBuffer = WriteDest_Parm(gMsgDest);
+    if (gMsgDest == MSG_BROADCAST && pBuffer->cursize + gMsgBuffer.cursize > pBuffer->maxsize)
+        return;
+
+    if (!pBuffer->data)
+    {
+        Con_DPrintf("Message sent to uninitialized buffer\n");
+        return;
+    }
+
+    MSG_WriteByte(WriteDest_Parm(gMsgDest), gMsgType);
+    if (isVariableLengthMsg)
+        MSG_WriteByte(WriteDest_Parm(gMsgDest), gMsgBuffer.cursize);
+    MSG_WriteBuf(WriteDest_Parm(gMsgDest), gMsgBuffer.cursize, gMsgBuffer.data);
+
+    switch (gMsgDest)
+    {
+    case MSG_PVS:
+        SV_Multicast(gMsgOrigin, MSG_FL_PVS, false);
+        break;
+    case MSG_PAS:
+        SV_Multicast(gMsgOrigin, MSG_FL_PAS, false);
+        break;
+    case MSG_PVS_R:
+        SV_Multicast(gMsgOrigin, MSG_FL_PAS, true);
+        break;
+    case MSG_PAS_R:
+        SV_Multicast(gMsgOrigin, MSG_FL_PAS, true);
+        break;
+    }
+}
+
+void MSG_WriteLong(sizebuf_t *sb, int c);
+void MSG_WriteAngle(sizebuf_t *sb, float f);
+
+void PF_WriteByte_I(int iValue)
+{
+    if (!gMsgStarted)
+        Sys_Error("WRITE_BYTE called with no active message\n");
+    MSG_WriteByte(&gMsgBuffer, iValue);
+}
+
+void PF_WriteChar_I(int iValue)
+{
+    if (!gMsgStarted)
+        Sys_Error("WRITE_CHAR called with no active message\n");
+    MSG_WriteChar(&gMsgBuffer, iValue);
+}
+
+void PF_WriteShort_I(int iValue)
+{
+    if (!gMsgStarted)
+        Sys_Error("WRITE_SHORT called with no active message\n");
+    MSG_WriteShort(&gMsgBuffer, iValue);
+}
+
+void PF_WriteLong_I(int iValue)
+{
+    if (!gMsgStarted)
+        Sys_Error("PF_WriteLong_I called with no active message\n");
+    MSG_WriteLong(&gMsgBuffer, iValue);
+}
+
+void PF_WriteAngle_I(float flValue)
+{
+    if (!gMsgStarted)
+        Sys_Error("PF_WriteAngle_I called with no active message\n");
+    MSG_WriteAngle(&gMsgBuffer, flValue);
+}
+
+void PF_WriteCoord_I(float flValue)
+{
+    if (!gMsgStarted)
+        Sys_Error("PF_WriteCoord_I called with no active message\n");
+    MSG_WriteCoord(&gMsgBuffer, flValue);
+}
+
+void PF_WriteString_I(const char *sz)
+{
+    if (!gMsgStarted)
+        Sys_Error("PF_WriteString_I called with no active message\n");
+    MSG_WriteString(&gMsgBuffer, sz);
+}
+
+void PF_WriteEntity_I(int iValue)
+{
+    if (!gMsgStarted)
+        Sys_Error("PF_WriteEntity_I called with no active message\n");
+    MSG_WriteShort(&gMsgBuffer, iValue);
+}
 
 void func_00276270(void) {
 }
