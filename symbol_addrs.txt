@@ -579,3 +579,7 @@ box_planes = 0x00406538; // size:0x78
 PM_HullForBox = 0x0026F9D0; // type:func
 PM_LinkContents = 0x0026FB38; // type:func
 PM_WaterEntity = 0x0026FCF8; // type:func
+PM_RecursiveHullCheck = 0x0026FDD0; // type:func
+PM_HullForStudioModel = 0x002702A8; // type:func
+R_StudioHull = 0x002BAA50; // type:func
+g_contentsresult = 0x00399340; // size:0x4

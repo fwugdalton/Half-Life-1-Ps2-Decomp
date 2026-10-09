@@ -57,7 +57,9 @@ typedef struct model_s
     float mins[3];              /* 0x50 */
     int unk_5C;
     float maxs[3];              /* 0x60 */
-    byte unk_6C[0x9C - 0x6C];
+    byte unk_6C[0x80 - 0x6C];
+    int flags;                  /* 0x80 */
+    byte unk_84[0x9C - 0x84];
     int numleafs;               /* 0x9C */
     mleaf_t *leafs;             /* 0xA0 */
     byte unk_A4[0xDC - 0xA4];

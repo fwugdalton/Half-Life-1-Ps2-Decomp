@@ -161,13 +161,243 @@ int PM_TruePointContents(vec3_t p, int clientId)
 	return CONTENTS_EMPTY;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/pmovetst", func_0026FDD0);
+#define DIST_EPSILON (0.03125f)
 
-INCLUDE_ASM("asm/nonmatchings/engine/pmovetst", func_002702A8);
+qboolean PM_RecursiveHullCheck(hull_t *hull, int num, float p1f, float p2f, vec3_t p1, vec3_t p2, pmtrace_t *trace)
+{
+	dclipnode_t *node;
+	mplane_t *plane;
+	float t1, t2;
+	float frac;
+	int i;
+	vec3_t mid;
+	int side;
+	float midf;
 
-INCLUDE_ASM("asm/nonmatchings/engine/pmovetst", PM_HullForBsp);
+	if (num < 0)
+	{
+		if (num != CONTENTS_SOLID)
+		{
+			trace->allsolid = 0;
+			if (num == CONTENTS_EMPTY)
+				trace->inopen = 1;
+			else
+				trace->inwater = 1;
+		}
+		else
+			trace->startsolid = 1;
+		return 1;
+	}
 
+	if (hull->firstclipnode >= hull->lastclipnode)
+	{
+		trace->allsolid = 0;
+		trace->inopen = 1;
+		return 1;
+	}
+
+	if (num < hull->firstclipnode || num > hull->lastclipnode)
+		Sys_Error("PM_RecursiveHullCheck: bad node number");
+
+	node = hull->clipnodes + num;
+	plane = hull->planes + node->planenum;
+
+	if (plane->type < 3)
+	{
+		t1 = p1[plane->type] - plane->dist;
+		t2 = p2[plane->type] - plane->dist;
+	}
+	else
+	{
+		t1 = DotProduct(plane->normal, p1) - plane->dist;
+		t2 = DotProduct(plane->normal, p2) - plane->dist;
+	}
+
+	if (t1 >= 0 && t2 >= 0)
+		return PM_RecursiveHullCheck(hull, node->children[0], p1f, p2f, p1, p2, trace);
+	if (t1 < 0 && t2 < 0)
+		return PM_RecursiveHullCheck(hull, node->children[1], p1f, p2f, p1, p2, trace);
+
+	if (t1 < 0)
+		frac = (t1 + DIST_EPSILON) / (t1 - t2);
+	else
+		frac = (t1 - DIST_EPSILON) / (t1 - t2);
+	if (frac < 0)
+		frac = 0;
+	if (frac > 1)
+		frac = 1;
+
+	midf = p1f + (p2f - p1f) * frac;
+	for (i = 0; i < 3; i++)
+		mid[i] = p1[i] + frac * (p2[i] - p1[i]);
+
+	side = (t1 < 0);
+
+	if (!PM_RecursiveHullCheck(hull, node->children[side], p1f, midf, p1, mid, trace))
+		return 0;
+
+	if (PM_HullPointContents(hull, node->children[side ^ 1], mid) != CONTENTS_SOLID)
+		return PM_RecursiveHullCheck(hull, node->children[side ^ 1], midf, p2f, mid, p2, trace);
+
+	if (trace->allsolid)
+		return 0;
+
+	if (!side)
+	{
+		VectorCopy(plane->normal, trace->plane.normal);
+		trace->plane.dist = plane->dist;
+	}
+	else
+	{
+		VectorSubtract(vec3_origin, plane->normal, trace->plane.normal);
+		trace->plane.dist = -plane->dist;
+	}
+
+	while (PM_HullPointContents(hull, hull->firstclipnode, mid) == CONTENTS_SOLID)
+	{
+		frac -= 0.05f;
+		if (frac < 0)
+		{
+			trace->fraction = midf;
+			VectorCopy(mid, trace->endpos);
+			Con_DPrintf("Trace backed up past 0.0.\n");
+			return 0;
+		}
+		midf = p1f + (p2f - p1f) * frac;
+		for (i = 0; i < 3; i++)
+			mid[i] = p1[i] + frac * (p2[i] - p1[i]);
+	}
+
+	trace->fraction = midf;
+	VectorCopy(mid, trace->endpos);
+
+	return 0;
+}
+
+hull_t *R_StudioHull(model_t *pModel, float frame, int sequence, vec3_t angles, vec3_t origin, vec3_t size, byte *pcontroller, byte *pblending, int *pNumHulls);
+
+hull_t *PM_HullForStudioModel(model_t *pModel, vec3_t offset, float frame, int sequence, vec3_t angles, vec3_t origin, byte *pcontroller, byte *pblending, int *pNumHulls, int clientId)
+{
+	vec3_t size;
+
+	VectorSubtract(player_maxs[pmove[clientId].usehull], player_mins[pmove[clientId].usehull], size);
+	VectorScale(size, 0.5f, size);
+	VectorCopy(vec3_origin, offset);
+	return R_StudioHull(pModel, frame, sequence, angles, origin, size, pcontroller, pblending, pNumHulls);
+}
+
+hull_t *PM_HullForBsp(physent_t *pe, vec3_t offset, int clientId)
+{
+	hull_t *hull;
+
+	switch (pmove[clientId].usehull)
+	{
+	case 0:
+		hull = &pe->model->hulls[1];
+		break;
+	case 1:
+		hull = &pe->model->hulls[3];
+		break;
+	case 2:
+		hull = &pe->model->hulls[0];
+		break;
+	default:
+		hull = NULL;
+		break;
+	}
+
+	VectorSubtract(hull->clip_mins, player_mins[pmove[clientId].usehull], offset);
+	VectorAdd(offset, pe->origin, offset);
+	return hull;
+}
+
+#define SOLID_BSP 4
+#define STUDIO_TRACE_HITBOX 0x200
+
+extern int g_contentsresult;
+
+#ifdef NON_MATCHING
+int PM_TestPlayerPosition(vec3_t pos, int clientId)
+{
+	int i, j;
+	physent_t *pe;
+	hull_t *hull;
+	vec3_t mins, maxs, test;
+	vec3_t offset;
+	int numhulls;
+	int rotated;
+
+	pm_stucktrace = PM_PlayerTrace(pmove[clientId].origin, pmove[clientId].origin, PM_NORMAL, clientId);
+
+	for (i = 0; i < pmove[clientId].numphysent; i++)
+	{
+		pe = &pmove[clientId].physents[i];
+
+		if (pe->model && !pe->solid && pe->skin)
+			continue;
+
+		VectorCopy(pe->origin, offset);
+		numhulls = 1;
+
+		if (pe->model)
+		{
+			hull = PM_HullForBsp(pe, offset, clientId);
+		}
+		else if (pe->studiomodel && pe->studiomodel->type == mod_studio &&
+		         ((pe->studiomodel->flags & STUDIO_TRACE_HITBOX) || pmove[clientId].usehull == 2))
+		{
+			hull = PM_HullForStudioModel(pe->studiomodel, offset, pe->frame, pe->sequence, pe->angles, pe->origin,
+			                             pe->controller, pe->blending, &numhulls, clientId);
+		}
+		else
+		{
+			VectorSubtract(pe->mins, player_maxs[pmove[clientId].usehull], mins);
+			VectorSubtract(pe->maxs, player_mins[pmove[clientId].usehull], maxs);
+			hull = PM_HullForBox(mins, maxs);
+		}
+
+		VectorSubtract(pos, offset, test);
+
+		if (pe->solid == SOLID_BSP && (pe->angles[0] != 0 || pe->angles[1] != 0 || pe->angles[2] != 0))
+			rotated = 1;
+		else
+			rotated = 0;
+
+		if (rotated)
+		{
+			vec3_t forward, right, up;
+			vec3_t temp;
+
+			AngleVectors(pe->angles, forward, right, up);
+
+			VectorCopy(test, temp);
+			test[0] = DotProduct(temp, forward);
+			test[1] = -DotProduct(temp, right);
+			test[2] = DotProduct(temp, up);
+		}
+
+		if (numhulls == 1)
+		{
+			g_contentsresult = PM_HullPointContents(hull, hull->firstclipnode, test);
+			if (g_contentsresult == CONTENTS_SOLID)
+				return i;
+		}
+		else
+		{
+			for (j = 0; j < numhulls; j++)
+			{
+				g_contentsresult = PM_HullPointContents(&hull[j], hull[j].firstclipnode, test);
+				if (g_contentsresult == CONTENTS_SOLID)
+					return i;
+			}
+		}
+	}
+
+	return -1;
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/pmovetst", PM_TestPlayerPosition);
+#endif
 
 INCLUDE_ASM("asm/nonmatchings/engine/pmovetst", PM_PlayerTrace);
 

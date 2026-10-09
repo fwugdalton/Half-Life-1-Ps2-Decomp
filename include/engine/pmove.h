@@ -62,7 +62,11 @@ typedef struct physent_s
 	vec3_t angles;                  /* 0x30 */
 	int solid;                      /* 0x3C */
 	int skin;                       /* 0x40 */
-	byte unk_44[0x58 - 0x44];
+	int unk_44;
+	float frame;                    /* 0x48 */
+	int sequence;                   /* 0x4C */
+	byte controller[4];             /* 0x50 */
+	byte blending[4];               /* 0x54 */
 } physent_t; /* 0x58 */
 
 typedef struct
@@ -162,6 +166,8 @@ extern vec3_t player_maxs[3];
 void PM_InitBoxHull(void);
 int PM_PointContents(vec3_t p, int clientId);
 int PM_TruePointContents(vec3_t p, int clientId);
+extern pmtrace_t pm_stucktrace;
+int PM_TestPlayerPosition(vec3_t pos, int clientId);
 pmtrace_t PM_PlayerTrace(vec3_t start, vec3_t end, int traceFlags, int clientId);
 qboolean PM_AddToTouched(pmtrace_t tr, vec3_t impactvelocity, int clientId);
 
