@@ -144,14 +144,13 @@ void Netchan_Setup(int sock, netchan_t *chan, netadr_t adr)
 	chan->rate = net_rate;
 }
 
-#ifdef NON_MATCHING
 void Netchan_Transmit(netchan_t *chan, int length, byte *data, int unk)
 {
 	sizebuf_t send;
 	byte send_buf[MAX_MSGLEN + PACKET_HEADER];
 	qboolean send_reliable;
 	unsigned w1, w2;
-	int i, j;
+	int i, j, mask;
 	float fRate;
 
 	if (chan->message.overflowed)
@@ -205,6 +204,7 @@ void Netchan_Transmit(netchan_t *chan, int length, byte *data, int unk)
 			;
 	}
 
+	mask = MAX_LATENT - 1;
 	if (send.cursize < 16)
 	{
 		for (i = 0; i < 16; i++)
@@ -215,7 +215,7 @@ void Netchan_Transmit(netchan_t *chan, int length, byte *data, int unk)
 	chan->outgoing_size[i] = send.cursize;
 	chan->outgoing_time[i] = realtime;
 
-	chan->flow[FLOW_OUTGOING].stats[chan->flow[FLOW_OUTGOING].current & (MAX_LATENT - 1)].size = send.cursize + UDP_HEADER_SIZE;
+	chan->flow[FLOW_OUTGOING].stats[chan->flow[FLOW_OUTGOING].current & mask].size = send.cursize + UDP_HEADER_SIZE;
 	chan->flow[FLOW_OUTGOING].stats[chan->flow[FLOW_OUTGOING].current & (MAX_LATENT - 1)].time = realtime;
 	chan->flow[FLOW_OUTGOING].current++;
 	Netchan_UpdateFlow(chan);
@@ -237,9 +237,6 @@ void Netchan_Transmit(netchan_t *chan, int length, byte *data, int unk)
 	if (showpackets.value)
 		Con_Printf("\n");
 }
-#else
-INCLUDE_ASM("asm/nonmatchings/engine/net_chan", Netchan_Transmit);
-#endif
 
 void Netchan_UpdateLatency(netchan_t *chan, int latency, float rate)
 {

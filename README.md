@@ -64,7 +64,7 @@ O `make` termina com `build/SLUS_200.66.rom: OK` quando o rebuild é idêntico a
 - `engine/unk_265E18.c`: 100% (contador Geiger e posição da mira, que no PC ficam no client.dll)
 - `engine/unk_267A90.c`: 2 de 3 (carga de modelo de estúdio; falta `Mod_StudioCacheCallback`)
 - `engine/mathlib.c`: 100% (código, `.rodata` e `.data`; compilado com `-ffast-math`)
-- `engine/net_chan.c`: 9 de 10, `.rodata` e `.data` (falta `Netchan_Transmit`, dois registradores trocados; `-ffast-math`)
+- `engine/net_chan.c`: 100% (10 funções), `.rodata` e `.data` (`-ffast-math`)
 - `engine/keys.c`: 18 de 19 funções, `.rodata` e `.data` (falta `Key_Event`)
 
 Funções que ainda não casam ficam com o C em `#ifdef NON_MATCHING` e o asm original via `INCLUDE_ASM`
