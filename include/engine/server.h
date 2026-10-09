@@ -6,15 +6,95 @@
 
 typedef void *FileHandle_t;
 
+typedef int string_t;
+
+typedef struct link_s
+{
+    struct link_s *prev;
+    struct link_s *next;
+} link_t;
+
+struct edict_s;
+
+/* entvars_t do PS2: igual ao do PC sem endpos/startpos/impacttime/starttime
+   (0x20 bytes a menos antes de mins); depois de flags ainda parcial */
+typedef struct entvars_s
+{
+    string_t classname;         /* 0x000 */
+    string_t globalname;        /* 0x004 */
+    float origin[3];            /* 0x008 */
+    float oldorigin[3];         /* 0x014 */
+    float velocity[3];          /* 0x020 */
+    float basevelocity[3];      /* 0x02C */
+    float clbasevelocity[3];    /* 0x038 */
+    float movedir[3];           /* 0x044 */
+    float angles[3];            /* 0x050 */
+    float avelocity[3];         /* 0x05C */
+    float punchangle[3];        /* 0x068 */
+    float v_angle[3];           /* 0x074 */
+    int fixangle;               /* 0x080 */
+    float idealpitch;           /* 0x084 */
+    float pitch_speed;          /* 0x088 */
+    float ideal_yaw;            /* 0x08C */
+    float yaw_speed;            /* 0x090 */
+    int modelindex;             /* 0x094 */
+    string_t model;             /* 0x098 */
+    int viewmodel;              /* 0x09C */
+    int weaponmodel;            /* 0x0A0 */
+    float absmin[3];            /* 0x0A4 */
+    float absmax[3];            /* 0x0B0 */
+    float mins[3];              /* 0x0BC */
+    float maxs[3];              /* 0x0C8 */
+    float size[3];              /* 0x0D4 */
+    float ltime;                /* 0x0E0 */
+    float nextthink;            /* 0x0E4 */
+    int movetype;               /* 0x0E8 */
+    int solid;                  /* 0x0EC */
+    int skin;                   /* 0x0F0 */
+    int body;                   /* 0x0F4 */
+    int effects;                /* 0x0F8 */
+    float gravity;              /* 0x0FC */
+    float friction;             /* 0x100 */
+    int light_level;            /* 0x104 */
+    int sequence;               /* 0x108 */
+    int gaitsequence;           /* 0x10C */
+    float frame;                /* 0x110 */
+    float animtime;             /* 0x114 */
+    float framerate;            /* 0x118 */
+    byte controller[4];         /* 0x11C */
+    byte blending[2];           /* 0x120 */
+    float scale;                /* 0x124 */
+    int rendermode;             /* 0x128 */
+    float renderamt;            /* 0x12C */
+    float rendercolor[3];       /* 0x130 */
+    int renderfx;               /* 0x13C */
+    float health;               /* 0x140 */
+    float frags;                /* 0x144 */
+    int weapons;                /* 0x148 */
+    float takedamage;           /* 0x14C */
+    int deadflag;               /* 0x150 */
+    float view_ofs[3];          /* 0x154 */
+    int button;                 /* 0x160 */
+    int impulse;                /* 0x164 */
+    struct edict_s *chain;      /* 0x168 */
+    struct edict_s *dmg_inflictor; /* 0x16C */
+    struct edict_s *enemy;      /* 0x170 */
+    struct edict_s *aiment;     /* 0x174 */
+    struct edict_s *owner;      /* 0x178 */
+    struct edict_s *groundentity; /* 0x17C */
+    int spawnflags;             /* 0x180 */
+    int flags;                  /* 0x184 */
+    byte unk_188[0x1EC - 0x188];
+} entvars_t; /* 0x1EC */
+
 /* parcial: só os campos já identificados */
 typedef struct edict_s
 {
-    qboolean free;
-    byte unk_04[0xD8 - 0x04];
-    float velocity[3];          /* 0x0D8 (v.velocity) */
-    byte unk_E4[0x23C - 0xE4];
-    int flags;                  /* 0x23C (v.flags) */
-    byte unk_240[0x2A4 - 0x240];
+    qboolean free;              /* 0x00 */
+    int serialnumber;           /* 0x04 */
+    link_t area;                /* 0x08 */
+    byte unk_10[0xB8 - 0x10];
+    entvars_t v;                /* 0xB8 */
 } edict_t; /* 0x2A4 */
 
 #define FL_SPECTATOR (1 << 26)
@@ -98,13 +178,23 @@ typedef struct server_s
     qboolean paused;            /* 0x00004 */
     byte unk_00008[0x18 - 0x08];
     char name[64];              /* 0x00018 */
-    byte unk_00058[0x1B9EC - 0x58];
+    byte unk_00058[0xD8 - 0x58];
+    struct model_s *worldmodel; /* 0x000D8 */
+    byte unk_000DC[0x190E8 - 0xDC];
+    char *model_precache[512];  /* 0x190E8 */
+    struct model_s *models[512]; /* 0x198E8 */
+    char *sound_precache[512];  /* 0x1A0E8 */
+    byte unk_1A8E8[0x1B9EC - 0x1A8E8];
     int num_edicts;             /* 0x1B9EC */
     int max_edicts;             /* 0x1B9F0 */
     edict_t *edicts;            /* 0x1B9F4 */
-    byte unk_1B9F8[0x1C9B0 - 0x1B9F8];
+    byte unk_1B9F8[0x1B9FC - 0x1B9F8];
+    sizebuf_t datagram;         /* 0x1B9FC */
+    byte datagram_buf[4000];    /* 0x1BA10 */
     sizebuf_t reliable_datagram; /* 0x1C9B0 */
-    byte unk_1C9C4[0x2E784 - 0x1C9C4];
+    byte unk_1C9C4[0x1ED2C - 0x1C9C4];
+    sizebuf_t signon;           /* 0x1ED2C */
+    byte unk_1ED40[0x2E784 - 0x1ED40];
 } server_t; /* 0x2E784 */
 
 extern server_t sv;

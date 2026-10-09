@@ -1269,7 +1269,7 @@ int PM_CheckStuck(int clientId)
 	{
 		info = pmove[clientId].physents[hitent].info;
 		ent = EDICT_NUM(info);
-		if (!(ent->flags & FL_SPECTATOR) && !((D_003329F4[info / 8] >> (info % 8)) & 1))
+		if (!(ent->v.flags & FL_SPECTATOR) && !((D_003329F4[info / 8] >> (info % 8)) & 1))
 		{
 			trace.allsolid = pm_stucktrace.allsolid;
 			trace.startsolid = pm_stucktrace.startsolid;
@@ -1281,11 +1281,11 @@ int PM_CheckStuck(int clientId)
 			trace.plane.dist = pm_stucktrace.plane.dist;
 			trace.ent = ent;
 			trace.hitgroup = pm_stucktrace.hitgroup;
-			VectorCopy(sv_player->velocity, oldvel);
-			VectorCopy(pmove[clientId].velocity, sv_player->velocity);
+			VectorCopy(sv_player->v.velocity, oldvel);
+			VectorCopy(pmove[clientId].velocity, sv_player->v.velocity);
 			SV_SetGlobalTrace(&trace);
 			gEntityInterface_pfnTouch(ent, sv_player);
-			VectorCopy(oldvel, sv_player->velocity);
+			VectorCopy(oldvel, sv_player->v.velocity);
 		}
 	}
 
@@ -1997,10 +1997,10 @@ qboolean PM_AddToTouched(pmtrace_t tr, vec3_t impactvelocity, int clientId)
 			trace.hitgroup = tr.hitgroup;
 
 			VectorCopy(pmove[clientId].velocity, oldvel);
-			VectorCopy(impactvelocity, sv_player->velocity);
-			if (!(ent->flags & FL_SPECTATOR) && !pmove[clientId].spectator)
+			VectorCopy(impactvelocity, sv_player->v.velocity);
+			if (!(ent->v.flags & FL_SPECTATOR) && !pmove[clientId].spectator)
 				SV_Impact(ent, sv_player, &trace);
-			VectorSubtract(sv_player->velocity, oldvel, tr.deltavelocity);
+			VectorSubtract(sv_player->v.velocity, oldvel, tr.deltavelocity);
 			VectorCopy(oldvel, pmove[clientId].velocity);
 		}
 		else

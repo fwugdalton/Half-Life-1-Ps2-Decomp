@@ -11,9 +11,32 @@
 typedef struct mnode_s
 {
     int contents;               /* 0x00 */
-    byte unk_04[0x2C];
+    byte unk_04[0x0C - 0x04];
+    struct mplane_s *plane;     /* 0x0C */
+    byte unk_10[0x30 - 0x10];
     struct mnode_s *children[2]; /* 0x30 */
-} mnode_t;
+    unsigned short firstsurface; /* 0x38 */
+    unsigned short numsurfaces; /* 0x3A */
+    byte unk_3C[0x40 - 0x3C];
+} mnode_t; /* 0x40 */
+
+typedef struct texture_s
+{
+    byte unk_00[0x10];
+    char name[16];              /* 0x10 */
+} texture_t;
+
+/* no PS2 o mtexinfo_t vem embutido no começo da superfície */
+typedef struct msurface_s
+{
+    float vecs[2][4];           /* 0x00 */
+    float mipadjust;            /* 0x20 */
+    texture_t *texture;         /* 0x24 */
+    byte unk_28[0x40 - 0x28];
+    short texturemins[2];       /* 0x40 */
+    short extents[2];           /* 0x44 */
+    byte unk_48[0x90 - 0x48];
+} msurface_t; /* 0x90 */
 
 typedef struct mleaf_s
 {
@@ -62,7 +85,11 @@ typedef struct model_s
     byte unk_84[0x9C - 0x84];
     int numleafs;               /* 0x9C */
     mleaf_t *leafs;             /* 0xA0 */
-    byte unk_A4[0xDC - 0xA4];
+    byte unk_A4[0xB8 - 0xA4];
+    mnode_t *nodes;             /* 0xB8 */
+    byte unk_BC[0xC0 - 0xBC];
+    msurface_t *surfaces;       /* 0xC0 */
+    byte unk_C4[0xDC - 0xC4];
     hull_t hulls[4];            /* 0xDC */
 } model_t;
 

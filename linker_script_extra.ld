@@ -7,3 +7,4 @@ D_0038C5F8 = 0x0038C5F8; /* "half-life.east.won.net:27010" */
 D_0038D080 = 0x0038D080; /* "\n" (keys.c) */
 D_0038D150 = 0x0038D150; /* "Bad key_dest" (keys.c) */
 D_0038D660 = 0x0038D660; /* "\n" (pmove.c) */
+D_0038D8F8 = 0x0038D8F8; /* "%s" (pr_cmds.c) */
