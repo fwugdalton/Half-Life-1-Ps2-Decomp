@@ -66,6 +66,8 @@ O `make` termina com `build/SLUS_200.66.rom: OK` quando o rebuild é idêntico a
 - `engine/mathlib.c`: 100% (código, `.rodata` e `.data`; compilado com `-ffast-math`)
 - `engine/net_chan.c`: 100% (10 funções), `.rodata` e `.data` (`-ffast-math`)
 - `engine/keys.c`: 18 de 19 funções, `.rodata` e `.data` (falta `Key_Event`)
+- `engine/pmove.c`: todo em C menos `PM_FlyMove`; `.rodata` e `.data` (`-ffast-math`). Junta o pmove do motor, o pm_debug e o pm_shared, que dividem a mesma string `"\n"`. No PS2 há um `playermove_t` por jogador local (`pmove[clientId]`)
+- `engine/pmovetst.c`: 15 de 18 funções e `.rodata` (`-ffast-math`); faltam `PM_TestPlayerPosition`, `PM_PlayerTrace` e `PM_PlayerTraceFast`, todas com o C pronto e só diferença de registradores
 
 Funções que ainda não casam ficam com o C em `#ifdef NON_MATCHING` e o asm original via `INCLUDE_ASM`
 (`tools/wrap.py` envolve, `tools/unwrap.py` desfaz; depois `make split` com o venv). Strings que o splat não
