@@ -740,3 +740,4 @@ iy_ran1 = 0x00332370; // size:0x4
 iv_ran1 = 0x004069B8; // size:0x80
 last_spawncount_changelevel = 0x004069B0; // size:0x4
 last_spawncount_map = 0x004069B4; // size:0x4
+gMsgData = 0x00406A38; // size:0xFA

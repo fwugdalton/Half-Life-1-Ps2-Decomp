@@ -103,7 +103,8 @@ segments:
       - [0x2320E8, .data, engine/net_chan]
       - [0x232144, data, cod/232144]
       - [0x232148, .data, engine/pmove]
-      - [0x2322E8, data, cod/2322E8]
+      - [0x2322E8, .data, engine/pr_cmds]
+      - [0x232374, data, cod/232374]
       - [0x236C80, rodata, cod/236C80] # .rodata
       - [0x28B158, .rodata, engine/Cmd]
       - [0x28B538, rodata, cod/28B538]

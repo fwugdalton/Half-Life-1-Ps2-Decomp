@@ -429,8 +429,27 @@ void PF_tracelineNoEnts_DLL(const float *v1, const float *v2, int fNoMonsters, e
     ptr->iHitgroup = gGlobalVariables.trace_hitgroup;
 }
 
-extern vec3_t gHullMins[4];
-extern vec3_t gHullMaxs[4];
+extern byte gMsgData[];
+
+vec3_t gHullMins[4] = {
+    {0.0f, 0.0f, 0.0f},
+    {-16.0f, -16.0f, -36.0f},
+    {-32.0f, -32.0f, -32.0f},
+    {-16.0f, -16.0f, -18.0f},
+};
+vec3_t gHullMaxs[4] = {
+    {0.0f, 0.0f, 0.0f},
+    {16.0f, 16.0f, 36.0f},
+    {32.0f, 32.0f, 32.0f},
+    {16.0f, 16.0f, 18.0f},
+};
+sizebuf_t gMsgBuffer = {false, false, gMsgData, 250, 0};
+edict_t *gMsgEntity = NULL;
+int gMsgDest = 0;
+int gMsgType = 0;
+qboolean gMsgStarted = false;
+int idum = 0;
+int iy_ran1 = 0;
 
 void TraceHull(const float *v1, const float *v2, int fNoMonsters, int hullNumber, edict_t *pentToSkip, TraceResult *ptr)
 {
