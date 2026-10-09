@@ -49,6 +49,9 @@ $(BUILD_DIR)/%.o: %.s
 	$(AS) $(ASFLAGS) -o $@ $<
 	$(OBJCOPY) $(SECTALIGN) $@
 
+# mathlib.c foi compilado com -ffast-math (sqrt.s direto, sem o teste de errno)
+$(BUILD_DIR)/src/engine/mathlib.o: CFLAGS += -ffast-math
+
 $(BUILD_DIR)/src/%.o: src/%.c $(shell find include -name "*.h")
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -S -o $(BUILD_DIR)/src/$*.s0 $<

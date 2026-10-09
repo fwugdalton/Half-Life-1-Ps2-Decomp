@@ -80,7 +80,9 @@ segments:
       - [0x162D58, c, engine/Host]
       - [0x165E18, c, engine/unk_265E18]
       - [0x1664E0, c, engine/keys]
-      - [0x167A90, asm, cod/167A90]
+      - [0x167A90, c, engine/unk_267A90]
+      - [0x167E00, c, engine/mathlib]
+      - [0x169180, asm, cod/169180]
       - [0x1F5980, textbin, cod/1F5980] # .vutext
       - [0x201B00, data, cod/201B00] # .data
       - [0x231C00, .data, engine/Cmd]
@@ -93,6 +95,8 @@ segments:
       - [0x231D80, .data, engine/unk_265E18]
       - [0x231DA8, .data, engine/keys]
       - [0x2320D0, data, cod/2320D0]
+      - [0x2320D8, .data, engine/mathlib]
+      - [0x2320E8, data, cod/2320E8]
       - [0x236C80, rodata, cod/236C80] # .rodata
       - [0x28B158, .rodata, engine/Cmd]
       - [0x28B538, rodata, cod/28B538]
@@ -105,7 +109,8 @@ segments:
       - [0x28C090, .rodata, engine/Host]
       - [0x28C9C8, rodata, cod/28C9C8]
       - [0x28C9D0, .rodata, engine/keys]
-      - [0x28D260, rodata, cod/28D260]
+      - [0x28D260, .rodata, engine/mathlib]
+      - [0x28D2C8, rodata, cod/28D2C8]
       - [0x298E80, gcc_except_table, cod/298E80] # .gcc_except_table
       - [0x298F80, sdata, cod/298F80] # .sdata
       - { type: sbss, vram: 0x00399000, name: cod/00399000 } # .sbss

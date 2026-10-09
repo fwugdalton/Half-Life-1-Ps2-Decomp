@@ -4,6 +4,7 @@
 - .rdata             -> .section .rodata
 - break 7            -> break 0, 7          (o ee-as põe o código no campo baixo)
 - cvt.w.s fd, fs     -> .word (o gas não aceita essa instrução com -march=r5900)
+- sqrt.s fd, fs      -> .word com o operando no campo ft (codificação do R5900)
 - em modo reorder, o ee-as não move mflo/mfhi para o delay slot de um desvio;
   nesses casos o desvio é emitido em noreorder com um nop explícito.
 - também não preenche o delay slot quando a penúltima instrução é sdl/sdr/swl/swr
@@ -55,6 +56,10 @@ for line in lines:
     if m:
         line = '%sbreak\t0,%s' % m.groups()
     m = re.match(r'^(\s+)cvt\.w\.s\s+\$f(\d+),\s*\$f(\d+)\s*$', line)
+    m2 = re.match(r'^(\s+)sqrt\.s\s+\$f(\d+),\s*\$f(\d+)\s*$', line)
+    if m2:
+        # no R5900 o operando do sqrt.s vai no campo ft, não no fs
+        line = '%s.word\t0x%08X' % (m2.group(1), 0x46000004 | (int(m2.group(3)) << 16) | (int(m2.group(2)) << 6))
     if m:
         line = '%s.word\t0x%08X' % (m.group(1), 0x46000024 | (int(m.group(3)) << 11) | (int(m.group(2)) << 6))
         if reorder and prev_real == len(out) - 1 and re.match(r'^\s+mfc1\s', out[prev_real]):
