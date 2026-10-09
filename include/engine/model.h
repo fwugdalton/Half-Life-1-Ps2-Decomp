@@ -25,7 +25,15 @@ typedef struct mleaf_s
 
 typedef struct model_s
 {
-    byte unk_00[0x9C];
+    char name[64];
+    int needload;               /* 0x40 */
+    int type;                   /* 0x44 */
+    int numframes;              /* 0x48 */
+    int synctype;               /* 0x4C */
+    float mins[3];              /* 0x50 */
+    int unk_5C;
+    float maxs[3];              /* 0x60 */
+    byte unk_6C[0x9C - 0x6C];
     int numleafs;               /* 0x9C */
     mleaf_t *leafs;             /* 0xA0 */
 } model_t;
