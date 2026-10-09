@@ -118,7 +118,12 @@ typedef struct edict_s
     qboolean free;              /* 0x00 */
     int serialnumber;           /* 0x04 */
     link_t area;                /* 0x08 */
-    byte unk_10[0xB4 - 0x10];
+    short num_leafs;            /* 0x10 */
+    short max_leafs;            /* 0x12 */
+    short unk_14;               /* 0x14 */
+    short *leafnums;            /* 0x18 */
+    byte unk_1C[0xB0 - 0x1C];
+    float freetime;             /* 0xB0 */
     void *pvPrivateData;        /* 0xB4 */
     entvars_t v;                /* 0xB8 */
 } edict_t; /* 0x2A4 */
