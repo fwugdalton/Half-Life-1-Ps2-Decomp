@@ -3041,11 +3041,154 @@ void Host_Begin_f(void)
     memset(host_client->netchan.latency, 0, sizeof(host_client->netchan.latency));
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Kick_f);
+extern char *D_0055600C;
+int Q_atoi(char *str);
+void SV_DropClient(client_t *cl, qboolean crash);
+struct model_s *Mod_ForName(char *name, qboolean crash);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029D8F0);
+void Host_Kick_f(void)
+{
+    char *p;
+    char *who;
+    char *message;
+    client_t *save;
+    int i;
+    int uid;
+    qboolean byNumber;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Viewmodel_f);
+    message = NULL;
+
+    if (Cmd_Argc() < 2)
+    {
+        Con_Printf("usage:  kick < name > | < # userid >\n");
+        return;
+    }
+
+    if (cmd_source == src_command)
+    {
+        if (!sv.active)
+        {
+            Cmd_ForwardToServer();
+            return;
+        }
+    }
+    else if (host_client->netchan.remote_address.type != 1)
+    {
+        SV_ClientPrintf("You can't 'kick' because you are not a server operator\n");
+        return;
+    }
+
+    save = host_client;
+
+    p = Cmd_Argv(1);
+    if (p && *p == '#')
+    {
+        if (Cmd_Argc() < 3)
+            uid = Q_atoi(p + 1);
+        else
+            uid = Q_atoi(Cmd_Argv(2));
+
+        for (i = 0, host_client = svs.clients; i < svs.maxclients; i++, host_client++)
+        {
+            if (!host_client->active && !host_client->connected)
+                continue;
+            if (host_client->userid == uid)
+                break;
+        }
+        byNumber = true;
+    }
+    else
+    {
+        for (i = 0, host_client = svs.clients; i < svs.maxclients; i++, host_client++)
+        {
+            if (!host_client->active && !host_client->connected)
+                continue;
+            if (!Q_strcasecmp(host_client->name, Cmd_Argv(1)))
+                break;
+        }
+        byNumber = false;
+    }
+
+    if (i < svs.maxclients)
+    {
+        if (cmd_source == src_command)
+        {
+            if (cls[0].state == 0)
+                who = "Console";
+            else
+                who = D_0055600C;
+        }
+        else
+        {
+            who = save->name;
+        }
+
+        if (host_client->netchan.remote_address.type == 1)
+        {
+            Con_Printf("The local player cannot be kicked!\n");
+            return;
+        }
+
+        if (Cmd_Argc() > 2)
+        {
+            message = COM_Parse(Cmd_Args());
+            if (byNumber)
+            {
+                message++;
+                while (*message == ' ')
+                    message++;
+                message += Q_strlen(Cmd_Argv(2));
+            }
+            while (*message == ' ')
+                message++;
+        }
+
+        if (message)
+            SV_ClientPrintf("Kicked by %s: %s\n", who, message);
+        else
+            SV_ClientPrintf("Kicked by %s\n", who);
+
+        SV_DropClient(host_client, false);
+    }
+
+    host_client = save;
+}
+
+edict_t *FindViewthing(void)
+{
+    int i;
+    edict_t *e;
+
+    for (i = 0; i < sv.num_edicts; i++)
+    {
+        e = &sv.edicts[i];
+        if (!strcmp(pr_strings + e->v.classname, "viewthing"))
+            return e;
+    }
+
+    Con_Printf("No viewthing on map\n");
+    return NULL;
+}
+
+void Host_Viewmodel_f(void)
+{
+    edict_t *e;
+    struct model_s *m;
+
+    e = FindViewthing();
+    if (!e)
+        return;
+
+    m = Mod_ForName(Cmd_Argv(1), false);
+    if (!m)
+    {
+        Con_Printf("Can't load %s\n", Cmd_Argv(1));
+        return;
+    }
+
+    e->v.frame = 0;
+    cl[0].model_precache[e->v.modelindex] = m;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Viewframe_f);
 

@@ -1385,3 +1385,4 @@ DirectoryClear = 0x0029C2B8; // type:func
 Host_ClearSaveDirectory = 0x0029C330; // type:func
 Host_ClearGameState = 0x0029C388; // type:func
 Host_Say = 0x0029C948; // type:func
+FindViewthing = 0x0029D8F0; // type:func
