@@ -44,6 +44,18 @@
 #define RES_CUSTOM (1 << 2)
 
 typedef struct sfx_s sfx_t;
+
+/* decallist_t do PS2 (arquivo de decals salvos, cabeçalho "VALV") */
+typedef struct
+{
+    int unk0;                   /* 0x00 */
+    short entityIndex;          /* 0x04 */
+    byte depth;                 /* 0x06 */
+    byte flags;                 /* 0x07 */
+    vec3_t position;            /* 0x08 */
+    vec3_t impactPlaneNormal;   /* 0x14 */
+    char name[16];              /* 0x20 */
+} decallist_t; /* 0x30 */
 typedef int (*pfnUserMsgHook)(int clientId, const char *pszName, int iSize, void *pbuf);
 
 typedef struct _ClUserMsg
@@ -72,10 +84,11 @@ extern char com_gamedir[];
 extern void (*D_003997C0)(char *gamedir);
 extern int protocol_version;
 extern int D_00332F2C;
-extern float D_003334D4; /* r_decals.value */
-extern float D_003334EC; /* mp_decals.value */
-#define r_decals_value D_003334D4
-#define mp_decals_value D_003334EC
+extern cvar_t r_decals;
+extern cvar_t mp_decals;
+extern cvar_t cl_skyname;
+extern cvar_t gl_zmax;
+extern cvar_t gl_wateramp;
 extern char D_00409340[8];  /* static local */
 extern char D_00409348[12]; /* static local */
 
@@ -119,7 +132,15 @@ void Cvar_SetValue(char *var_name, float value);
 int func_00243460(void);
 int func_00243370(void);
 float MSG_ReadCoord(void);
-float func_00243528(void);
+float MSG_ReadFloat(void);
+int COM_CheckParm(char *parm);
+int strcmp(const char *, const char *);
+void *func_0022B118(char *name, char *mode);
+int func_0022BE50(void *buf, int size, int count, void *f);
+void func_0022B238(void *f);
+int Draw_DecalIndexFromName(char *name);
+int Draw_DecalIndex(int id);
+void func_002A58C8(int textureIndex, int entity, int modelIndex, vec3_t position, int flags, int unk);
 float func_002437A8(void);
 int atoi(const char *);
 void Host_Error(const char *error, ...);
@@ -950,8 +971,8 @@ void CL_ParseServerInfo(int clientId)
 
     if (cl[clientId].maxclients > 1)
     {
-        if (mp_decals_value < r_decals_value)
-            Cvar_SetValue("r_decals", mp_decals_value);
+        if (mp_decals.value < r_decals.value)
+            Cvar_SetValue("r_decals", mp_decals.value);
     }
 
     CL_DeallocateDynamicData(clientId);
@@ -1011,7 +1032,7 @@ void CL_ParseBaseline(cl_entity_t *ent)
     for (i = 0; i < 3; i++)
     {
         ent->baseline.origin[i] = MSG_ReadCoord();
-        ent->baseline.angles[i] = func_00243528();
+        ent->baseline.angles[i] = MSG_ReadFloat();
         ent->baseline.mins[i] = MSG_ReadCoord();
         ent->baseline.maxs[i] = MSG_ReadCoord();
     }
@@ -1112,13 +1133,130 @@ void CL_ParseClientdata(int bits, int clientId)
 void func_00296658(void) {
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_parse", func_00296660);
+void CL_ParseStaticSound(int clientId)
+{
+    vec3_t org;
+    char name[80];
+    int sound_num, ent, pitch, fFlags;
+    float vol, atten;
+    int i;
+    sfx_t *sfx;
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_parse", func_002967C8);
+    for (i = 0; i < 3; i++)
+        org[i] = MSG_ReadCoord();
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_parse", func_00296930);
+    sound_num = MSG_ReadShort();
+    vol = MSG_ReadByte() / 255.0f;
+    atten = MSG_ReadByte() / 64.0f;
+    ent = MSG_ReadShort();
+    pitch = MSG_ReadByte();
+    fFlags = MSG_ReadByte();
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_parse", func_002969C0);
+    if (COM_CheckParm("-nosound"))
+        return;
+
+    if (fFlags & SND_FL_SENTENCE)
+    {
+        sfx = (sfx_t *)name;
+        strcpy(name, "!");
+        strcat(name, rgpszrawsentence[sound_num]);
+    }
+    else
+    {
+        sfx = cl[clientId].sound_precache[sound_num];
+    }
+
+    S_StartStaticSound(ent, CHAN_STATIC, sfx, org, vol, atten, fFlags, pitch, clientId);
+}
+
+void CL_ParseMovevars(int clientId)
+{
+    movevars.gravity = MSG_ReadFloat();
+    movevars.stopspeed = MSG_ReadFloat();
+    movevars.maxspeed = MSG_ReadFloat();
+    movevars.spectatormaxspeed = MSG_ReadFloat();
+    movevars.accelerate = MSG_ReadFloat();
+    movevars.airaccelerate = MSG_ReadFloat();
+    movevars.wateraccelerate = MSG_ReadFloat();
+    movevars.friction = MSG_ReadFloat();
+    movevars.edgefriction = MSG_ReadFloat();
+    movevars.waterfriction = MSG_ReadFloat();
+    movevars.entgravity = MSG_ReadFloat();
+    movevars.bounce = MSG_ReadFloat();
+    movevars.stepsize = MSG_ReadFloat();
+    movevars.maxvelocity = MSG_ReadFloat();
+    movevars.zmax = MSG_ReadFloat();
+    movevars.waveHeight = MSG_ReadFloat();
+    strcpy(movevars.skyName, MSG_ReadString());
+
+    if (strcmp(movevars.skyName, cl_skyname.string))
+        Cvar_Set("cl_skyname", movevars.skyName);
+
+    if (movevars.zmax != gl_zmax.value)
+        Cvar_SetValue("gl_zmax", movevars.zmax);
+
+    if (movevars.waveHeight != gl_wateramp.value)
+        Cvar_SetValue("gl_wateramp", movevars.waveHeight);
+
+    if (cl_entities[clientId])
+        cl_entities[clientId][0].scale = gl_wateramp.value;
+}
+
+void CL_ParseSoundFade(int clientId)
+{
+    int percent, holdTime, inTime, outTime;
+
+    percent = MSG_ReadByte();
+    holdTime = MSG_ReadByte();
+    inTime = MSG_ReadByte();
+    outTime = MSG_ReadByte();
+
+    cls[clientId].soundfade.soundFadeStartTime = realtime;
+    cls[clientId].soundfade.nStartPercent = percent;
+    cls[clientId].soundfade.soundFadeOutTime = outTime;
+    cls[clientId].soundfade.soundFadeHoldTime = holdTime;
+    cls[clientId].soundfade.soundFadeInTime = inTime;
+}
+
+void CL_LoadDecals(char *filename)
+{
+    void *f;
+    decallist_t decal;
+    int id, i, count;
+    int n;
+
+    f = func_0022B118(filename, "rb");
+    if (f)
+    {
+        func_0022BE50(&id, 4, 1, f);
+        func_0022BE50(&i, 4, 1, f);
+
+        if (id == ('V' | ('A' << 8) | ('L' << 16) | ('V' << 24)))
+        {
+            func_0022BE50(&count, 4, 1, f);
+            for (i = 0; i < count; i++)
+            {
+                func_0022BE50(decal.name, 1, 16, f);
+                func_0022BE50(&decal.entityIndex, 2, 1, f);
+                func_0022BE50(&decal.depth, 1, 1, f);
+                func_0022BE50(&decal.flags, 1, 1, f);
+                func_0022BE50(decal.position, 12, 1, f);
+
+                if (r_decals.value != 0)
+                {
+                    id = Draw_DecalIndexFromName(decal.name);
+                    func_002A58C8(Draw_DecalIndex(id), decal.entityIndex, 0, decal.position, decal.flags, 0);
+                }
+            }
+        }
+
+        func_0022B238(f);
+    }
+
+    n = MSG_ReadByte();
+    for (i = 0; i < n; i++)
+        Con_Printf("Loading decals from %s\n", MSG_ReadString());
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/cl_parse", func_00296B90);
 

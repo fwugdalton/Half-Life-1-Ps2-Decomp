@@ -177,6 +177,16 @@ typedef struct downloadtime_s
     int nBytesRemaining;
 } downloadtime_t;
 
+typedef struct soundfade_s
+{
+    int nStartPercent;          /* 0x00 */
+    int nClientSoundFadePercent; /* 0x04 */
+    float soundFadeStartTime;   /* 0x08 */
+    int soundFadeOutTime;       /* 0x0C */
+    int soundFadeHoldTime;      /* 0x10 */
+    int soundFadeInTime;        /* 0x14 */
+} soundfade_t; /* 0x18 */
+
 typedef struct client_static_s
 {
     cactive_t state;            /* 0x0000 */
@@ -204,7 +214,7 @@ typedef struct client_static_s
     int dl_unk_7EF4;            /* 0x7EF4 */
     qboolean dl_custom;         /* 0x7EF8 */
     float latency;              /* 0x7EFC */
-    byte unk_7F00[0x7F18 - 0x7F00];
+    soundfade_t soundfade;      /* 0x7F00 */
 } client_static_t;              /* 0x7F18 */
 
 extern client_static_t cls[2];
