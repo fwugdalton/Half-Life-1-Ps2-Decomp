@@ -103,6 +103,7 @@ typedef struct model_s
     char *entities;             /* 0x18C */
     byte unk_190[0x194 - 0x190];
     cache_user_t cache;         /* 0x194 */
+    int unk_198;                /* 0x198 */
 } model_t;
 
 #endif /* ENGINE_MODEL_H */
