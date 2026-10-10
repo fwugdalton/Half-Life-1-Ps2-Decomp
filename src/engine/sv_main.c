@@ -4,6 +4,7 @@
 #include "engine/mathlib.h"
 #include "engine/model.h"
 #include "engine/server.h"
+#include "engine/eiface.h"
 #include "engine/cvar.h"
 #include "engine/cmd.h"
 #include "engine/progdefs.h"
@@ -1091,26 +1092,6 @@ typedef struct saverestore_s
     int currentIndex;           /* 0x1C */
 } SAVERESTOREDATA;
 
-typedef struct
-{
-    void *unk_00[0x1C / 4];
-    void (*pfnSave)(edict_t *pent, struct saverestore_s *pSaveData); /* 0x1C */
-    void *unk_20[(0x3C - 0x20) / 4];
-    int (*pfnClientConnect)(edict_t *pEntity, const char *pszName, const char *pszAddress, char *szRejectReason); /* 0x3C */
-    void (*pfnClientDisconnect)(edict_t *pEntity); /* 0x40 */
-    void *unk_44[(0x50 - 0x44) / 4];
-    void (*pfnClientUserInfoChanged)(edict_t *pEntity, char *infobuffer); /* 0x50 */
-    void (*pfnServerActivate)(edict_t *pEdictList, int edictCount, int clientMax); /* 0x54 */
-    void *unk_58[(0x64 - 0x58) / 4];
-    void (*pfnParmsNewLevel)(void);          /* 0x64 */
-    void (*pfnParmsChangeLevel)(void);       /* 0x68 */
-    const char *(*pfnGetGameDescription)(void); /* 0x6C */
-    void *unk_70[(0x74 - 0x70) / 4];
-    void (*pfnSpectatorConnect)(edict_t *pEntity);    /* 0x74 */
-    void (*pfnSpectatorDisconnect)(edict_t *pEntity); /* 0x78 */
-} DLL_FUNCTIONS;
-
-extern DLL_FUNCTIONS gEntityInterface;
 extern int cmd_source;
 extern float realtime;
 extern UserMsg *sv_gpUserMsgs;
