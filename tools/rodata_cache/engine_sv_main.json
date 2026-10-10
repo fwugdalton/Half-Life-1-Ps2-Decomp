@@ -237,6 +237,10 @@
 "g_playertouch"
 ]
 },
+"SV_EmitPacketEntities": {
+"migrated": [],
+"refs": []
+},
 "SV_ExtractFromUserinfo": {
 "migrated": [
 "D_0038F3D8",
@@ -869,10 +873,6 @@
 "refs": [
 "D_0038F310"
 ]
-},
-"func_0027F670": {
-"migrated": [],
-"refs": []
 },
 "func_0027F910": {
 "migrated": [],

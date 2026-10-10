@@ -113,6 +113,13 @@ typedef struct entvars_s
 } entvars_t; /* 0x1EC: acaba em pContainingEntity (sem playerclass..euser4) */
 
 /* parcial: só os campos já identificados */
+typedef struct entity_state_s
+{
+    int entityType;             /* 0x00 */
+    int number;                 /* 0x04 */
+    byte unk_08[0x94 - 0x08];
+} entity_state_t; /* 0x94 */
+
 typedef struct edict_s
 {
     qboolean free;              /* 0x00 */
@@ -122,7 +129,7 @@ typedef struct edict_s
     short max_leafs;            /* 0x12 */
     short unk_14;               /* 0x14 */
     short *leafnums;            /* 0x18 */
-    byte unk_1C[0xB0 - 0x1C];
+    entity_state_t baseline;    /* 0x1C */
     float freetime;             /* 0xB0 */
     void *pvPrivateData;        /* 0xB4 */
     entvars_t v;                /* 0xB8 */

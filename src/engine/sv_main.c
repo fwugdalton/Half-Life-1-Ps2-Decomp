@@ -1296,7 +1296,7 @@ extern netadr_t net_from;
 mleaf_t *Mod_PointInLeaf(vec_t *p, model_t *model);
 void ED_LoadFromFile(char *data);
 struct packet_entities_s;
-void func_0027F670(int a, client_t *client, struct packet_entities_s *pack, sizebuf_t *msg);
+int SV_EmitPacketEntities(int unused, client_t *client, struct packet_entities_s *to, sizebuf_t *msg);
 
 typedef struct
 {
@@ -1912,12 +1912,6 @@ int SV_PointLeafnum(vec_t *p)
 }
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027E480);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027EA70);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027F670);
-typedef struct entity_state_s
-{
-    byte unk_00[0x94];
-} entity_state_t; /* 0x94 */
-
 typedef struct packet_entities_s
 {
     int num_entities;
@@ -1930,9 +1924,107 @@ typedef struct
     entity_state_t entities[256];
 } full_packet_entities_t;
 
+void MSG_WriteBitsUInt(unsigned int *data, int numbits);
+void func_0027EA70(entity_state_t *from, entity_state_t *to, sizebuf_t *msg, qboolean force);
+
+#define svc_packetentities 41
+#define U_REMOVE 0x10
+
+int SV_EmitPacketEntities(int unused, client_t *client, struct packet_entities_s *to, sizebuf_t *msg)
+{
+    packet_entities_t *from;
+    int oldindex, newindex;
+    int oldnum, newnum;
+    int oldmax;
+    edict_t *ent;
+    unsigned int bits;
+    byte bval;
+    unsigned short sval;
+    byte nval;
+    unsigned int zero;
+
+    from = NULL;
+    oldmax = 0;
+
+    MSG_WriteByte(msg, svc_packetentities);
+    newindex = 0;
+    MSG_WriteShort(msg, to->num_entities);
+    MSG_StartBitWriting(msg);
+
+    oldindex = 0;
+    while (newindex < to->num_entities || oldindex < oldmax)
+    {
+        newnum = newindex >= to->num_entities ? 9999 : to->entities[newindex].number;
+        oldnum = oldindex >= oldmax ? 9999 : from->entities[oldindex].number;
+
+        if (newnum == oldnum)
+        {
+            func_0027EA70(&from->entities[oldindex], &to->entities[newindex], msg, false);
+            oldindex++;
+            newindex++;
+            continue;
+        }
+
+        if (newnum < oldnum)
+        {
+            ent = EDICT_NUM(newnum);
+            func_0027EA70(&ent->baseline, &to->entities[newindex], msg, true);
+            newindex++;
+            continue;
+        }
+
+        if (newnum > oldnum)
+        {
+            bits = U_REMOVE;
+            if (oldnum >= 256)
+                bits |= 0x8000;
+            if (bits >= 0x100)
+                bits |= 1;
+            if (bits > 0xFFFF)
+                bits |= 0x100;
+            if (bits > 0xFFFFFF)
+                bits |= 0x800000;
+
+            bval = bits;
+            MSG_WriteBitsUChar(&bval, 8);
+            if (bits & 1)
+            {
+                bval = bits >> 8;
+                MSG_WriteBitsUChar(&bval, 8);
+            }
+            if (bits & 0x100)
+            {
+                bval = bits >> 16;
+                MSG_WriteBitsUChar(&bval, 8);
+            }
+            if (bits & 0x800000)
+            {
+                bval = bits >> 24;
+                MSG_WriteBitsUChar(&bval, 8);
+            }
+
+            if (bits & 0x8000)
+            {
+                sval = oldnum;
+                MSG_WriteBitsUShort(&sval, 10);
+            }
+            else
+            {
+                nval = oldnum;
+                MSG_WriteBitsUChar(&nval, 8);
+            }
+            oldindex++;
+        }
+    }
+
+    zero = 0;
+    MSG_WriteBitsUInt(&zero, 32);
+    MSG_EndBitWriting(msg);
+    return msg->cursize;
+}
 void func_0027F910(client_t *client, packet_entities_t *pack, sizebuf_t *msg)
 {
-    func_0027F670(0, client, pack, msg);
+    SV_EmitPacketEntities(0, client, pack, msg);
 }
 extern int host_framecount;
 

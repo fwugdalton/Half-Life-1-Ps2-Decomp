@@ -951,3 +951,4 @@ SV_ActivateServer = 0x002823C8; // type:func
 SV_Physics = 0x00287A40; // type:func
 SV_CreateBaseline = 0x00281D98; // type:func
 SVC_GetChallenge = 0x0027D0F8; // type:func
+SV_EmitPacketEntities = 0x0027F670; // type:func
