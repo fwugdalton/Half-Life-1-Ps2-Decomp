@@ -1288,7 +1288,7 @@ qboolean NET_CompareAdr(netadr_t a, netadr_t b);
 char *Info_ValueForKey(char *s, char *key);
 void func_00244AC8(char *s, char *key);
 void SV_ClearResourceLists(client_t *cl);
-int func_002E60D8(const char *a, const char *b, int n);
+int strncasecmp(const char *a, const char *b, int n);
 void Netchan_Setup(int sock, netchan_t *chan, netadr_t adr);
 void Netchan_OutOfBandPrint(int sock, netadr_t adr, int unk, char *format, ...);
 void Log_Printf(char *fmt, ...);
@@ -1309,7 +1309,7 @@ qboolean NET_CompareAdr(netadr_t a, netadr_t b);
 char *Info_ValueForKey(char *s, char *key);
 void func_00244AC8(char *s, char *key);
 void SV_ClearResourceLists(client_t *cl);
-int func_002E60D8(const char *a, const char *b, int n);
+int strncasecmp(const char *a, const char *b, int n);
 void Netchan_Setup(int sock, netchan_t *chan, netadr_t adr);
 void Netchan_OutOfBandPrint(int sock, netadr_t adr, int unk, char *format, ...);
 void Log_Printf(char *fmt, ...);
@@ -1330,7 +1330,7 @@ qboolean NET_CompareAdr(netadr_t a, netadr_t b);
 char *Info_ValueForKey(char *s, char *key);
 void func_00244AC8(char *s, char *key);
 void SV_ClearResourceLists(client_t *cl);
-int func_002E60D8(const char *a, const char *b, int n);
+int strncasecmp(const char *a, const char *b, int n);
 void Netchan_Setup(int sock, netchan_t *chan, netadr_t adr);
 void Netchan_OutOfBandPrint(int sock, netadr_t adr, int unk, char *format, ...);
 void Log_Printf(char *fmt, ...);
@@ -1351,7 +1351,7 @@ qboolean NET_CompareAdr(netadr_t a, netadr_t b);
 char *Info_ValueForKey(char *s, char *key);
 void func_00244AC8(char *s, char *key);
 void SV_ClearResourceLists(client_t *cl);
-int func_002E60D8(const char *a, const char *b, int n);
+int strncasecmp(const char *a, const char *b, int n);
 void Netchan_Setup(int sock, netchan_t *chan, netadr_t adr);
 void Netchan_OutOfBandPrint(int sock, netadr_t adr, int unk, char *format, ...);
 void Log_Printf(char *fmt, ...);
@@ -1372,7 +1372,7 @@ qboolean NET_CompareAdr(netadr_t a, netadr_t b);
 char *Info_ValueForKey(char *s, char *key);
 void func_00244AC8(char *s, char *key);
 void SV_ClearResourceLists(client_t *cl);
-int func_002E60D8(const char *a, const char *b, int n);
+int strncasecmp(const char *a, const char *b, int n);
 void Netchan_Setup(int sock, netchan_t *chan, netadr_t adr);
 void Netchan_OutOfBandPrint(int sock, netadr_t adr, int unk, char *format, ...);
 void Log_Printf(char *fmt, ...);
@@ -1393,7 +1393,7 @@ qboolean NET_CompareAdr(netadr_t a, netadr_t b);
 char *Info_ValueForKey(char *s, char *key);
 void func_00244AC8(char *s, char *key);
 void SV_ClearResourceLists(client_t *cl);
-int func_002E60D8(const char *a, const char *b, int n);
+int strncasecmp(const char *a, const char *b, int n);
 void Netchan_Setup(int sock, netchan_t *chan, netadr_t adr);
 void Netchan_OutOfBandPrint(int sock, netadr_t adr, int unk, char *format, ...);
 void Log_Printf(char *fmt, ...);
@@ -1607,7 +1607,7 @@ invalid:
         {
             if (!cl->active && !cl->spawned && !cl->connected)
                 continue;
-            if (!func_002E60D8(cdkey, cl->hashedcdkey, 32))
+            if (!strncasecmp(cdkey, cl->hashedcdkey, 32))
                 count++;
         }
         if (count >= 5)
