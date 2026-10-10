@@ -33,6 +33,7 @@ typedef struct
     int cdAudioTrack;           /* 0x8C */
     int maxClients;             /* 0x90 */
     int maxEntities;            /* 0x94 */
+    char *pStringBase;          /* 0x98 */
 } globalvars_t;
 
 extern globalvars_t gGlobalVariables;

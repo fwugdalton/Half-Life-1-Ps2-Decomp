@@ -965,3 +965,4 @@ sv_logrelay = 0x00332410; // size:0x14
 MSG_WriteWord = 0x00241F58; // type:func
 SV_AddEntitiesToPacket = 0x00280700; // type:func
 MSG_WriteBitsShort = 0x00242BC0; // type:func
+SV_SpawnServer = 0x002825C8; // type:func

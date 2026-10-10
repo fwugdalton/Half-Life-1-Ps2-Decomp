@@ -31,9 +31,12 @@ typedef struct texture_s
 typedef struct msurface_s
 {
     float vecs[2][4];           /* 0x00 */
-    float mipadjust;            /* 0x20 */
+    short unk_20;               /* 0x20 */
+    unsigned short flags;       /* 0x22 */
     texture_t *texture;         /* 0x24 */
-    byte unk_28[0x40 - 0x28];
+    byte unk_28[0x38 - 0x28];
+    void *unk_38;               /* 0x38 */
+    byte unk_3C[0x40 - 0x3C];
     short texturemins[2];       /* 0x40 */
     short extents[2];           /* 0x44 */
     byte unk_48[0x90 - 0x48];
@@ -83,12 +86,14 @@ typedef struct model_s
     float maxs[3];              /* 0x60 */
     byte unk_6C[0x80 - 0x6C];
     int flags;                  /* 0x80 */
-    byte unk_84[0x9C - 0x84];
+    byte unk_84[0x8C - 0x84];
+    int numsubmodels;           /* 0x8C */
+    byte unk_90[0x9C - 0x90];
     int numleafs;               /* 0x9C */
     mleaf_t *leafs;             /* 0xA0 */
     byte unk_A4[0xB8 - 0xA4];
     mnode_t *nodes;             /* 0xB8 */
-    byte unk_BC[0xC0 - 0xBC];
+    int numsurfaces;            /* 0xBC */
     msurface_t *surfaces;       /* 0xC0 */
     byte unk_C4[0xDC - 0xC4];
     hull_t hulls[4];            /* 0xDC */

@@ -292,7 +292,7 @@ typedef struct server_s
     int lastcheck;              /* 0x00010 */
     float lastchecktime;        /* 0x00014 */
     char name[64];              /* 0x00018 */
-    byte unk_00058[0x98 - 0x58];
+    char startspot[64];         /* 0x00058 */
     char modelname[64];         /* 0x00098 */
     struct model_s *worldmodel; /* 0x000D8 */
     unsigned int worldmapCRC;   /* 0x000DC */

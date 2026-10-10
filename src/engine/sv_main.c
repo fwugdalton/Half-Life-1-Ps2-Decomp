@@ -3128,7 +3128,261 @@ void SV_ActivateServer(int runPhysics)
     else
         Con_DPrintf("Game started\n");
 }
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_002825C8);
+extern char D_0038E6F8[]; /* "sv_clienttrace" */
+extern cvar_t coop;
+extern cvar_t deathmatch;
+extern cvar_t skill;
+extern int D_003995D0;
+extern int D_00332F2C;
+extern int D_003994B8;
+extern char *D_003323C8;
+extern int D_00332F34;
+extern int D_00399410;
+void SV_ReconnectAllClients(void);
+void Log_Open(void);
+void Log_Printf(char *fmt, ...);
+void Host_PrintServerCvars(void);
+void func_002C70A8(qboolean multiplayer);
+void Cvar_SetValue(char *var_name, float value);
+void Host_ClearMemory(qboolean bQuiet);
+int func_00245408(int maxclients);
+void *Hunk_AllocName(int size, char *name);
+model_t *Mod_ForName(char *name, qboolean crash);
+void func_002A47F0(void);
+void CRC32_Init(unsigned int *pulCRC);
+qboolean CRC_MapFile(unsigned int *crcvalue, char *pszFileName);
+qboolean CRC_File(unsigned int *crcvalue, char *pszFileName);
+void func_0028F5C8(void);
+void func_002A40E8(void);
+void func_002A4110(msurface_t *surf);
+int func_002A3C00(void *p);
+void func_002A4180(void);
+void func_002A40B8(int total);
+void func_00236108(char *server);
+int func_002E0F18(float f);
+
+extern char D_004D7FC0[512][5];
+extern cvar_t D_00332548;
+
+#ifdef NON_MATCHING
+int SV_SpawnServer(int unused, char *server, char *startspot)
+{
+    edict_t *ent;
+    edict_t *world;
+    int i;
+    int k;
+    int j;
+    int total;
+    client_t *cl;
+    model_t *mod;
+    char szDllName[64];
+
+    if (sv.active && svs.maxclients > 1)
+    {
+        SV_ReconnectAllClients();
+
+        for (i = 0, cl = svs.clients; i < svs.maxclients; i++, cl++)
+        {
+            if (!cl->active && !cl->spawned && !cl->connected)
+                continue;
+
+            ent = cl->edict;
+            if (!ent || ent->free)
+                continue;
+
+            if (!ent->pvPrivateData)
+            {
+                Con_Printf("Skipping reconnect on %s, no pvPrivateData\n", cl->name);
+                continue;
+            }
+
+            if (cl->spectator)
+                gEntityInterface.pfnSpectatorDisconnect(ent);
+            else
+                gEntityInterface.pfnClientDisconnect(ent);
+        }
+    }
+
+    Log_Open();
+    Log_Printf("Spawning server \"%s\"\n", server);
+    Host_PrintServerCvars();
+    func_002C70A8(svs.maxclients > 1);
+
+    if (!hostname.string[0])
+        Cvar_Set("hostname", "Half-Life");
+
+    D_003995D0 = 0;
+
+    if (startspot)
+        Con_DPrintf("Spawn Server %s: [%s]\n", server, startspot);
+    else
+        Con_DPrintf("Spawn Server %s\n", server);
+
+    D_00332F2C = ++svs.spawncount;
+
+    if (coop.value)
+        Cvar_SetValue("deathmatch", 0);
+
+    D_003994B8 = (int)(skill.value + 0.5f);
+    if (D_003994B8 < 0)
+        D_003994B8 = 0;
+    if (D_003994B8 > 3)
+        D_003994B8 = 3;
+    Cvar_SetValue("skill", (float)D_003994B8);
+
+    Host_ClearMemory(false);
+
+    memset(&sv, 0, sizeof(sv));
+    strcpy(sv.name, server);
+    if (startspot)
+        strcpy(sv.startspot, startspot);
+    else
+        sv.startspot[0] = 0;
+
+    pr_strings = gGlobalVariables.pStringBase = D_003323C8;
+
+    if (svs.maxclients == 1)
+        Cvar_SetValue(D_0038E6F8, 1.0f);
+
+    sv.max_edicts = func_00245408(svs.maxclients);
+
+    SV_DeallocateDynamicData();
+    SV_ReallocateDynamicData();
+
+    gGlobalVariables.maxEntities = sv.max_edicts;
+
+    sv.edicts = Hunk_AllocName(sv.max_edicts * sizeof(edict_t), "edicts");
+
+    sv.datagram.maxsize = sizeof(sv.datagram_buf);
+    sv.datagram.cursize = 0;
+    sv.datagram.data = sv.datagram_buf;
+
+    sv.reliable_datagram.maxsize = sizeof(sv.reliable_datagram_buf);
+    sv.reliable_datagram.cursize = 0;
+    sv.reliable_datagram.data = sv.reliable_datagram_buf;
+
+    sv.unk_1D964.maxsize = sizeof(sv.unk_1D978);
+    sv.unk_1D964.data = sv.unk_1D978;
+
+    sv.multicast.maxsize = sizeof(sv.multicast_buf);
+    sv.multicast.data = sv.multicast_buf;
+
+    sv.signon.maxsize = sizeof(sv.signon_buffers[0]);
+    sv.signon.cursize = 0;
+    sv.signon.data = sv.signon_buffers[0];
+
+    sv.num_signon_buffers = 1;
+
+    sv.num_edicts = svs.maxclients + 1;
+    for (i = 0; i < svs.maxclients; i++)
+        {
+        ent = sv.edicts + i + 1;
+        svs.clients[i].edict = ent;
+    }
+
+    D_00332F34 = 1;
+    gGlobalVariables.maxClients = svs.maxclients;
+
+    sv.state = 1;
+    gGlobalVariables.time = 1.0f;
+    sv.time = 1.0f;
+    sv.paused = false;
+
+    strcpy(sv.name, server);
+    sprintf(sv.modelname, "maps/%s.bs2", server);
+    sv.worldmodel = Mod_ForName(sv.modelname, false);
+    func_002A47F0();
+
+    if (!sv.worldmodel)
+    {
+        Con_Printf("Couldn't spawn server %s\n", sv.modelname);
+        sv.active = false;
+        return 0;
+    }
+
+    if (svs.maxclients > 1)
+    {
+        CRC32_Init(&sv.worldmapCRC);
+        if (!CRC_MapFile(&sv.worldmapCRC, sv.modelname))
+        {
+            Con_Printf("Couldn't CRC server map:  %s\n", sv.modelname);
+            sv.active = false;
+            return 0;
+        }
+
+        sprintf(szDllName, "cl_dlls/client.dll");
+        CRC32_Init(&sv.clientdllmd5);
+        if (!CRC_File(&sv.clientdllmd5, szDllName))
+        {
+            Con_Printf("Couldn't CRC client side dll:  %s\n", szDllName);
+            sv.active = false;
+            return 0;
+        }
+    }
+    else
+    {
+        sv.worldmapCRC = 0;
+        sv.clientdllmd5 = 0;
+    }
+
+    sv.models[1] = sv.worldmodel;
+    func_0028F5C8();
+
+    sv.model_precache[1] = sv.modelname;
+    sv.sound_precache[0] = pr_strings;
+    sv.model_precache[0] = pr_strings;
+
+    for (i = 1; i < sv.worldmodel->numsubmodels; i++)
+    {
+        sv.model_precache[1 + i] = D_004D7FC0[i];
+        sv.models[i + 1] = Mod_ForName(D_004D7FC0[i], false);
+    }
+
+    func_002A40E8();
+    total = 0;
+    for (k = 1; k < 512 && (mod = sv.models[k]); k++)
+    {
+        if (mod->name[0] == '*')
+            continue;
+        for (j = 0; j < mod->numsurfaces; j++)
+        {
+            func_002A4110(&mod->surfaces[j]);
+            if (!(mod->surfaces[j].flags & 0x110))
+                total += func_002A3C00(mod->surfaces[j].unk_38);
+        }
+    }
+    func_002A4180();
+    func_002A40B8(total);
+
+    func_00236108(server);
+
+    world = sv.edicts;
+    memset(&world->v, 0, sizeof(entvars_t));
+    world->free = false;
+    world->v.model = sv.worldmodel->name - pr_strings;
+    world->v.modelindex = 1;
+    world->v.solid = 4;
+    world->v.movetype = 7;
+
+    gGlobalVariables.deathmatch = 0;
+    gGlobalVariables.coop = 0;
+    if (coop.value)
+        gGlobalVariables.coop = coop.value;
+    else
+        gGlobalVariables.deathmatch = deathmatch.value;
+
+    gGlobalVariables.serverflags = svs.serverflags;
+    gGlobalVariables.mapname = sv.name - pr_strings;
+    gGlobalVariables.startspot = sv.startspot - pr_strings;
+
+    D_00399410 = func_002E0F18(D_00332548.value);
+    SV_SetMoveVars();
+
+    return 1;
+}
+#else
+INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_SpawnServer);
+#endif
 void SV_LoadEntities(void)
 {
     ED_LoadFromFile(sv.worldmodel->entities);
@@ -3272,7 +3526,6 @@ void func_00283130(void)
 }
 void Pmove_Init(void);
 void func_0028B308(void);
-extern char D_004D7FC0[512][5];
 extern cvar_t D_003326F8;
 extern cvar_t D_00332968;
 extern cvar_t sv_aim;
@@ -3306,7 +3559,6 @@ extern cvar_t sv_wateramp;
 extern cvar_t sv_skyname;
 extern cvar_t sv_maxvelocity;
 extern cvar_t D_003324D0;
-extern cvar_t D_00332548;
 extern cvar_t D_00332560;
 extern cvar_t D_00332578;
 extern cvar_t D_00332590;
