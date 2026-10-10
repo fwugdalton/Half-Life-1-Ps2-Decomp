@@ -1014,3 +1014,4 @@ SV_ClearResourceList = 0x002889B8; // type:func
 NET_IsLocalAddress = 0x002C6EA8; // type:func
 SV_BeginRedirect = 0x00297C68; // type:func
 SV_EndRedirect = 0x00297C98; // type:func
+sv_idealpitchscale = 0x00332968; // size:0x14

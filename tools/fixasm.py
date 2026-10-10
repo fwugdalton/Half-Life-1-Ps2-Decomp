@@ -12,7 +12,8 @@
   nem quando a última instrução lê um registrador de FPU carregado pela penúltima.
 - depois de mtc1 (inclusive o li.s expandido), o ee-as põe um nop se a instrução
   seguinte lê o mesmo par de registradores de FPU ($f2 e $f3 contam como o mesmo),
-  mesmo com um rótulo no meio (aí o nop fica antes do rótulo).
+  mesmo com um rótulo no meio (aí o nop fica antes do rótulo); se a instrução depois
+  do rótulo não lê o registrador, não há nop (o mtc1 vira .word para o gas não pôr um).
 - cvt.w.s (.word) logo depois de mfc1 vai em noreorder: o gas poria um nop entre os dois.
 - o ee-as também não preenche o delay slot de um desvio quando a instrução anterior
   precisou do nop do mtc1 (visto em conversão unsigned->float seguida de b).
@@ -139,6 +140,15 @@ for line in lines:
             else:
                 out.append('\tnop')
             after_nop.add(len(out))
+        elif reorder and pending_fpr is not None and label_at is not None:
+            # mtc1 seguido de rótulo cuja instrução não lê o registrador: o ee-as não põe nop,
+            # mas o gas moderno poria (não sabe o que vem depois do rótulo)
+            # (um li.s/mtc1 logo antes também vira .word, senão o gas põe o nop antes do .word)
+            idxs = [pending_idx]
+            while idxs[0] > 0 and FPWRITE.match(out[idxs[0] - 1]):
+                idxs.insert(0, idxs[0] - 1)
+            for i in reversed(idxs):
+                out[i:i + 1] = raw_mtc1(out[i])
         pending_fpr = None
         label_at = None
         m = FPWRITE.match(line)

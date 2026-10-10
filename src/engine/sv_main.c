@@ -4704,7 +4704,7 @@ void func_00283130(void)
 void Pmove_Init(void);
 void func_0028B308(void);
 extern cvar_t D_003326F8;
-extern cvar_t D_00332968;
+extern cvar_t sv_idealpitchscale;
 extern cvar_t sv_aim;
 extern cvar_t D_00332428;
 extern cvar_t violence_hblood;
@@ -4771,7 +4771,7 @@ void SV_Init(void)
     Cvar_RegisterVariable(&D_003326F8);
     Cvar_RegisterVariable(&sv_lan);
     Cvar_RegisterVariable(&sv_password);
-    Cvar_RegisterVariable(&D_00332968);
+    Cvar_RegisterVariable(&sv_idealpitchscale);
     Cvar_RegisterVariable(&sv_aim);
     Cvar_RegisterVariable(&D_00332428);
     Cvar_RegisterVariable(&violence_hblood);
