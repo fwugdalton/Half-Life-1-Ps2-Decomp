@@ -29,6 +29,10 @@ typedef struct
     float trace_inwater;        /* 0x7C */
     int trace_hitgroup;         /* 0x80 */
     int trace_flags;            /* 0x84 */
+    int msg_entity;             /* 0x88 */
+    int cdAudioTrack;           /* 0x8C */
+    int maxClients;             /* 0x90 */
+    int maxEntities;            /* 0x94 */
 } globalvars_t;
 
 extern globalvars_t gGlobalVariables;

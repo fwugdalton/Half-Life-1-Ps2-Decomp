@@ -107,7 +107,6 @@
 "D_00332638",
 "D_00332650",
 "D_00332668",
-"D_00332680",
 "D_00332698",
 "D_003326B0",
 "D_003326C8",
@@ -149,6 +148,7 @@
 "sv_lan",
 "sv_maxspeed",
 "sv_maxvelocity",
+"sv_netsize",
 "sv_skyname",
 "sv_spectatormaxspeed",
 "sv_stepsize",
@@ -217,6 +217,12 @@
 "g_moved_from",
 "g_playertouch",
 "sv"
+]
+},
+"SV_SendUserReg": {
+"migrated": [],
+"refs": [
+"sv_gpNewUserMsgs"
 ]
 },
 "SV_ServerLog_f": {
@@ -599,9 +605,9 @@
 "D_003997F8",
 "D_003997FF",
 "D_004A96D0",
-"D_0053DD70",
 "cls",
 "com_gamedir",
+"gEntityInterface",
 "net_from",
 "protocol_version",
 "sv",
@@ -840,13 +846,13 @@
 "D_0038F3B8"
 ],
 "refs": [
-"D_003323D4",
 "D_0038F3B8",
 "D_004C50B4",
 "D_004C6068",
 "host_client",
 "realtime",
 "sv",
+"sv_gpNewUserMsgs",
 "sv_gpUserMsgs",
 "svs"
 ]
@@ -936,7 +942,7 @@
 "migrated": [],
 "refs": [
 "D_004A9228",
-"D_0053DD70",
+"gEntityInterface",
 "host_client",
 "svs"
 ]
@@ -947,7 +953,6 @@
 "D_0038F540"
 ],
 "refs": [
-"D_003323D4",
 "D_0038E630",
 "D_0038E6C0",
 "D_0038F520",
@@ -956,6 +961,7 @@
 "host_client",
 "host_frametime",
 "sv",
+"sv_gpNewUserMsgs",
 "sv_gpUserMsgs",
 "svs"
 ]
@@ -1008,8 +1014,8 @@
 "D_004C7FE4",
 "D_004C843C",
 "D_004D7FC0",
-"D_0053DD70",
 "coop",
+"gEntityInterface",
 "gGlobalVariables",
 "pr_strings",
 "skill",
@@ -1032,9 +1038,9 @@
 "func_00282E40": {
 "migrated": [],
 "refs": [
-"D_003323D4",
 "D_003323DC",
 "D_0038E8F8",
+"sv_gpNewUserMsgs",
 "sv_gpUserMsgs"
 ]
 },

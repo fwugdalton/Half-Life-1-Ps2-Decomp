@@ -6,6 +6,8 @@
 #include "engine/server.h"
 #include "engine/cvar.h"
 #include "engine/cmd.h"
+#include "engine/progdefs.h"
+#include "engine/pmove.h"
 
 extern edict_t **g_moved_edict;
 extern vec3_t *g_moved_from;
@@ -1006,8 +1008,195 @@ void SV_QueryMovevarsChanged(void)
 void func_0027BF20(void)
 {
 }
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027BF28);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027C1B8);
+extern cvar_t developer, coop, deathmatch;
+extern int protocol_version;
+extern char com_gamedir[];
+extern char *pr_strings;
+extern client_t *host_client;
+int build_number(void);
+void MSG_WriteLong(sizebuf_t *sb, int c);
+void MSG_WriteShort(sizebuf_t *sb, int c);
+void COM_FileBase(char *in, char *out);
+
+#define svc_print 8
+#define svc_serverinfo 11
+#define svc_setview 5
+#define svc_cdtrack 32
+
+void SV_SendServerinfo(client_t *client)
+{
+    char message[2048];
+    int playernum;
+
+    if (developer.value || svs.maxclients > 1)
+    {
+        MSG_WriteByte(&client->netchan.message, svc_print);
+        sprintf(message, "%c\nBUILD %d SERVER (%i CRC)\nServer # %i\n", 2, build_number(), 0, svs.spawncount);
+        MSG_WriteString(&client->netchan.message, message);
+    }
+
+    MSG_WriteByte(&client->netchan.message, svc_serverinfo);
+    MSG_WriteLong(&client->netchan.message, protocol_version);
+    MSG_WriteLong(&client->netchan.message, svs.spawncount);
+    MSG_WriteLong(&client->netchan.message, sv.worldmapCRC);
+    MSG_WriteLong(&client->netchan.message, sv.clientdllmd5);
+    MSG_WriteByte(&client->netchan.message, svs.maxclients);
+
+    playernum = NUM_FOR_EDICT(client->edict) - 1;
+    if (client->spectator)
+        playernum |= 128;
+    MSG_WriteByte(&client->netchan.message, playernum);
+
+    if (coop.value == 0 && deathmatch.value != 0)
+        MSG_WriteByte(&client->netchan.message, 1);
+    else
+        MSG_WriteByte(&client->netchan.message, 0);
+
+    COM_FileBase(com_gamedir, message);
+    MSG_WriteString(&client->netchan.message, message);
+    MSG_WriteString(&client->netchan.message, sv.modelname);
+
+    sprintf(message, "%s", pr_strings + sv.edicts->v.message);
+    MSG_WriteString(&client->netchan.message, message);
+
+    SV_WriteMovevarsToClient(&host_client->netchan.message);
+
+    MSG_WriteByte(&client->netchan.message, svc_cdtrack);
+    MSG_WriteByte(&client->netchan.message, gGlobalVariables.cdAudioTrack);
+    MSG_WriteByte(&client->netchan.message, gGlobalVariables.cdAudioTrack);
+
+    MSG_WriteByte(&client->netchan.message, svc_setview);
+    MSG_WriteShort(&client->netchan.message, NUM_FOR_EDICT(client->edict));
+
+    MSG_WriteByte(&client->netchan.message, 48);
+    MSG_WriteLong(&client->netchan.message, svs.spawncount);
+    MSG_WriteLong(&client->netchan.message, 0);
+
+    client->spawned = false;
+    client->connected = true;
+    client->unk_73D4 = true;
+
+    func_0027BF20();
+}
+typedef struct
+{
+    void *unk_00[0x3C / 4];
+    int (*pfnClientConnect)(edict_t *pEntity, const char *pszName, const char *pszAddress, char *szRejectReason); /* 0x3C */
+    void (*pfnClientDisconnect)(edict_t *pEntity); /* 0x40 */
+    void *unk_44[(0x64 - 0x44) / 4];
+    void (*unk_64)(void);                     /* 0x64 */
+    void *unk_68[(0x74 - 0x68) / 4];
+    void (*pfnSpectatorConnect)(edict_t *pEntity);    /* 0x74 */
+    void (*pfnSpectatorDisconnect)(edict_t *pEntity); /* 0x78 */
+} DLL_FUNCTIONS;
+
+extern DLL_FUNCTIONS gEntityInterface;
+extern int cmd_source;
+extern float realtime;
+extern void *sv_gpUserMsgs;
+extern void *sv_gpNewUserMsgs;
+extern cvar_t sv_netsize;
+void SV_SendUserReg(sizebuf_t *msg);
+void SV_DropClient(client_t *cl, qboolean crash);
+char *va(char *format, ...);
+void func_0027C6E0(void);
+
+#define svc_stufftext 9
+
+void SV_New_f(void)
+{
+    edict_t *ent;
+    int sinfo, decals, usr;
+    void *pTemp;
+    char szRejectReason[128];
+    char szAddress[256];
+    char szName[64];
+
+    if (cmd_source == 1)
+        return;
+
+    if (host_client->spawned && !host_client->active)
+        return;
+
+    ent = host_client->edict;
+
+    host_client->connected = true;
+    host_client->connection_started = realtime;
+
+    SZ_Clear(&host_client->netchan.message);
+
+    /* manda os dados do servidor */
+    SV_SendServerinfo(host_client);
+
+    sinfo = host_client->netchan.message.cursize;
+    if (sv_netsize.value)
+        Con_DPrintf("SINFO=%i\n", sinfo);
+
+    decals = host_client->netchan.message.cursize;
+    if (sv_netsize.value)
+        Con_DPrintf("DECALS=%i\n", decals - sinfo);
+
+    host_client->sendinfo = true;
+    if (sv_gpUserMsgs)
+    {
+        pTemp = sv_gpNewUserMsgs;
+        sv_gpNewUserMsgs = sv_gpUserMsgs;
+        SV_SendUserReg(&host_client->netchan.message);
+        sv_gpNewUserMsgs = pTemp;
+    }
+
+    usr = host_client->netchan.message.cursize;
+    if (sv_netsize.value)
+        Con_DPrintf("USR=%i\n", usr - decals);
+
+    /* se já estava no jogo (mudança de nível), avisa a dll que saiu */
+    if ((host_client->active || host_client->spawned) && host_client->edict)
+    {
+        if (!host_client->edict->free)
+        {
+            if (!host_client->edict->v.pContainingEntity)
+            {
+                Con_DPrintf("SV_New_f:Disconnect called with invalid entity\n");
+            }
+            else if (host_client->spectator)
+            {
+                gEntityInterface.pfnSpectatorDisconnect(host_client->edict);
+            }
+            else
+            {
+                gEntityInterface.pfnClientDisconnect(host_client->edict);
+            }
+        }
+    }
+
+    if (!host_client->spectator)
+    {
+        sprintf(szName, host_client->name);
+        sprintf(szAddress, NET_AdrToString(host_client->netchan.remote_address));
+        sprintf(szRejectReason, "Connection rejected by game\n");
+
+        if (!gEntityInterface.pfnClientConnect(ent, szName, szAddress, szRejectReason))
+        {
+            MSG_WriteByte(&host_client->netchan.message, svc_stufftext);
+            MSG_WriteString(&host_client->netchan.message, va("echo %s\n", szRejectReason));
+            SV_DropClient(host_client, false);
+            return;
+        }
+    }
+    else
+    {
+        func_0027C6E0();
+        gGlobalVariables.time = sv.time;
+        gEntityInterface.unk_64();
+        gEntityInterface.pfnSpectatorConnect(ent);
+    }
+
+    if (sv_netsize.value)
+        Con_DPrintf("CLSIZE = %i\n", host_client->netchan.message.cursize - usr);
+
+    MSG_WriteByte(&host_client->netchan.message, svc_stufftext);
+    MSG_WriteString(&host_client->netchan.message, va("fullserverinfo \"%s\"\n", Info_Serverinfo()));
+}
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027C500);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027C5C8);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027C658);
@@ -1259,7 +1448,7 @@ INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_002825C8);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00282D90);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00282DB8);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00282E40);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00282F80);
+INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_SendUserReg);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00283018);
 /* rodata não migrada: início */
 __asm__(".section .rodata\n"

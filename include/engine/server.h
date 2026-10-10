@@ -164,7 +164,8 @@ typedef struct client_s
     qboolean uploading;         /* 0x000C */
     byte unk_0010[0x14 - 0x10];
     netchan_t netchan;          /* 0x0014 */
-    byte unk_73C4[0x73D8 - 0x73C4];
+    byte unk_73C4[0x73D4 - 0x73C4];
+    qboolean unk_73D4;          /* 0x73D4 */
     qboolean spectator;         /* 0x73D8 */
     qboolean fakeclient;        /* 0x73DC */
     byte unk_73E0[0x73E4 - 0x73E0];
@@ -222,9 +223,12 @@ typedef struct server_s
     int lastcheck;              /* 0x00010 */
     float lastchecktime;        /* 0x00014 */
     char name[64];              /* 0x00018 */
-    byte unk_00058[0xD8 - 0x58];
+    byte unk_00058[0x98 - 0x58];
+    char modelname[64];         /* 0x00098 */
     struct model_s *worldmodel; /* 0x000D8 */
-    byte unk_000DC[0x190E8 - 0xDC];
+    unsigned int worldmapCRC;   /* 0x000DC */
+    unsigned int clientdllmd5;  /* 0x000E0 */
+    byte unk_000E4[0x190E8 - 0xE4];
     char *model_precache[512];  /* 0x190E8 */
     struct model_s *models[512]; /* 0x198E8 */
     char *sound_precache[512];  /* 0x1A0E8 */

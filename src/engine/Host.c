@@ -119,7 +119,7 @@ void S_Update(float *origin, float *forward, float *right, float *up, int unk);
 void func_002CD788(void);
 void func_00251330(void);
 void func_002C63C0(void *p);
-int func_002455D8(void);
+int build_number(void);
 void func_00294518(void);
 void func_00277B78(int protocol);
 void Memory_Init(void *buf, int size);
@@ -1515,7 +1515,7 @@ void Host_Version(void)
 {
     strcpy(gpszVersionString, "Playstation 2");
     Con_DPrintf("Protocol version: %i\nExe version: %s\n", protocol_version, gpszVersionString);
-    Con_DPrintf("Exe build: 19:13:34 Oct 19 2001 (%i)\n", func_002455D8());
+    Con_DPrintf("Exe build: 19:13:34 Oct 19 2001 (%i)\n", build_number());
 }
 
 int Host_Init(quakeparms_t *parms)
