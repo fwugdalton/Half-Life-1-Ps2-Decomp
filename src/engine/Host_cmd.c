@@ -88,6 +88,17 @@ extern cvar_t sv_lan;
 int PF_IsMapValid_I(char *mapname);
 void func_00245310(void);
 void func_002CFB90(char *pszSubString);
+extern char D_003924F8[];
+extern char D_00392520[];
+void func_002CD340(int a0, int a1);
+char *func_00299400(void);
+int func_0022B6F0(char *pattern, char *data);
+float func_0022B8E0(char *data);
+int func_0022B810(int h, char *data);
+void func_0022B8A0(int h);
+void func_00239488(void);
+void func_00228CF0(char *dst, char *src);
+void func_00228EE0(char *dst, char *fmt, ...);
 void SV_CountPlayers(int *clients, int *spectators);
 int strcasecmp(const char *, const char *);
 #include "engine/mathlib.h"
@@ -752,17 +763,117 @@ void Host_Maps_f(void)
     func_002CFB90(pszSubString);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Changelevel_f);
+void Host_Changelevel_f(void)
+{
+    char level[64];
+    char _startspot[64];
+    char *startspot;
+
+    if (Cmd_Argc() < 2 || !Host_ValidGame())
+    {
+        Con_Printf("changelevel <levelname> : continue game on a new level\n");
+        return;
+    }
+
+    if (!sv.active)
+    {
+        Con_Printf(D_003924F8);
+        return;
+    }
+
+    if (!PF_IsMapValid_I(Cmd_Argv(1)))
+    {
+        Con_Printf(D_00392520);
+        Con_Printf(Cmd_Argv(1));
+        Con_Printf(D_00392470);
+        return;
+    }
+
+    func_002AC478(0);
+    func_002CD340(1, 0);
+
+    strcpy(level, Cmd_Argv(1));
+    if (Cmd_Argc() == 2)
+    {
+        startspot = NULL;
+    }
+    else
+    {
+        strcpy(_startspot, Cmd_Argv(2));
+        startspot = _startspot;
+    }
+
+    SV_InactivateClients();
+    SV_SpawnServer(false, level, startspot);
+    SV_LoadEntities();
+    SV_ActivateServer(1);
+}
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_003924F8);
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00392520);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00299008);
+char *Host_FindRecentSave(char *pszOut)
+{
+    char data[260];
+    float latest;
+    float t;
+    int found;
+    int h;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Restart_f);
+    found = 0;
+    latest = -1.0f;
+    sprintf(pszOut, "%s*.sav", func_00299400());
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Restartdecay_f);
+    h = func_0022B6F0(pszOut, data);
+    while (h != -1)
+    {
+        t = func_0022B8E0(data);
+        if (t > 0 && (!found || t > latest))
+        {
+            latest = t;
+            strcpy(pszOut, data);
+            found = 1;
+        }
+
+        if (!func_0022B810(h, data))
+        {
+            func_0022B8A0(h);
+            h = -1;
+        }
+    }
+
+    return found ? pszOut : NULL;
+}
+
+void Host_Restart_f(void)
+{
+    char name[260];
+
+    if (!sv.active)
+        return;
+
+    if (cmd_source != src_command)
+        return;
+
+    func_00239488();
+    func_0029C388();
+    SV_InactivateClients();
+    strcpy(name, sv.name);
+    SV_SpawnServer(false, name, NULL);
+    SV_LoadEntities();
+    SV_ActivateServer(1);
+}
+
+void Host_Restartdecay_f(void)
+{
+    char cmd[100];
+    char name[100];
+
+    func_00228CF0(name, sv.name);
+    func_00228EE0(cmd, "map %s", name);
+    Host_Map(false, cmd, name, false);
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Reload_f);
 
