@@ -102,7 +102,7 @@ void func_00228EE0(char *dst, char *fmt, ...);
 extern cvar_t D_003330E8;
 #define host_map D_003330E8
 extern char D_00392558[];
-int func_0029A0A0(char *pName);
+int Host_Load(char *pName);
 int func_00228DC0(const char *s);
 int func_00228E40(const char *s1, const char *s2, int n);
 void MSG_WriteChar(sizebuf_t *sb, int c);
@@ -199,6 +199,22 @@ void func_00299420(char *pszComment);
 void func_00251DC0(char *pMessage, int a1);
 char *strstr(const char *, const char *);
 int func_0022BE50(void *buf, int size, int count, int file);
+extern const char _ctype_[];
+#define isdigit(c) ((_ctype_ + 1)[(int)(c)] & 4)
+extern char D_00392788[];
+extern char D_003927A8[];
+extern char D_003927B8[];
+extern char D_003927C0[];
+extern char D_003927D0[];
+extern char D_003927E0[];
+extern char D_003927E8[];
+extern int giStateInfo;
+int atoi(const char *);
+char *func_00243F68(char *pName);
+int func_0022B590(char *src, char *dst);
+void func_0022BC60(char *name);
+void func_0029C108(int pFile, int mapCount);
+void Cbuf_AddText(char *text);
 void SV_CountPlayers(int *clients, int *spectators);
 int strcasecmp(const char *, const char *);
 #include "engine/mathlib.h"
@@ -992,7 +1008,7 @@ void Host_Reload_f(void)
     SV_InactivateClients();
 
     pSaveName = Host_FindRecentSave(name);
-    if (pSaveName && func_0029A0A0(pSaveName))
+    if (pSaveName && Host_Load(pSaveName))
         return;
 
     func_00239488();
@@ -1412,7 +1428,13 @@ int SaveReadHeader(int pFile, GAME_HEADER *pHeader, int readGlobalState)
     return 1;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00299FB0);
+void func_00299FB0(int pFile, char *pName)
+{
+    GAME_HEADER header;
+
+    if (SaveReadHeader(pFile, &header, 0))
+        strcpy(pName, header.comment);
+}
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_003926F8);
 
@@ -1420,11 +1442,107 @@ INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00392700);
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00392728);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Loadgame_f);
+void Host_Loadgame_f(void)
+{
+    if (cmd_source != src_command)
+        return;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029A060);
+    if (Cmd_Argc() != 2)
+    {
+        Con_Printf("load <savename> : load a game\n");
+        return;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029A0A0);
+    if (!Host_Load(Cmd_Argv(1)))
+        Con_Printf("Error loading saved game\n");
+}
+
+void func_0029A060(char *pName)
+{
+    int old;
+
+    old = D_00399704;
+    D_00399704 = 1;
+    Host_Load(pName);
+    D_00399704 = old;
+}
+
+#ifdef NON_MATCHING
+int Host_Load(char *pName)
+{
+    GAME_HEADER gameHeader;
+    char name[256];
+    char number[16];
+    int pFile;
+    int nSlot;
+    int result;
+    char *p;
+    int i;
+
+    func_00239488();
+
+    if (!pName || !pName[0])
+        return 0;
+
+    if (pName[0] == '_')
+    {
+        p = pName + 1;
+        i = 0;
+        while (*p && isdigit(*p) && i < 5)
+            number[i++] = *p++;
+        number[i] = 0;
+
+        nSlot = atoi(number);
+        if (nSlot < 1 || nSlot > 12)
+            return 0;
+
+        sprintf(name, "%sHalf-Life-%i", Host_SaveGameDirectory(), nSlot);
+    }
+    else
+    {
+        sprintf(name, D_00392690, Host_SaveGameDirectory(), func_00243F68(pName));
+    }
+
+    if (!svs.unk_00C)
+        Host_InitializeGameDLL();
+
+    func_00244138(name, D_00392698);
+    COM_FixSlashes(name);
+    Con_Printf(D_00392788, name);
+
+    result = func_0022B590(name, D_003927A8);
+    if (result != 1)
+        return 0;
+
+    pFile = func_0022B118(D_003927A8, D_003927B8);
+    if (!pFile)
+        return 0;
+
+    func_0022BC60(name);
+    func_0029C388();
+
+    if (SaveReadHeader(pFile, &gameHeader, 1))
+    {
+
+        SV_InactivateClients();
+        func_002AC478(0);
+        func_0029C108(pFile, gameHeader.mapCount);
+        func_0022B238(pFile);
+        func_0022B248(D_003927A8);
+        Cvar_SetValue(D_003927D0, 0);
+        Cvar_SetValue(D_003927E0, 0);
+        sprintf(name, D_003927E8, gameHeader.mapName);
+        Host_Map(false, name, gameHeader.mapName, true);
+        return 1;
+    }
+
+    giStateInfo = result;
+    Cbuf_AddText(D_003927C0);
+    return 0;
+}
+#else
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Load);
+#endif
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00392788);
 
