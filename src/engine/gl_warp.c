@@ -4,6 +4,7 @@
 #include "engine/mathlib.h"
 
 #define MAX_CLIP_VERTS 64
+#define fabs(x) ((x) < 0 ? -(x) : (x))
 
 #define SKY_TEXNUM 1001
 #define GL_TEXTURE_2D 0x0DE1
@@ -34,6 +35,8 @@ extern int D_003994F8;      /* c_sky */
 extern float D_004E7738[2][6]; /* skymins */
 extern float D_004E7780[2][6]; /* skymaxs */
 extern vec3_t r_origin;
+extern int D_003331C0[6][3]; /* vec_to_st */
+#define vec_to_st D_003331C0
 
 float *func_002A3C60(glpoly_t *p);
 void func_002A13D0(int nump, vec3_t vecs, int stage);
@@ -102,7 +105,76 @@ void func_002A0F68(void)
 INCLUDE_ASM("asm/nonmatchings/engine/gl_warp", func_002A0F68);
 #endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_warp", func_002A1150);
+void func_002A1150(int nump, vec3_t vecs)
+{
+    int i, j;
+    vec3_t v, av;
+    float s, t, dv;
+    int axis;
+    float *vp;
+
+    D_003994F8++;
+
+    VectorCopy(vec3_origin, v);
+    for (i = 0, vp = vecs; i < nump; i++, vp += 3)
+        VectorAdd(vp, v, v);
+
+    av[0] = fabs(v[0]);
+    av[1] = fabs(v[1]);
+    av[2] = fabs(v[2]);
+
+    if (av[0] > av[1] && av[0] > av[2])
+    {
+        if (v[0] < 0)
+            axis = 1;
+        else
+            axis = 0;
+    }
+    else if (av[1] > av[2] && av[1] > av[0])
+    {
+        if (v[1] < 0)
+            axis = 3;
+        else
+            axis = 2;
+    }
+    else
+    {
+        if (v[2] < 0)
+            axis = 5;
+        else
+            axis = 4;
+    }
+
+    for (i = 0; i < nump; i++, vecs += 3)
+    {
+        j = vec_to_st[axis][2];
+        if (j > 0)
+            dv = vecs[j - 1];
+        else
+            dv = -vecs[-j - 1];
+
+        j = vec_to_st[axis][0];
+        if (j < 0)
+            s = -vecs[-j - 1] / dv;
+        else
+            s = vecs[j - 1] / dv;
+
+        j = vec_to_st[axis][1];
+        if (j < 0)
+            t = -vecs[-j - 1] / dv;
+        else
+            t = vecs[j - 1] / dv;
+
+        if (s < D_004E7738[0][axis])
+            D_004E7738[0][axis] = s;
+        if (t < D_004E7738[1][axis])
+            D_004E7738[1][axis] = t;
+        if (s > D_004E7780[0][axis])
+            D_004E7780[0][axis] = s;
+        if (t > D_004E7780[1][axis])
+            D_004E7780[1][axis] = t;
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_warp", func_002A13D0);
 
