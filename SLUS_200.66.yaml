@@ -91,7 +91,8 @@ segments:
       - [0x177EB8, c, engine/r_trans]
       - [0x1798A0, c, engine/snd_mem]
       - [0x17A6B8, c, engine/sv_main]
-      - [0x183638, asm, cod/183638]
+      - [0x183638, c, engine/sv_move]
+      - [0x184A58, asm, cod/184A58]
       - [0x1F5980, textbin, cod/1F5980] # .vutext
       - [0x201B00, data, cod/201B00] # .data
       - [0x231C00, .data, engine/Cmd]
