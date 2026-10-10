@@ -103,7 +103,7 @@ void func_00288A58(void);
 void MSG_BeginReading(void);
 int MSG_ReadLong(void);
 char *MSG_ReadStringLine(void);
-void func_00297D10(netadr_t *adr);
+void SV_Rcon(netadr_t *adr);
 void func_00247118(int player);
 void func_00251710(int player);
 void func_0024FB48(int player);
@@ -1248,7 +1248,7 @@ void Host_ConnectionlessPacket(void)
     Cmd_TokenizeString(MSG_ReadStringLine());
 
     if (!strcmp(Cmd_Argv(0), "rcon"))
-        func_00297D10(&net_from);
+        SV_Rcon(&net_from);
 }
 
 void _Host_Frame(float time)

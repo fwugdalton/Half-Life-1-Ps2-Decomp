@@ -1345,3 +1345,4 @@ SV_InactivateClients = 0x00297AD0; // type:func
 Rcon_Validate = 0x00297CC0; // type:func
 rcon_password = 0x00333100; // size:0x14
 sv_redirectto = 0x003994B0; // size:0x8
+SV_Rcon = 0x00297D10; // type:func

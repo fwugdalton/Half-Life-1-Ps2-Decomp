@@ -44,6 +44,13 @@ extern int sv_redirected;
 extern char outputbuf[1400];
 extern netadr_t sv_redirectto;
 extern cvar_t rcon_password;
+extern sizebuf_t net_message;
+extern int giActive;
+extern char D_00392178[];
+void Log_Printf(char *fmt, ...);
+char *strcat(char *, const char *);
+void CL_Disconnect(int player);
+void func_0029C330(void);
 
 int sprintf(char *, const char *, ...);
 unsigned int strlen(const char *);
@@ -231,9 +238,53 @@ int Rcon_Validate(void)
     return 1;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00297D10);
+void SV_Rcon(netadr_t *adr)
+{
+    char remaining[1024];
+    int valid;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Quit_f);
+    valid = Rcon_Validate();
+
+    if (!valid)
+        Con_Printf("Bad rcon from %s:\n%s\n", NET_AdrToString(*adr), net_message.data + 4);
+    if (valid == 1)
+        Con_Printf("Rcon from %s:\n%s\n", NET_AdrToString(*adr), net_message.data + 4);
+    if (!valid)
+        Log_Printf("Bad Rcon from \"%s\":\"(%s)\"\n", NET_AdrToString(*adr), net_message.data + 4);
+    if (valid == 1)
+        Log_Printf("Rcon from \"%s\":\"(%s)\"\n", NET_AdrToString(*adr), net_message.data + 4);
+
+    SV_BeginRedirect(RD_PACKET, adr);
+
+    if (!valid)
+    {
+        Con_Printf("Bad rcon_password.\n");
+    }
+    else
+    {
+        remaining[0] = 0;
+        for (valid = 2; valid < Cmd_Argc(); valid++)
+        {
+            strcat(remaining, Cmd_Argv(valid));
+            strcat(remaining, D_00392178);
+        }
+        Cmd_ExecuteString(remaining, src_command);
+    }
+
+    SV_EndRedirect();
+}
+
+
+void Host_Quit_f(void)
+{
+    int i;
+
+    func_0029C330();
+    giActive = 3;
+
+    for (i = 0; i < cl_numlocal; i++)
+        CL_Disconnect(i);
+}
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00392178);
 

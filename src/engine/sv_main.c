@@ -2030,7 +2030,7 @@ void Cmd_TokenizeString(char *text);
 extern cvar_t sv_logrelay;
 void func_0027D0F0(void);
 void SV_ConnectClient(void);
-void func_00297D10(netadr_t *adr);
+void SV_Rcon(netadr_t *adr);
 
 void SV_ConnectionlessPacket(void)
 {
@@ -2097,7 +2097,7 @@ void SV_ConnectionlessPacket(void)
     else if (!strcmp(c, "connect"))
         SV_ConnectClient();
     else if (!strcmp(c, "rcon"))
-        func_00297D10(&net_from);
+        SV_Rcon(&net_from);
     else
         Con_Printf("bad connectionless packet from %s:\n%s\n", NET_AdrToString(net_from), args);
 }
