@@ -295,6 +295,8 @@ int SV_PointContents(const vec3_t p);
 #define MOVETYPE_FOLLOW 12
 #define FL_CLIENT 8
 #define CONTENTS_SOLID -2
+#define FENTTABLE_GLOBAL 0x10000000
+int NUM_FOR_EDICT(edict_t *e);
 void SV_CountPlayers(int *clients, int *spectators);
 int strcasecmp(const char *, const char *);
 #include "engine/mathlib.h"
@@ -2200,7 +2202,98 @@ int EntityInSolid(edict_t *pent)
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00392920);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029BA10);
+#ifdef NON_MATCHING
+int CreateEntityTransitionList(SAVERESTOREDATA *pSaveData, int levelMask)
+{
+    ENTITYTABLE entity;
+    int i;
+    int movedCount;
+    int active;
+    edict_t *pent;
+
+    movedCount = 0;
+
+    for (i = 0; i < pSaveData->tableCount; i++)
+    {
+        entity = pSaveData->pTable[i];
+        pent = NULL;
+
+        if (entity.classname && entity.size && entity.id > 0)
+        {
+            active = (entity.flags & levelMask) ? 1 : 0;
+
+            if (entity.id < svs.maxclients + 1)
+            {
+                pent = svs.clients[entity.id - 1].edict;
+                if (active)
+                {
+                    if (!(entity.flags & FENTTABLE_PLAYER))
+                        Sys_Error(D_00392920, i);
+
+                    if (svs.clients[entity.id - 1].active && pent)
+                        EntityInit(pent, entity.classname);
+                    else
+                        pent = NULL;
+                }
+            }
+            else if (active)
+            {
+                pent = CreateNamedEntity(entity.classname);
+            }
+        }
+
+        entity.pent = pent;
+        pSaveData->pTable[i] = entity;
+    }
+
+    for (i = 0; i < pSaveData->tableCount; i++)
+    {
+        entity = pSaveData->pTable[i];
+        pSaveData->currentIndex = i;
+        pSaveData->size = entity.location;
+        pSaveData->pCurrentData = pSaveData->pBaseData + entity.location;
+        pent = entity.pent;
+
+        if (pent && (entity.flags & levelMask))
+        {
+            if (entity.flags & FENTTABLE_GLOBAL)
+            {
+                Con_DPrintf("Merging changes for global: %s\n", pr_strings + entity.classname);
+                gEntityInterface.pfnRestore(pent, pSaveData, 1);
+                ED_Free(pent);
+            }
+            else
+            {
+                Con_DPrintf("Transferring %s (%d)\n", pr_strings + entity.classname, NUM_FOR_EDICT(pent));
+                if (gEntityInterface.pfnRestore(pent, pSaveData, 0) < 0)
+                {
+                    ED_Free(pent);
+                }
+                else
+                {
+                    SV_LinkEdict(pent, false);
+                    if (!(entity.flags & FENTTABLE_PLAYER) && EntityInSolid(pent))
+                    {
+                        Con_DPrintf("Suppressing %s\n", pr_strings + entity.classname);
+                        ED_Free(pent);
+                    }
+                    else
+                    {
+                        movedCount++;
+                        entity.flags = FENTTABLE_REMOVED;
+                    }
+                }
+            }
+        }
+
+        pSaveData->pTable[i] = entity;
+    }
+
+    return movedCount;
+}
+#else
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", CreateEntityTransitionList);
+#endif
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029BDB8);
 

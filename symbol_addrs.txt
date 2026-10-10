@@ -1376,3 +1376,4 @@ LoadGamestate = 0x0029B488; // type:func
 EntryInTable = 0x0029B818; // type:func
 LandmarkOrigin = 0x0029B8A8; // type:func
 EntityInSolid = 0x0029B970; // type:func
+CreateEntityTransitionList = 0x0029BA10; // type:func
