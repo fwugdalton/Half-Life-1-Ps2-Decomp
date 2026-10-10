@@ -15,6 +15,15 @@ typedef struct link_s
     struct link_s *next;
 } link_t;
 
+typedef struct areanode_s
+{
+    int axis;                   /* 0x00: -1 = folha */
+    float dist;                 /* 0x04 */
+    struct areanode_s *children[2]; /* 0x08 */
+    link_t trigger_edicts;      /* 0x10 */
+    link_t solid_edicts;        /* 0x18 */
+} areanode_t; /* 0x20 */
+
 struct edict_s;
 
 /* entvars_t do PS2: igual ao do PC sem endpos/startpos/impacttime/starttime

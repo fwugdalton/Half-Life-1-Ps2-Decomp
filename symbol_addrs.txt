@@ -1015,3 +1015,7 @@ NET_IsLocalAddress = 0x002C6EA8; // type:func
 SV_BeginRedirect = 0x00297C68; // type:func
 SV_EndRedirect = 0x00297C98; // type:func
 sv_idealpitchscale = 0x00332968; // size:0x14
+sv_pmove_maxs = 0x004E2D20; // size:0xC
+sv_pmove_mins = 0x004E2D30; // size:0xC
+dpadd = 0x002DF438; // type:func
+dpcmp = 0x002DFA20; // type:func

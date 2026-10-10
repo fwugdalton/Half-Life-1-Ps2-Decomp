@@ -40,6 +40,7 @@ typedef struct
     void *pfnPlayerCustomization;                               /* 0x70 */
     void (*pfnSpectatorConnect)(edict_t *pEntity);              /* 0x74 */
     void (*pfnSpectatorDisconnect)(edict_t *pEntity);           /* 0x78 */
+    void (*pfnSpectatorThink)(edict_t *pEntity);                /* 0x7C */
 } DLL_FUNCTIONS;
 
 extern DLL_FUNCTIONS gEntityInterface;
