@@ -30,13 +30,14 @@ typedef struct
     void (*pfnClientCommand)(edict_t *pEntity);                 /* 0x4C */
     void (*pfnClientUserInfoChanged)(edict_t *pEntity, char *infobuffer); /* 0x50 */
     void (*pfnServerActivate)(edict_t *pEdictList, int edictCount, int clientMax); /* 0x54 */
-    void (*pfnServerDeactivate)(void);                          /* 0x58 */
-    void (*pfnPlayerPreThink)(edict_t *pEntity);                /* 0x5C */
-    void (*pfnPlayerPostThink)(edict_t *pEntity);               /* 0x60 */
+    /* o PS2 não tem pfnServerDeactivate: daqui em diante tudo sobe 4 bytes */
+    void (*pfnPlayerPreThink)(edict_t *pEntity);                /* 0x58 */
+    void (*pfnPlayerPostThink)(edict_t *pEntity);               /* 0x5C */
+    void (*pfnStartFrame)(void);                                /* 0x60 */
     void (*pfnParmsNewLevel)(void);                             /* 0x64 */
     void (*pfnParmsChangeLevel)(void);                          /* 0x68 */
     const char *(*pfnGetGameDescription)(void);                 /* 0x6C */
-    void *unk_70;                                               /* 0x70 */
+    void *pfnPlayerCustomization;                               /* 0x70 */
     void (*pfnSpectatorConnect)(edict_t *pEntity);              /* 0x74 */
     void (*pfnSpectatorDisconnect)(edict_t *pEntity);           /* 0x78 */
 } DLL_FUNCTIONS;

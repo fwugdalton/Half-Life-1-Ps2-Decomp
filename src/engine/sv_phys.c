@@ -5,6 +5,7 @@
 #include "engine/cvar.h"
 #include "engine/progdefs.h"
 #include "engine/eiface.h"
+#include "engine/pmove.h"
 
 #define FL_KILLME (1 << 30)
 #define SOLID_NOT 0
@@ -16,6 +17,8 @@
 #define FL_MONSTER (1 << 5)
 #define FL_ONGROUND (1 << 9)
 #define FL_ALWAYSTHINK (1 << 21)
+#define FL_CONVEYOR (1 << 2)
+#define FL_BASEVELOCITY (1 << 22)
 #define FL_FLY (1 << 0)
 #define FL_SWIM (1 << 1)
 #define FL_FLOAT (1 << 15)
@@ -82,6 +85,11 @@ int RandomLong(int lLow, int lHigh);
 void SV_StartSound(edict_t *entity, int channel, const char *sample, int volume, float attenuation, int fFlags, int pitch);
 extern vec3_t current_table[];
 extern vec3_t g_vecZero;
+extern cvar_t allowGame;
+extern cvar_t sv_maxspeed, sv_spectatormaxspeed, sv_accelerate, sv_airaccelerate, sv_wateraccelerate;
+extern cvar_t sv_edgefriction, sv_waterfriction, sv_stepsize, sv_zmax, sv_wateramp, sv_skyname;
+void SV_Physics_Toss(edict_t *ent);
+void SV_Physics_Step(edict_t *ent);
 extern cvar_t sv_maxvelocity;
 
 INCLUDE_RODATA("asm/nonmatchings/engine/sv_phys", D_0038F790);
@@ -1302,12 +1310,201 @@ void SV_Physics_Step(edict_t *ent)
 INCLUDE_ASM("asm/nonmatchings/engine/sv_phys", SV_Physics_Step);
 #endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/sv_phys", func_002879D0);
+void func_002879D0(void)
+{
+    int i;
+    client_t *cl;
 
+    for (i = 0, cl = svs.clients; i < svs.maxclients; i++, cl++)
+    {
+        if (cl->active || cl->spawned || cl->connected)
+            cl->unk_7410 = sv.time;
+    }
+}
+
+#ifdef NON_MATCHING
+void SV_Physics(void)
+{
+    int i;
+    volatile int count;
+    edict_t *ent;
+    edict_t *groundentity;
+    float movetime;
+    float thinktime;
+    float ltime;
+
+    gGlobalVariables.time = sv.time;
+    gEntityInterface.pfnStartFrame();
+
+    count = (allowGame.value != 0) ? sv.num_edicts : 1;
+
+    for (i = 0; i < count; i++)
+    {
+        ent = &sv.edicts[i];
+        if (ent->free)
+            continue;
+
+        if (gGlobalVariables.force_retouch != 0)
+            SV_LinkEdict(ent, true);
+
+        if (i > 0 && i <= svs.maxclients)
+            continue;
+
+        if (ent->v.flags & FL_ONGROUND)
+        {
+            groundentity = ent->v.groundentity;
+            if (groundentity && (groundentity->v.flags & FL_CONVEYOR))
+            {
+                if (ent->v.flags & FL_BASEVELOCITY)
+                    VectorMA(ent->v.basevelocity, groundentity->v.speed, groundentity->v.movedir, ent->v.basevelocity);
+                else
+                    VectorScale(groundentity->v.movedir, groundentity->v.speed, ent->v.basevelocity);
+
+                ent->v.flags |= FL_BASEVELOCITY;
+            }
+        }
+
+        if (!(ent->v.flags & FL_BASEVELOCITY))
+        {
+            VectorMA(ent->v.velocity, 1.0f + host_frametime * 0.5f, ent->v.basevelocity, ent->v.velocity);
+            VectorCopy(vec3_origin, ent->v.basevelocity);
+        }
+
+        ent->v.flags &= ~FL_BASEVELOCITY;
+
+        if (ent->v.movetype == MOVETYPE_PUSH)
+        {
+            ltime = ent->v.ltime;
+            movetime = host_frametime;
+            thinktime = ent->v.nextthink;
+            if (thinktime < ltime + movetime)
+            {
+                movetime = thinktime - ltime;
+                if (movetime < 0)
+                    movetime = 0;
+            }
+
+            if (movetime)
+            {
+                SV_Physics_Pusher(ent, movetime);
+            }
+            else if (thinktime > ltime && ((ent->v.flags & FL_ALWAYSTHINK) || thinktime <= ltime))
+            {
+                ent->v.nextthink = 0;
+                gGlobalVariables.time = sv.time;
+                gEntityInterface.pfnThink(ent);
+            }
+        }
+        else if (ent->v.movetype == MOVETYPE_NONE)
+        {
+            SV_Physics_None(ent);
+        }
+        else if (ent->v.movetype == MOVETYPE_FOLLOW)
+        {
+            if (SV_RunThink(ent))
+            {
+                if (ent->v.aiment)
+                {
+                    VectorAdd(ent->v.aiment->v.origin, ent->v.v_angle, ent->v.origin);
+                    VectorCopy(ent->v.aiment->v.angles, ent->v.angles);
+                    SV_LinkEdict(ent, true);
+                }
+                else
+                {
+                    Con_DPrintf("%s movetype FOLLOW with NULL aiment\n", &pr_strings[ent->v.classname]);
+                    ent->v.movetype = MOVETYPE_NONE;
+                }
+            }
+        }
+        else if (ent->v.movetype == MOVETYPE_NOCLIP)
+        {
+            SV_Physics_Noclip(ent);
+        }
+        else if (ent->v.movetype == MOVETYPE_STEP || ent->v.movetype == MOVETYPE_PUSHSTEP)
+        {
+            SV_Physics_Step(ent);
+        }
+        else if (ent->v.movetype == MOVETYPE_TOSS
+            || ent->v.movetype == MOVETYPE_BOUNCE
+            || ent->v.movetype == MOVETYPE_BOUNCEMISSILE
+            || ent->v.movetype == MOVETYPE_FLY
+            || ent->v.movetype == MOVETYPE_FLYMISSILE)
+        {
+            SV_Physics_Toss(ent);
+        }
+        else
+        {
+            Sys_Error("SV_Physics: %s bad movetype %d", &pr_strings[ent->v.classname], ent->v.movetype);
+        }
+
+        if (ent->v.flags & FL_KILLME)
+            ED_Free(ent);
+    }
+
+    if (gGlobalVariables.force_retouch != 0)
+        gGlobalVariables.force_retouch -= 1;
+
+    sv.time += host_frametime;
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/sv_phys", SV_Physics);
+#endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/sv_phys", SV_Trace_Toss);
+trace_t SV_Trace_Toss(edict_t *ent, edict_t *ignore)
+{
+    edict_t tempent;
+    edict_t *tent;
+    trace_t trace;
+    vec3_t move;
+    vec3_t end;
+    float save_frametime;
 
-INCLUDE_ASM("asm/nonmatchings/engine/sv_phys", SV_SetMoveVars);
+    save_frametime = host_frametime;
+    host_frametime = 0.05f;
 
-INCLUDE_ASM("asm/nonmatchings/engine/sv_phys", func_002882A0);
+    tempent = *ent;
+    tent = &tempent;
+
+    while (1)
+    {
+        SV_CheckVelocity(tent);
+        SV_AddGravity(tent);
+        VectorMA(tent->v.angles, host_frametime, tent->v.avelocity, tent->v.angles);
+        VectorScale(tent->v.velocity, host_frametime, move);
+        VectorAdd(tent->v.origin, move, end);
+        trace = SV_Move(tent->v.origin, tent->v.mins, tent->v.maxs, end, MOVE_NORMAL, tent, 0);
+        VectorCopy(trace.endpos, tent->v.origin);
+
+        if (trace.ent && trace.ent != ignore)
+            break;
+    }
+
+    host_frametime = save_frametime;
+    return trace;
+}
+
+void SV_SetMoveVars(void)
+{
+    movevars.gravity = sv_gravity.value;
+    movevars.stopspeed = sv_stopspeed.value;
+    movevars.maxspeed = sv_maxspeed.value;
+    movevars.spectatormaxspeed = sv_spectatormaxspeed.value;
+    movevars.accelerate = sv_accelerate.value;
+    movevars.airaccelerate = sv_airaccelerate.value;
+    movevars.wateraccelerate = sv_wateraccelerate.value;
+    movevars.friction = sv_friction.value;
+    movevars.edgefriction = sv_edgefriction.value;
+    movevars.waterfriction = sv_waterfriction.value;
+    movevars.entgravity = 1.0f;
+    movevars.bounce = sv_bounce.value;
+    movevars.stepsize = sv_stepsize.value;
+    movevars.maxvelocity = sv_maxvelocity.value;
+    movevars.zmax = sv_zmax.value;
+    movevars.waveHeight = sv_wateramp.value;
+    strcpy(movevars.skyName, sv_skyname.string);
+}
+
+int func_002882A0(void)
+{
+    return 1;
+}

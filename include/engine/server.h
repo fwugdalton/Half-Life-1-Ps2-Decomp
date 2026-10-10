@@ -227,7 +227,9 @@ typedef struct client_s
     byte unk_73E0[0x73E4 - 0x73E0];
     usercmd_t lastcmd;          /* 0x73E4 */
     float localtime;            /* 0x7408 */
-    byte unk_740C[0x7444 - 0x740C];
+    byte unk_740C[0x7410 - 0x740C];
+    float unk_7410;             /* 0x7410 */
+    byte unk_7414[0x7444 - 0x7414];
     float maxspeed;             /* 0x7444 */
     byte unk_7448[0x7454 - 0x7448];
     sizebuf_t datagram;         /* 0x7454 */

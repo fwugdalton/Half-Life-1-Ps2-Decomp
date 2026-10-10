@@ -1003,3 +1003,4 @@ SV_Physics_Step = 0x00287578; // type:func
 SV_TestEntityPosition = 0x002900F0; // type:func
 current_table = 0x00332908; // size:0x48
 g_vecZero = 0x003328F8; // size:0xC
+allowGame = 0x00332F00; // size:0x14
