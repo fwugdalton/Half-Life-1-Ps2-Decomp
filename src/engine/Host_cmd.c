@@ -2788,11 +2788,142 @@ void Host_Tell_f(void)
     host_client = save;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Kill_f);
+extern cvar_t pausable;
+extern netadr_t net_from;
+void func_002369F0(int a0);
+void func_00236500(void);
+void func_00239550(void);
+void func_002363A0(int a0);
+void func_0021C3C0(void);
+void func_002394F0(void);
+void func_0021C4B0(void);
+void SV_New_f(void);
+char *va(char *format, ...);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Pause_f);
+void Host_Kill_f(void)
+{
+    if (cmd_source == src_command)
+    {
+        Cmd_ForwardToServer();
+        return;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_PreSpawn_f);
+    if (sv_player->v.health <= 0)
+    {
+        SV_ClientPrintf("Can't suicide -- already dead!\n");
+        return;
+    }
+
+    gGlobalVariables.time = sv.time;
+    gEntityInterface.pfnClientKill(sv_player);
+}
+
+void Host_Pause_f(void)
+{
+    int id;
+
+    id = atoi(Cmd_Argv(1));
+
+    if (cmd_source == src_command)
+    {
+        if (D_00332F34 == 1 && sv.paused)
+        {
+            key_dest = 0;
+            func_002369F0(id);
+            func_00236500();
+            func_00239550();
+        }
+
+        switch (id)
+        {
+        case 0:
+            Cmd_ForwardToServer();
+            break;
+        case 1:
+            Cmd_ForwardToServerUnreliable();
+            break;
+        }
+        return;
+    }
+
+    if (pausable.value == 0)
+    {
+        SV_ClientPrintf("Pause not allowed.\n");
+        return;
+    }
+
+    if (D_00332F34 != 1)
+        return;
+
+    sv.paused ^= 1;
+
+    if (sv.paused)
+    {
+        func_002363A0(id);
+        func_0021C3C0();
+        func_002394F0();
+        key_dest = 5;
+    }
+    else
+    {
+        key_dest = 0;
+        func_0021C4B0();
+    }
+
+    MSG_WriteByte(&sv.reliable_datagram, 24);
+    MSG_WriteByte(&sv.reliable_datagram, sv.paused);
+}
+
+void Host_PreSpawn_f(void)
+{
+    int buf;
+
+    if (cmd_source == src_command)
+    {
+        Con_Printf("prespawn is not valid from the console\n");
+        return;
+    }
+
+    if (host_client->spawned)
+    {
+        Con_Printf("prespawn not valid -- already spawned\n");
+        return;
+    }
+
+    if (atoi(Cmd_Argv(1)) != svs.spawncount)
+    {
+        Con_Printf("SV_PreSpawn_f from different level\n");
+        SV_New_f();
+        return;
+    }
+
+    buf = atoi(Cmd_Argv(2));
+    if (buf >= sv.num_signon_buffers)
+        buf = 0;
+
+    SZ_Write(&host_client->netchan.message, sv.signon_buffers[buf], sv.signon_buffer_size[buf]);
+    buf++;
+
+    if (buf == sv.num_signon_buffers)
+    {
+        MSG_WriteByte(&host_client->netchan.message, 25);
+        MSG_WriteByte(&host_client->netchan.message, 1);
+        host_client->unk_73D4 = true;
+    }
+    else
+    {
+        MSG_WriteByte(&host_client->netchan.message, 9);
+        switch (*(int *)net_from.ip)
+        {
+        case 0:
+            MSG_WriteString(&host_client->netchan.message, va("cmd prespawn %i %i\n", svs.spawncount, buf));
+            break;
+        case 1:
+            MSG_WriteString(&host_client->netchan.message, va("cmd2 prespawn %i %i\n", svs.spawncount, buf));
+            break;
+        }
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Spawn_f);
 
