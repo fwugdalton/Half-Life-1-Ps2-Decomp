@@ -50,7 +50,7 @@ extern char D_00392178[];
 void Log_Printf(char *fmt, ...);
 char *strcat(char *, const char *);
 void CL_Disconnect(int player);
-void func_0029C330(void);
+void Host_ClearSaveDirectory(void);
 extern float realtime;
 extern char D_00392278[];
 int func_0027E140(client_t *cl);
@@ -74,7 +74,7 @@ extern UserMsg *sv_gpNewUserMsgs;
 void func_0021C340(void);
 void Host_ShutdownServer(qboolean crash);
 void func_002AC478(int a0);
-void func_0029C388(void);
+void Host_ClearGameState(void);
 int SV_SpawnServer(qboolean bIsDemo, char *server, char *startspot);
 int LoadGamestate(char *level, int a1);
 void SV_LoadEntities(void);
@@ -185,7 +185,7 @@ extern char D_00332F38[];
 SAVERESTOREDATA *SaveGamestate(void);
 void func_00217560(char *dir, char *mapname);
 void func_0022B310(char *name, int a1);
-int func_0029C220(char *pPath);
+int DirectoryCount(char *pPath);
 void func_00244138(char *path, char *extension);
 int func_0022B118(char *name, char *mode);
 int func_0022BD98(void *data, int size, int count, int file);
@@ -213,7 +213,7 @@ int atoi(const char *);
 char *func_00243F68(char *pName);
 int func_0022B590(char *src, char *dst);
 void func_0022BC60(char *name);
-void func_0029C108(int pFile, int mapCount);
+void DirectoryExtract(int pFile, int mapCount);
 void Cbuf_AddText(char *text);
 
 typedef struct
@@ -541,7 +541,7 @@ void Host_Quit_f(void)
 {
     int i;
 
-    func_0029C330();
+    Host_ClearSaveDirectory();
     giActive = 3;
 
     for (i = 0; i < cl_numlocal; i++)
@@ -834,7 +834,7 @@ void Host_Map(qboolean bIsDemo, char *mapstring, char *mapName, qboolean loadGam
 
     if (!loadGame)
     {
-        func_0029C388();
+        Host_ClearGameState();
         SV_InactivateClients();
         svs.serverflags = 0;
     }
@@ -1056,7 +1056,7 @@ void Host_Restart_f(void)
         return;
 
     func_00239488();
-    func_0029C388();
+    Host_ClearGameState();
     SV_InactivateClients();
     strcpy(name, sv.name);
     SV_SpawnServer(false, name, NULL);
@@ -1087,7 +1087,7 @@ void Host_Reload_f(void)
     if (cmd_source != src_command)
         return;
 
-    func_0029C388();
+    Host_ClearGameState();
     SV_InactivateClients();
 
     pSaveName = Host_FindRecentSave(name);
@@ -1314,7 +1314,7 @@ overflow:
 
     sprintf(name, "%s*.HL?", Host_SaveGameDirectory());
     COM_FixSlashes(name);
-    gameHeader.mapCount = func_0029C220(name);
+    gameHeader.mapCount = DirectoryCount(name);
     strcpy(gameHeader.mapName, sv.name);
     strcpy(gameHeader.comment, pSaveComment);
 
@@ -1602,14 +1602,14 @@ int Host_Load(char *pName)
         return 0;
 
     func_0022BC60(name);
-    func_0029C388();
+    Host_ClearGameState();
 
     if (SaveReadHeader(pFile, &gameHeader, 1))
     {
 
         SV_InactivateClients();
         func_002AC478(0);
-        func_0029C108(pFile, gameHeader.mapCount);
+        DirectoryExtract(pFile, gameHeader.mapCount);
         func_0022B238(pFile);
         func_0022B248(D_003927A8);
         Cvar_SetValue(D_003927D0, 0);
@@ -2388,19 +2388,98 @@ void DirectoryCopy(char *pPath, int pFile)
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029C108);
+void func_0022AFD0(char *name, int size);
+void func_0022BEB8(int file, int offset, int origin);
+void func_0022BAA0(char *pattern);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029C220);
+void DirectoryExtract(int pFile, int fileCount)
+{
+    char fileName[260];
+    char szName[260];
+    int fileSize;
+    int pCopy;
+    int i;
+
+    for (i = 0; i < fileCount; i++)
+    {
+        func_0022BE50(szName, 1, 260, pFile);
+        func_0022BE50(&fileSize, 4, 1, pFile);
+        sprintf(fileName, D_00392990, szName);
+        COM_FixSlashes(fileName);
+        Mem_PushTag();
+        Mem_SetTag(1);
+        func_0022AFD0(fileName, fileSize);
+        pCopy = func_0022B118(fileName, D_003926D0);
+        func_0022BD98(func_0022BF38(pFile), fileSize, 1, pCopy);
+        func_0022B238(pCopy);
+        Mem_PopTag();
+        func_0022BEB8(pFile, fileSize, 1);
+    }
+}
+
+int DirectoryCount(char *pPath)
+{
+    char szName[256];
+    int h;
+    int count;
+
+    count = 0;
+    h = func_0022B6F0(pPath, szName);
+    while (h != -1)
+    {
+        if (!strstr(szName, D_00392988))
+            count++;
+
+        if (!func_0022B810(h, szName))
+        {
+            func_0022B8A0(h);
+            h = -1;
+        }
+    }
+
+    return count;
+}
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00392988);
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00392990);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029C2B8);
+void DirectoryClear(char *pPath)
+{
+    char szName[260];
+    int h;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029C330);
+    h = func_0022B6F0(pPath, szName);
+    while (h != -1)
+    {
+        func_0022B248(szName);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029C388);
+        if (!func_0022B810(h, szName))
+        {
+            func_0022B8A0(h);
+            h = -1;
+        }
+    }
+
+    func_0022BAA0("*.sav");
+}
+
+void Host_ClearSaveDirectory(void)
+{
+    char szName[260];
+
+    sprintf(szName, D_00392990, Host_SaveGameDirectory());
+    COM_FixSlashes(szName);
+    strcat(szName, "*.HL?");
+    DirectoryClear(szName);
+}
+
+void Host_ClearGameState(void)
+{
+    func_002CD340(1, 0);
+    Host_ClearSaveDirectory();
+    gEntityInterface.pfnResetGlobalState();
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Changelevel2_f);
 
