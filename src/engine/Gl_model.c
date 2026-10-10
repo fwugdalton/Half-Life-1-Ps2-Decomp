@@ -730,3 +730,5 @@ qboolean Mod_CheckLumpPointer(void *pheader, void *pdata, int lump)
 
     return ret;
 }
+
+INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", func_002A0450);
