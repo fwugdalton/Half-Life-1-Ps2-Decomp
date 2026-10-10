@@ -84,6 +84,13 @@ extern char com_gamedir[];
 extern void (*D_003997C0)(char *gamedir);
 extern int protocol_version;
 extern int D_00332F2C;
+extern char *svc_strings[];
+extern int msg_buckets[64];
+extern int frame_data[64];
+extern int total_data[64];
+extern int bitcounts[40];
+extern int playerbitcounts[32];
+extern int custombitcounts[32];
 extern cvar_t r_decals;
 extern cvar_t mp_decals;
 extern cvar_t cl_skyname;
@@ -1258,10 +1265,48 @@ void CL_LoadDecals(char *filename)
         Con_Printf("Loading decals from %s\n", MSG_ReadString());
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_parse", func_00296B90);
+void CL_DumpMessageLoad_f(void)
+{
+    int i;
+    int total;
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_parse", func_00296CE0);
+    total = 0;
+    Con_Printf("-------- Message Load ---------\n");
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_parse", func_00296DC0);
+    for (i = 0; i < SVC_LASTMSG + 10; i++)
+    {
+        Con_Printf("%i:%s: %i msgs:%.2fK\n", i, (i < SVC_LASTMSG + 1) ? svc_strings[i] : "bogus #", msg_buckets[i], total_data[i] / 1024.0f);
+        total += msg_buckets[i];
+    }
+
+    Con_Printf("User messages:  %i:%.2fK\n", msg_buckets[SVC_LASTMSG + 10], total_data[SVC_LASTMSG + 10] / 1024.0f);
+    Con_Printf("------ End:  %i Total----\n", total + msg_buckets[SVC_LASTMSG + 10]);
+}
+
+void CL_BitCounts_f(void)
+{
+    int i;
+
+    Con_Printf("------- Bit Counts -------\n");
+    Con_Printf("Bit    Delta   Player  Custom\n");
+
+    for (i = 0; i < 40; i++)
+    {
+        if (i < 32)
+            Con_Printf("(1<<%2i) %6.6i  %6.6i  %6.6i\n", i, bitcounts[i], playerbitcounts[i], custombitcounts[i]);
+        else
+            Con_Printf("(1<<%2i) %6.6i\n", i, bitcounts[i]);
+    }
+
+    Con_Printf("--------------------------\n");
+}
+
+void CL_AccumulateMessageLoad(void)
+{
+    int i;
+
+    for (i = 0; i < 64; i++)
+        total_data[i] += frame_data[i];
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/cl_parse", func_00296E00);
