@@ -151,10 +151,27 @@ typedef struct
 
 typedef struct resource_s
 {
-    byte unk_00[0x48];
+    char szFileName[64];        /* 0x00 */
+    byte type;                  /* 0x40 */
+    byte ucFlags;               /* 0x41 */
+    int nIndex;                 /* 0x44 */
     struct resource_s *pNext; /* 0x48 */
     struct resource_s *pPrev; /* 0x4C */
 } resource_t; /* 0x50 */
+
+typedef struct customization_s
+{
+    byte unk_00[0x68];
+    struct customization_s *pNext; /* 0x68 */
+} customization_t; /* 0x6C */
+
+typedef struct _UserMsg
+{
+    int iMsg;                   /* 0x00 */
+    int iSize;                  /* 0x04 */
+    char szName[12];            /* 0x08 */
+    struct _UserMsg *next;      /* 0x14 */
+} UserMsg;
 
 typedef struct client_s
 {
@@ -192,7 +209,8 @@ typedef struct client_s
     resource_t resourcesneeded; /* 0x8558 */
     resource_t resourcesonhand; /* 0x85A8 */
     int unk_85F8;               /* 0x85F8 */
-    byte unk_85FC[0x8778 - 0x85FC];
+    byte unk_85FC[0x870C - 0x85FC];
+    customization_t customdata; /* 0x870C */
 } client_t; /* 0x8778 */
 
 typedef struct server_log_s
@@ -228,7 +246,8 @@ typedef struct server_s
     struct model_s *worldmodel; /* 0x000D8 */
     unsigned int worldmapCRC;   /* 0x000DC */
     unsigned int clientdllmd5;  /* 0x000E0 */
-    byte unk_000E4[0x190E8 - 0xE4];
+    resource_t resourcelist[1280]; /* 0x000E4 */
+    int num_resources;          /* 0x190E4 */
     char *model_precache[512];  /* 0x190E8 */
     struct model_s *models[512]; /* 0x198E8 */
     char *sound_precache[512];  /* 0x1A0E8 */

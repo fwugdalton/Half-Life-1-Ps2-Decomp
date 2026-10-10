@@ -14,7 +14,7 @@ __asm__ com os rótulos não migrados, na ordem dos endereços: cada bloco vai a
 primeira função (em C ou INCLUDE_ASM) cuja rodata migrada vem depois dele.
 
 Rótulos compartilhados que só funções em C usam são emitidos pelo próprio C e ficam de
-fora. Os que o C emite mas alguma função em asm ainda usa ganham símbolo absoluto em
+fora (a menos que o C os declare `extern`, aí vão no bloco). Os que o C emite mas alguma função em asm ainda usa ganham símbolo absoluto em
 linker_script_extra.ld (entre marcadores com o nome do arquivo).
 Blocos e símbolos antigos são removidos antes, então dá para rodar de novo a cada mudança.
 """
@@ -90,7 +90,8 @@ for b in blocks:
     if b[0] in mig_all:
         continue
     u = users(b[0])
-    if u & in_c:
+    if u & in_c and not re.search(r'^extern[^;\n]*\b%s\b' % b[0], s, re.M):
+        # (rótulo declarado extern no C não é emitido pelo C: vai no bloco)
         # o C já emite; se alguma função em asm ainda usa, precisa de símbolo absoluto
         if u - in_c:
             absolute.append(b)

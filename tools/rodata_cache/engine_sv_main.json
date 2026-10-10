@@ -91,8 +91,6 @@
 "D_0038F788"
 ],
 "refs": [
-"D_003323E0",
-"D_003323F8",
 "D_00332410",
 "D_00332428",
 "D_00332458",
@@ -154,8 +152,10 @@
 "sv_friction",
 "sv_gravity",
 "sv_lan",
+"sv_maxrate",
 "sv_maxspeed",
 "sv_maxvelocity",
+"sv_minrate",
 "sv_netsize",
 "sv_skyname",
 "sv_spectatormaxspeed",

@@ -1093,8 +1093,8 @@ typedef struct
 extern DLL_FUNCTIONS gEntityInterface;
 extern int cmd_source;
 extern float realtime;
-extern void *sv_gpUserMsgs;
-extern void *sv_gpNewUserMsgs;
+extern UserMsg *sv_gpUserMsgs;
+extern UserMsg *sv_gpNewUserMsgs;
 extern cvar_t sv_netsize;
 void SV_SendUserReg(sizebuf_t *msg);
 void SV_DropClient(client_t *cl, qboolean crash);
@@ -1107,7 +1107,7 @@ void SV_New_f(void)
 {
     edict_t *ent;
     int sinfo, decals, usr;
-    void *pTemp;
+    UserMsg *pTemp;
     char szRejectReason[128];
     char szAddress[256];
     char szName[64];
@@ -1468,7 +1468,23 @@ void func_0027DA98(void)
     }
 }
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027DB10);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027DE58);
+//SV_CheckRate
+extern cvar_t sv_maxrate;
+extern cvar_t sv_minrate;
+
+void SV_CheckRate(client_t *cl)
+{
+    if (sv_maxrate.value > 0.0f)
+    {
+        if (cl->netchan.rate > sv_maxrate.value)
+            cl->netchan.rate = sv_maxrate.value < 10000.0f ? sv_maxrate.value : 10000.0f;
+    }
+    if (sv_minrate.value > 0.0f)
+    {
+        if (cl->netchan.rate < sv_minrate.value)
+            cl->netchan.rate = sv_minrate.value > 500.0f ? sv_minrate.value : 500.0f;
+    }
+}
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027DEE8);
 /* rodata não migrada: início */
 __asm__(".section .rodata\n"
@@ -1628,7 +1644,19 @@ INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_ExtractFromUserinfo);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_ModelIndex);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_002817E0);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00281888);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00281B08);
+//SV_AddResource
+void SV_AddResource(int type, char *name, int size, int flags, int index)
+{
+    resource_t *r = &sv.resourcelist[sv.num_resources];
+
+    if (sv.num_resources >= 1280)
+        Sys_Error("Too many resources on server.");
+    sv.num_resources++;
+    r->type = type;
+    strcpy(r->szFileName, name);
+    r->ucFlags |= flags != 0;
+    r->nIndex = index;
+}
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00281BC8);
 void func_00281D88(void)
 {
@@ -1664,8 +1692,31 @@ void SV_ClearEntities(void)
     }
 }
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00282E40);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_SendUserReg);
+//SV_SendUserReg
+#define svc_newusermsg 39
+extern char D_0038F6E0[];
+
+void SV_SendUserReg(sizebuf_t *msg)
+{
+    UserMsg *pMsg;
+
+    if (!sv_gpNewUserMsgs)
+        return;
+    pMsg = sv_gpNewUserMsgs;
+    do
+    {
+        MSG_WriteByte(msg, svc_newusermsg);
+        MSG_WriteByte(msg, pMsg->iMsg);
+        MSG_WriteByte(msg, pMsg->iSize);
+        MSG_WriteLong(msg, *(int *)&pMsg->szName[0]);
+        MSG_WriteLong(msg, *(int *)&pMsg->szName[4]);
+        MSG_WriteLong(msg, *(int *)&pMsg->szName[8]);
+        MSG_WriteLong(msg, *(int *)&pMsg->szName[12]);
+        pMsg = pMsg->next;
+    } while (pMsg);
+}
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00283018);
+//func_00283130
 /* rodata não migrada: início */
 __asm__(".section .rodata\n"
         ".globl D_0038F6E0\n"
@@ -1677,5 +1728,22 @@ __asm__(".section .rodata\n"
         ".align 3\n"
         ".section .text\n");
 /* rodata não migrada: fim */
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00283130);
+void func_00283130(void)
+{
+    int i;
+    client_t *cl;
+    customization_t *pCust;
+
+    Con_Printf("Server Rep. of Player Logos ===\n");
+    for (i = 0, cl = svs.clients; i < svs.maxclients; i++, cl++)
+    {
+        if (!cl->active && !cl->connected && !cl->spawned)
+            continue;
+        if (cl->fakeclient)
+            continue;
+        for (pCust = cl->customdata.pNext; pCust; pCust = pCust->pNext)
+            ;
+    }
+    Con_Printf(D_0038F6E0);
+}
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_Init);

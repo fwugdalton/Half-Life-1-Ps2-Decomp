@@ -1819,14 +1819,6 @@ void PF_MessageBegin_I(int msg_dest, int msg_type, const float *pOrigin, edict_t
     gMsgBuffer.overflowed = false;
 }
 
-typedef struct _UserMsg
-{
-    int iMsg;                   /* 0x00 */
-    int iSize;                  /* 0x04 */
-    char szName[12];            /* 0x08 */
-    struct _UserMsg *next;      /* 0x14 */
-} UserMsg;
-
 #define svc_startofusermessages 53
 #define MSG_FL_PVS 1
 #define MSG_FL_PAS 2
