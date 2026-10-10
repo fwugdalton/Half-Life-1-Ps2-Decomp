@@ -94,7 +94,7 @@ void func_0024FE00(int player);
 void SV_ClearEntities(void);
 void func_002B05F8(void);
 void func_0029F6A8(void);
-void func_002885A0(client_t *cl);
+void SV_ClearResourceLists(client_t *cl);
 void SV_ReadPackets(void);
 void SV_Physics(void);
 void SV_QueryMovevarsChanged(void);
@@ -318,8 +318,8 @@ void SV_SetMaxclients(void)
     for (i = 0, cl = svs.clients; i < svs.maxclientslimit; cl++, i++)
     {
         memset(cl, 0, sizeof(client_t));
-        cl->resourcesonhand.pNext = cl->resourcesonhand.pPrev = &cl->resourcesonhand;
         cl->resourcesneeded.pNext = cl->resourcesneeded.pPrev = &cl->resourcesneeded;
+        cl->resourcesonhand.pNext = cl->resourcesonhand.pPrev = &cl->resourcesonhand;
     }
 
     if (svs.maxclients > 1)
@@ -634,7 +634,7 @@ void SV_ClearClientStates(void)
     client_t *pcl;
 
     for (i = 0, pcl = svs.clients; i < svs.maxclients; i++, pcl++)
-        func_002885A0(pcl);
+        SV_ClearResourceLists(pcl);
 }
 
 void Host_CheckDynamicStructures(void)

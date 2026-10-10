@@ -1677,10 +1677,10 @@ edict_t *PF_CreateFakeClient_I(const char *netname)
     ent = EDICT_NUM(i + 1);
 
     memset(fakeclient, 0, sizeof(client_t));
-    fakeclient->resourcesonhand.pPrev = &fakeclient->resourcesonhand;
-    fakeclient->resourcesonhand.pNext = &fakeclient->resourcesonhand;
     fakeclient->resourcesneeded.pPrev = &fakeclient->resourcesneeded;
     fakeclient->resourcesneeded.pNext = &fakeclient->resourcesneeded;
+    fakeclient->resourcesonhand.pPrev = &fakeclient->resourcesonhand;
+    fakeclient->resourcesonhand.pNext = &fakeclient->resourcesonhand;
 
     strncpy(fakeclient->name, netname, sizeof(fakeclient->name));
 

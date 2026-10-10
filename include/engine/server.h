@@ -196,9 +196,19 @@ typedef struct resource_s
     struct resource_s *pPrev; /* 0x4C */
 } resource_t; /* 0x50 */
 
+/* fila circular de 8 entradas em client_t (sv_upld.c) */
+typedef struct
+{
+    int unk_0;
+    float time;
+    int unk_8;
+} upload_entry_t;
+
 typedef struct customization_s
 {
-    byte unk_00[0x68];
+    qboolean bInUse;            /* 0x00 */
+    resource_t resource;        /* 0x04 */
+    byte unk_54[0x68 - 0x54];
     struct customization_s *pNext; /* 0x68 */
 } customization_t; /* 0x6C */
 
@@ -251,10 +261,21 @@ typedef struct client_s
     int unk_8538;               /* 0x8538 */
     void *unk_853C;             /* 0x853C */
     byte unk_8540[0x8558 - 0x8540];
-    resource_t resourcesneeded; /* 0x8558 */
-    resource_t resourcesonhand; /* 0x85A8 */
+    resource_t resourcesonhand; /* 0x8558 */
+    resource_t resourcesneeded; /* 0x85A8 */
     int unk_85F8;               /* 0x85F8 */
-    byte unk_85FC[0x870C - 0x85FC];
+    resource_t *unk_85FC;       /* 0x85FC */
+    byte unk_8600[0x8688 - 0x8600];
+    int unk_8688;               /* 0x8688 */
+    int unk_868C;               /* 0x868C */
+    int unk_8690;               /* 0x8690 */
+    int unk_8694;               /* 0x8694 */
+    float unk_8698;             /* 0x8698 */
+    float unk_869C;             /* 0x869C */
+    upload_entry_t unk_86A0[8]; /* 0x86A0 */
+    int unk_8700;               /* 0x8700 */
+    qboolean uploaddoneregistering; /* 0x8704 */
+    byte unk_8708[0x870C - 0x8708];
     customization_t customdata; /* 0x870C */
 } client_t; /* 0x8778 */
 

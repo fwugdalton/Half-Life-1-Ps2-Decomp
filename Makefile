@@ -59,6 +59,7 @@ $(BUILD_DIR)/src/engine/r_trans.o: CFLAGS += -ffast-math
 $(BUILD_DIR)/src/engine/sv_main.o: CFLAGS += -ffast-math
 $(BUILD_DIR)/src/engine/sv_move.o: CFLAGS += -ffast-math
 $(BUILD_DIR)/src/engine/sv_phys.o: CFLAGS += -ffast-math
+$(BUILD_DIR)/src/engine/sv_upld.o: CFLAGS += -ffast-math
 
 $(BUILD_DIR)/src/%.o: src/%.c $(shell find include -name "*.h")
 	@mkdir -p $(dir $@)

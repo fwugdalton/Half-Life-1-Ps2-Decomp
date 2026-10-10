@@ -1280,14 +1280,14 @@ extern cvar_t sv_lan;
 extern cvar_t sv_password;
 extern int D_00334540;
 extern int g_userid;
-qboolean func_002C6EA8(netadr_t adr);
+qboolean NET_IsLocalAddress(netadr_t adr);
 qboolean func_002C6D78(netadr_t a, netadr_t b);
 qboolean func_002C6CF8(netadr_t a, netadr_t b);
 qboolean func_002C6D58(netadr_t a);
 qboolean NET_CompareAdr(netadr_t a, netadr_t b);
 char *Info_ValueForKey(char *s, char *key);
 void func_00244AC8(char *s, char *key);
-void func_002885A0(client_t *cl);
+void SV_ClearResourceLists(client_t *cl);
 int func_002E60D8(const char *a, const char *b, int n);
 void Netchan_Setup(int sock, netchan_t *chan, netadr_t adr);
 void Netchan_OutOfBandPrint(int sock, netadr_t adr, int unk, char *format, ...);
@@ -1301,14 +1301,14 @@ extern cvar_t sv_lan;
 extern cvar_t sv_password;
 extern int D_00334540;
 extern int g_userid;
-qboolean func_002C6EA8(netadr_t adr);
+qboolean NET_IsLocalAddress(netadr_t adr);
 qboolean func_002C6D78(netadr_t a, netadr_t b);
 qboolean func_002C6CF8(netadr_t a, netadr_t b);
 qboolean func_002C6D58(netadr_t a);
 qboolean NET_CompareAdr(netadr_t a, netadr_t b);
 char *Info_ValueForKey(char *s, char *key);
 void func_00244AC8(char *s, char *key);
-void func_002885A0(client_t *cl);
+void SV_ClearResourceLists(client_t *cl);
 int func_002E60D8(const char *a, const char *b, int n);
 void Netchan_Setup(int sock, netchan_t *chan, netadr_t adr);
 void Netchan_OutOfBandPrint(int sock, netadr_t adr, int unk, char *format, ...);
@@ -1322,14 +1322,14 @@ extern cvar_t sv_lan;
 extern cvar_t sv_password;
 extern int D_00334540;
 extern int g_userid;
-qboolean func_002C6EA8(netadr_t adr);
+qboolean NET_IsLocalAddress(netadr_t adr);
 qboolean func_002C6D78(netadr_t a, netadr_t b);
 qboolean func_002C6CF8(netadr_t a, netadr_t b);
 qboolean func_002C6D58(netadr_t a);
 qboolean NET_CompareAdr(netadr_t a, netadr_t b);
 char *Info_ValueForKey(char *s, char *key);
 void func_00244AC8(char *s, char *key);
-void func_002885A0(client_t *cl);
+void SV_ClearResourceLists(client_t *cl);
 int func_002E60D8(const char *a, const char *b, int n);
 void Netchan_Setup(int sock, netchan_t *chan, netadr_t adr);
 void Netchan_OutOfBandPrint(int sock, netadr_t adr, int unk, char *format, ...);
@@ -1343,14 +1343,14 @@ extern cvar_t sv_lan;
 extern cvar_t sv_password;
 extern int D_00334540;
 extern int g_userid;
-qboolean func_002C6EA8(netadr_t adr);
+qboolean NET_IsLocalAddress(netadr_t adr);
 qboolean func_002C6D78(netadr_t a, netadr_t b);
 qboolean func_002C6CF8(netadr_t a, netadr_t b);
 qboolean func_002C6D58(netadr_t a);
 qboolean NET_CompareAdr(netadr_t a, netadr_t b);
 char *Info_ValueForKey(char *s, char *key);
 void func_00244AC8(char *s, char *key);
-void func_002885A0(client_t *cl);
+void SV_ClearResourceLists(client_t *cl);
 int func_002E60D8(const char *a, const char *b, int n);
 void Netchan_Setup(int sock, netchan_t *chan, netadr_t adr);
 void Netchan_OutOfBandPrint(int sock, netadr_t adr, int unk, char *format, ...);
@@ -1364,14 +1364,14 @@ extern cvar_t sv_lan;
 extern cvar_t sv_password;
 extern int D_00334540;
 extern int g_userid;
-qboolean func_002C6EA8(netadr_t adr);
+qboolean NET_IsLocalAddress(netadr_t adr);
 qboolean func_002C6D78(netadr_t a, netadr_t b);
 qboolean func_002C6CF8(netadr_t a, netadr_t b);
 qboolean func_002C6D58(netadr_t a);
 qboolean NET_CompareAdr(netadr_t a, netadr_t b);
 char *Info_ValueForKey(char *s, char *key);
 void func_00244AC8(char *s, char *key);
-void func_002885A0(client_t *cl);
+void SV_ClearResourceLists(client_t *cl);
 int func_002E60D8(const char *a, const char *b, int n);
 void Netchan_Setup(int sock, netchan_t *chan, netadr_t adr);
 void Netchan_OutOfBandPrint(int sock, netadr_t adr, int unk, char *format, ...);
@@ -1385,14 +1385,14 @@ extern cvar_t sv_lan;
 extern cvar_t sv_password;
 extern int D_00334540;
 extern int g_userid;
-qboolean func_002C6EA8(netadr_t adr);
+qboolean NET_IsLocalAddress(netadr_t adr);
 qboolean func_002C6D78(netadr_t a, netadr_t b);
 qboolean func_002C6CF8(netadr_t a, netadr_t b);
 qboolean func_002C6D58(netadr_t a);
 qboolean NET_CompareAdr(netadr_t a, netadr_t b);
 char *Info_ValueForKey(char *s, char *key);
 void func_00244AC8(char *s, char *key);
-void func_002885A0(client_t *cl);
+void SV_ClearResourceLists(client_t *cl);
 int func_002E60D8(const char *a, const char *b, int n);
 void Netchan_Setup(int sock, netchan_t *chan, netadr_t adr);
 void Netchan_OutOfBandPrint(int sock, netadr_t adr, int unk, char *format, ...);
@@ -1441,7 +1441,7 @@ void SV_ConnectClient(void)
 
     challenge = atoi(Cmd_Argv(2));
 
-    if (!func_002C6EA8(adr))
+    if (!NET_IsLocalAddress(adr))
     {
         for (i = 0; i < 16; i++)
         {
@@ -1524,7 +1524,7 @@ invalid:
     if (s[0] && strcmp(s, D_0038E630))
         ;
 
-    if (!func_002C6EA8(adr) && sv_password.string[0] && strcasecmp(sv_password.string, "none")
+    if (!NET_IsLocalAddress(adr) && sv_password.string[0] && strcasecmp(sv_password.string, "none")
         && strcmp(sv_password.string, Info_ValueForKey(userinfo, "password")))
     {
         Con_Printf("%s:  password failed\n", NET_AdrToString(net_from));
@@ -1619,11 +1619,11 @@ invalid:
     }
 
     host_client = client;
-    func_002885A0(client);
+    SV_ClearResourceLists(client);
     memset(client, 0, sizeof(client_t));
 
-    client->resourcesonhand.pNext = client->resourcesonhand.pPrev = &client->resourcesonhand;
     client->resourcesneeded.pNext = client->resourcesneeded.pPrev = &client->resourcesneeded;
+    client->resourcesonhand.pNext = client->resourcesonhand.pPrev = &client->resourcesonhand;
 
     Netchan_Setup(NS_SERVER, &client->netchan, adr);
     Netchan_OutOfBandPrint(NS_SERVER, adr, *(int *)adr.ip, "%c0000000000000000", 'B');
@@ -4834,7 +4834,7 @@ void SV_Init(void)
     {
         cl = &svs.clients[i];
         memset(cl, 0, sizeof(client_t));
-        cl->resourcesneeded.pNext = cl->resourcesneeded.pPrev = &cl->resourcesneeded;
         cl->resourcesonhand.pNext = cl->resourcesonhand.pPrev = &cl->resourcesonhand;
+        cl->resourcesneeded.pNext = cl->resourcesneeded.pPrev = &cl->resourcesneeded;
     }
 }
