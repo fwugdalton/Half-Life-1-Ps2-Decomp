@@ -77,7 +77,7 @@ realcheck:
     c_yes++;
     return true;
 }
-trace_t func_00291900(const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int type, edict_t *passedict);
+trace_t SV_MoveNoEnts(const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int type, edict_t *passedict);
 void SV_LinkEdict(edict_t *ent, qboolean touch_triggers);
 
 qboolean SV_movetest(edict_t *ent, vec_t *move, qboolean relink)
@@ -92,14 +92,14 @@ qboolean SV_movetest(edict_t *ent, vec_t *move, qboolean relink)
     VectorCopy(neworg, end);
     end[2] -= sv_stepsize.value * 2;
 
-    trace = func_00291900(neworg, ent->v.mins, ent->v.maxs, end, false, ent);
+    trace = SV_MoveNoEnts(neworg, ent->v.mins, ent->v.maxs, end, false, ent);
     if (trace.allsolid)
         return false;
 
     if (trace.startsolid)
     {
         neworg[2] -= sv_stepsize.value;
-        trace = func_00291900(neworg, ent->v.mins, ent->v.maxs, end, false, ent);
+        trace = SV_MoveNoEnts(neworg, ent->v.mins, ent->v.maxs, end, false, ent);
         if (trace.allsolid || trace.startsolid)
             return false;
     }

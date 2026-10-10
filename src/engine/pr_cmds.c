@@ -347,7 +347,7 @@ void PF_sound_I(edict_t *entity, int channel, const char *sample, float volume, 
 }
 
 trace_t SV_Move(const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int type, edict_t *passedict, qboolean monsterClipBrush);
-trace_t SV_MoveNoEnts(const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int type, edict_t *passedict, qboolean monsterClipBrush);
+trace_t SV_MoveNoStudio(const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int type, edict_t *passedict, qboolean monsterClipBrush);
 void SV_SetGlobalTrace(trace_t *ptrace);
 
 void PF_traceline_Shared(const float *v1, const float *v2, int nomonsters, edict_t *ent, qboolean noents)
@@ -355,7 +355,7 @@ void PF_traceline_Shared(const float *v1, const float *v2, int nomonsters, edict
     trace_t trace;
 
     if (noents)
-        trace = SV_MoveNoEnts(v1, vec3_origin, vec3_origin, v2, nomonsters, ent, false);
+        trace = SV_MoveNoStudio(v1, vec3_origin, vec3_origin, v2, nomonsters, ent, false);
     else
         trace = SV_Move(v1, vec3_origin, vec3_origin, v2, nomonsters, ent, false);
 

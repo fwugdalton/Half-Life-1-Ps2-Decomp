@@ -55,7 +55,34 @@ void SV_FindTouchedLeafs(edict_t *ent, mnode_t *node, int *topnode);
 int SV_LinkContents(areanode_t *node, vec3_t pos);
 trace_t SV_Move(const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int type, edict_t *passedict, qboolean monsterClipBrush);
 void SV_SetGlobalTrace(trace_t *ptrace);
+hull_t *SV_HullForStudioModel(edict_t *pEdict, const vec3_t mins, const vec3_t maxs, vec3_t offset, int *pNumHulls);
+int SV_HitgroupForStudioHull(int index);
+void AngleVectorsTranspose(const vec3_t angles, vec3_t forward, vec3_t right, vec3_t up);
 #define MOVETYPE_FOLLOW 12
+#define MOVE_NOMONSTERS 1
+#define MOVE_MISSILE 2
+#define MOVETYPE_PUSHSTEP 13
+#define kRenderNormal 0
+#define FL_MONSTER (1 << 5)
+#define FL_WORLDBRUSH (1 << 25)
+
+typedef struct
+{
+    vec3_t boxmins;             /* 0x00 */
+    vec3_t boxmaxs;             /* 0x0C */
+    const float *mins;          /* 0x18 */
+    const float *maxs;          /* 0x1C */
+    vec3_t mins2;               /* 0x20 */
+    vec3_t maxs2;               /* 0x2C */
+    const float *start;         /* 0x38 */
+    const float *end;           /* 0x3C */
+    trace_t trace;              /* 0x40 */
+    short type;                 /* 0x78 */
+    short ignoretrans;          /* 0x7A */
+    edict_t *passedict;         /* 0x7C */
+    qboolean monsterClipBrush;  /* 0x80 */
+} moveclip_t;
+
 void RemoveLink(link_t *l);
 void *memset(void *, int, unsigned int);
 void CrossProduct(const vec3_t v1, const vec3_t v2, vec3_t cross);
@@ -682,24 +709,516 @@ qboolean SV_RecursiveHullCheck(hull_t *hull, int num, float p1f, float p2f, vec3
     return false;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/world", func_00290628);
+void SV_SingleClipMoveToEntity(edict_t *ent, const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, trace_t *trace, int nostudio)
+{
+    hull_t *hull;
+    vec3_t offset;
+    vec3_t start_l, end_l;
+    vec3_t forward, right, up;
+    vec3_t temp;
+    trace_t testtrace;
+    vec3_t right2, up2;
+    vec3_t temp2;
+    int numhulls;
+    int rotated;
+    int closest;
+    int i;
+    model_t *pmodel;
 
-INCLUDE_ASM("asm/nonmatchings/engine/world", SV_ClipMoveToEntity);
+    memset(trace, 0, sizeof(trace_t));
+    trace->fraction = 1.0f;
+    trace->allsolid = true;
+    trace->endpos[0] = end[0];
+    trace->endpos[1] = end[1];
+    trace->endpos[2] = end[2];
 
-INCLUDE_ASM("asm/nonmatchings/engine/world", func_00290CF8);
+    pmodel = sv.models[ent->v.modelindex];
+    if (!nostudio && pmodel && pmodel->type == mod_studio)
+    {
+        hull = SV_HullForStudioModel(ent, mins, maxs, offset, &numhulls);
+    }
+    else
+    {
+        hull = SV_HullForEntity(ent, mins, maxs, offset);
+        numhulls = 1;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/world", func_00290DB0);
+    VectorSubtract(start, offset, start_l);
+    VectorSubtract(end, offset, end_l);
 
-INCLUDE_ASM("asm/nonmatchings/engine/world", func_00291198);
+    if (ent->v.solid == SOLID_BSP && (ent->v.angles[0] != 0 || ent->v.angles[1] != 0 || ent->v.angles[2] != 0))
+        rotated = true;
+    else
+        rotated = false;
 
-INCLUDE_ASM("asm/nonmatchings/engine/world", func_00291580);
+    if (rotated)
+    {
+        AngleVectors(ent->v.angles, forward, right, up);
 
-INCLUDE_ASM("asm/nonmatchings/engine/world", SV_MoveBounds);
+        VectorCopy(start_l, temp);
+        start_l[0] = DotProduct(temp, forward);
+        start_l[1] = -DotProduct(temp, right);
+        start_l[2] = DotProduct(temp, up);
 
-INCLUDE_ASM("asm/nonmatchings/engine/world", func_00291900);
+        VectorCopy(end_l, temp);
+        end_l[0] = DotProduct(temp, forward);
+        end_l[1] = -DotProduct(temp, right);
+        end_l[2] = DotProduct(temp, up);
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/world", SV_Move);
+    if (numhulls == 1)
+    {
+        SV_RecursiveHullCheck(hull, hull->firstclipnode, 0, 1, start_l, end_l, trace);
+    }
+    else
+    {
+        closest = 0;
+        for (i = 0; i < numhulls; i++)
+        {
+            memset(&testtrace, 0, sizeof(trace_t));
+            testtrace.endpos[0] = end[0];
+            testtrace.endpos[1] = end[1];
+            testtrace.endpos[2] = end[2];
+            testtrace.fraction = 1.0f;
+            testtrace.allsolid = true;
+            SV_RecursiveHullCheck(&hull[i], hull[i].firstclipnode, 0, 1, start_l, end_l, &testtrace);
 
-INCLUDE_ASM("asm/nonmatchings/engine/world", SV_MoveNoEnts);
+            if (i == 0 || testtrace.allsolid || testtrace.startsolid || testtrace.fraction < trace->fraction)
+            {
+                if (trace->startsolid)
+                {
+                    *trace = testtrace;
+                    trace->startsolid = true;
+                }
+                else
+                {
+                    *trace = testtrace;
+                }
+                closest = i;
+            }
+        }
+        trace->hitgroup = SV_HitgroupForStudioHull(closest);
+    }
 
-INCLUDE_RODATA("asm/nonmatchings/engine/world", D_00390780);
+    if (trace->fraction != 1.0f)
+    {
+        if (rotated)
+        {
+            AngleVectorsTranspose(ent->v.angles, temp, right2, up2);
+            VectorCopy(trace->plane.normal, temp2);
+            trace->plane.normal[0] = DotProduct(temp2, temp);
+            trace->plane.normal[1] = DotProduct(temp2, right2);
+            trace->plane.normal[2] = DotProduct(temp2, up2);
+        }
+
+        trace->endpos[0] = start[0] + trace->fraction * (end[0] - start[0]);
+        trace->endpos[1] = start[1] + trace->fraction * (end[1] - start[1]);
+        trace->endpos[2] = start[2] + trace->fraction * (end[2] - start[2]);
+    }
+
+    if (trace->fraction < 1.0f || trace->startsolid)
+        trace->ent = ent;
+}
+
+trace_t SV_ClipMoveToEntity(edict_t *ent, const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end)
+{
+    trace_t goodtrace;
+
+    SV_SingleClipMoveToEntity(ent, start, mins, maxs, end, &goodtrace, 0);
+    return goodtrace;
+}
+
+trace_t SV_ClipMoveToEntityNoStudio(edict_t *ent, const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end)
+{
+    trace_t goodtrace;
+
+    SV_SingleClipMoveToEntity(ent, start, mins, maxs, end, &goodtrace, 1);
+    return goodtrace;
+}
+
+void SV_ClipToLinks(areanode_t *node, moveclip_t *clip)
+{
+    link_t *l, *next;
+    edict_t *touch;
+    trace_t trace;
+
+    for (l = node->solid_edicts.next; l != &node->solid_edicts; l = next)
+    {
+        next = l->next;
+        touch = EDICT_FROM_AREA(l);
+
+        if (touch->v.solid == SOLID_NOT)
+            continue;
+        if (touch == clip->passedict)
+            continue;
+        if (touch->v.solid == SOLID_TRIGGER)
+            Sys_Error("Trigger in clipping list");
+
+        if (touch->v.solid == SOLID_BSP)
+        {
+            if ((touch->v.flags & FL_MONSTERCLIP) && !clip->monsterClipBrush)
+                continue;
+        }
+        else
+        {
+            if (clip->type == MOVE_NOMONSTERS && touch->v.movetype != MOVETYPE_PUSHSTEP)
+                continue;
+        }
+
+        if (clip->ignoretrans && touch->v.rendermode != kRenderNormal && !(touch->v.flags & FL_WORLDBRUSH))
+            continue;
+
+        if (clip->boxmins[0] > touch->v.absmax[0]
+            || clip->boxmins[1] > touch->v.absmax[1]
+            || clip->boxmins[2] > touch->v.absmax[2]
+            || clip->boxmaxs[0] < touch->v.absmin[0]
+            || clip->boxmaxs[1] < touch->v.absmin[1]
+            || clip->boxmaxs[2] < touch->v.absmin[2])
+            continue;
+
+        if (clip->passedict && clip->passedict->v.size[0] != 0 && touch->v.size[0] == 0)
+            continue;
+
+        if (clip->trace.allsolid)
+            return;
+
+        if (clip->passedict)
+        {
+            if (touch->v.owner == clip->passedict)
+                continue;
+            if (clip->passedict->v.owner == touch)
+                continue;
+        }
+
+        if (touch->v.flags & FL_MONSTER)
+            trace = SV_ClipMoveToEntity(touch, clip->start, clip->mins2, clip->maxs2, clip->end);
+        else
+            trace = SV_ClipMoveToEntity(touch, clip->start, clip->mins, clip->maxs, clip->end);
+
+        if (trace.allsolid || trace.startsolid || trace.fraction < clip->trace.fraction)
+        {
+            trace.ent = touch;
+            if (clip->trace.startsolid)
+            {
+                clip->trace = trace;
+                clip->trace.startsolid = true;
+            }
+            else
+            {
+                clip->trace = trace;
+            }
+        }
+    }
+
+    if (node->axis == -1)
+        return;
+
+    if (clip->boxmaxs[node->axis] > node->dist)
+        SV_ClipToLinks(node->children[0], clip);
+    if (clip->boxmins[node->axis] < node->dist)
+        SV_ClipToLinks(node->children[1], clip);
+}
+
+void SV_ClipToLinksNoStudio(areanode_t *node, moveclip_t *clip)
+{
+    link_t *l, *next;
+    edict_t *touch;
+    trace_t trace;
+
+    for (l = node->solid_edicts.next; l != &node->solid_edicts; l = next)
+    {
+        next = l->next;
+        touch = EDICT_FROM_AREA(l);
+
+        if (touch->v.solid == SOLID_NOT)
+            continue;
+        if (touch == clip->passedict)
+            continue;
+        if (touch->v.solid == SOLID_TRIGGER)
+            Sys_Error("Trigger in clipping list");
+
+        if (touch->v.solid == SOLID_BSP)
+        {
+            if ((touch->v.flags & FL_MONSTERCLIP) && !clip->monsterClipBrush)
+                continue;
+        }
+        else
+        {
+            if (clip->type == MOVE_NOMONSTERS && touch->v.movetype != MOVETYPE_PUSHSTEP)
+                continue;
+        }
+
+        if (clip->ignoretrans && touch->v.rendermode != kRenderNormal && !(touch->v.flags & FL_WORLDBRUSH))
+            continue;
+
+        if (clip->boxmins[0] > touch->v.absmax[0]
+            || clip->boxmins[1] > touch->v.absmax[1]
+            || clip->boxmins[2] > touch->v.absmax[2]
+            || clip->boxmaxs[0] < touch->v.absmin[0]
+            || clip->boxmaxs[1] < touch->v.absmin[1]
+            || clip->boxmaxs[2] < touch->v.absmin[2])
+            continue;
+
+        if (clip->passedict && clip->passedict->v.size[0] != 0 && touch->v.size[0] == 0)
+            continue;
+
+        if (clip->trace.allsolid)
+            return;
+
+        if (clip->passedict)
+        {
+            if (touch->v.owner == clip->passedict)
+                continue;
+            if (clip->passedict->v.owner == touch)
+                continue;
+        }
+
+        if (touch->v.flags & FL_MONSTER)
+            trace = SV_ClipMoveToEntityNoStudio(touch, clip->start, clip->mins2, clip->maxs2, clip->end);
+        else
+            trace = SV_ClipMoveToEntityNoStudio(touch, clip->start, clip->mins, clip->maxs, clip->end);
+
+        if (trace.allsolid || trace.startsolid || trace.fraction < clip->trace.fraction)
+        {
+            trace.ent = touch;
+            if (clip->trace.startsolid)
+            {
+                clip->trace = trace;
+                clip->trace.startsolid = true;
+            }
+            else
+            {
+                clip->trace = trace;
+            }
+        }
+    }
+
+    if (node->axis == -1)
+        return;
+
+    if (clip->boxmaxs[node->axis] > node->dist)
+        SV_ClipToLinksNoStudio(node->children[0], clip);
+    if (clip->boxmins[node->axis] < node->dist)
+        SV_ClipToLinksNoStudio(node->children[1], clip);
+}
+
+#ifdef NON_MATCHING
+void SV_ClipToWorldbrush(areanode_t *node, moveclip_t *clip)
+{
+    link_t *l;
+    link_t *next;
+    edict_t *touch;
+    trace_t trace;
+    link_t *head;
+
+    head = &node->solid_edicts;
+    for (l = node->solid_edicts.next; l != head; l = next)
+    {
+        next = l->next;
+        touch = EDICT_FROM_AREA(l);
+
+        if (touch->v.solid != SOLID_BSP || touch == clip->passedict || !(touch->v.flags & FL_WORLDBRUSH))
+            continue;
+
+        if (clip->boxmins[0] > touch->v.absmax[0]
+            || clip->boxmins[1] > touch->v.absmax[1]
+            || clip->boxmins[2] > touch->v.absmax[2]
+            || clip->boxmaxs[0] < touch->v.absmin[0]
+            || clip->boxmaxs[1] < touch->v.absmin[1]
+            || clip->boxmaxs[2] < touch->v.absmin[2])
+            continue;
+
+        if (clip->trace.allsolid)
+            return;
+
+        trace = SV_ClipMoveToEntity(touch, clip->start, clip->mins, clip->maxs, clip->end);
+
+        if (trace.allsolid || trace.startsolid || trace.fraction < clip->trace.fraction)
+        {
+            trace.ent = touch;
+            if (clip->trace.startsolid)
+            {
+                clip->trace = trace;
+                clip->trace.startsolid = true;
+            }
+            else
+            {
+                clip->trace = trace;
+            }
+        }
+    }
+
+    if (node->axis == -1)
+        return;
+
+    if (clip->boxmaxs[node->axis] > node->dist)
+        SV_ClipToWorldbrush(node->children[0], clip);
+    if (clip->boxmins[node->axis] < node->dist)
+        SV_ClipToWorldbrush(node->children[1], clip);
+}
+#else
+INCLUDE_ASM("asm/nonmatchings/engine/world", SV_ClipToWorldbrush);
+#endif
+
+void SV_MoveBounds(const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, vec3_t boxmins, vec3_t boxmaxs)
+{
+    int i;
+
+    for (i = 0; i < 3; i++)
+    {
+        if (end[i] > start[i])
+        {
+            boxmins[i] = start[i] + mins[i] - 1;
+            boxmaxs[i] = end[i] + maxs[i] + 1;
+        }
+        else
+        {
+            boxmins[i] = end[i] + mins[i] - 1;
+            boxmaxs[i] = start[i] + maxs[i] + 1;
+        }
+    }
+}
+
+trace_t SV_MoveNoEnts(const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int type, edict_t *passedict)
+{
+    moveclip_t clip;
+    vec3_t worldEndPoint;
+    float worldFraction;
+
+    memset(&clip, 0, sizeof(moveclip_t));
+    clip.trace = SV_ClipMoveToEntity(sv.edicts, start, mins, maxs, end);
+
+    if (clip.trace.fraction == 0)
+        return clip.trace;
+
+    VectorCopy(clip.trace.endpos, worldEndPoint);
+    worldFraction = clip.trace.fraction;
+    clip.trace.fraction = 1.0f;
+    clip.end = worldEndPoint;
+    clip.type = type & 0xFF;
+    clip.ignoretrans = type >> 8;
+    clip.passedict = passedict;
+    clip.start = start;
+    clip.mins = mins;
+    VectorCopy(mins, clip.mins2);
+    clip.maxs = maxs;
+    VectorCopy(maxs, clip.maxs2);
+    clip.monsterClipBrush = false;
+
+    SV_MoveBounds(start, clip.mins2, clip.maxs2, worldEndPoint, clip.boxmins, clip.boxmaxs);
+    SV_ClipToWorldbrush(sv_areanodes, &clip);
+
+    clip.trace.fraction *= worldFraction;
+    if (clip.trace.ent)
+        gGlobalVariables.trace_ent = clip.trace.ent;
+    else
+        gGlobalVariables.trace_ent = NULL;
+
+
+    return clip.trace;
+}
+
+trace_t SV_Move(const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int type, edict_t *passedict, qboolean monsterClipBrush)
+{
+    moveclip_t clip;
+    vec3_t worldEndPoint;
+    float worldFraction;
+    int i;
+
+    memset(&clip, 0, sizeof(moveclip_t));
+    clip.trace = SV_ClipMoveToEntity(sv.edicts, start, mins, maxs, end);
+
+    if (clip.trace.fraction == 0)
+        return clip.trace;
+
+    VectorCopy(clip.trace.endpos, worldEndPoint);
+    worldFraction = clip.trace.fraction;
+    clip.trace.fraction = 1.0f;
+    clip.type = type & 0xFF;
+    clip.ignoretrans = type >> 8;
+    clip.passedict = passedict;
+    clip.monsterClipBrush = monsterClipBrush;
+    clip.end = worldEndPoint;
+    clip.start = start;
+    clip.mins = mins;
+    clip.maxs = maxs;
+
+    if (type == MOVE_MISSILE)
+    {
+        for (i = 0; i < 3; i++)
+        {
+            clip.mins2[i] = -15;
+            clip.maxs2[i] = 15;
+        }
+    }
+    else
+    {
+        VectorCopy(mins, clip.mins2);
+        VectorCopy(maxs, clip.maxs2);
+    }
+
+    SV_MoveBounds(start, clip.mins2, clip.maxs2, worldEndPoint, clip.boxmins, clip.boxmaxs);
+    SV_ClipToLinks(sv_areanodes, &clip);
+
+    clip.trace.fraction *= worldFraction;
+    if (clip.trace.ent)
+        gGlobalVariables.trace_ent = clip.trace.ent;
+    else
+        gGlobalVariables.trace_ent = NULL;
+
+
+    return clip.trace;
+}
+
+trace_t SV_MoveNoStudio(const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int type, edict_t *passedict, qboolean monsterClipBrush)
+{
+    moveclip_t clip;
+    vec3_t worldEndPoint;
+    float worldFraction;
+    int i;
+
+    memset(&clip, 0, sizeof(moveclip_t));
+    clip.trace = SV_ClipMoveToEntityNoStudio(sv.edicts, start, mins, maxs, end);
+
+    if (clip.trace.fraction == 0)
+        return clip.trace;
+
+    VectorCopy(clip.trace.endpos, worldEndPoint);
+    worldFraction = clip.trace.fraction;
+    clip.trace.fraction = 1.0f;
+    clip.type = type & 0xFF;
+    clip.ignoretrans = type >> 8;
+    clip.passedict = passedict;
+    clip.monsterClipBrush = monsterClipBrush;
+    clip.end = worldEndPoint;
+    clip.start = start;
+    clip.mins = mins;
+    clip.maxs = maxs;
+
+    if (type == MOVE_MISSILE)
+    {
+        for (i = 0; i < 3; i++)
+        {
+            clip.mins2[i] = -15;
+            clip.maxs2[i] = 15;
+        }
+    }
+    else
+    {
+        VectorCopy(mins, clip.mins2);
+        VectorCopy(maxs, clip.maxs2);
+    }
+
+    SV_MoveBounds(start, clip.mins2, clip.maxs2, worldEndPoint, clip.boxmins, clip.boxmaxs);
+    SV_ClipToLinksNoStudio(sv_areanodes, &clip);
+
+    clip.trace.fraction *= worldFraction;
+    if (clip.trace.ent)
+        gGlobalVariables.trace_ent = clip.trace.ent;
+    else
+        gGlobalVariables.trace_ent = NULL;
+
+
+    return clip.trace;
+}
+
