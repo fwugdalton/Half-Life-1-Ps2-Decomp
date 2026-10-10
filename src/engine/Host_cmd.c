@@ -3657,18 +3657,93 @@ void Host_Protocol_f(void)
     Con_Printf("protocol set to %i\n", protocol_version);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_GetSv_f);
+void UI_Disabled_f(void);
+extern int (*D_003997B0)(void);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_BGetSv_f);
+void Host_GetSv_f(void)
+{
+    char szRequest[16];
+    master_t *p;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_BGetMod_f);
+    func_002C70A8(true);
+
+    if (gfNoMasterServer)
+        return;
+
+    if (!valvemaster_adr)
+        return;
+
+    szRequest[0] = 'c';
+
+    for (p = valvemaster_adr; p; p = p->next)
+    {
+        Con_Printf("Requesting server list from %s\n", NET_AdrToString(p->adr));
+        NET_SendPacket(NS_CLIENT, 1, szRequest, p->adr, 2);
+    }
+}
+
+void Host_BGetSv_f(void)
+{
+    char szRequest[16];
+    master_t *p;
+
+    func_002C70A8(true);
+
+    if (gfNoMasterServer)
+        return;
+
+    if (!valvemaster_adr)
+        return;
+
+    *(int *)&szRequest[1] = 0;
+    szRequest[0] = 'e';
+
+    for (p = valvemaster_adr; p; p = p->next)
+    {
+        Con_Printf("Requesting batch server list from %s\n", NET_AdrToString(p->adr));
+        NET_SendPacket(NS_CLIENT, 5, szRequest, p->adr, 2);
+    }
+}
+
+void Host_BGetMod_f(void)
+{
+    char szRequest[128];
+    master_t *p;
+
+    func_002C70A8(true);
+
+    if (gfNoMasterServer)
+        return;
+
+    if (!valvemaster_adr)
+        return;
+
+    sprintf(szRequest, "%c\r\nstart-of-list\r\n", 'x');
+
+    for (p = valvemaster_adr; p; p = p->next)
+    {
+        Con_Printf("Requesting batch mod status from %s\n", NET_AdrToString(p->adr));
+        NET_SendPacket(NS_CLIENT, strlen(szRequest) + 1, szRequest, p->adr, 2);
+    }
+}
 
 void Host_PingSv_f(void) {
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Notify_f);
+void Host_Notify_f(void)
+{
+    UI_Disabled_f();
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_GetCertificate_f);
+void Host_GetCertificate_f(void)
+{
+    Con_Printf("Trying to authenticate with WON servers\n");
+
+    if (!D_003997B0())
+        Con_Printf("Failed to authenticate\n");
+    else
+        Con_Printf("WON Authentication successful\n");
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_InitCommands);
 
