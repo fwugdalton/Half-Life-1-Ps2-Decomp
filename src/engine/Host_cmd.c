@@ -51,6 +51,20 @@ void Log_Printf(char *fmt, ...);
 char *strcat(char *, const char *);
 void CL_Disconnect(int player);
 void func_0029C330(void);
+extern float realtime;
+extern char D_00392278[];
+int func_0027E140(client_t *cl);
+char *func_002C6E08(netadr_t a);
+extern int cmd_source;
+extern int D_0033473C;
+#define noip D_0033473C
+extern netadr_t net_local_adr;
+extern char gpszVersionString[];
+extern vec3_t r_origin;
+int build_number(void);
+void SV_ClientPrintf(char *fmt, ...);
+void SV_CountPlayers(int *clients, int *spectators);
+int strcasecmp(const char *, const char *);
 
 int sprintf(char *, const char *, ...);
 unsigned int strlen(const char *);
@@ -288,11 +302,111 @@ void Host_Quit_f(void)
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00392178);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00297F08);
+void Host_Status_PrintClient(char *msg, qboolean bShowAddress, void (*print)(char *fmt, ...), int j, client_t *client)
+{
+    int seconds, minutes, hours;
+
+    seconds = (int)(realtime - client->netchan.connect_time);
+    minutes = seconds / 60;
+    if (minutes)
+    {
+        seconds -= minutes * 60;
+        hours = minutes / 60;
+        if (hours)
+            minutes -= hours * 60;
+    }
+    else
+    {
+        hours = 0;
+    }
+
+    print("#%-2u %-12.12s\n", j + 1, client->name);
+    print("   frags:  %3i\n", (int)client->edict->v.frags);
+
+    if (hours)
+        print("   time :  %2i:%02i:%02i\n", hours, minutes, seconds);
+    else
+        print("   time :  %02i:%02i\n", minutes, seconds);
+
+    print("   frame rate :  %.2f fps\n", client->netchan.frame_rate);
+    print("   frame latency :  %.1f frames\n", client->netchan.frame_latency);
+    print("   ping :  %4i\n", func_0027E140(client));
+    print("   drop :  %5.2f %%\n", 100.0f * (float)client->netchan.drop_count / (float)client->netchan.incoming_sequence);
+
+    if (msg && msg[0])
+        print("   %s\n", msg);
+
+    if (client->spectator)
+        print("  (spectator) %s\n", func_002C6E08(client->netchan.remote_address));
+    else if (client->fakeclient)
+        print("  (fake)\n");
+    else if (bShowAddress)
+        print("   %s\n", func_002C6E08(client->netchan.remote_address));
+
+    print(D_00392278);
+}
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00392278);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Status_f);
+void Host_Status_f(void)
+{
+    client_t *client;
+    int j;
+    int nClients;
+    int nSpectators;
+    void (*print)(char *fmt, ...);
+
+    if (cmd_source == src_command)
+    {
+        if (!sv.active)
+        {
+            Cmd_ForwardToServer();
+            return;
+        }
+        print = (void (*)(char *, ...))Con_Printf;
+    }
+    else
+    {
+        print = SV_ClientPrintf;
+    }
+
+    print("hostname:  %s\n", Cvar_VariableString("hostname"));
+    print("version :  %s\n", gpszVersionString);
+    print("build   :  %d\n", build_number());
+
+    if (!noip)
+        print("tcp/ip  :  %s\n", NET_AdrToString(net_local_adr));
+
+    print(" map     :  %s\n", sv.name);
+    print("at: %d x, %d y, %d z\n", (int)r_origin[0], (int)r_origin[1], (int)r_origin[2]);
+
+    SV_CountPlayers(&nClients, &nSpectators);
+    if (nSpectators)
+        print(" players: %i active (%i spectators) (%i max)\n\n", nClients, nSpectators, svs.maxclients);
+    else
+        print(" players: %i active (%i max)\n\n", nClients, svs.maxclients);
+
+    if (Cmd_Argc() == 2 && !strcasecmp(Cmd_Argv(1), "short"))
+    {
+        for (j = 0, client = svs.clients; j < svs.maxclients; j++, client++)
+        {
+            if (client->active)
+                print("#%i - %s\n", j + 1, client->name);
+        }
+        return;
+    }
+
+    for (j = 0, client = svs.clients; j < svs.maxclients; j++, client++)
+    {
+        if (!client->active)
+        {
+            if (client->connected)
+                Host_Status_PrintClient("CONNECTING", cmd_source == src_command, print, j, client);
+            continue;
+        }
+        Host_Status_PrintClient(NULL, cmd_source == src_command, print, j, client);
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_God_f);
 
