@@ -283,6 +283,10 @@ extern char *pr_strings;
 void ReleaseEntityDLLFields(edict_t *pEdict);
 void InitEntityDLLFields(edict_t *pEdict);
 void func_00217678(char *dir, char *level);
+extern char D_00392898[];
+void *Q_memcpy(void *dest, void *src, int count);
+void *Hunk_AllocName(int size, char *name);
+#define FENTTABLE_REMOVED 0x40000000
 void SV_CountPlayers(int *clients, int *spectators);
 int strcasecmp(const char *, const char *);
 #include "engine/mathlib.h"
@@ -1933,9 +1937,89 @@ SAVERESTOREDATA *LoadSaveData(char *level)
     return pSaveData;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029AEE8);
+void ParseSaveTables(SAVERESTOREDATA *pSaveData, SAVE_HEADER *pHeader, int updateGlobals)
+{
+    SAVELIGHTSTYLE light;
+    edict_t *pNull;
+    int i;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", EntityPatchWrite);
+    for (i = 0; i < pSaveData->tableCount; i++)
+    {
+        gEntityInterface.pfnSaveReadFields(pSaveData, D_00392820, &pSaveData->pTable[i], D_00333078, 5);
+        pNull = NULL;
+        Q_memcpy(&pSaveData->pTable[i].pent, &pNull, sizeof(edict_t *));
+    }
+
+    pSaveData->size = 0;
+    pSaveData->pBaseData = pSaveData->pCurrentData;
+
+    gEntityInterface.pfnSaveReadFields(pSaveData, D_003927F0, pHeader, D_00332F68, 13);
+
+    pSaveData->connectionCount = pHeader->connectionCount;
+    pSaveData->time = pHeader->time;
+    pSaveData->fUseLandmark = 1;
+    VectorCopy(vec3_origin, pSaveData->vecLandmarkOffset);
+
+    for (i = 0; i < pSaveData->connectionCount; i++)
+        gEntityInterface.pfnSaveReadFields(pSaveData, D_00392800, &pSaveData->levelList[i], D_00333038, 4);
+
+    if (updateGlobals)
+    {
+        for (i = MAX_LIGHTSTYLES - 1; i >= 0; i--)
+            sv.lightstyles[i] = NULL;
+    }
+
+    for (i = 0; i < pHeader->lightStyleCount; i++)
+    {
+        gEntityInterface.pfnSaveReadFields(pSaveData, D_00392810, &light, D_003330C8, 2);
+        if (updateGlobals)
+        {
+            sv.lightstyles[light.index] = Hunk_AllocName(strlen(light.style) + 1, "LightStyle");
+            strcpy(sv.lightstyles[light.index], light.style);
+        }
+    }
+}
+
+void EntityPatchWrite(SAVERESTOREDATA *pSaveData, char *level)
+{
+    char name[260];
+    ENTITYTABLE entity;
+    int size;
+    int i;
+    int pFile;
+
+    sprintf(name, D_00392898, Host_SaveGameDirectory(), level);
+    COM_FixSlashes(name);
+
+    Mem_PushTag();
+    Mem_SetTag(2);
+
+    pFile = func_0022B118(name, D_003926D0);
+    if (pFile)
+    {
+        size = 0;
+        for (i = 0; i < pSaveData->tableCount; i++)
+        {
+            entity = pSaveData->pTable[i];
+            if (entity.flags & FENTTABLE_REMOVED)
+                size++;
+        }
+
+        func_0022BD98(&size, sizeof(int), 1, pFile);
+
+        for (i = 0; i < pSaveData->tableCount; i++)
+        {
+            entity = pSaveData->pTable[i];
+            if (entity.flags & FENTTABLE_REMOVED)
+                func_0022BD98(&i, sizeof(int), 1, pFile);
+        }
+
+        func_0022B238(pFile);
+    }
+
+    Mem_PopTag();
+    func_0022BBC0(name);
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029B328);
 
