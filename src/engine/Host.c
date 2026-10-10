@@ -95,7 +95,7 @@ void SV_ClearEntities(void);
 void func_002B05F8(void);
 void func_0029F6A8(void);
 void func_002885A0(client_t *cl);
-void func_0027DEE8(void);
+void SV_ReadPackets(void);
 void func_00287A40(void);
 void SV_QueryMovevarsChanged(void);
 void SV_SendClientMessages(void);
@@ -738,7 +738,7 @@ void Host_ServerFrame(void)
         t[0] = Sys_FloatTime();
 
     D_004A920C = host_frametime;
-    func_0027DEE8();
+    SV_ReadPackets();
 
     if (host_speeds.value != 0)
         t[1] = Sys_FloatTime();

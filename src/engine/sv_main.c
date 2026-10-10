@@ -1480,7 +1480,61 @@ qboolean func_0027D380(char *a0, char *a1, int *a2, int *a3, int *a4, int *a5, c
 }
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027D480);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027D778);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027D938);
+extern char D_0038E630[]; /* "0" (ainda emitido pelo bloco de rodata) */
+extern char D_0038E678[]; /* "1" */
+extern char D_0038EFD0[]; /* "none" */
+int Cvar_CountServerVariables(void);
+extern cvar_t *cvar_vars;
+void NET_SendPacket(int sock, int length, void *data, netadr_t to, int unk);
+
+#define FCVAR_SERVER 4
+#define FCVAR_PROTECTED 0x20
+
+void SVC_RuleInfo(void)
+{
+    sizebuf_t buf;
+    byte data[2048];
+    int nNumRules;
+    cvar_t *var;
+
+    buf.maxsize = sizeof(data);
+    buf.data = data;
+    buf.cursize = 0;
+
+    if (!sv.active)
+        return;
+    if (svs.maxclients <= 1)
+        return;
+
+    nNumRules = Cvar_CountServerVariables();
+    if (nNumRules <= 0)
+        return;
+
+    MSG_WriteLong(&buf, -1);
+    MSG_WriteByte(&buf, 'E');
+    MSG_WriteShort(&buf, nNumRules);
+
+    for (var = cvar_vars; var; var = var->next)
+    {
+        if (!(var->flags & FCVAR_SERVER))
+            continue;
+
+        MSG_WriteString(&buf, var->name);
+        if (var->flags & FCVAR_PROTECTED)
+        {
+            if (strlen(var->string) > 0 && strcasecmp(var->string, D_0038EFD0))
+                MSG_WriteString(&buf, D_0038E678);
+            else
+                MSG_WriteString(&buf, D_0038E630);
+        }
+        else
+        {
+            MSG_WriteString(&buf, var->string);
+        }
+    }
+
+    NET_SendPacket(NS_SERVER, buf.cursize, buf.data, net_from, 0);
+}
 typedef struct master_s
 {
     int heartbeat;              /* 0x00 */
@@ -1513,7 +1567,7 @@ void func_0027DA98(void)
         break;
     }
 }
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027DB10);
+INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_ConnectionlessPacket);
 extern cvar_t sv_maxrate;
 extern cvar_t sv_minrate;
 
@@ -1530,7 +1584,45 @@ void SV_CheckRate(client_t *cl)
             cl->netchan.rate = sv_minrate.value > 500.0f ? sv_minrate.value : 500.0f;
     }
 }
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027DEE8);
+void func_002879D0(void);
+qboolean NET_GetPacket(int sock);
+void SV_ConnectionlessPacket(void);
+qboolean Netchan_Process(netchan_t *chan);
+void SV_ExecuteClientMessage(client_t *cl, int unk);
+
+void SV_ReadPackets(void)
+{
+    int i;
+    client_t *cl;
+
+    func_002879D0();
+
+    while (NET_GetPacket(NS_SERVER))
+    {
+        if (*(int *)net_message.data == -1)
+        {
+            SV_ConnectionlessPacket();
+            continue;
+        }
+
+        for (i = 0, cl = svs.clients; i < svs.maxclients; i++, cl++)
+        {
+            if (!cl->connected && !cl->active && !cl->spawned)
+                continue;
+            if (!NET_CompareAdr(net_from, cl->netchan.remote_address))
+                continue;
+
+            SV_CheckRate(cl);
+            if (Netchan_Process(&cl->netchan))
+            {
+                svs.unk_138++;
+                cl->send_message = true;
+                SV_ExecuteClientMessage(cl, *(int *)net_from.ip);
+            }
+            break;
+        }
+    }
+}
 extern cvar_t sv_timeout;
 void SV_BroadcastPrintf(char *fmt, ...);
 
@@ -1657,9 +1749,43 @@ void SV_ClearDatagram(void)
 {
     SZ_Clear(&sv.datagram);
 }
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_AddToFatPVS);
 extern int fatbytes;
 extern byte fatpvs[];
+byte *Mod_LeafPVS(mleaf_t *leaf, model_t *model);
+
+void SV_AddToFatPVS(vec_t *org, mnode_t *node)
+{
+    int i;
+    byte *pvs;
+    mplane_t *plane;
+    float d;
+
+    while (1)
+    {
+        if (node->contents < 0)
+        {
+            if (node->contents != -2)
+            {
+                pvs = Mod_LeafPVS((mleaf_t *)node, sv.worldmodel);
+                for (i = 0; i < fatbytes; i++)
+                    fatpvs[i] |= pvs[i];
+            }
+            return;
+        }
+
+        plane = node->plane;
+        d = DotProduct(org, plane->normal) - plane->dist;
+        if (d > 8)
+            node = node->children[0];
+        else if (d < -8)
+            node = node->children[1];
+        else
+        {
+            SV_AddToFatPVS(org, node->children[0]);
+            node = node->children[1];
+        }
+    }
+}
 void SV_AddToFatPVS(float *org, mnode_t *node);
 
 byte *SV_FatPVS(float *org)
@@ -1895,7 +2021,43 @@ void func_00281D90(void)
 {
 }
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00281D98);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_BroadcastCommand);
+#include <stdarg.h>
+int vsprintf(char *buf, const char *fmt, va_list ap);
+
+#define svc_stufftext 9
+
+void SV_BroadcastCommand(char *fmt, ...)
+{
+    va_list argptr;
+    char string[1024];
+    byte data[128];
+    sizebuf_t msg;
+    int i;
+    client_t *cl;
+
+    msg.data = data;
+    msg.maxsize = sizeof(data);
+    msg.cursize = 0;
+
+    if (!sv.active)
+        return;
+
+    va_start(argptr, fmt);
+    vsprintf(string, fmt, argptr);
+    va_end(argptr);
+
+    MSG_WriteByte(&msg, svc_stufftext);
+    MSG_WriteString(&msg, string);
+
+    for (i = 0, cl = svs.clients; i < svs.maxclients; i++, cl++)
+    {
+        if (!cl->active && !cl->connected && !cl->spawned)
+            continue;
+        if (cl->fakeclient)
+            continue;
+        SZ_Write(&cl->netchan.message, msg.data, msg.cursize);
+    }
+}
 void SV_ReconnectAllClients(void)
 {
     SV_BroadcastCommand("reconnect\n");
@@ -1938,9 +2100,68 @@ void SV_ClearEntities(void)
             ReleaseEntityDLLFields(ent);
     }
 }
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00282E40);
+extern int giNextUserMsg;
+
+#ifdef NON_MATCHING
+int RegUserMsg(const char *pszName, int iSize)
+{
+    UserMsg *pUserMsgs;
+    qboolean found = false;
+    int iMsg;
+
+    if (giNextUserMsg >= 256)
+        return 0;
+    if (!pszName)
+        return 0;
+    if (strlen(pszName) > 11)
+        return 0;
+    if (iSize > 192)
+        return 0;
+
+    for (pUserMsgs = sv_gpUserMsgs; pUserMsgs; pUserMsgs = pUserMsgs->next)
+    {
+        if (!strcmp(pszName, pUserMsgs->szName))
+        {
+            found = true;
+            break;
+        }
+    }
+
+    if (found)
+        iMsg = pUserMsgs->iMsg;
+    else
+    {
+    for (pUserMsgs = sv_gpNewUserMsgs; pUserMsgs; pUserMsgs = pUserMsgs->next)
+    {
+        if (!strcmp(pszName, pUserMsgs->szName))
+        {
+            found = true;
+            break;
+        }
+    }
+
+        if (found)
+            iMsg = pUserMsgs->iMsg;
+        else
+        {
+    pUserMsgs = Mem_DbgMalloc(sizeof(UserMsg), "engine/Sv_main.c", 5818);
+    pUserMsgs->iMsg = giNextUserMsg;
+                giNextUserMsg++;
+    pUserMsgs->iSize = iSize;
+    strcpy(pUserMsgs->szName, pszName);
+    if (!pUserMsgs)
+        return 0;
+    pUserMsgs->next = sv_gpNewUserMsgs;
+    sv_gpNewUserMsgs = pUserMsgs;
+            iMsg = pUserMsgs->iMsg;
+        }
+    }
+    return iMsg;
+}
+#else
+INCLUDE_ASM("asm/nonmatchings/engine/sv_main", RegUserMsg);
+#endif
 #define svc_newusermsg 39
-extern char D_0038F6E0[];
 
 void SV_SendUserReg(sizebuf_t *msg)
 {
@@ -1961,19 +2182,30 @@ void SV_SendUserReg(sizebuf_t *msg)
         pMsg = pMsg->next;
     } while (pMsg);
 }
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00283018);
-/* rodata não migrada: início */
-__asm__(".section .rodata\n"
-        ".align 3\n"
-        ".globl D_0038F6E0\n"
-        "D_0038F6E0:\n"
-        ".asciz \"==========================\\n\"\n"
-        ".align 2\n"
-        ".asciz \"\"\n"
-        ".align 2\n"
-        ".align 3\n"
-        ".section .text\n");
-/* rodata não migrada: fim */
+void func_00283018(void)
+{
+    char szLine[1024];
+    int i;
+    client_t *cl;
+
+    if (!sv.active)
+    {
+        Con_Printf("Not running a server\n");
+        return;
+    }
+
+    Con_Printf("CD Keys =================\n");
+    for (i = 0, cl = svs.clients; i < svs.maxclients; i++, cl++)
+    {
+        if (!cl->active && !cl->connected && !cl->spawned)
+            continue;
+        if (cl->fakeclient)
+            continue;
+        sprintf(szLine, "%3i %s : %s\n", i + 1, cl->name, cl->hashedcdkey);
+        Con_Printf(szLine);
+    }
+    Con_Printf("==========================\n");
+}
 void func_00283130(void)
 {
     int i;
@@ -1990,6 +2222,6 @@ void func_00283130(void)
         for (pCust = cl->customdata.pNext; pCust; pCust = pCust->pNext)
             ;
     }
-    Con_Printf(D_0038F6E0);
+    Con_Printf("==========================\n");
 }
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_Init);

@@ -201,7 +201,7 @@ typedef struct client_s
     char userinfo[MAX_INFO_STRING]; /* 0x8420 */
     qboolean sendinfo;          /* 0x84E4 */
     float sendinfo_time;        /* 0x84E8 */
-    byte unk_84EC[0x850D - 0x84EC];
+    char hashedcdkey[33];       /* 0x84EC */
     char name[32];              /* 0x850D */
     byte unk_852D[0x8538 - 0x852D];
     int unk_8538;               /* 0x8538 */
@@ -231,6 +231,8 @@ typedef struct server_static_s
     client_t *clients;          /* 0x110 */
     int serverflags;            /* 0x114 */
     server_log_t log;           /* 0x118 */
+    byte unk_12C[0x138 - 0x12C];
+    int unk_138;                /* 0x138 */
 } server_static_t;
 
 typedef struct server_s

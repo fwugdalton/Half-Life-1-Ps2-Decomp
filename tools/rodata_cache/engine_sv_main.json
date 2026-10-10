@@ -7,10 +7,31 @@
 "svs"
 ]
 },
+"RegUserMsg": {
+"migrated": [],
+"refs": [
+"D_0038E8F8",
+"giNextUserMsg",
+"sv_gpNewUserMsgs",
+"sv_gpUserMsgs"
+]
+},
 "SVC_Ping": {
 "migrated": [],
 "refs": [
 "net_from"
+]
+},
+"SVC_RuleInfo": {
+"migrated": [],
+"refs": [
+"D_0038E630",
+"D_0038E678",
+"D_0038EFD0",
+"cvar_vars",
+"net_from",
+"sv",
+"svs"
 ]
 },
 "SV_AddResource": {
@@ -107,6 +128,29 @@
 "migrated": [],
 "refs": [
 "sv"
+]
+},
+"SV_ConnectionlessPacket": {
+"migrated": [
+"D_0038F260",
+"D_0038F268"
+],
+"refs": [
+"D_0033241C",
+"D_0038F260",
+"D_0038F268",
+"D_0038F280",
+"D_0038F288",
+"D_0038F290",
+"D_0038F298",
+"D_0038F2A8",
+"D_0038F2B0",
+"D_0038F2B8",
+"D_0038F2C0",
+"D_0038F2C8",
+"D_0038F2D0",
+"D_0038F2D8",
+"net_from"
 ]
 },
 "SV_CountPlayers": {
@@ -367,6 +411,14 @@
 "D_003329A4",
 "D_003329BC",
 "movevars",
+"svs"
+]
+},
+"SV_ReadPackets": {
+"migrated": [],
+"refs": [
+"net_from",
+"net_message",
 "svs"
 ]
 },
@@ -748,54 +800,11 @@
 "svs"
 ]
 },
-"func_0027D938": {
-"migrated": [],
-"refs": [
-"D_0038E630",
-"D_0038E678",
-"D_0038EFD0",
-"cvar_vars",
-"net_from",
-"sv",
-"svs"
-]
-},
 "func_0027DA98": {
 "migrated": [],
 "refs": [
 "net_from",
 "valvemaster_adr"
-]
-},
-"func_0027DB10": {
-"migrated": [
-"D_0038F260",
-"D_0038F268"
-],
-"refs": [
-"D_0033241C",
-"D_0038F260",
-"D_0038F268",
-"D_0038F280",
-"D_0038F288",
-"D_0038F290",
-"D_0038F298",
-"D_0038F2A8",
-"D_0038F2B0",
-"D_0038F2B8",
-"D_0038F2C0",
-"D_0038F2C8",
-"D_0038F2D0",
-"D_0038F2D8",
-"net_from"
-]
-},
-"func_0027DEE8": {
-"migrated": [],
-"refs": [
-"net_from",
-"net_message",
-"svs"
 ]
 },
 "func_0027E140": {
@@ -1013,15 +1022,6 @@
 "skill",
 "sv",
 "svs"
-]
-},
-"func_00282E40": {
-"migrated": [],
-"refs": [
-"D_003323DC",
-"D_0038E8F8",
-"sv_gpNewUserMsgs",
-"sv_gpUserMsgs"
 ]
 },
 "func_00283018": {
