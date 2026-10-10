@@ -42,6 +42,13 @@ typedef struct
 
 typedef struct
 {
+    int version;
+    int ofs[16];   /* 0x04 */
+    int len[16];   /* 0x44 */
+} bs2lumps_t;
+
+typedef struct
+{
     byte pad0[0x13];
     byte nummips;            /* 0x13 */
     byte pad14[4];
@@ -667,6 +674,59 @@ void func_002A01B8(model_t *mod, gl_sprite_t *psprite)
     mod->synctype = 0;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", func_002A0320);
+void func_002A0320(void)
+{
+    int i;
+    model_t *mod;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", func_002A03A8);
+    Con_Printf("Cached models:\n");
+    for (i = 0, mod = mod_known; i < mod_numknown; i++, mod++)
+        Con_Printf("%8p : %s\n", mod->cache.data, mod->name);
+}
+
+qboolean func_002A03A8(void *pheader, void *pdata, int lump)
+{
+    bs2lumps_t *header;
+    byte *ptr;
+    byte *start;
+    qboolean ret;
+
+    header = (bs2lumps_t *)pheader;
+    ptr = (byte *)pdata;
+    ret = false;
+
+    if (!ptr)
+    {
+        ret = true;
+    }
+    else
+    {
+        switch (lump)
+        {
+        case 0:
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+        case 5:
+        case 6:
+        case 7:
+        case 8:
+        case 9:
+        case 10:
+        case 13:
+        case 14:
+            if (ptr >= (byte *)header + header->ofs[lump] && ptr < (byte *)header + header->ofs[lump] + header->len[lump])
+                ret = ((ptr - (byte *)header) % 4) == 0;
+            break;
+        case 11:
+        case 12:
+        case 15:
+            if (ptr >= (byte *)header + header->ofs[lump])
+                ret = ptr < (byte *)header + header->ofs[lump] + header->len[lump];
+            break;
+        }
+    }
+
+    return ret;
+}
