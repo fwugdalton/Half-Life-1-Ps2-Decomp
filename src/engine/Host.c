@@ -546,10 +546,10 @@ void SV_DropClient(client_t *cl, qboolean crash)
                 gEntityInterface_pfnClientDisconnect(cl->edict);
         }
 
-        if (cl->unk_853C)
+        if (cl->download)
         {
-            func_002CFD08(cl->unk_853C);
-            cl->unk_853C = NULL;
+            func_002CFD08(cl->download);
+            cl->download = NULL;
         }
 
         if (cl->unk_85F8)

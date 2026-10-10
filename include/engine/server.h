@@ -235,8 +235,13 @@ typedef struct client_s
     int topcolor;               /* 0x8530 */
     int bottomcolor;            /* 0x8534 */
     int unk_8538;               /* 0x8538 */
-    void *unk_853C;             /* 0x853C */
-    byte unk_8540[0x8558 - 0x8540];
+    byte *download;             /* 0x853C */
+    int downloadsize;           /* 0x8540 */
+    int downloadcount;          /* 0x8544 */
+    byte unk_8548[0x854C - 0x8548];
+    unsigned int downloadCRC;   /* 0x854C */
+    qboolean unk_8550;          /* 0x8550 */
+    int unk_8554;               /* 0x8554 */
     resource_t resourcesonhand; /* 0x8558 */
     resource_t resourcesneeded; /* 0x85A8 */
     int unk_85F8;               /* 0x85F8 */

@@ -301,6 +301,7 @@ void SV_CountPlayers(int *clients, int *spectators);
 int strcasecmp(const char *, const char *);
 #include "engine/mathlib.h"
 #include "engine/progdefs.h"
+#include "engine/model.h"
 #define FL_GODMODE 0x40
 #define FL_NOTARGET 0x80
 #define MOVETYPE_WALK 3
@@ -3190,18 +3191,128 @@ void Host_Viewmodel_f(void)
     cl[0].model_precache[e->v.modelindex] = m;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Viewframe_f);
+void PrintFrameName(model_t *m, int frame);
+extern int D_003341B8;
+void CRC32_ProcessBuffer(unsigned int *pulCRC, void *pBuffer, int nBuffer);
+void MSG_WriteShort(sizebuf_t *sb, int c);
+void func_002CFD08(void *p);
 
-void func_0029DAB8(void) {
+void Host_Viewframe_f(void)
+{
+    edict_t *e;
+    model_t *m;
+    int f;
+
+    e = FindViewthing();
+    if (!e)
+        return;
+
+    m = cl[0].model_precache[e->v.modelindex];
+
+    f = atoi(Cmd_Argv(1));
+    if (f >= m->numframes)
+        f = m->numframes - 1;
+
+    e->v.frame = f;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Viewnext_f);
+void PrintFrameName(model_t *m, int frame) {
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Viewprev_f);
+void Host_Viewnext_f(void)
+{
+    edict_t *e;
+    model_t *m;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Interp_f);
+    e = FindViewthing();
+    if (!e)
+        return;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Nextdl_f);
+    m = cl[0].model_precache[e->v.modelindex];
+
+    e->v.frame = e->v.frame + 1;
+    if (e->v.frame >= m->numframes)
+        e->v.frame = m->numframes - 1;
+
+    PrintFrameName(m, e->v.frame);
+}
+
+void Host_Viewprev_f(void)
+{
+    edict_t *e;
+    model_t *m;
+
+    e = FindViewthing();
+    if (!e)
+        return;
+
+    m = cl[0].model_precache[e->v.modelindex];
+
+    e->v.frame = e->v.frame - 1;
+    if (e->v.frame < 0)
+        e->v.frame = 0;
+
+    PrintFrameName(m, e->v.frame);
+}
+
+void Host_Interp_f(void)
+{
+    D_003341B8 = !D_003341B8;
+
+    if (!D_003341B8)
+        Con_Printf("Frame Interpolation OFF\n");
+    else
+        Con_Printf("Frame Interpolation ON\n");
+}
+
+void Host_Nextdl_f(void)
+{
+    int r;
+    int size;
+    int percent;
+    int block;
+    int blocksize;
+
+    if (cmd_source == src_command)
+    {
+        Cmd_ForwardToServer();
+        return;
+    }
+
+    if (!host_client->download)
+        return;
+
+    r = host_client->downloadsize - host_client->downloadcount;
+    blocksize = 1024;
+    if (host_client->unk_8550)
+        blocksize = host_client->unk_8554;
+    if (r > blocksize)
+        r = blocksize;
+    block = host_client->downloadcount / blocksize;
+
+    CRC32_ProcessBuffer(&host_client->downloadCRC, host_client->download + host_client->downloadcount, r);
+
+    MSG_WriteByte(&host_client->netchan.message, 40);
+    MSG_WriteShort(&host_client->netchan.message, r);
+    MSG_WriteShort(&host_client->netchan.message, block);
+    MSG_WriteLong(&host_client->netchan.message, host_client->downloadCRC);
+
+    host_client->downloadcount += r;
+    size = host_client->downloadsize;
+    if (!size)
+        size = 1;
+    percent = host_client->downloadcount * 100 / size;
+    MSG_WriteByte(&host_client->netchan.message, percent);
+    SZ_Write(&host_client->netchan.message, host_client->download + host_client->downloadcount - r, r);
+
+    if (host_client->downloadcount == host_client->downloadsize)
+    {
+        func_002CFD08(host_client->download);
+        host_client->unk_8554 = 1024;
+        host_client->unk_8550 = 0;
+        host_client->download = NULL;
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029DDB8);
 
