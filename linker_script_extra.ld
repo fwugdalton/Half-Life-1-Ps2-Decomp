@@ -12,10 +12,6 @@ D_0038E478 = 0x0038E478; /* "Non-sprite set to glow!\n" (r_trans.c) */
 D_0038FA20 = 0x0038FA20;
 D_0038FA38 = 0x0038FA38;
 /* engine/sv_phys: fim */
-/* engine/cl_parse: início */
-D_003915F0 = 0x003915F0; /* "!" */
-D_00391660 = 0x00391660; /* "model" */
-/* engine/cl_parse: fim */
 /* engine/sv_main: início */
 D_0038E8F8 = 0x0038E8F8;
 /* engine/sv_main: fim */

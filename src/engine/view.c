@@ -55,7 +55,6 @@ extern cvar_t cl_rollangle, cl_rollspeed, v_kicktime;
 extern cl_entity_t *cl_entities[2];
 float PM_CalcRoll(vec3_t angles, vec3_t velocity, float rollangle, float rollspeed);
 void V_AddIdle(int clientId);
-#define STAT_HEALTH 0
 #define CONTENTS_WATER -3
 #define VectorAdd(a, b, c) {(c)[0] = (a)[0] + (b)[0]; (c)[1] = (a)[1] + (b)[1]; (c)[2] = (a)[2] + (b)[2];}
 
@@ -734,7 +733,7 @@ void V_CalcRefdef(int clientId)
     else if (scr_viewsize.value == 80)
         view->origin[2] += 0.5f;
 
-    view->model = cl[clientId].model_precache[cl[clientId].weapon];
+    view->model = cl[clientId].model_precache[cl[clientId].stats[STAT_WEAPON]];
     view->frame = 0;
     view->unk_30 = 0;
     view->index = cl[clientId].playernum + 1;

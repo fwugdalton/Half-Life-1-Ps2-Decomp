@@ -46,11 +46,15 @@ typedef struct player_info_s
     char model[64];             /* 0x0F0 */
     int topcolor;               /* 0x130 */
     int bottomcolor;            /* 0x134 */
-    byte pad138[0x344 - 0x138];
+    byte pad138[0x340 - 0x138];
+    float maxspeed;             /* 0x340 */
     byte customdata[0x3C8 - 0x344]; /* 0x344: customization_t (cabeça da lista) */
 } player_info_t; /* 0x3C8 */
 
 #define MAX_CLIENTS 3
+#define MAX_CL_STATS 32
+#define STAT_HEALTH 0
+#define STAT_WEAPON 2
 
 typedef struct client_state_s
 {
@@ -63,10 +67,7 @@ typedef struct client_state_s
     byte pad214[0x224 - 0x214];
     float forwardmove;          /* 0x224: cmd.forwardmove */
     byte pad228[0x238 - 0x228];
-    int stats[1];               /* 0x238: stats[STAT_HEALTH] */
-    byte pad23C[0x240 - 0x23C];
-    int weapon;                 /* 0x240: stats[STAT_WEAPON] */
-    byte pad244[0x2B8 - 0x244];
+    int stats[MAX_CL_STATS];    /* 0x238 */
     int items;                  /* 0x2B8 */
     byte pad2BC[0x2DC - 0x2BC];
     vec3_t viewangles;          /* 0x2DC */
@@ -92,7 +93,8 @@ typedef struct client_state_s
     int waterlevel;             /* 0x388 */
     byte pad38C[0x390 - 0x38C];
     int intermission;           /* 0x390 */
-    byte pad394[0x3A0 - 0x394];
+    int completed_time;         /* 0x394 */
+    float mtime[2];             /* 0x398 */
     float time;                 /* 0x3A0 */
     float oldtime;              /* 0x3A4 */
     byte pad3A8[0x3AC - 0x3A8];
@@ -110,10 +112,13 @@ typedef struct client_state_s
     int num_entities;           /* 0x13F4 */
     byte pad13F8[0x13FC - 0x13F8];
     cl_entity_t viewent;        /* 0x13FC */
-    byte pad159C[0x15A4 - 0x159C];
+    int cdtrack;                /* 0x159C */
+    int looptrack;              /* 0x15A0 */
     int unk_15A4;               /* 0x15A4 */
     int unk_15A8;               /* 0x15A8 */
-    byte pad15AC[0x15C4 - 0x15AC];
+    float weaponstarttime;      /* 0x15AC */
+    int weaponsequence;         /* 0x15B0 */
+    byte pad15B4[0x15C4 - 0x15B4];
     player_info_t players[MAX_CLIENTS]; /* 0x15C4 */
     byte pad211C[0x212C - 0x211C];
 } client_state_t; /* 0x212C */

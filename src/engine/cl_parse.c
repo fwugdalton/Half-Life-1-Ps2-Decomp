@@ -21,7 +21,61 @@
 #define SU_INWATER (1 << 11)
 #define SU_FULLYINWATER (1 << 15)
 #define DEFAULT_VIEWHEIGHT 22
-#define STAT_HEALTH 0
+#define YAW 1
+#define MAX_LIGHTSTYLES 64
+
+/* comandos do servidor (protocolo do PS2) */
+#define svc_bad 0
+#define svc_nop 1
+#define svc_disconnect 2
+#define svc_updatestat 3
+#define svc_version 4
+#define svc_setview 5
+#define svc_sound 6
+#define svc_time 7
+#define svc_print 8
+#define svc_stufftext 9
+#define svc_setangle 10
+#define svc_serverinfo 11
+#define svc_lightstyle 12
+#define svc_updateuserinfo 13
+#define svc_clientdata 15
+#define svc_stopsound 16
+#define svc_particle 18
+#define svc_damage 19
+#define svc_spawnstatic 20
+#define svc_spawnbaseline 22
+#define svc_temp_entity 23
+#define svc_setpause 24
+#define svc_signonnum 25
+#define svc_centerprint 26
+#define svc_killedmonster 27
+#define svc_foundsecret 28
+#define svc_spawnstaticsound 29
+#define svc_intermission 30
+#define svc_finale 31
+#define svc_cdtrack 32
+#define svc_restore 33
+#define svc_cutscene 34
+#define svc_weaponanim 35
+#define svc_decalname 36
+#define svc_roomtype 37
+#define svc_addangle 38
+#define svc_newusermsg 39
+#define svc_packetentities 40
+#define svc_deltapacketentities 41
+#define svc_deltapacketentities2 42
+#define svc_playerinfo 43
+#define svc_choke 44
+#define svc_resourcelist 45
+#define svc_newmovevars 46
+#define svc_resourcerequest 47
+#define svc_customization 48
+#define svc_unk49 49
+#define svc_crosshairangle 50
+#define svc_soundfade 51
+#define svc_clientmaxspeed 52
+#define svc_unk53 53
 #define SVC_LASTMSG 53
 #define MAX_USERMSGS 72
 
@@ -44,6 +98,12 @@
 #define RES_CUSTOM (1 << 2)
 
 typedef struct sfx_s sfx_t;
+
+typedef struct
+{
+    int length;
+    char map[64];
+} lightstyle_t; /* 0x44 */
 
 /* decallist_t do PS2 (arquivo de decals salvos, cabeçalho "VALV") */
 typedef struct
@@ -78,7 +138,17 @@ extern qboolean noclip_anglehack;
 extern int D_0033451C;
 extern int cl_updatebackup[MAX_LOCAL];
 extern int cl_updatemask[MAX_LOCAL];
-extern int D_00399490[MAX_LOCAL];
+extern int cl_parsecountmod[MAX_LOCAL];
+extern int D_00409354, D_00409358, D_0040935C; /* últimos 3 comandos */
+extern int msg_readcount;
+extern int msg_badread;
+extern lightstyle_t cl_lightstyle[MAX_LIGHTSTYLES];
+extern int D_0053D1D4;
+#define vid_recalc_refdef D_0053D1D4
+extern float D_004A8B28;
+#define sv_maxspeed_value D_004A8B28
+extern void (*D_003997DC)(void);
+extern void (*D_00399788)(void);
 extern float D_00399498[MAX_LOCAL];
 extern char com_gamedir[];
 extern void (*D_003997C0)(char *gamedir);
@@ -116,6 +186,19 @@ void COM_ExplainDisconnection(qboolean bPrint, char *fmt, ...);
 void CL_Disconnect(int clientId);
 struct model_s *Mod_ForName(char *name, qboolean crash);
 void Draw_DecalSetName(int decal, char *name);
+void SCR_EndLoadingPlaque(void);
+void SCR_CenterPrint(char *str, int clientId);
+void Q_strcpy(char *dest, const char *src);
+int Q_strlen(const char *str);
+void func_002CD280(int entnum, int entchannel, int clientId);
+void func_002B0E28(int clientId);
+void func_00258778(int clientId);
+void func_00250C50(int clientId);
+void func_002490B0(qboolean delta, int clientId);
+void func_0024BD88(int clientId);
+void func_0024AD40(int clientId);
+void func_00251BB0(void);
+void func_00239318(int track, qboolean looping);
 void *Mem_DbgMalloc(int size, const char *file, int line);
 void Mem_Free(void *p);
 void Mem_PushTag(void);
@@ -566,7 +649,26 @@ int func_00295148(void)
     return 1;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_parse", func_00295150);
+void func_00295150(void)
+{
+    downloadtime_t *p;
+
+    if (cl_downloadinterval.value == 0)
+        return;
+
+    if (cl_downloadinterval.value < 0)
+        Cvar_SetValue("cl_downloadinterval", 1);
+
+    if (realtime - cls[0].dl_fLastStatTime < cl_downloadinterval.value)
+        return;
+
+    cls[0].dl_fLastStatTime = realtime;
+    p = &cls[0].dl_rgStats[cls[0].dl_nCurStat & 7];
+    p->bUsed = 1;
+    p->fTime = realtime;
+    p->nBytesRemaining = cls[0].dl_nRemainingToTransfer;
+    cls[0].dl_nCurStat++;
+}
 
 void func_00295218(void) {
 }
@@ -900,7 +1002,7 @@ void CL_ReallocateDynamicData(int nMaxClients, int clientId)
 
     cl_updatebackup[clientId] = 8;
     cl_updatemask[clientId] = 7;
-    D_00399490[clientId] &= 7;
+    cl_parsecountmod[clientId] &= 7;
 
     if (cl[clientId].frames)
         Mem_Free(cl[clientId].frames);
@@ -1061,7 +1163,7 @@ void CL_ParseClientdata(int bits, int clientId)
     i = cls[clientId].netchan.incoming_acknowledged;
     cl[clientId].parsecount = i;
     i &= cl_updatemask[clientId];
-    D_00399490[clientId] = i;
+    cl_parsecountmod[clientId] = i;
     frame = &cl[clientId].frames[i];
     D_00399498[clientId] = frame->senttime;
     frame->receivedtime = realtime;
@@ -1128,16 +1230,16 @@ void CL_ParseClientdata(int bits, int clientId)
     }
 
     if (bits & SU_WEAPONFRAME)
-        cl[clientId].weapon = MSG_ReadShort();
+        cl[clientId].stats[STAT_WEAPON] = MSG_ReadShort();
     else
-        cl[clientId].weapon = 0;
+        cl[clientId].stats[STAT_WEAPON] = 0;
 
     i = MSG_ReadShort();
     if (cl[clientId].stats[STAT_HEALTH] != i)
         cl[clientId].stats[STAT_HEALTH] = i;
 }
 
-void func_00296658(void) {
+void func_00296658(int clientId) {
 }
 
 void CL_ParseStaticSound(int clientId)
@@ -1309,4 +1411,316 @@ void CL_AccumulateMessageLoad(void)
         total_data[i] += frame_data[i];
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_parse", func_00296E00);
+#ifdef NON_MATCHING
+void CL_ParseServerMessage(int clientId)
+{
+    int cmd;
+    int i, j;
+    int bufStart;
+    int bufSize;
+    float f;
+    frame_t *frame;
+
+    cl[clientId].onground = 0;
+    memset(frame_data, 0, sizeof(frame_data));
+
+    for (;;)
+    {
+        if (msg_badread)
+            Host_Error("CL_ParseServerMessage: Bad server message");
+
+        bufStart = msg_readcount;
+        cmd = MSG_ReadByte();
+        if (cmd == -1)
+            break;
+
+        if (cmd > SVC_LASTMSG)
+        {
+            msg_buckets[SVC_LASTMSG + 10]++;
+            DispatchUserMsg(cmd, clientId);
+            frame_data[SVC_LASTMSG + 10] += msg_readcount - bufStart;
+            continue;
+        }
+
+        D_0040935C = D_00409358;
+        D_00409358 = D_00409354;
+        D_00409354 = cmd;
+
+        if ((unsigned)cmd < 64)
+            msg_buckets[cmd]++;
+
+        switch (cmd)
+        {
+        default:
+            Con_DPrintf("Last 3 messages parsed.\n");
+            Con_DPrintf("%s\n", svc_strings[D_0040935C]);
+            Con_DPrintf("%s\n", svc_strings[D_00409358]);
+            Con_DPrintf("%s\n", svc_strings[D_00409354]);
+            Con_DPrintf("BAD:  %3i:%s\n", msg_readcount - 1, svc_strings[cmd]);
+            Host_Error("CL_ParseServerMessage: Illegible server message\n");
+            break;
+
+        case svc_time:
+            cl[clientId].mtime[1] = cl[clientId].mtime[0];
+            cl[clientId].mtime[0] = MSG_ReadFloat();
+            break;
+
+        case svc_clientdata:
+            CL_ParseClientdata(MSG_ReadShort(), clientId);
+            break;
+
+        case svc_version:
+            i = MSG_ReadLong();
+            if (i != protocol_version)
+                Host_Error("CL_ParseServerMessage: Server is protocol %i instead of %i\n", i, protocol_version);
+            break;
+
+        case svc_disconnect:
+            SCR_EndLoadingPlaque();
+            Host_EndGame("Server disconnected\n");
+            break;
+
+        case svc_print:
+            Con_Printf("%s", MSG_ReadString());
+            break;
+
+        case svc_centerprint:
+            SCR_CenterPrint(MSG_ReadString(), clientId);
+            break;
+
+        case svc_stufftext:
+            Cbuf_AddText(MSG_ReadString());
+            break;
+
+        case svc_serverinfo:
+            CL_ParseServerInfo(clientId);
+            vid_recalc_refdef = true;
+            break;
+
+        case svc_setangle:
+            for (i = 0; i < 3; i++)
+                cl[clientId].viewangles[i] = func_002437A8();
+            break;
+
+        case svc_addangle:
+            cl[clientId].viewangles[YAW] += func_002437A8();
+            break;
+
+        case svc_setview:
+            cl[clientId].viewentity = MSG_ReadShort();
+            break;
+
+        case svc_crosshairangle:
+            cl[clientId].crosshairangle[0] = func_00243370() * 0.2f;
+            cl[clientId].crosshairangle[1] = func_00243370() * 0.2f;
+            break;
+
+        case svc_lightstyle:
+            i = MSG_ReadByte();
+            if (i >= MAX_LIGHTSTYLES)
+                Sys_Error("svc_lightstyle > MAX_LIGHTSTYLES");
+            Q_strcpy(cl_lightstyle[i].map, MSG_ReadString());
+            cl_lightstyle[i].length = Q_strlen(cl_lightstyle[i].map);
+            break;
+
+        case svc_sound:
+            CL_ParseStartSoundPacket(clientId);
+            break;
+
+        case svc_stopsound:
+            i = MSG_ReadShort();
+            func_002CD280(i >> 3, i & 7, clientId);
+            break;
+
+        case svc_particle:
+            func_002B0E28(clientId);
+            break;
+
+        case svc_spawnbaseline:
+            CL_ParseBaseline(CL_EntityNum(MSG_ReadShort(), clientId));
+            break;
+
+        case svc_spawnstatic:
+            func_00296658(clientId);
+            break;
+
+        case svc_temp_entity:
+            func_00258778(clientId);
+            break;
+
+        case svc_setpause:
+            cl[clientId].unk_37C = MSG_ReadByte();
+            if (cl[clientId].unk_37C)
+                D_003997DC();
+            else
+                D_00399788();
+            break;
+
+        case svc_signonnum:
+            i = MSG_ReadByte();
+            if (i <= cls[clientId].signon)
+                Host_Error("Received signon %i when at %i", i, cls[clientId].signon);
+            cls[clientId].signon = i;
+            func_00250C50(clientId);
+            break;
+
+        case svc_spawnstaticsound:
+            CL_ParseStaticSound(clientId);
+            break;
+
+        case svc_cdtrack:
+            cl[clientId].cdtrack = MSG_ReadByte();
+            cl[clientId].looptrack = MSG_ReadByte();
+            func_00239318(cl[clientId].cdtrack, true);
+            break;
+
+        case svc_restore:
+            CL_LoadDecals(MSG_ReadString());
+            break;
+
+        case svc_weaponanim:
+            cl[clientId].weaponstarttime = 0;
+            cl[clientId].weaponsequence = MSG_ReadByte();
+            cl[clientId].viewent.unk_20 = MSG_ReadByte();
+            break;
+
+        case svc_decalname:
+            i = MSG_ReadByte();
+            Draw_DecalSetName(i, MSG_ReadString());
+            break;
+
+        case svc_roomtype:
+            Cvar_SetValue("room_type", MSG_ReadShort());
+            break;
+
+        case svc_newusermsg:
+            CL_ParseNewUserMsg(clientId);
+            break;
+
+        case svc_updateuserinfo:
+            CL_UpdateUserinfo(clientId);
+            break;
+
+        case svc_updatestat:
+            i = MSG_ReadByte();
+            if ((unsigned)i >= MAX_CL_STATS)
+                Sys_Error("svc_updatestat: %i is invalid", i);
+            cl[clientId].stats[i] = MSG_ReadLong();
+            break;
+
+        case svc_intermission:
+            vid_recalc_refdef = true;
+            cl[clientId].intermission = 1;
+            cl[clientId].completed_time = cl[clientId].time;
+            break;
+
+        case svc_finale:
+            vid_recalc_refdef = true;
+            cl[clientId].intermission = 2;
+            cl[clientId].completed_time = cl[clientId].time;
+            SCR_CenterPrint(MSG_ReadString(), clientId);
+            break;
+
+        case svc_cutscene:
+            vid_recalc_refdef = true;
+            cl[clientId].intermission = 3;
+            cl[clientId].completed_time = cl[clientId].time;
+            SCR_CenterPrint(MSG_ReadString(), clientId);
+            break;
+
+        case svc_packetentities:
+            func_00295218();
+            break;
+
+        case svc_deltapacketentities:
+            func_002490B0(false, clientId);
+            func_0024BD88(clientId);
+            break;
+
+        case svc_deltapacketentities2:
+            func_002490B0(true, clientId);
+            func_0024BD88(clientId);
+            break;
+
+        case svc_playerinfo:
+            func_0024AD40(clientId);
+            break;
+
+        case svc_choke:
+            i = MSG_ReadByte();
+            for (j = 0; j < i; j++)
+                cl[clientId].frames[(cls[clientId].netchan.incoming_acknowledged - 1 - j) & cl_updatemask[clientId]].receivedtime = -2;
+            break;
+
+        case svc_unk53:
+            i = MSG_ReadByte();
+            if (cl[clientId].frames[i & cl_updatemask[clientId]].receivedtime == -1 || cl[clientId].frames[i & cl_updatemask[clientId]].receivedtime == -2)
+                cl[clientId].frames[i & cl_updatemask[clientId]].receivedtime = -3;
+            break;
+
+        case svc_resourcelist:
+            CL_ParseResourceList(clientId);
+            break;
+
+        case svc_newmovevars:
+            CL_ParseMovevars(clientId);
+            break;
+
+        case svc_customization:
+            func_00251BB0();
+            break;
+
+        case svc_unk49:
+            func_00295B68();
+            break;
+
+        case svc_soundfade:
+            CL_ParseSoundFade(clientId);
+            break;
+
+        case svc_clientmaxspeed:
+            i = MSG_ReadByte();
+            if (i >= cl[clientId].maxclients)
+                Host_Error("CL_ParseServerMessage: svc_clientmaxspeed >= cl[clientId].maxclients");
+            f = MSG_ReadFloat();
+            cl[clientId].players[i].maxspeed = f;
+            if (f > sv_maxspeed_value)
+                cl[clientId].players[i].maxspeed = sv_maxspeed_value;
+            break;
+
+        case svc_nop:
+            break;
+
+        case svc_damage:
+            break;
+
+        case svc_killedmonster:
+            break;
+
+        case svc_foundsecret:
+            break;
+
+        case svc_resourcerequest:
+            break;
+        }
+
+        bufSize = msg_readcount - bufStart;
+        frame_data[cmd] += bufSize;
+
+        if (cmd == svc_deltapacketentities || cmd == svc_deltapacketentities2)
+            cl[clientId].frames[cl_parsecountmod[clientId]].unk_326 += bufSize;
+        else if (cmd == svc_playerinfo)
+            cl[clientId].frames[cl_parsecountmod[clientId]].unk_324 += bufSize;
+        else if (cmd == svc_temp_entity)
+            cl[clientId].frames[cl_parsecountmod[clientId]].unk_328 += bufSize;
+        else if (cmd == svc_sound)
+            cl[clientId].frames[cl_parsecountmod[clientId]].unk_32A += bufSize;
+    }
+
+    cl[clientId].frames[cl_parsecountmod[clientId]].unk_32C += net_message.cursize;
+    CL_AccumulateMessageLoad();
+    func_0024BD88(clientId);
+}
+#else
+INCLUDE_ASM("asm/nonmatchings/engine/cl_parse", CL_ParseServerMessage);
+#endif

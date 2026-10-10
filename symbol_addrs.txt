@@ -1283,3 +1283,7 @@ total_data = 0x004E7050; // size:0x100
 bitcounts = 0x0046E7F0; // size:0xA0
 playerbitcounts = 0x0046E770; // size:0x80
 custombitcounts = 0x0046E890; // size:0x80
+CL_ParseServerMessage = 0x00296E00; // type:func
+cl_parsecountmod = 0x00399490; // size:0x8
+cl_lightstyle = 0x00474168; // size:0x1100
+SCR_CenterPrint = 0x002ABA40; // type:func
