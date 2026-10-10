@@ -10,5 +10,4 @@ D_0038D660 = 0x0038D660; /* "\n" (pmove.c) */
 D_0038E478 = 0x0038E478; /* "Non-sprite set to glow!\n" (r_trans.c) */
 /* engine/sv_main: início */
 D_0038E8F8 = 0x0038E8F8;
-D_0038F310 = 0x0038F310;
 /* engine/sv_main: fim */

@@ -2486,7 +2486,9 @@ void func_00242B58(signed char *data, int numbits);
 void func_00242C90(int numbits, float angle);
 void func_00242B58(signed char *data, int numbits);
 
-#ifdef NON_MATCHING
+void func_00242C90(int numbits, float angle);
+void func_00242B58(signed char *data, int numbits);
+
 void SV_WriteDelta(entity_state_t *from, entity_state_t *to, sizebuf_t *msg, qboolean force)
 {
     unsigned int bits;
@@ -2496,6 +2498,7 @@ void SV_WriteDelta(entity_state_t *from, entity_state_t *to, sizebuf_t *msg, qbo
     byte bval;
     unsigned short usval;
     short coord;
+    float mineps;
     signed char cval;
     short sbody;
     byte t;
@@ -2563,13 +2566,14 @@ void SV_WriteDelta(entity_state_t *from, entity_state_t *to, sizebuf_t *msg, qbo
     if (to->animtime && !to->velocity[0] && !to->velocity[1] && !to->velocity[2])
         bits |= 0x200000;
 
+    mineps = -0.1f;
     for (i = 0; i < 3; i++)
     {
         d = to->mins[i] - from->mins[i];
-        if (d < -0.1f || d > 0.1f)
+        if (d < mineps || d > 0.1f)
             bits2 |= (1 << i);
         d = to->maxs[i] - from->maxs[i];
-        if (d < -0.1f || d > 0.1f)
+        if (d < mineps || d > 0.1f)
             bits2 |= (8 << i);
     }
 
@@ -2829,9 +2833,6 @@ void SV_WriteDelta(entity_state_t *from, entity_state_t *to, sizebuf_t *msg, qbo
         }
     }
 }
-#else
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_WriteDelta);
-#endif
 typedef struct packet_entities_s
 {
     int num_entities;
