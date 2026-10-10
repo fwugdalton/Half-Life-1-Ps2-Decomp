@@ -42,9 +42,29 @@ typedef struct
 
 typedef struct
 {
-    byte pad0[7];
-    byte numframes;  /* 0x07 */
-    int frames[1];   /* 0x08 */
+    byte pad0[0x13];
+    byte nummips;            /* 0x13 */
+    byte pad14[4];
+    unsigned short width;    /* 0x18 */
+    unsigned short height;   /* 0x1A */
+    unsigned short width2;   /* 0x1C */
+    unsigned short height2;  /* 0x1E */
+    byte palette[0x400];     /* 0x20 */
+    byte pixels[1];          /* 0x420 */
+} gl_spriteframe_t;
+
+typedef struct
+{
+    int gl_texturenum;
+    gl_spriteframe_t *frame;
+} gl_spriteframedesc_t;
+
+typedef struct
+{
+    byte pad0[6];
+    byte flags;                       /* 0x06 */
+    byte numframes;                   /* 0x07 */
+    gl_spriteframedesc_t frames[1];   /* 0x08 */
 } gl_sprite_t;
 
 void func_002A0028(char *buf, model_t *mod, int frame);
@@ -76,7 +96,9 @@ void *Mem_DbgMalloc(int size, const char *file, int line);
 void *memset(void *, int, unsigned int);
 char *strcpy(char *, const char *);
 void Mod_LoadStudioModel(model_t *mod, void *buffer);
-void func_002A01B8(model_t *mod, void *buffer);
+void func_002A01B8(model_t *mod, gl_sprite_t *psprite);
+void *COM_LoadFile(char *path, int usehunk, int *pLength);
+void func_002AF9A0(int texnum);
 void *Cache_Check(cache_user_t *c);
 void Cache_Free(cache_user_t *c);
 FileHandle_t FS_Open(char *name, char *mode);
@@ -570,7 +592,7 @@ void func_002A0050(model_t *mod)
         return;
 
     {
-        int *p = psprite->frames;
+        int *p = &psprite->frames[0].gl_texturenum;
         for (i = 0; i < psprite->numframes; i++)
             *p = 0;
     }
@@ -582,11 +604,68 @@ void func_002A0050(model_t *mod)
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", func_002A0100);
+void func_002A0100(model_t *mod)
+{
+    int i;
+    gl_sprite_t *psprite;
+    gl_spriteframedesc_t *pdesc;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", func_002A0180);
+    if (mod->type != mod_sprite)
+        return;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", func_002A01B8);
+    mod->needload = 1;
+    psprite = (gl_sprite_t *)mod->cache.data;
+    if (!psprite)
+        return;
+
+    {
+        gl_spriteframedesc_t *frames = psprite->frames;
+        for (i = 0; i < psprite->numframes; i++)
+        {
+            func_002AF9A0(frames[i].gl_texturenum);
+            frames[i].gl_texturenum = 0;
+        }
+    }
+}
+
+void func_002A0180(model_t *mod)
+{
+    int length;
+
+    func_002A01B8(mod, COM_LoadFile(mod->name, 1, &length));
+}
+
+void func_002A01B8(model_t *mod, gl_sprite_t *psprite)
+{
+    int i;
+    char name[256];
+    gl_spriteframe_t *frame;
+    gl_spriteframedesc_t *frames;
+    byte *pixels, *palette;
+
+    mod->cache.data = psprite;
+
+    frames = psprite->frames;
+    for (i = 0; i < psprite->numframes; i++)
+    {
+        if (!(psprite->flags & 1))
+            frames[i].frame = (gl_spriteframe_t *)((int)frames[i].frame + (int)psprite);
+        frame = frames[i].frame;
+        palette = frame->palette;
+        pixels = frame->pixels;
+        func_002A0028(name, mod, i);
+        frames[i].gl_texturenum = GL_LoadDecalTexture(name, 5, frame->width, frame->height, pixels, palette, frame->nummips);
+    }
+
+    psprite->flags |= 1;
+    frame = psprite->frames[0].frame;
+    mod->mins[0] = mod->mins[1] = -frame->width2 / 2;
+    mod->maxs[0] = mod->maxs[1] = frame->width2 / 2;
+    mod->mins[2] = -frame->height2 / 2;
+    mod->maxs[2] = frame->height2 / 2;
+    mod->type = mod_sprite;
+    mod->synctype = 0;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", func_002A0320);
 
