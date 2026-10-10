@@ -31,6 +31,28 @@ char *Info_Serverinfo(void);
 void Info_Print(char *s);
 int atoi(const char *);
 void SV_RunCmd(usercmd_t *ucmd, int clientId);
+void func_00289320(float frametime);
+qboolean func_00289818(edict_t *ent, float frametime, double time);
+void func_002893F8(areanode_t *node, int clientId);
+void func_0028A820(void);
+float PM_CalcRoll(vec3_t angles, vec3_t velocity, float rollangle, float rollspeed);
+void PM_PlayerMove(qboolean server, int clientId);
+void PM_CheckVelocity(int clientId);
+edict_t *EDICT_NUM(int n);
+void SV_Impact(edict_t *e1, edict_t *e2, trace_t *ptrace);
+float sqrtf(float);
+extern cvar_t sv_maxspeed, sv_rollangle, sv_rollspeed, pm_pushfix;
+extern int cl_numlocal;
+extern int D_003241F0;
+extern float *D_00399428;
+extern float *D_00399434;
+extern areanode_t sv_areanodes[];
+
+#define FL_CONVEYOR (1 << 2)
+#define FL_DUCKING (1 << 14)
+#define FL_ONTRAIN (1 << 24)
+#define FL_BASEVELOCITY (1 << 22)
+#define MOVETYPE_WALK 3
 void SV_PreRunCmd(void);
 void SV_LinkEdict(edict_t *ent, qboolean touch_triggers);
 void func_00288378(void);
@@ -307,7 +329,254 @@ qboolean func_00289818(edict_t *ent, float frametime, double time)
     return !ent->free;
 }
 
+#ifdef NON_MATCHING
+void SV_RunCmd(usercmd_t *ucmd, int clientId)
+{
+    static usercmd_t cmd;
+    trace_t trace;
+    vec3_t oldvel;
+    vec3_t vel;
+    int i;
+    int oldmsec;
+    float spd, fmove;
+    edict_t *ent;
+    pmtrace_t *tr;
+    int n;
+
+    cmd = *ucmd;
+
+    if (cmd.msec > 50)
+    {
+        oldmsec = ucmd->msec;
+        cmd.msec = oldmsec / 2;
+        SV_RunCmd(&cmd, clientId);
+        cmd.msec = oldmsec / 2;
+        cmd.impulse = 0;
+        SV_RunCmd(&cmd, clientId);
+        return;
+    }
+
+    pm_frametime = ucmd->msec * 0.001f;
+    func_00289320(pm_frametime);
+
+    VectorCopy(vec3_origin, sv_player->v.clbasevelocity);
+
+    if (!sv_player->v.fixangle)
+        VectorCopy(ucmd->viewangles, sv_player->v.v_angle);
+
+    sv_player->v.button = ucmd->buttons;
+    if (ucmd->impulse)
+        sv_player->v.impulse = ucmd->impulse;
+
+    if ((sv_player->v.flags & FL_ONGROUND) && sv_player->v.groundentity && (sv_player->v.groundentity->v.flags & FL_CONVEYOR))
+    {
+        if (sv_player->v.flags & FL_BASEVELOCITY)
+            VectorMA(sv_player->v.basevelocity, sv_player->v.groundentity->v.speed, sv_player->v.groundentity->v.movedir, sv_player->v.basevelocity);
+        else
+            VectorScale(sv_player->v.groundentity->v.movedir, sv_player->v.groundentity->v.speed, sv_player->v.basevelocity);
+        sv_player->v.flags |= FL_BASEVELOCITY;
+    }
+
+    if (!(sv_player->v.flags & FL_BASEVELOCITY))
+    {
+        VectorMA(sv_player->v.velocity, 1.0f + pm_frametime * 0.5f, sv_player->v.basevelocity, sv_player->v.velocity);
+        VectorCopy(vec3_origin, sv_player->v.basevelocity);
+    }
+
+    sv_player->v.flags &= ~FL_BASEVELOCITY;
+
+    if (!host_client->spectator)
+    {
+        gGlobalVariables.time = host_client->unk_7410;
+        gEntityInterface.pfnPlayerPreThink(sv_player);
+        func_00289818(sv_player, pm_frametime, host_client->unk_7410);
+    }
+
+    host_client->unk_7410 += pm_frametime;
+
+    pmove[clientId].usehull = 0;
+    if (host_client->maxspeed != 0)
+        pmove[clientId].maxspeed = host_client->maxspeed < sv_maxspeed.value ? host_client->maxspeed : sv_maxspeed.value;
+    else
+        pmove[clientId].maxspeed = sv_maxspeed.value;
+
+    spd = sqrtf(cmd.forwardmove * cmd.forwardmove + cmd.sidemove * cmd.sidemove + cmd.upmove * cmd.upmove);
+    if (spd != 0 && pmove[clientId].maxspeed < spd)
+    {
+        fmove = pmove[clientId].maxspeed / spd;
+        cmd.forwardmove *= fmove;
+        cmd.sidemove *= fmove;
+        cmd.upmove *= fmove;
+    }
+
+    if (sv_player->v.flags & FL_DUCKING)
+    {
+        pmove[clientId].usehull = 1;
+        cmd.forwardmove *= 0.333f;
+        cmd.sidemove *= 0.333f;
+        cmd.upmove *= 0.333f;
+    }
+
+    if ((sv_player->v.flags & (FL_FROZEN | FL_ONTRAIN)) || D_003241F0)
+    {
+        cmd.forwardmove = 0;
+        cmd.sidemove = 0;
+        cmd.upmove = 0;
+    }
+
+    if (sv_player->v.basevelocity[0] != 0 || sv_player->v.basevelocity[1] != 0 || sv_player->v.basevelocity[2] != 0)
+        VectorCopy(sv_player->v.basevelocity, sv_player->v.clbasevelocity);
+
+    VectorAdd(sv_player->v.v_angle, sv_player->v.punchangle, sv_player->v.v_angle);
+
+    if (sv_player->v.health > 0)
+    {
+        sv_player->v.angles[ROLL] = PM_CalcRoll(sv_player->v.angles, sv_player->v.velocity, sv_rollangle.value, sv_rollspeed.value) * 4;
+        if (!sv_player->v.fixangle)
+        {
+            if (cl_numlocal == 1)
+                sv_player->v.angles[PITCH] = -sv_player->v.v_angle[PITCH] / 3;
+            else
+                sv_player->v.angles[PITCH] = -sv_player->v.v_angle[PITCH] / 6;
+            sv_player->v.angles[YAW] = sv_player->v.v_angle[YAW];
+        }
+    }
+
+    for (i = 0; i < 3; i++)
+        pmove[clientId].origin[i] = sv_player->v.origin[i] + (sv_player->v.mins[i] - player_mins[pmove[clientId].usehull][i]);
+
+    pmove[clientId].server = true;
+    pmove[clientId].time = sv.time * 1000.0f;
+    pmove[clientId].flDuckTime = host_client->flDuckTime;
+    pmove[clientId].bInDuck = host_client->bInDuck;
+    VectorCopy(sv_player->v.velocity, pmove[clientId].velocity);
+    VectorCopy(sv_player->v.movedir, pmove[clientId].movedir);
+    VectorCopy(sv_player->v.v_angle, pmove[clientId].angles);
+    VectorCopy(sv_player->v.basevelocity, pmove[clientId].basevelocity);
+    VectorCopy(sv_player->v.view_ofs, pmove[clientId].view_ofs);
+    pmove[clientId].gravity = sv_player->v.gravity;
+    pmove[clientId].friction = sv_player->v.friction;
+    pmove[clientId].spectator = host_client->spectator;
+    pmove[clientId].waterjumptime = sv_player->v.teleport_time;
+    pmove[clientId].cmd = cmd;
+    pmove[clientId].dead = sv_player->v.health <= 0;
+    pmove[clientId].oldbuttons = host_client->oldbuttons;
+    pmove[clientId].movetype = sv_player->v.movetype;
+    pmove[clientId].flags = sv_player->v.flags;
+
+    for (i = 0; i < 3; i++)
+    {
+        sv_pmove_mins[i] = pmove[clientId].origin[i] - 256;
+        sv_pmove_maxs[i] = pmove[clientId].origin[i] + 256;
+    }
+
+    pmove[clientId].numphysent = 1;
+    pmove[clientId].nummoveent = 0;
+    pmove[clientId].physents[0].model = sv.worldmodel;
+    func_002893F8(sv_areanodes, clientId);
+
+    if (pm_pushfix.value != 0)
+        SV_LinkEdict(sv_player, true);
+
+    pmove[clientId].player_index = NUM_FOR_EDICT(sv_player);
+
+    PM_PlayerMove(true, clientId);
+
+    if (pmove[clientId].movetype == MOVETYPE_WALK)
+        pmove[clientId].friction = 1.0f;
+
+    host_client->bInDuck = pmove[clientId].bInDuck;
+    host_client->flDuckTime = pmove[clientId].flDuckTime;
+    host_client->oldbuttons = pmove[clientId].oldbuttons;
+    sv_player->v.teleport_time = pmove[clientId].waterjumptime;
+    sv_player->v.waterlevel = pm_waterlevel[clientId];
+    sv_player->v.watertype = pm_watertype[clientId];
+    sv_player->v.flags = pmove[clientId].flags;
+    sv_player->v.friction = pmove[clientId].friction;
+    if (!pmove[clientId].dead)
+        sv_player->v.movetype = pmove[clientId].movetype;
+
+    if (pm_onground[clientId] != -1)
+    {
+        sv_player->v.flags |= FL_ONGROUND;
+        sv_player->v.groundentity = EDICT_NUM(pmove[clientId].physents[pm_onground[clientId]].info);
+    }
+    else
+    {
+        sv_player->v.flags &= ~FL_ONGROUND;
+    }
+
+    VectorCopy(pmove[clientId].view_ofs, sv_player->v.view_ofs);
+    pm_onground[clientId] = pm_onground[clientId] != -1;
+
+    for (i = 0; i < 3; i++)
+        sv_player->v.origin[i] = pmove[clientId].origin[i] - (sv_player->v.mins[i] - player_mins[pmove[clientId].usehull][i]);
+
+    if (pm_pushfix.value == 0)
+        VectorCopy(pmove[clientId].velocity, sv_player->v.velocity);
+
+    VectorCopy(pmove[clientId].basevelocity, sv_player->v.basevelocity);
+
+    D_00399428 = sv_player->v.origin;
+    D_00399434 = sv_player->v.velocity;
+
+    if (pm_pushfix.value != 0)
+    {
+        if (!host_client->spectator)
+        {
+            VectorCopy(vec3_origin, vel);
+            for (i = 0; i < pmove[clientId].numtouch; i++)
+            {
+                tr = &pmove[clientId].touchindex[i];
+                VectorAdd(vel, tr->deltavelocity, vel);
+            }
+
+            PM_CheckVelocity(clientId);
+            VectorAdd(pmove[clientId].velocity, vel, sv_player->v.velocity);
+            SV_LinkEdict(sv_player, true);
+        }
+    }
+    else if (!host_client->spectator)
+    {
+        SV_LinkEdict(sv_player, true);
+
+        VectorCopy(sv_player->v.velocity, oldvel);
+
+        for (i = 0; i < pmove[clientId].numtouch; i++)
+        {
+            tr = &pmove[clientId].touchindex[i];
+            n = pmove[clientId].physents[tr->ent].info;
+            ent = EDICT_NUM(n);
+
+            if (g_playertouch[n / 8] & (1 << (n % 8)))
+                continue;
+
+            if (ent->v.flags & FL_SPECTATOR)
+                continue;
+
+            trace.allsolid = tr->allsolid;
+            trace.startsolid = tr->startsolid;
+            trace.inopen = tr->inopen;
+            trace.inwater = tr->inwater;
+            trace.fraction = tr->fraction;
+            VectorCopy(tr->endpos, trace.endpos);
+            VectorCopy(tr->plane.normal, trace.plane.normal);
+            trace.plane.dist = tr->plane.dist;
+            trace.hitgroup = tr->hitgroup;
+            trace.ent = ent;
+
+            VectorCopy(tr->deltavelocity, sv_player->v.velocity);
+            SV_Impact(ent, sv_player, &trace);
+        }
+
+        VectorCopy(oldvel, sv_player->v.velocity);
+    }
+
+    func_0028A820();
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/sv_user", SV_RunCmd);
+#endif
 
 void func_0028A820(void)
 {

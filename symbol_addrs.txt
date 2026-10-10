@@ -1024,3 +1024,7 @@ msg_badread = 0x003990D8; // size:0x4
 msg_readcount = 0x003990F8; // size:0x4
 MSG_ReadCoord = 0x00243738; // type:func
 MSG_ReadDeltaUsercmd = 0x00243D20; // type:func
+sv_areanodes = 0x004E6A10;
+sv_rollspeed = 0x003329C8; // size:0x14
+sv_rollangle = 0x003329E0; // size:0x14
+PM_CalcRoll = 0x00245500; // type:func
