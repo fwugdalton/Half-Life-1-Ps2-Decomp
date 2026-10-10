@@ -34,6 +34,28 @@
 "svs"
 ]
 },
+"SVC_Info": {
+"migrated": [
+"D_0038F250"
+],
+"refs": [
+"D_003325A8",
+"D_0033473C",
+"D_00334740",
+"D_0038EFD0",
+"D_0038F250",
+"D_003997F8",
+"D_003997FF",
+"D_004A96D0",
+"cls",
+"com_gamedir",
+"gEntityInterface",
+"net_from",
+"protocol_version",
+"sv",
+"svs"
+]
+},
 "SVC_Ping": {
 "migrated": [],
 "refs": [
@@ -323,7 +345,6 @@
 "D_00332560",
 "D_00332578",
 "D_00332590",
-"D_003325A8",
 "D_003325D8",
 "D_003325F0",
 "D_00332608",
@@ -375,6 +396,7 @@
 "sv_maxvelocity",
 "sv_minrate",
 "sv_netsize",
+"sv_password",
 "sv_skyname",
 "sv_spectatormaxspeed",
 "sv_stepsize",
@@ -560,6 +582,22 @@
 "migrated": [],
 "refs": [
 "host_client",
+"svs"
+]
+},
+"SV_SendResourceListBlock_f": {
+"migrated": [
+"D_0038F468",
+"D_0038F498",
+"D_0038F4D0"
+],
+"refs": [
+"D_0038F468",
+"D_0038F498",
+"D_0038F4D0",
+"cmd_source",
+"host_client",
+"sv",
 "svs"
 ]
 },
@@ -769,7 +807,6 @@
 "D_0038EFC0"
 ],
 "refs": [
-"D_003325A8",
 "D_00334540",
 "D_0038E630",
 "D_0038EEE0",
@@ -796,15 +833,15 @@
 "D_0038F158",
 "D_0038F190",
 "D_0038F1B0",
-"D_003997F8",
-"D_003997FF",
 "D_004A96C0",
 "D_004E2BE0",
 "D_0053DDD4",
 "g_userid",
 "host_client",
 "net_from",
+"net_local_adr",
 "protocol_version",
+"sv_password",
 "svs"
 ]
 },
@@ -823,28 +860,6 @@
 "refs": [
 "D_0038E628",
 "D_0053DB38"
-]
-},
-"func_0027D480": {
-"migrated": [
-"D_0038F250"
-],
-"refs": [
-"D_003325A8",
-"D_0033473C",
-"D_00334740",
-"D_0038EFD0",
-"D_0038F250",
-"D_003997F8",
-"D_003997FF",
-"D_004A96D0",
-"cls",
-"com_gamedir",
-"gEntityInterface",
-"net_from",
-"protocol_version",
-"sv",
-"svs"
 ]
 },
 "func_0027DA98": {
@@ -943,22 +958,6 @@
 "sv"
 ]
 },
-"func_00281888": {
-"migrated": [
-"D_0038F468",
-"D_0038F498",
-"D_0038F4D0"
-],
-"refs": [
-"D_0038F468",
-"D_0038F498",
-"D_0038F4D0",
-"cmd_source",
-"host_client",
-"sv",
-"svs"
-]
-},
 "func_00281D88": {
 "migrated": [],
 "refs": []
@@ -989,7 +988,6 @@
 "D_00332548",
 "D_00332F2C",
 "D_00332F34",
-"D_00334740",
 "D_0038E6F8",
 "D_0038F550",
 "D_0038F580",
@@ -1018,6 +1016,7 @@
 "coop",
 "gEntityInterface",
 "gGlobalVariables",
+"hostname",
 "pr_strings",
 "skill",
 "sv",

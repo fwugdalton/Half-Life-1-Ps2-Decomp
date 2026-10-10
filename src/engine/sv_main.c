@@ -1098,12 +1098,14 @@ typedef struct
     void *unk_20[(0x3C - 0x20) / 4];
     int (*pfnClientConnect)(edict_t *pEntity, const char *pszName, const char *pszAddress, char *szRejectReason); /* 0x3C */
     void (*pfnClientDisconnect)(edict_t *pEntity); /* 0x40 */
-    void *unk_44[(0x54 - 0x44) / 4];
+    void *unk_44[(0x50 - 0x44) / 4];
+    void (*pfnClientUserInfoChanged)(edict_t *pEntity, char *infobuffer); /* 0x50 */
     void (*pfnServerActivate)(edict_t *pEdictList, int edictCount, int clientMax); /* 0x54 */
     void *unk_58[(0x64 - 0x58) / 4];
     void (*unk_64)(void);                     /* 0x64 */
     void (*pfnParmsChangeLevel)(void);       /* 0x68 */
-    void *unk_6C[(0x74 - 0x6C) / 4];
+    const char *(*pfnGetGameDescription)(void); /* 0x6C */
+    void *unk_70[(0x74 - 0x70) / 4];
     void (*pfnSpectatorConnect)(edict_t *pEntity);    /* 0x74 */
     void (*pfnSpectatorDisconnect)(edict_t *pEntity); /* 0x78 */
 } DLL_FUNCTIONS;
@@ -1540,7 +1542,98 @@ qboolean func_0027D380(char *a0, char *a1, int *a2, int *a3, int *a4, int *a5, c
     }
     return D_0053DB38.active;
 }
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027D480);
+extern char D_0038EFD0[]; /* "none" */
+extern int D_0033473C;
+extern netadr_t net_local_adr;
+extern cvar_t hostname;
+extern cvar_t sv_password;
+qboolean func_0027D380(char *a0, char *a1, int *a2, int *a3, int *a4, int *a5, char *a6);
+
+void SVC_Info(qboolean bDetailed)
+{
+    sizebuf_t buf;
+    byte data[1400];
+    char szURL[512];
+    char szDLURL[512];
+    char szGameDir[260];
+    char szHLVersion[32];
+    int nVersion;
+    int nSize;
+    int bSvOnly;
+    int bClDll;
+    int i;
+    int count;
+
+    buf.maxsize = sizeof(data);
+    buf.data = data;
+    buf.cursize = 0;
+
+    if (!sv.active)
+        return;
+    if (svs.maxclients <= 1)
+        return;
+
+    count = 0;
+    for (i = 0; i < svs.maxclients; i++)
+    {
+        if (svs.clients[i].active || svs.clients[i].connected || svs.clients[i].spawned)
+            count++;
+    }
+
+    MSG_WriteLong(&buf, -1);
+    if (bDetailed)
+        MSG_WriteByte(&buf, 'm');
+    else
+        MSG_WriteByte(&buf, 'C');
+
+    if (!D_0033473C)
+        MSG_WriteString(&buf, NET_AdrToString(net_local_adr));
+    else
+        MSG_WriteString(&buf, "LOOPBACK");
+
+    MSG_WriteString(&buf, hostname.string);
+    MSG_WriteString(&buf, sv.name);
+
+    COM_FileBase(com_gamedir, szGameDir);
+    MSG_WriteString(&buf, szGameDir);
+    MSG_WriteString(&buf, gEntityInterface.pfnGetGameDescription());
+
+    MSG_WriteByte(&buf, count);
+    MSG_WriteByte(&buf, svs.maxclients);
+    MSG_WriteByte(&buf, protocol_version);
+
+    if (bDetailed)
+    {
+        if (!cls[0].state)
+            MSG_WriteByte(&buf, 'd');
+        else
+            MSG_WriteByte(&buf, 'l');
+        MSG_WriteByte(&buf, 'l');
+
+        if (strlen(sv_password.string) && strcasecmp(sv_password.string, D_0038EFD0))
+            MSG_WriteByte(&buf, 1);
+        else
+            MSG_WriteByte(&buf, 0);
+
+        if (func_0027D380(szURL, szDLURL, &nVersion, &nSize, &bSvOnly, &bClDll, szHLVersion))
+        {
+            MSG_WriteByte(&buf, 1);
+            MSG_WriteString(&buf, szURL);
+            MSG_WriteString(&buf, szDLURL);
+            MSG_WriteString(&buf, szHLVersion);
+            MSG_WriteLong(&buf, nVersion);
+            MSG_WriteLong(&buf, nSize);
+            MSG_WriteByte(&buf, bSvOnly);
+            MSG_WriteByte(&buf, bClDll);
+        }
+        else
+        {
+            MSG_WriteByte(&buf, 0);
+        }
+    }
+
+    NET_SendPacket(NS_SERVER, buf.cursize, buf.data, net_from, 0);
+}
 void SVC_PlayerInfo(void)
 {
     sizebuf_t buf;
@@ -1587,7 +1680,6 @@ void SVC_PlayerInfo(void)
 }
 extern char D_0038E630[]; /* "0" (ainda emitido pelo bloco de rodata) */
 extern char D_0038E678[]; /* "1" */
-extern char D_0038EFD0[]; /* "none" */
 int Cvar_CountServerVariables(void);
 extern cvar_t *cvar_vars;
 void NET_SendPacket(int sock, int length, void *data, netadr_t to, int unk);
@@ -2227,7 +2319,69 @@ void SV_SendClientMessages(void)
 
     SV_CleanupEnts();
 }
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_ExtractFromUserinfo);
+extern char D_0038F050[]; /* "name" */
+char *Info_ValueForKey(char *s, char *key);
+
+void SV_ExtractFromUserinfo(client_t *cl)
+{
+    char *val;
+    char *p, *q;
+    int i;
+    char newname[80];
+
+    gEntityInterface.pfnClientUserInfoChanged(cl->edict, cl->userinfo);
+
+    val = Info_ValueForKey(cl->userinfo, D_0038F050);
+
+    strncpy(newname, val, sizeof(newname) - 1);
+    newname[sizeof(newname) - 1] = 0;
+
+    for (p = newname; *p == ' ' && *p; p++)
+        ;
+    if (p != newname && *p)
+    {
+        for (q = newname; *p; *q++ = *p++)
+            ;
+        *q = 0;
+    }
+
+    for (p = newname + strlen(newname) - 1; p != newname && *p == ' '; p--)
+        ;
+    p[1] = 0;
+
+    if (strcmp(val, newname))
+    {
+        Info_SetValueForKey(cl->userinfo, D_0038F050, newname, MAX_INFO_STRING);
+        val = Info_ValueForKey(cl->userinfo, D_0038F050);
+    }
+
+    if (!val[0] || !strcasecmp(val, "console"))
+    {
+        Info_SetValueForKey(cl->userinfo, D_0038F050, "unnamed", MAX_INFO_STRING);
+        val = Info_ValueForKey(cl->userinfo, D_0038F050);
+    }
+
+    strncpy(cl->name, val, sizeof(cl->name) - 1);
+
+    val = Info_ValueForKey(cl->userinfo, "rate");
+    if (strlen(val))
+    {
+        i = atoi(val);
+        if (i < 500)
+            i = 500;
+        else if (i > 10000)
+            i = 10000;
+        cl->netchan.rate = i;
+    }
+
+    val = Info_ValueForKey(cl->userinfo, "topcolor");
+    if (strlen(val))
+        cl->topcolor = atoi(val);
+
+    val = Info_ValueForKey(cl->userinfo, "bottomcolor");
+    if (strlen(val))
+        cl->bottomcolor = atoi(val);
+}
 int SV_ModelIndex(char *name)
 {
     int i;
@@ -2257,7 +2411,62 @@ void SV_FlushSignon(void)
     sv.signon.data = sv.signon_buffers[sv.num_signon_buffers];
     sv.num_signon_buffers++;
 }
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00281888);
+void Cmd_ForwardToServer(void);
+
+#define svc_resourcelist 45
+
+void SV_SendResourceListBlock_f(void)
+{
+    int nStart;
+    int n;
+    int nSizePos;
+    short nCount;
+
+    if (cmd_source == 1)
+    {
+        Cmd_ForwardToServer();
+        return;
+    }
+
+    if (!host_client->connected)
+    {
+        Con_Printf("resourcelist not valid -- already spawned\n");
+        return;
+    }
+
+    if (atoi(Cmd_Argv(1)) != svs.spawncount)
+    {
+        Con_Printf("SV_SendResourceListBlock_f from different level\n");
+        SV_New_f();
+        return;
+    }
+
+    nStart = atoi(Cmd_Argv(2));
+
+    MSG_WriteByte(&host_client->netchan.message, svc_resourcelist);
+    MSG_WriteShort(&host_client->netchan.message, sv.num_resources);
+    MSG_WriteShort(&host_client->netchan.message, nStart);
+    nSizePos = host_client->netchan.message.cursize;
+    MSG_WriteShort(&host_client->netchan.message, 0);
+
+    for (n = nStart; n < sv.num_resources &&
+           host_client->netchan.message.cursize < host_client->netchan.message.maxsize - 512; n++)
+    {
+        MSG_WriteByte(&host_client->netchan.message, sv.resourcelist[n].type);
+        MSG_WriteString(&host_client->netchan.message, sv.resourcelist[n].szFileName);
+        MSG_WriteShort(&host_client->netchan.message, sv.resourcelist[n].nIndex);
+        MSG_WriteByte(&host_client->netchan.message, sv.resourcelist[n].ucFlags);
+    }
+
+    nCount = n;
+    Q_memcpy(host_client->netchan.message.data + nSizePos, &nCount, 2);
+
+    if (n < sv.num_resources)
+    {
+        MSG_WriteByte(&host_client->netchan.message, svc_stufftext);
+        MSG_WriteString(&host_client->netchan.message, va("cmd resourcelist %i %i\n", svs.spawncount, n));
+    }
+}
 void SV_AddResource(int type, char *name, int size, int flags, int index)
 {
     resource_t *r = &sv.resourcelist[sv.num_resources];

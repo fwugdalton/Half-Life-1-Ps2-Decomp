@@ -210,7 +210,9 @@ typedef struct client_s
     float sendinfo_time;        /* 0x84E8 */
     char hashedcdkey[33];       /* 0x84EC */
     char name[32];              /* 0x850D */
-    byte unk_852D[0x8538 - 0x852D];
+    byte unk_852D[0x8530 - 0x852D];
+    int topcolor;               /* 0x8530 */
+    int bottomcolor;            /* 0x8534 */
     int unk_8538;               /* 0x8538 */
     void *unk_853C;             /* 0x853C */
     byte unk_8540[0x8558 - 0x8540];
