@@ -263,6 +263,25 @@ extern char D_003330C8[];
 extern char D_00333078[];
 void EntityPatchWrite(SAVERESTOREDATA *pSaveData, char *level);
 void CL_Save(char *name);
+
+/* entrada da lista de decals montada por func_002A50B8 */
+typedef struct
+{
+    char *name;                 /* 0x00 */
+    short entityIndex;          /* 0x04 */
+    byte depth;                 /* 0x06 */
+    byte flags;                 /* 0x07 */
+    vec3_t position;            /* 0x08 */
+} savedecal_t; /* 0x14 */
+
+int func_002A50B8(savedecal_t *pList, int a1);
+void Mem_PushTag(void);
+void Mem_SetTag(int tag);
+void Mem_PopTag(void);
+void func_0022BBC0(char *name);
+extern char *pr_strings;
+void ReleaseEntityDLLFields(edict_t *pEdict);
+void InitEntityDLLFields(edict_t *pEdict);
 void SV_CountPlayers(int *clients, int *spectators);
 int strcasecmp(const char *, const char *);
 #include "engine/mathlib.h"
@@ -1748,11 +1767,61 @@ SAVERESTOREDATA *SaveGamestate(void)
     return pSaveData;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", CL_Save);
+void CL_Save(char *name)
+{
+    savedecal_t decalList[1024];
+    int tag;
+    int number;
+    int i;
+    int pFile;
+
+    number = func_002A50B8(decalList, 0);
+
+    Mem_PushTag();
+    Mem_SetTag(2);
+
+    pFile = func_0022B118(name, D_003926D0);
+    if (pFile)
+    {
+        tag = (('V' << 24) | ('L' << 16) | ('A' << 8) | 'V');
+        func_0022BD98(&tag, sizeof(int), 1, pFile);
+        tag = SAVEGAME_VERSION;
+        func_0022BD98(&tag, sizeof(int), 1, pFile);
+        func_0022BD98(&number, sizeof(int), 1, pFile);
+
+        for (i = 0; i < number; i++)
+        {
+            func_0022BD98(decalList[i].name, 1, 16, pFile);
+            func_0022BD98(&decalList[i].entityIndex, sizeof(short), 1, pFile);
+            func_0022BD98(&decalList[i].depth, sizeof(byte), 1, pFile);
+            func_0022BD98(&decalList[i].flags, sizeof(byte), 1, pFile);
+            func_0022BD98(decalList[i].position, sizeof(vec3_t), 1, pFile);
+        }
+
+        func_0022B238(pFile);
+    }
+
+    Mem_PopTag();
+    func_0022BBC0(name);
+}
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00392850);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029AB00);
+void EntityInit(edict_t *pEdict, string_t className)
+{
+    ENTITYINIT pEntityInit;
+
+    if (!className)
+        Sys_Error("Bad class!!\n");
+
+    ReleaseEntityDLLFields(pEdict);
+    InitEntityDLLFields(pEdict);
+    pEdict->v.classname = className;
+
+    pEntityInit = GetEntityInit(pr_strings + className);
+    if (pEntityInit)
+        pEntityInit(&pEdict->v);
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029AB70);
 
