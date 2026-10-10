@@ -63,6 +63,25 @@ extern char gpszVersionString[];
 extern vec3_t r_origin;
 int build_number(void);
 void SV_ClientPrintf(char *fmt, ...);
+extern cvar_t deathmatch;
+extern cvar_t coop;
+extern qboolean (*D_0039979C)(void);
+extern int key_dest;
+extern char D_00392078[];
+extern int D_00332F34;
+extern UserMsg *sv_gpUserMsgs;
+extern UserMsg *sv_gpNewUserMsgs;
+void func_0021C340(void);
+void Host_ShutdownServer(qboolean crash);
+void func_002AC478(int a0);
+void func_0029C388(void);
+int SV_SpawnServer(qboolean bIsDemo, char *server, char *startspot);
+int func_0029B488(char *level, int a1);
+void SV_LoadEntities(void);
+void func_00236A10(void);
+void SV_ActivateServer(int runPhysics);
+char *strcpy(char *, const char *);
+void *memcpy(void *, const void *, unsigned int);
 void SV_CountPlayers(int *clients, int *spectators);
 int strcasecmp(const char *, const char *);
 #include "engine/mathlib.h"
@@ -70,6 +89,7 @@ int strcasecmp(const char *, const char *);
 #define FL_GODMODE 0x40
 #define FL_NOTARGET 0x80
 #define MOVETYPE_WALK 3
+#define MOVETYPE_FLY 5
 #define MOVETYPE_NOCLIP 8
 extern int D_00399410;
 #define allow_cheats D_00399410
@@ -522,13 +542,146 @@ void Host_Noclip_f(void)
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Fly_f);
+void Host_Fly_f(void)
+{
+    if (cmd_source == src_command)
+    {
+        Cmd_ForwardToServer();
+        return;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_002988B0);
+    if (gGlobalVariables.deathmatch != 0 && !host_client->unk_73D0)
+        return;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Ping_f);
+    if (sv_player->v.movetype != MOVETYPE_FLY)
+    {
+        sv_player->v.movetype = MOVETYPE_FLY;
+        SV_ClientPrintf("flymode ON\n");
+    }
+    else
+    {
+        sv_player->v.movetype = MOVETYPE_WALK;
+        SV_ClientPrintf("flymode OFF\n");
+    }
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00298A18);
+qboolean Host_ValidGame(void)
+{
+    if (svs.maxclients > 1)
+    {
+        if (deathmatch.value != 0 || coop.value != 0)
+            return true;
+    }
+    else
+    {
+        if (D_0039979C && D_0039979C())
+            return true;
+    }
+
+    Con_DPrintf("Unable to launch game\n");
+    return false;
+}
+
+void Host_Ping_f(void)
+{
+    int i;
+    client_t *client;
+
+    if (cmd_source == src_command)
+    {
+        Cmd_ForwardToServer();
+        return;
+    }
+
+    SV_ClientPrintf("Client ping times:\n");
+
+    for (i = 0, client = svs.clients; i < svs.maxclients; i++, client++)
+    {
+        if (!client->active)
+            continue;
+        SV_ClientPrintf("%4i %s\n", func_0027E140(client), client->name);
+    }
+}
+
+void Host_Map(qboolean bIsDemo, char *mapstring, char *mapName, qboolean loadGame)
+{
+    int i, j, k;
+    UserMsg *pMsg;
+
+    func_0021C340();
+    for (k = 0; k < cl_numlocal; k++)
+        CL_Disconnect(k);
+
+    Host_ShutdownServer(false);
+    key_dest = 0;
+    func_002AC478(0);
+
+    if (!loadGame)
+    {
+        func_0029C388();
+        SV_InactivateClients();
+        svs.serverflags = 0;
+    }
+
+    for (k = 0; k < cl_numlocal; k++)
+        strcpy(cls[k].mapstring, mapstring);
+
+    if (!Host_ValidGame())
+        return;
+
+    if (!SV_SpawnServer(bIsDemo, mapName, NULL))
+        return;
+
+    if (loadGame)
+    {
+        if (!func_0029B488(mapName, 1))
+            SV_LoadEntities();
+        func_00236A10();
+        sv.paused = true;
+        D_00332F34 = 0;
+        sv.loadgame = true;
+        SV_ActivateServer(0);
+    }
+    else
+    {
+        SV_LoadEntities();
+        SV_ActivateServer(1);
+        if (!sv.active)
+            return;
+
+        for (i = 0; i < cl_numlocal; i++)
+        {
+            if (cls[i].state)
+            {
+                memcpy(cls[i].spawnparms, D_00392078, 1);
+                for (j = 2; j < Cmd_Argc(); j++)
+                {
+                    strcat(cls[i].spawnparms, Cmd_Argv(j));
+                    strcat(cls[i].spawnparms, D_00392178);
+                }
+            }
+        }
+    }
+
+    if (sv_gpNewUserMsgs)
+    {
+        if (!sv_gpUserMsgs)
+        {
+            sv_gpUserMsgs = sv_gpNewUserMsgs;
+        }
+        else
+        {
+            pMsg = sv_gpUserMsgs;
+            while (pMsg->next)
+                pMsg = pMsg->next;
+            pMsg->next = sv_gpNewUserMsgs;
+        }
+        sv_gpNewUserMsgs = NULL;
+    }
+
+    if (cls[0].state)
+        Cmd_ExecuteString("connect local", src_command);
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Map_f);
 

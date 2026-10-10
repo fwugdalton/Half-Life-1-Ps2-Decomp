@@ -195,7 +195,8 @@ typedef struct client_static_s
     int signon;                 /* 0x73C8 */
     byte unk_73CC[0x74D0 - 0x73CC];
     qboolean demoplayback;      /* 0x74D0 */
-    byte unk_74D4[0x7D14 - 0x74D4];
+    char mapstring[64];         /* 0x74D4 */
+    char spawnparms[2048];      /* 0x7514 */
     char userinfo[MAX_INFO_STRING]; /* 0x7D14 */
     byte unk_7DD8[0x7DDC - 0x7DD8];
     int unk_7DDC;               /* 0x7DDC */
