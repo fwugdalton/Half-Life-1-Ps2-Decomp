@@ -4329,7 +4329,7 @@ void func_002A47F0(void);
 void CRC32_Init(unsigned int *pulCRC);
 qboolean CRC_MapFile(unsigned int *crcvalue, char *pszFileName);
 qboolean CRC_File(unsigned int *crcvalue, char *pszFileName);
-void func_0028F5C8(void);
+void SV_ClearWorld(void);
 void func_002A40E8(void);
 void func_002A4110(msurface_t *surf);
 int func_002A3C00(void *p);
@@ -4503,7 +4503,7 @@ int SV_SpawnServer(int unused, char *server, char *startspot)
     }
 
     sv.models[1] = sv.worldmodel;
-    func_0028F5C8();
+    SV_ClearWorld();
 
     sv.model_precache[1] = sv.modelname;
     sv.sound_precache[0] = pr_strings;
