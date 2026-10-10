@@ -170,15 +170,40 @@ typedef struct netchan_s
     flow_t flow[2];             /* 0x7190 */
 } netchan_t;                    /* 0x73B0 */
 
+typedef struct downloadtime_s
+{
+    qboolean bUsed;
+    float fTime;
+    int nBytesRemaining;
+} downloadtime_t;
+
 typedef struct client_static_s
 {
     cactive_t state;            /* 0x0000 */
     netchan_t netchan;          /* 0x0004 */
     byte unk_73B4[0x73C8 - 0x73B4];
     int signon;                 /* 0x73C8 */
-    byte unk_73CC[0x7D14 - 0x73CC];
+    byte unk_73CC[0x74D0 - 0x73CC];
+    qboolean demoplayback;      /* 0x74D0 */
+    byte unk_74D4[0x7D14 - 0x74D4];
     char userinfo[MAX_INFO_STRING]; /* 0x7D14 */
-    byte unk_7DD8[0x7F18 - 0x7DD8];
+    byte unk_7DD8[0x7DDC - 0x7DD8];
+    int unk_7DDC;               /* 0x7DDC */
+    int unk_7DE0;               /* 0x7DE0 */
+    qboolean dl_doneregistering; /* 0x7DE4 */
+    byte unk_7DE8[0x7E78 - 0x7DE8];
+    /* incomingtransfer_t (download de recursos) */
+    int dl_unk_7E78;            /* 0x7E78 */
+    int dl_unk_7E7C;            /* 0x7E7C */
+    int dl_nTotalToTransfer;    /* 0x7E80 */
+    int dl_nRemainingToTransfer; /* 0x7E84 */
+    float dl_fLastStatusUpdate; /* 0x7E88 */
+    float dl_fLastStatTime;     /* 0x7E8C */
+    downloadtime_t dl_rgStats[8]; /* 0x7E90 */
+    int dl_nCurStat;            /* 0x7EF0 */
+    int dl_unk_7EF4;            /* 0x7EF4 */
+    qboolean dl_custom;         /* 0x7EF8 */
+    byte unk_7EFC[0x7F18 - 0x7EFC];
 } client_static_t;              /* 0x7F18 */
 
 extern client_static_t cls[2];

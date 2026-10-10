@@ -39,7 +39,9 @@ typedef struct player_info_s
 typedef struct client_state_s
 {
     int max_edicts;             /* 0x000 */
-    byte pad4[0x224 - 0x4];
+    byte pad4[0x208 - 0x4];
+    int servercount;            /* 0x208 */
+    byte pad20C[0x224 - 0x20C];
     float forwardmove;          /* 0x224: cmd.forwardmove */
     byte pad228[0x238 - 0x228];
     int stats[1];               /* 0x238: stats[STAT_HEALTH] */
@@ -80,7 +82,8 @@ typedef struct client_state_s
     int maxclients;             /* 0x13E0 */
     byte pad13E4[0x13E8 - 0x13E4];
     int viewentity;             /* 0x13E8 */
-    byte pad13EC[0x13F4 - 0x13EC];
+    struct model_s *worldmodel; /* 0x13EC */
+    byte pad13F0[0x13F4 - 0x13F0];
     int num_entities;           /* 0x13F4 */
     byte pad13F8[0x13FC - 0x13F8];
     cl_entity_t viewent;        /* 0x13FC */

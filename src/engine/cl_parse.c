@@ -19,6 +19,14 @@
 #define PITCH_NORM 100
 #define CHAN_STATIC 6
 
+/* resource_t */
+#define t_sound 0
+#define t_skin 1
+#define t_model 2
+#define t_decal 3
+#define t_generic 4
+#define RES_FATALIFMISSING (1 << 0)
+
 typedef struct sfx_s sfx_t;
 typedef int (*pfnUserMsgHook)(int clientId, const char *pszName, int iSize, void *pbuf);
 
@@ -36,9 +44,22 @@ extern byte gUserMsgBuf[];
 extern cl_entity_t *cl_entities[MAX_LOCAL];
 extern sizebuf_t net_message;
 extern char *rgpszrawsentence[];
+extern cvar_t cl_downloadinterval;
+extern float realtime;
+extern qboolean noclip_anglehack;
+extern int D_0033451C;
+extern char D_00409340[8];  /* static local */
+extern char D_00409348[12]; /* static local */
 
 void *memset(void *, int, unsigned int);
 char *strcat(char *, const char *);
+int sprintf(char *, const char *, ...);
+char *va(const char *format, ...);
+float Sys_FloatTime(void);
+void Hunk_Check(void);
+void MSG_WriteString(sizebuf_t *sb, const char *s);
+void func_002B0280(int clientId);
+void CL_RemoveFromResourceList(resource_t *pResource);
 int atoi(const char *);
 void Host_Error(const char *error, ...);
 void Host_EndGame(const char *message, ...);
@@ -461,25 +482,221 @@ INCLUDE_ASM("asm/nonmatchings/engine/cl_parse", func_00295150);
 void func_00295218(void) {
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_parse", func_00295220);
+void CL_PrintResource(int index, resource_t *pResource)
+{
+    if (pResource->ucFlags & RES_FATALIFMISSING)
+        sprintf(D_00409340, "Y");
+    else
+        sprintf(D_00409340, "N");
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_parse", func_00295358);
+    switch (pResource->type)
+    {
+    default:
+        sprintf(D_00409348, "unknown");
+        break;
+    case t_sound:
+        sprintf(D_00409348, "sound");
+        break;
+    case t_decal:
+        sprintf(D_00409348, "decal");
+        break;
+    case t_model:
+        sprintf(D_00409348, "model");
+        break;
+    case t_skin:
+        sprintf(D_00409348, "skin");
+        break;
+    case t_generic:
+        sprintf(D_00409348, "generic");
+        break;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_parse", func_00295380);
+    Con_Printf("%3i %s:%15s %i %s\n", index, D_00409348, pResource->szFileName, pResource->nIndex, D_00409340);
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_parse", func_00295388);
+int func_00295358(resource_t *pList)
+{
+    int n;
+    resource_t *p;
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_parse", func_002954E0);
+    n = 0;
+    for (p = pList->pNext; p != pList; p = p->pNext)
+        n++;
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_parse", func_002955B0);
+    return n;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_parse", func_00295628);
+int func_00295380(struct model_s *model)
+{
+    return 1;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_parse", func_00295690);
+void CL_RegisterResources(int clientId)
+{
+    if (cls[clientId].dl_custom)
+    {
+        cls[clientId].dl_custom = 0;
+        return;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_parse", func_00295718);
+    cl[clientId].worldmodel = cl[clientId].model_precache[1];
+    cl_entities[clientId][0].model = cl[clientId].worldmodel;
+    if (!cl[clientId].worldmodel)
+        Sys_Error("Client world model is NULL\n");
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_parse", func_002957E0);
+    Con_DPrintf("Setting up renderer...\n");
+    Sys_FloatTime();
+    func_002B0280(clientId);
+    Sys_FloatTime();
+    Hunk_Check();
+    Sys_FloatTime();
+
+    noclip_anglehack = false;
+
+    if (!cls[clientId].demoplayback && !func_00295380(cl[clientId].worldmodel))
+        return;
+
+    MSG_WriteByte(&cls[clientId].netchan.message, clc_stringcmd);
+    MSG_WriteString(&cls[clientId].netchan.message, va("prespawn %i 0", cl[clientId].servercount));
+    Sys_FloatTime();
+}
+
+int CL_ResourceBreakdown(resource_t *pList, int *nWorld, int *nModels, int *nDecals, int *nSounds, int *nSkins, int *nGeneric)
+{
+    int n;
+    int world;
+    resource_t *p;
+
+    *nModels = 0;
+    *nWorld = 0;
+    *nDecals = 0;
+    *nSounds = 0;
+    *nSkins = 0;
+    *nGeneric = 0;
+
+    n = 0;
+    for (p = pList->pNext; p != pList; p = p->pNext)
+    {
+        world = 1;
+        n++;
+        switch (p->type)
+        {
+        case t_model:
+            if (p->nIndex == 1)
+                *nWorld = world;
+            else
+                (*nModels)++;
+            break;
+        case t_sound:
+            (*nSounds)++;
+            break;
+        case t_decal:
+            (*nDecals)++;
+            break;
+        case t_skin:
+            (*nSkins)++;
+            break;
+        case t_generic:
+            (*nGeneric)++;
+            break;
+        }
+    }
+
+    return n;
+}
+
+void CL_AddToResourceList(resource_t *pResource, resource_t *pList)
+{
+    if (pResource->pPrev || pResource->pNext)
+    {
+        Con_Printf("Resource already linked\n");
+        return;
+    }
+
+    if (!pList->pPrev || !pList->pNext)
+    {
+        Sys_Error("Resource list corrupted.\n");
+        return;
+    }
+
+    pResource->pPrev = pList->pPrev;
+    pList->pPrev->pNext = pResource;
+    pList->pPrev = pResource;
+    pResource->pNext = pList;
+}
+
+void CL_ClearResourceList(resource_t *pList)
+{
+    resource_t *p, *n;
+
+    for (p = pList->pNext; p && p != pList; p = n)
+    {
+        n = p->pNext;
+        CL_RemoveFromResourceList(p);
+    }
+
+    pList->pPrev = pList;
+    pList->pNext = pList;
+}
+
+void CL_RemoveFromResourceList(resource_t *pResource)
+{
+    if (!pResource->pPrev || !pResource->pNext)
+        Sys_Error("Mislinked resource in CL_RemoveFromResourceList");
+
+    if (pResource->pNext == pResource || pResource->pPrev == pResource)
+        Sys_Error("Attempt to free last entry in list.");
+
+    pResource->pPrev->pNext = pResource->pNext;
+    pResource->pNext->pPrev = pResource->pPrev;
+    pResource->pPrev = NULL;
+    pResource->pNext = NULL;
+}
+
+qboolean CL_RequestMissingResources(int clientId)
+{
+    if (cls[clientId].unk_7DDC || cls[clientId].dl_unk_7E78)
+        return false;
+
+    if (!cls[clientId].dl_custom && cls[clientId].state != ca_uninitialized)
+        return false;
+
+    if (cls[clientId].dl_doneregistering)
+        return false;
+
+    cls[clientId].unk_7DE0 = 0;
+    Con_DPrintf("Resource propagation complete.\n");
+    CL_RegisterResources(clientId);
+    cls[clientId].dl_doneregistering = true;
+    return false;
+}
+
+void CL_StartResourceDownloading(char *pszMessage, qboolean bCustom, int clientId)
+{
+    if (pszMessage)
+        Con_DPrintf(pszMessage);
+
+    cls[clientId].dl_nTotalToTransfer = 0;
+
+    if (!bCustom)
+    {
+        cls[clientId].state = ca_uninitialized;
+        cls[clientId].dl_custom = false;
+        D_0033451C = 0;
+    }
+    else
+    {
+        cls[clientId].dl_custom = true;
+    }
+
+    cls[clientId].dl_doneregistering = false;
+    cls[clientId].dl_unk_7E78 = 0;
+    cls[clientId].dl_fLastStatusUpdate = realtime;
+    cls[clientId].dl_fLastStatTime = realtime;
+    cls[clientId].dl_nRemainingToTransfer = cls[clientId].dl_nTotalToTransfer;
+    memset(cls[clientId].dl_rgStats, 0, sizeof(cls[clientId].dl_rgStats));
+    cls[clientId].dl_nCurStat = 0;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/cl_parse", func_002958C8);
 
