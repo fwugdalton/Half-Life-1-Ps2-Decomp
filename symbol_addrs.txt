@@ -1366,3 +1366,5 @@ cl_skycolor_b = 0x00331890; // size:0x18
 cl_skyvec_x = 0x003318A8; // size:0x18
 cl_skyvec_y = 0x003318C0; // size:0x18
 cl_skyvec_z = 0x003318D8; // size:0x18
+EntityPatchWrite = 0x0029B150; // type:func
+CL_Save = 0x0029A958; // type:func

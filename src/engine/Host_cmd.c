@@ -215,6 +215,54 @@ int func_0022B590(char *src, char *dst);
 void func_0022BC60(char *name);
 void func_0029C108(int pFile, int mapCount);
 void Cbuf_AddText(char *text);
+
+typedef struct
+{
+    int saveId;                 /* 0x00 */
+    int version;                /* 0x04 */
+    int skillLevel;             /* 0x08 */
+    int entityCount;            /* 0x0C */
+    int connectionCount;        /* 0x10 */
+    int lightStyleCount;        /* 0x14 */
+    float time;                 /* 0x18 */
+    char mapName[32];           /* 0x1C */
+    char skyName[32];           /* 0x3C */
+    int skyColor_r;             /* 0x5C */
+    int skyColor_g;             /* 0x60 */
+    int skyColor_b;             /* 0x64 */
+    float skyVec_x;             /* 0x68 */
+    float skyVec_y;             /* 0x6C */
+    float skyVec_z;             /* 0x70 */
+} SAVE_HEADER;
+
+typedef struct
+{
+    int index;                  /* 0x00 */
+    char style[64];             /* 0x04 */
+} SAVELIGHTSTYLE;
+
+#define MAX_LIGHTSTYLES 64
+#define FENTTABLE_PLAYER 0x80000000
+
+extern cvar_t skill;
+extern cvar_t sv_skyname;
+extern cvar_t cl_skycolor_r;
+extern cvar_t cl_skycolor_g;
+extern cvar_t cl_skycolor_b;
+extern cvar_t cl_skyvec_x;
+extern cvar_t cl_skyvec_y;
+extern cvar_t cl_skyvec_z;
+extern char D_003927F0[];
+extern char D_00392800[];
+extern char D_00392810[];
+extern char D_00392820[];
+extern char D_00392850[];
+extern char D_00332F68[];
+extern char D_00333038[];
+extern char D_003330C8[];
+extern char D_00333078[];
+void EntityPatchWrite(SAVERESTOREDATA *pSaveData, char *level);
+void CL_Save(char *name);
 void SV_CountPlayers(int *clients, int *spectators);
 int strcasecmp(const char *, const char *);
 #include "engine/mathlib.h"
@@ -1566,9 +1614,141 @@ INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00392810);
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00392820);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", SaveGamestate);
+SAVERESTOREDATA *SaveGamestate(void)
+{
+    char name[256];
+    SAVE_HEADER header;
+    SAVELIGHTSTYLE light;
+    int i;
+    char *pTableData;
+    char *pTokenData;
+    char *pszToken;
+    int pFile;
+    int dataSize;
+    int tableSize;
+    edict_t *pent;
+    SAVERESTOREDATA *pSaveData;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029A958);
+    if (!gEntityInterface.pfnParmsChangeLevel)
+        return NULL;
+
+    pSaveData = SaveInit(0);
+    sprintf(name, D_00392640, Host_SaveGameDirectory(), sv.name);
+    COM_FixSlashes(name);
+    gEntityInterface.pfnParmsChangeLevel();
+
+    header.version = build_number();
+    header.skillLevel = (int)skill.value;
+    header.entityCount = pSaveData->tableCount;
+    header.connectionCount = pSaveData->connectionCount;
+    header.time = sv.time;
+    strcpy(header.skyName, sv_skyname.string);
+    header.skyColor_r = (int)cl_skycolor_r.value;
+    header.skyColor_g = (int)cl_skycolor_g.value;
+    header.skyColor_b = (int)cl_skycolor_b.value;
+    header.skyVec_x = cl_skyvec_x.value;
+    header.skyVec_y = cl_skyvec_y.value;
+    header.skyVec_z = cl_skyvec_z.value;
+    pSaveData->time = 0;
+    strcpy(header.mapName, sv.name);
+
+    header.lightStyleCount = 0;
+    for (i = 0; i < MAX_LIGHTSTYLES; i++)
+    {
+        if (sv.lightstyles[i])
+            header.lightStyleCount++;
+    }
+
+    gEntityInterface.pfnSaveWriteFields(pSaveData, D_003927F0, &header, D_00332F68, 13);
+    pSaveData->time = header.time;
+
+    for (i = 0; i < pSaveData->connectionCount; i++)
+        gEntityInterface.pfnSaveWriteFields(pSaveData, D_00392800, &pSaveData->levelList[i], D_00333038, 4);
+
+    for (i = 0; i < MAX_LIGHTSTYLES; i++)
+    {
+        if (sv.lightstyles[i])
+        {
+            light.index = i;
+            strcpy(light.style, sv.lightstyles[i]);
+            gEntityInterface.pfnSaveWriteFields(pSaveData, D_00392810, &light, D_003330C8, 2);
+        }
+    }
+
+    for (i = 0; i < sv.num_edicts; i++)
+    {
+        pent = &sv.edicts[i];
+        pSaveData->currentIndex = i;
+        pSaveData->pTable[i].location = pSaveData->size;
+        pSaveData->pTable[i].size = 0;
+
+        if (pent->free)
+            continue;
+
+        gEntityInterface.pfnSave(pent, pSaveData);
+
+        if (i > 0 && i < svs.maxclients + 1)
+            pSaveData->pTable[i].flags |= FENTTABLE_PLAYER;
+    }
+
+    dataSize = pSaveData->size;
+    pTableData = pSaveData->pCurrentData;
+
+    for (i = 0; i < sv.num_edicts; i++)
+        gEntityInterface.pfnSaveWriteFields(pSaveData, D_00392820, &pSaveData->pTable[i], D_00333078, 5);
+
+    tableSize = pSaveData->size - dataSize;
+    pTokenData = pSaveData->pCurrentData;
+
+    if (pSaveData->pTokens)
+    {
+        for (i = 0; i < pSaveData->tokenCount; i++)
+        {
+            if (pSaveData->pTokens[i])
+            {
+                pszToken = pSaveData->pTokens[i];
+                while ((*pSaveData->pCurrentData++ = *pszToken++) != 0)
+                    ;
+            }
+            else
+            {
+                *pSaveData->pCurrentData++ = 0;
+            }
+        }
+    }
+
+    pSaveData->tokenSize = pSaveData->pCurrentData - pTokenData;
+
+    pFile = func_0022B118(name, D_003926D0);
+    if (!pFile)
+    {
+        Con_Printf("Unable to open save game file %s.", name);
+        return NULL;
+    }
+
+    i = (('V' << 24) | ('L' << 16) | ('A' << 8) | 'V');
+    func_0022BD98(&i, sizeof(int), 1, pFile);
+    i = SAVEGAME_VERSION;
+    func_0022BD98(&i, sizeof(int), 1, pFile);
+    func_0022BD98(&pSaveData->size, sizeof(int), 1, pFile);
+    func_0022BD98(&pSaveData->tableCount, sizeof(int), 1, pFile);
+    func_0022BD98(&pSaveData->tokenCount, sizeof(int), 1, pFile);
+    func_0022BD98(&pSaveData->tokenSize, sizeof(int), 1, pFile);
+    func_0022BD98(pTokenData, pSaveData->tokenSize, 1, pFile);
+    func_0022BD98(pTableData, tableSize, 1, pFile);
+    func_0022BD98(pSaveData->pBaseData, dataSize, 1, pFile);
+    func_0022B238(pFile);
+
+    EntityPatchWrite(pSaveData, sv.name);
+
+    sprintf(name, D_00392850, Host_SaveGameDirectory(), sv.name);
+    COM_FixSlashes(name);
+    CL_Save(name);
+
+    return pSaveData;
+}
+
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", CL_Save);
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00392850);
 
@@ -1578,7 +1758,7 @@ INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029AB70);
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029AEE8);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029B150);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", EntityPatchWrite);
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029B328);
 
