@@ -1377,3 +1377,5 @@ EntryInTable = 0x0029B818; // type:func
 LandmarkOrigin = 0x0029B8A8; // type:func
 EntityInSolid = 0x0029B970; // type:func
 CreateEntityTransitionList = 0x0029BA10; // type:func
+LoadAdjacentEntities = 0x0029BDB8; // type:func
+DirectoryCopy = 0x0029BFC8; // type:func

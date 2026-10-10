@@ -189,7 +189,7 @@ int func_0029C220(char *pPath);
 void func_00244138(char *path, char *extension);
 int func_0022B118(char *name, char *mode);
 int func_0022BD98(void *data, int size, int count, int file);
-void func_0029BFC8(char *pPath, int file);
+void DirectoryCopy(char *pPath, int file);
 void func_0022B238(int file);
 extern char D_003926F8[];
 extern char D_00392700[];
@@ -316,6 +316,7 @@ void SV_ClientPrintf(char *fmt, ...);
 int sprintf(char *, const char *, ...);
 unsigned int strlen(const char *);
 int strcmp(const char *, const char *);
+void *memset(void *, int, unsigned int);
 void Cbuf_Execute(void);
 void func_002C68B0(char *basedir);
 void func_002C70A8(qboolean multiplayer);
@@ -1370,7 +1371,7 @@ done:
     func_0022BD98(&pSaveData->tokenSize, sizeof(int), 1, file);
     func_0022BD98(pTokenData, pSaveData->tokenSize, 1, file);
     func_0022BD98(pSaveData->pBaseData, pSaveData->size, 1, file);
-    func_0029BFC8(name, file);
+    DirectoryCopy(name, file);
     func_0022B238(file);
     func_0022B310(pszFileName, 9);
     SaveExit(pSaveData);
@@ -2295,9 +2296,97 @@ int CreateEntityTransitionList(SAVERESTOREDATA *pSaveData, int levelMask)
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", CreateEntityTransitionList);
 #endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029BDB8);
+void LoadAdjacentEntities(char *pOldLevel, char *pLandmarkName)
+{
+    SAVERESTOREDATA currentLevelData;
+    SAVERESTOREDATA *pSaveData;
+    SAVE_HEADER header;
+    vec3_t landmarkOrigin;
+    int i, test, flags, index, movedCount;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029BFC8);
+    movedCount = 0;
+    memset(&currentLevelData, 0, sizeof(SAVERESTOREDATA));
+    gGlobalVariables.pSaveData = &currentLevelData;
+    gEntityInterface.pfnParmsChangeLevel();
+
+    for (i = 0; i < currentLevelData.connectionCount; i++)
+    {
+        for (test = 0; test < i; test++)
+        {
+            if (!strcmp(currentLevelData.levelList[i].mapName, currentLevelData.levelList[test].mapName))
+                break;
+        }
+
+        if (test < i)
+            continue;
+
+        pSaveData = LoadSaveData(currentLevelData.levelList[i].mapName);
+        if (pSaveData)
+        {
+            ParseSaveTables(pSaveData, &header, 0);
+            EntityPatchRead(pSaveData, currentLevelData.levelList[i].mapName);
+            pSaveData->time = sv.time;
+            pSaveData->fUseLandmark = 1;
+            LandmarkOrigin(&currentLevelData, landmarkOrigin, pLandmarkName);
+            LandmarkOrigin(pSaveData, pSaveData->vecLandmarkOffset, pLandmarkName);
+            VectorSubtract(landmarkOrigin, pSaveData->vecLandmarkOffset, pSaveData->vecLandmarkOffset);
+
+            flags = 0;
+            if (!strcasecmp(currentLevelData.levelList[i].mapName, pOldLevel))
+                flags |= FENTTABLE_PLAYER;
+
+            index = -1;
+            while ((index = EntryInTable(pSaveData, sv.name, index)) >= 0)
+                flags |= 1 << index;
+
+            if (flags)
+                movedCount = CreateEntityTransitionList(pSaveData, flags);
+
+            if (movedCount)
+                EntityPatchWrite(pSaveData, currentLevelData.levelList[i].mapName);
+
+            SaveExit(pSaveData);
+        }
+    }
+
+    gGlobalVariables.pSaveData = NULL;
+}
+
+extern char D_00392988[];
+extern char D_00392990[];
+int func_0022BF30(int file);
+void *func_0022BF38(int file);
+
+void DirectoryCopy(char *pPath, int pFile)
+{
+    char szName[260];
+    char name[260];
+    int fileSize;
+    int pCopy;
+    int h;
+
+    h = func_0022B6F0(pPath, szName);
+    while (h != -1)
+    {
+        if (!strstr(szName, D_00392988))
+        {
+            sprintf(name, D_00392990, szName);
+            COM_FixSlashes(name);
+            pCopy = func_0022B118(name, D_003927B8);
+            fileSize = func_0022BF30(pCopy);
+            func_0022BD98(szName, 1, 260, pFile);
+            func_0022BD98(&fileSize, 4, 1, pFile);
+            func_0022BD98(func_0022BF38(pCopy), fileSize, 1, pFile);
+            func_0022B238(pCopy);
+        }
+
+        if (!func_0022B810(h, szName))
+        {
+            func_0022B8A0(h);
+            h = -1;
+        }
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029C108);
 
