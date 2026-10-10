@@ -22,10 +22,26 @@ void func_002B05F8(void);
 
 typedef struct
 {
-    byte pad0[0x70];
+    int x, y, width, height;
+} vrect_t;
+
+typedef struct
+{
+    vrect_t vrect;              /* 0x00 */
+    byte pad10[0x70 - 0x10];
     vec3_t vieworg;             /* 0x70 */
     vec3_t viewangles;          /* 0x7C */
-} refdef_t;
+    byte pad88[0x8C - 0x88];
+} refdef_t; /* 0x8C */
+
+typedef struct
+{
+    byte *buffer;               /* 0x00 */
+    byte pad4[0x18 - 0x4];
+    unsigned int rowbytes;      /* 0x18 */
+    byte pad1C[0x24 - 0x1C];
+    float aspect;               /* 0x24 */
+} viddef_t;
 
 extern refdef_t r_refdef;
 extern model_t *sv_worldmodel;
@@ -40,6 +56,29 @@ extern cl_entity_t *cl_entities[2];
 float PM_CalcRoll(vec3_t angles, vec3_t velocity, float rollangle, float rollspeed);
 void V_AddIdle(int clientId);
 #define STAT_HEALTH 0
+#define CONTENTS_WATER -3
+#define VectorAdd(a, b, c) {(c)[0] = (a)[0] + (b)[0]; (c)[1] = (a)[1] + (b)[1]; (c)[2] = (a)[2] + (b)[2];}
+
+extern refdef_t oldrefdef[2];
+extern viddef_t r_viddef;
+extern float oldz[2];
+extern qboolean cam_thirdperson;
+extern vec3_t cam_ofs;
+extern cvar_t chase_active, scr_viewsize;
+extern vec3_t pm_right;
+extern qboolean con_forcedup;
+int PM_WaterEntity(vec3_t p, int clientId);
+int PM_PointContents(vec3_t p, int clientId);
+void Chase_Update(void);
+void R_PushDlights(void);
+void R_RenderView(int clientId);
+void V_CalcIntermissionRefdef(int clientId);
+void V_CalcShake(int clientId);
+void V_ApplyShake(float *origin, float *angles, float factor, int clientId);
+void V_CalcViewRoll(int clientId);
+void V_CalcGunAngle(int clientId);
+void V_DriftPitch(int clientId);
+float V_CalcBob(int clientId);
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
 typedef struct
@@ -87,6 +126,7 @@ extern int screengammatable[1024];
 extern float oldgammavalue, oldlightgamma, oldtexgamma, oldbrightness;
 extern int D_0053D1D4;
 extern char D_00390518[], D_00390528[];
+extern char D_00390340[], D_00390358[], D_00390368[], D_00390378[]; /* "0", "scr_ofsx", "scr_ofsy", "scr_ofsz" */
 
 void V_StartPitchDrift(int clientId);
 void BuildGammaTable(float g);
@@ -548,7 +588,7 @@ void V_CalcViewRoll(int clientId)
         v_dmg_time -= host_frametime;
     }
 
-    if (cl[clientId].stats[STAT_HEALTH] <= 0 && cl[clientId].unk_360 != 0)
+    if (cl[clientId].stats[STAT_HEALTH] <= 0 && cl[clientId].viewheight != 0)
         r_refdef.viewangles[ROLL] = 80;
 }
 
@@ -570,9 +610,240 @@ void V_CalcIntermissionRefdef(int clientId)
 INCLUDE_ASM("asm/nonmatchings/engine/view", V_CalcIntermissionRefdef);
 #endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/view", func_0028D0E8);
+#ifdef NON_MATCHING
+void V_CalcRefdef(int clientId)
+{
+    cl_entity_t *ent, *view;
+    int i;
+    vec3_t forward, right, up;
+    vec3_t angles;
+    vec3_t camAngles, camForward, camRight, camUp;
+    float bob;
+    float waterOffset;
 
-INCLUDE_ASM("asm/nonmatchings/engine/view", func_0028D9B8);
+    V_DriftPitch(clientId);
+
+    view = &cl[clientId].viewent;
+    waterOffset = 0;
+
+    bob = V_CalcBob(clientId);
+
+    VectorCopy(cl[clientId].simorg, r_refdef.vieworg);
+    r_refdef.vieworg[2] += cl[clientId].viewheight + bob;
+    VectorCopy(cl[clientId].viewangles, r_refdef.viewangles);
+
+    V_CalcShake(clientId);
+    V_ApplyShake(r_refdef.vieworg, r_refdef.viewangles, 1.0f, clientId);
+
+    r_refdef.vieworg[0] += 1.0f / 32;
+    r_refdef.vieworg[1] += 1.0f / 32;
+    r_refdef.vieworg[2] += 1.0f / 32;
+
+    if (cl[clientId].waterlevel >= 2)
+    {
+        int contents, waterDist, waterEntity;
+        vec3_t point;
+
+        waterDist = cl_waterdist.value;
+        waterEntity = PM_WaterEntity(cl[clientId].simorg, clientId);
+
+        if (waterEntity >= 0 && waterEntity < cl[clientId].max_edicts)
+        {
+            cl_entity_t *pwater = &cl_entities[clientId][waterEntity];
+
+            if (pwater->model)
+                waterDist += pwater->scale * 16;
+        }
+
+        VectorCopy(r_refdef.vieworg, point);
+
+        if (cl[clientId].waterlevel == 2)
+        {
+            point[2] -= waterDist;
+            for (i = 0; i < waterDist; i++)
+            {
+                contents = PM_PointContents(point, clientId);
+                if (contents > CONTENTS_WATER)
+                    break;
+                point[2] += 1;
+            }
+            waterOffset = (point[2] + waterDist) - r_refdef.vieworg[2];
+        }
+        else
+        {
+            point[2] += waterDist;
+            for (i = 0; i < waterDist; i++)
+            {
+                contents = PM_PointContents(point, clientId);
+                if (contents <= CONTENTS_WATER)
+                    break;
+                point[2] -= 1;
+            }
+            waterOffset = (point[2] - waterDist) - r_refdef.vieworg[2];
+        }
+    }
+
+    r_refdef.vieworg[2] += waterOffset;
+
+    V_CalcViewRoll(clientId);
+    V_AddIdle(clientId);
+
+    angles[0] = cl[clientId].viewangles[0];
+    angles[1] = cl[clientId].viewangles[1];
+    angles[2] = cl[clientId].simangles[2];
+    AngleVectors(angles, forward, right, up);
+
+    for (i = 0; i < 3; i++)
+        r_refdef.vieworg[i] += scr_ofsx.value * forward[i] + scr_ofsy.value * right[i] + scr_ofsz.value * up[i];
+
+    if (cam_thirdperson)
+    {
+        camAngles[0] = cam_ofs[0];
+        camAngles[1] = cam_ofs[1];
+        camAngles[2] = 0;
+        AngleVectors(camAngles, camForward, camRight, camUp);
+
+        for (i = 0; i < 3; i++)
+            r_refdef.vieworg[i] += -cam_ofs[2] * camForward[i];
+    }
+
+    VectorCopy(cl[clientId].viewangles, view->angles);
+    V_CalcGunAngle(clientId);
+
+    VectorCopy(cl[clientId].simorg, view->origin);
+    view->origin[2] += cl[clientId].viewheight + waterOffset;
+
+    V_ApplyShake(view->origin, view->angles, 0.9f, clientId);
+
+    for (i = 0; i < 3; i++)
+        view->origin[i] += forward[i] * bob * 0.4f;
+    view->origin[2] += bob;
+
+    view->angles[YAW] -= bob * 0.5f;
+    view->angles[ROLL] -= bob;
+    view->angles[PITCH] -= bob * 0.3f;
+
+    view->origin[2] -= 1;
+
+    if (scr_viewsize.value == 110)
+        view->origin[2] += 1;
+    else if (scr_viewsize.value == 100)
+        view->origin[2] += 2;
+    else if (scr_viewsize.value == 90)
+        view->origin[2] += 1;
+    else if (scr_viewsize.value == 80)
+        view->origin[2] += 0.5f;
+
+    view->model = cl[clientId].model_precache[cl[clientId].weapon];
+    view->frame = 0;
+    view->unk_30 = 0;
+    view->index = cl[clientId].playernum + 1;
+
+    VectorAdd(r_refdef.viewangles, cl[clientId].punchangle, r_refdef.viewangles);
+
+    if (cl[clientId].onground && cl[clientId].simorg[2] - oldz[clientId] > 0)
+    {
+        float steptime;
+
+        steptime = cl[clientId].time - cl[clientId].oldtime;
+        if (steptime < 0)
+            steptime = 0;
+
+        oldz[clientId] += steptime * 80;
+        if (oldz[clientId] > cl[clientId].simorg[2])
+            oldz[clientId] = cl[clientId].simorg[2];
+        if (cl[clientId].simorg[2] - oldz[clientId] > 12)
+            oldz[clientId] = cl[clientId].simorg[2] - 12;
+
+        r_refdef.vieworg[2] += oldz[clientId] - cl[clientId].simorg[2];
+        view->origin[2] += oldz[clientId] - cl[clientId].simorg[2];
+    }
+    else
+    {
+        oldz[clientId] = cl[clientId].simorg[2];
+    }
+
+    if (cam_thirdperson)
+        VectorCopy(camAngles, r_refdef.viewangles);
+
+    if (chase_active.value)
+        Chase_Update();
+
+    if (cl[clientId].viewentity > cl[clientId].maxclients)
+    {
+        ent = &cl_entities[clientId][cl[clientId].viewentity];
+        VectorCopy(ent->origin, r_refdef.vieworg);
+        VectorCopy(ent->angles, r_refdef.viewangles);
+    }
+}
+#else
+INCLUDE_ASM("asm/nonmatchings/engine/view", V_CalcRefdef);
+#endif
+
+void V_RenderView(int clientId)
+{
+    int i;
+
+    if (con_forcedup)
+        return;
+
+    if (cls[clientId].state != ca_active)
+        return;
+
+    if (cl[clientId].maxclients > 1)
+    {
+        Cvar_Set(D_00390358, D_00390340);
+        Cvar_Set(D_00390368, D_00390340);
+        Cvar_Set(D_00390378, D_00390340);
+    }
+
+    if (cl[clientId].intermission)
+    {
+        V_CalcIntermissionRefdef(clientId);
+    }
+    else if (!cl[clientId].unk_37C)
+    {
+        V_CalcRefdef(clientId);
+        oldrefdef[clientId] = r_refdef;
+    }
+    else
+    {
+        r_refdef = oldrefdef[clientId];
+    }
+
+    R_PushDlights();
+
+    if (lcd_x.value)
+    {
+        r_viddef.rowbytes <<= 1;
+        r_viddef.aspect *= 0.5f;
+
+        r_refdef.viewangles[YAW] -= lcd_yaw.value;
+        for (i = 0; i < 3; i++)
+            r_refdef.vieworg[i] -= pm_right[i] * lcd_x.value;
+        R_RenderView(clientId);
+
+        r_viddef.buffer += r_viddef.rowbytes >> 1;
+
+        R_PushDlights();
+
+        r_refdef.viewangles[YAW] += lcd_yaw.value * 2;
+        for (i = 0; i < 3; i++)
+            r_refdef.vieworg[i] += 2 * pm_right[i] * lcd_x.value;
+        R_RenderView(clientId);
+
+        r_viddef.buffer -= r_viddef.rowbytes >> 1;
+
+        r_refdef.vrect.height <<= 1;
+
+        r_viddef.rowbytes >>= 1;
+        r_viddef.aspect *= 2;
+    }
+    else
+    {
+        R_RenderView(clientId);
+    }
+}
 
 void V_CalcShake(int clientId)
 {
