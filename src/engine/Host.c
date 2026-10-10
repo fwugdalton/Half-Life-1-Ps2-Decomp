@@ -98,7 +98,7 @@ void func_002885A0(client_t *cl);
 void func_0027DEE8(void);
 void func_00287A40(void);
 void SV_QueryMovevarsChanged(void);
-void func_00281328(void);
+void SV_SendClientMessages(void);
 void func_00288A58(void);
 void MSG_BeginReading(void);
 int MSG_ReadLong(void);
@@ -750,7 +750,7 @@ void Host_ServerFrame(void)
         t[2] = Sys_FloatTime();
 
     SV_QueryMovevarsChanged();
-    func_00281328();
+    SV_SendClientMessages();
 
     if (host_speeds.value != 0)
         t[3] = Sys_FloatTime();

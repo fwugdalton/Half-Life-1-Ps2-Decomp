@@ -159,6 +159,15 @@
 "sv"
 ]
 },
+"SV_FlushSignon": {
+"migrated": [
+"D_0038F438"
+],
+"refs": [
+"D_0038F438",
+"sv"
+]
+},
 "SV_FullClientUpdate": {
 "migrated": [],
 "refs": [
@@ -401,6 +410,15 @@
 "net_message"
 ]
 },
+"SV_SaveSpawnparms": {
+"migrated": [],
+"refs": [
+"D_004A9228",
+"gEntityInterface",
+"host_client",
+"svs"
+]
+},
 "SV_SendClientDatagram": {
 "migrated": [
 "D_0038F370",
@@ -410,6 +428,13 @@
 "D_0038F370",
 "D_0038F398",
 "D_004A96C4"
+]
+},
+"SV_SendClientMessages": {
+"migrated": [],
+"refs": [
+"host_client",
+"svs"
 ]
 },
 "SV_SendServerinfo": {
@@ -524,6 +549,22 @@
 "D_0038EE98",
 "cmd_source",
 "host_client",
+"svs"
+]
+},
+"SV_UpdateToReliableMessages": {
+"migrated": [
+"D_0038F3B8"
+],
+"refs": [
+"D_0038F3B8",
+"D_004C50B4",
+"D_004C6068",
+"host_client",
+"realtime",
+"sv",
+"sv_gpNewUserMsgs",
+"sv_gpUserMsgs",
 "svs"
 ]
 },
@@ -850,38 +891,6 @@
 "sv"
 ]
 },
-"func_002810D8": {
-"migrated": [
-"D_0038F3B8"
-],
-"refs": [
-"D_0038F3B8",
-"D_004C50B4",
-"D_004C6068",
-"host_client",
-"realtime",
-"sv",
-"sv_gpNewUserMsgs",
-"sv_gpUserMsgs",
-"svs"
-]
-},
-"func_00281328": {
-"migrated": [],
-"refs": [
-"host_client",
-"svs"
-]
-},
-"func_002817E0": {
-"migrated": [
-"D_0038F438"
-],
-"refs": [
-"D_0038F438",
-"sv"
-]
-},
 "func_00281888": {
 "migrated": [
 "D_0038F468",
@@ -927,15 +936,6 @@
 "D_004C83E4",
 "pr_strings",
 "sv",
-"svs"
-]
-},
-"func_002822B0": {
-"migrated": [],
-"refs": [
-"D_004A9228",
-"gEntityInterface",
-"host_client",
 "svs"
 ]
 },

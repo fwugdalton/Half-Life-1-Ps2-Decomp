@@ -1079,14 +1079,29 @@ void SV_SendServerinfo(client_t *client)
 
     func_0027BF20();
 }
+typedef struct saverestore_s
+{
+    char *pBaseData;            /* 0x00 */
+    char *pCurrentData;         /* 0x04 */
+    int size;                   /* 0x08 */
+    int bufferSize;             /* 0x0C */
+    int tokenSize;              /* 0x10 */
+    int tokenCount;             /* 0x14 */
+    char **pTokens;             /* 0x18 */
+    int currentIndex;           /* 0x1C */
+} SAVERESTOREDATA;
+
 typedef struct
 {
-    void *unk_00[0x3C / 4];
+    void *unk_00[0x1C / 4];
+    void (*pfnSave)(edict_t *pent, struct saverestore_s *pSaveData); /* 0x1C */
+    void *unk_20[(0x3C - 0x20) / 4];
     int (*pfnClientConnect)(edict_t *pEntity, const char *pszName, const char *pszAddress, char *szRejectReason); /* 0x3C */
     void (*pfnClientDisconnect)(edict_t *pEntity); /* 0x40 */
     void *unk_44[(0x64 - 0x44) / 4];
     void (*unk_64)(void);                     /* 0x64 */
-    void *unk_68[(0x74 - 0x68) / 4];
+    void (*pfnParmsChangeLevel)(void);       /* 0x68 */
+    void *unk_6C[(0x74 - 0x6C) / 4];
     void (*pfnSpectatorConnect)(edict_t *pEntity);    /* 0x74 */
     void (*pfnSpectatorDisconnect)(edict_t *pEntity); /* 0x78 */
 } DLL_FUNCTIONS;
@@ -1283,7 +1298,10 @@ void func_0027F670(int a, client_t *client, struct packet_entities_s *pack, size
 
 typedef struct
 {
-    byte unk_000[0x224];
+    qboolean active;            /* 0x000 */
+    char unk_004[256];          /* 0x004 */
+    char unk_104[256];          /* 0x104 */
+    char unk_204[32];           /* 0x204 */
     int unk_224;
     int unk_228;
     int unk_22C;
@@ -1433,7 +1451,33 @@ void func_0027D340(void)
     D_0053DB38.unk_224 = 1;
     D_0053DB38.unk_22C = 1;
 }
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027D380);
+extern char D_0038E628[]; /* "" (ainda emitido pelo bloco de rodata) */
+
+qboolean func_0027D380(char *a0, char *a1, int *a2, int *a3, int *a4, int *a5, char *a6)
+{
+    if (D_0053DB38.active)
+    {
+        strcpy(a0, D_0053DB38.unk_004);
+        strcpy(a1, D_0053DB38.unk_104);
+        strcpy(a6, D_0053DB38.unk_204);
+        *a2 = D_0053DB38.unk_224;
+        *a3 = D_0053DB38.unk_228;
+        *a4 = D_0053DB38.unk_22C;
+        *a5 = D_0053DB38.unk_230;
+    }
+    else
+    {
+        /* strcpy(x, "") expandido pelo compilador */
+        a0[0] = D_0038E628[0];
+        a1[0] = D_0038E628[0];
+        a6[0] = D_0038E628[0];
+        *a2 = 1;
+        *a3 = 0;
+        *a4 = 1;
+        *a5 = 0;
+    }
+    return D_0053DB38.active;
+}
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027D480);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027D778);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027D938);
@@ -1583,7 +1627,32 @@ int func_0027E148(void)
 {
     return 0;
 }
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_FullClientUpdate);
+void Info_RemovePrefixedKeys(char *s, char prefix);
+
+#define svc_updateuserinfo 13
+
+void SV_FullClientUpdate(client_t *cl, sizebuf_t *sb)
+{
+    char info[MAX_INFO_STRING];
+    int i;
+
+    i = cl - svs.clients;
+
+    strcpy(info, cl->userinfo);
+    Info_RemovePrefixedKeys(info, '_');
+
+    MSG_WriteByte(sb, svc_updateuserinfo);
+    MSG_WriteByte(sb, i);
+    MSG_WriteLong(sb, cl->userid);
+    MSG_WriteString(sb, info);
+
+    if (cl->maxspeed != 0.0f)
+    {
+        MSG_WriteByte(sb, 52);
+        MSG_WriteByte(sb, i);
+        MSG_WriteFloat(sb, cl->maxspeed);
+    }
+}
 void SV_ClearDatagram(void)
 {
     SZ_Clear(&sv.datagram);
@@ -1748,8 +1817,33 @@ qboolean SV_SendClientDatagram(client_t *client, int unk)
     Netchan_Transmit(&client->netchan, msg.cursize, buf, unk);
     return true;
 }
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_002810D8);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00281328);
+INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_UpdateToReliableMessages);
+void SV_UpdateToReliableMessages(void);
+
+void SV_SendClientMessages(void)
+{
+    int i;
+
+    SV_UpdateToReliableMessages();
+
+    for (i = 0, host_client = svs.clients; i < svs.maxclients; i++, host_client++)
+    {
+        if (!host_client->active && !host_client->connected && !host_client->spawned)
+            continue;
+        if (host_client->fakeclient)
+            continue;
+        if (!host_client->send_message)
+            continue;
+
+        host_client->send_message = false;
+        if (host_client->active)
+            SV_SendClientDatagram(host_client, i);
+        else
+            Netchan_Transmit(&host_client->netchan, 0, NULL, i);
+    }
+
+    SV_CleanupEnts();
+}
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_ExtractFromUserinfo);
 int SV_ModelIndex(char *name)
 {
@@ -1767,7 +1861,19 @@ int SV_ModelIndex(char *name)
         Sys_Error("SV_ModelIndex: model %s not precached", name);
     return i;
 }
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_002817E0);
+void SV_FlushSignon(void)
+{
+    if (sv.signon.cursize < sv.signon.maxsize - 100)
+        return;
+
+    if (sv.num_signon_buffers == 15)
+        Sys_Error("sv.num_signon_buffers == MAX_SIGNON_BUFFERS-1");
+
+    sv.signon_buffer_size[sv.num_signon_buffers - 1] = sv.signon.cursize;
+    sv.signon.cursize = 0;
+    sv.signon.data = sv.signon_buffers[sv.num_signon_buffers];
+    sv.num_signon_buffers++;
+}
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00281888);
 void SV_AddResource(int type, char *name, int size, int flags, int index)
 {
@@ -1794,7 +1900,25 @@ void SV_ReconnectAllClients(void)
 {
     SV_BroadcastCommand("reconnect\n");
 }
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_002822B0);
+int NUM_FOR_EDICT(edict_t *e);
+
+void SV_SaveSpawnparms(SAVERESTOREDATA *pSaveData)
+{
+    int i;
+
+    svs.serverflags = gGlobalVariables.serverflags;
+    gEntityInterface.pfnParmsChangeLevel();
+
+    for (i = 0, host_client = svs.clients; i < svs.maxclients; i++, host_client++)
+    {
+        if (!host_client->active && !host_client->connected)
+            continue;
+
+        host_client->unk_8538 = pSaveData->size;
+        pSaveData->currentIndex = NUM_FOR_EDICT(host_client->edict);
+        gEntityInterface.pfnSave(host_client->edict, pSaveData);
+    }
+}
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_002823C8);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_002825C8);
 void SV_LoadEntities(void)

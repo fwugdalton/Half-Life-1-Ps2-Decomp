@@ -193,7 +193,7 @@ typedef struct client_s
     sizebuf_t datagram;         /* 0x7454 */
     byte unk_7468[0x8408 - 0x7468];
     float connection_started;   /* 0x8408 */
-    byte unk_840C[0x8410 - 0x840C];
+    qboolean send_message;      /* 0x840C */
     edict_t *edict;             /* 0x8410 */
     edict_t *pViewEntity;       /* 0x8414 */
     int userid;                 /* 0x8418 */
@@ -203,7 +203,8 @@ typedef struct client_s
     float sendinfo_time;        /* 0x84E8 */
     byte unk_84EC[0x850D - 0x84EC];
     char name[32];              /* 0x850D */
-    byte unk_852D[0x853C - 0x852D];
+    byte unk_852D[0x8538 - 0x852D];
+    int unk_8538;               /* 0x8538 */
     void *unk_853C;             /* 0x853C */
     byte unk_8540[0x8558 - 0x8540];
     resource_t resourcesneeded; /* 0x8558 */
@@ -228,7 +229,7 @@ typedef struct server_static_s
     int spawncount;             /* 0x008 */
     byte unk_00C[0x110 - 0x00C];
     client_t *clients;          /* 0x110 */
-    byte unk_114[0x118 - 0x114];
+    int serverflags;            /* 0x114 */
     server_log_t log;           /* 0x118 */
 } server_static_t;
 
@@ -268,7 +269,9 @@ typedef struct server_s
     sizebuf_t multicast;        /* 0x1E918 */
     byte multicast_buf[1024];   /* 0x1E92C */
     sizebuf_t signon;           /* 0x1ED2C */
-    byte unk_1ED40[0x2E784 - 0x1ED40];
+    int num_signon_buffers;     /* 0x1ED40 */
+    int signon_buffer_size[16]; /* 0x1ED44 */
+    byte signon_buffers[16][4000]; /* 0x1ED84 */
 } server_t; /* 0x2E784 */
 
 extern server_t sv;

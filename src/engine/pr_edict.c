@@ -17,7 +17,7 @@ double atof(const char *s);
 int sprintf(char *s, const char *fmt, ...);
 char *strcpy(char *d, const char *s);
 int strcmp(const char *a, const char *b);
-void func_002817E0(void);
+void SV_FlushSignon(void);
 void SuckOutClassname(char *szInputStream, edict_t *pEdict);
 int ed_privdata_allocs = 0;
 int ed_privdata_frees = 0;
@@ -303,7 +303,7 @@ void ED_LoadFromFile(char *data)
 
         if (gEntityInterface_pfnSpawn(ent) < 0 || (ent->v.flags & FL_KILLME))
             ED_Free(ent);
-        func_002817E0();
+        SV_FlushSignon();
     }
 
     Con_DPrintf("%i entities inhibited\n", inhibit);

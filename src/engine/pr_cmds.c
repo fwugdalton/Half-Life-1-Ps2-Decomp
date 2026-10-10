@@ -1961,7 +1961,7 @@ void func_00276270(void) {
 }
 
 char *va(char *format, ...);
-void func_002817E0(void);
+void SV_FlushSignon(void);
 void MSG_WriteCoord(sizebuf_t *sb, float f);
 void MSG_WriteShort(sizebuf_t *sb, int c);
 void MSG_WriteChar(sizebuf_t *sb, int c);
@@ -1985,7 +1985,7 @@ void PF_StaticDecal(const float *origin, int decalIndex, int entityIndex, int mo
     MSG_WriteShort(&sv.signon, entityIndex);
     if (entityIndex)
         MSG_WriteShort(&sv.signon, modelIndex);
-    func_002817E0();
+    SV_FlushSignon();
 }
 
 void func_00276338(edict_t *e)
