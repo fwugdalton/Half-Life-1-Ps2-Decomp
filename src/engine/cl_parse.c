@@ -26,6 +26,8 @@
 #define t_decal 3
 #define t_generic 4
 #define RES_FATALIFMISSING (1 << 0)
+#define RES_WASMISSING (1 << 1)
+#define RES_CUSTOM (1 << 2)
 
 typedef struct sfx_s sfx_t;
 typedef int (*pfnUserMsgHook)(int clientId, const char *pszName, int iSize, void *pbuf);
@@ -60,6 +62,14 @@ void Hunk_Check(void);
 void MSG_WriteString(sizebuf_t *sb, const char *s);
 void func_002B0280(int clientId);
 void CL_RemoveFromResourceList(resource_t *pResource);
+int MSG_ReadShort(void);
+void S_BeginPrecaching(void);
+struct sfx_s *S_PrecacheSound(char *name);
+void S_EndPrecaching(void);
+void COM_ExplainDisconnection(qboolean bPrint, char *fmt, ...);
+void CL_Disconnect(int clientId);
+struct model_s *Mod_ForName(char *name, qboolean crash);
+void Draw_DecalSetName(int decal, char *name);
 int atoi(const char *);
 void Host_Error(const char *error, ...);
 void Host_EndGame(const char *message, ...);
@@ -698,7 +708,76 @@ void CL_StartResourceDownloading(char *pszMessage, qboolean bCustom, int clientI
     cls[clientId].dl_nCurStat = 0;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_parse", func_002958C8);
+void CL_ParseResourceList(int clientId)
+{
+    resource_t resource;
+    int i, total, start, end;
+
+    total = MSG_ReadShort();
+    start = MSG_ReadShort();
+    end = MSG_ReadShort();
+
+    for (i = start; i < end; i++)
+    {
+        resource.type = MSG_ReadByte();
+        strcpy(resource.szFileName, MSG_ReadString());
+        resource.nIndex = MSG_ReadShort();
+        resource.ucFlags = (byte)MSG_ReadByte() & ~RES_WASMISSING;
+        resource.pNext = NULL;
+        resource.pPrev = NULL;
+
+        switch (resource.type)
+        {
+        case t_decal:
+            if (!(resource.ucFlags & RES_CUSTOM))
+                Draw_DecalSetName(resource.nIndex, resource.szFileName);
+            break;
+        case t_sound:
+            if (resource.ucFlags & RES_WASMISSING)
+            {
+                cl[clientId].sound_precache[resource.nIndex] = NULL;
+                break;
+            }
+            S_BeginPrecaching();
+            cl[clientId].sound_precache[resource.nIndex] = S_PrecacheSound(resource.szFileName);
+            S_EndPrecaching();
+            if (!cl[clientId].sound_precache[resource.nIndex])
+            {
+                if (resource.ucFlags & RES_FATALIFMISSING)
+                {
+                    COM_ExplainDisconnection(true, "Cannot continue without sound %s, disconnecting\n", resource.szFileName);
+                    CL_Disconnect(clientId);
+                }
+            }
+            break;
+        case t_skin:
+            break;
+        case t_model:
+            cl[clientId].model_precache[resource.nIndex] = Mod_ForName(resource.szFileName, false);
+            if (!cl[clientId].model_precache[resource.nIndex])
+            {
+                Con_Printf("Model %s not found\n", resource.szFileName);
+                if (resource.ucFlags & RES_FATALIFMISSING)
+                {
+                    COM_ExplainDisconnection(true, "Cannot continue without model %s, disconnecting\n", resource.szFileName);
+                    CL_Disconnect(clientId);
+                }
+            }
+            break;
+        case t_generic:
+            break;
+        default:
+            Con_DPrintf("Unknown resource type\n");
+            break;
+        }
+    }
+
+    cl[clientId].num_resources += end;
+    if (cl[clientId].num_resources >= total)
+        CL_StartResourceDownloading("Verifying and downloading resources...\n", false, clientId);
+    else
+        cls[clientId].state = ca_connected;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/cl_parse", func_00295B58);
 

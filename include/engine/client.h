@@ -39,7 +39,8 @@ typedef struct player_info_s
 typedef struct client_state_s
 {
     int max_edicts;             /* 0x000 */
-    byte pad4[0x208 - 0x4];
+    int num_resources;          /* 0x004 */
+    byte pad8[0x208 - 0x8];
     int servercount;            /* 0x208 */
     byte pad20C[0x224 - 0x20C];
     float forwardmove;          /* 0x224: cmd.forwardmove */

@@ -27,7 +27,7 @@ qboolean func_00288B18(void);
 int atoi(const char *);
 void MSG_WriteByte(sizebuf_t *sb, int c);
 void MSG_WriteLong(sizebuf_t *sb, int c);
-int func_00243400(void);
+int MSG_ReadShort(void);
 int MSG_ReadByte(void);
 char *MSG_ReadString(void);
 void *memset(void *, int, unsigned int);
@@ -389,9 +389,9 @@ void func_00288CE8(void)
     resource_t *pResource;
     resourcecount_t rc;
 
-    total = func_00243400();
-    start = func_00243400();
-    end = func_00243400();
+    total = MSG_ReadShort();
+    start = MSG_ReadShort();
+    end = MSG_ReadShort();
 
     for (i = start; i < end; i++)
     {
@@ -399,7 +399,7 @@ void func_00288CE8(void)
         memset(pResource, 0, sizeof(resource_t));
         pResource->type = MSG_ReadByte();
         strcpy(pResource->szFileName, MSG_ReadString());
-        pResource->nIndex = func_00243400();
+        pResource->nIndex = MSG_ReadShort();
         pResource->ucFlags = (byte)MSG_ReadByte() & ~2;
         pResource->pNext = NULL;
         pResource->pPrev = NULL;
