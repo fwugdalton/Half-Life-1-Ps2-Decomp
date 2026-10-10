@@ -1328,6 +1328,14 @@ void SVC_Ping(void)
 void func_0027D0F0(void)
 {
 }
+qboolean func_002C6D78(netadr_t a, netadr_t b);
+int RandomLong(int lLow, int lHigh);
+extern int (*D_003990F0)(int l);
+extern int D_00334540;
+extern cvar_t sv_lan;
+void func_00245310(void);
+void Q_memcpy(void *dest, void *src, int count);
+
 /* rodata não migrada: início */
 __asm__(".section .rodata\n"
         ".align 3\n"
@@ -1446,7 +1454,59 @@ __asm__(".section .rodata\n"
         ".align 3\n"
         ".section .text\n");
 /* rodata não migrada: fim */
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027D0F8);
+#ifdef NON_MATCHING
+void SVC_GetChallenge(void)
+{
+    int i;
+    int oldest = 0;
+    int oldestTime = 0x7FFFFFFF;
+    char data[128];
+    int challenge;
+
+    for (i = 0; i < 16; i++)
+    {
+        if (func_002C6D78(net_from, svs.challenges[i].adr))
+            break;
+        if (svs.challenges[i].time < oldestTime)
+        {
+            oldestTime = svs.challenges[i].time;
+            oldest = i;
+        }
+    }
+
+    if (i == 16)
+    {
+        i = oldest;
+        svs.challenges[oldest].challenge = (RandomLong(0, 0xFFFF) << 16) | RandomLong(0, 0xFFFF);
+        svs.challenges[oldest].adr = net_from;
+        svs.challenges[oldest].time = realtime;
+    }
+
+    sprintf(data, "%c%c%c%c%c0000000000000000", 255, 255, 255, 255, 'A');
+    challenge = D_003990F0(svs.challenges[i].challenge);
+    Q_memcpy(&data[21], &challenge, 4);
+
+    if (sv.active && svs.maxclients > 1 && sv_lan.value == 0.0f)
+        func_00245310();
+    else
+        D_00334540 = 1;
+
+    if (D_00334540)
+    {
+        Con_DPrintf("Server requiring authentication\n");
+        data[25] = 2;
+    }
+    else
+    {
+        Con_DPrintf("Server requiring WON authentication\n");
+        data[25] = 1;
+    }
+
+    NET_SendPacket(NS_SERVER, 26, data, net_from, *(int *)net_from.ip);
+}
+#else
+INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SVC_GetChallenge);
+#endif
 void func_0027D340(void)
 {
     memset(&D_0053DB38, 0, sizeof(D_0053DB38));
@@ -1988,7 +2048,67 @@ qboolean SV_SendClientDatagram(client_t *client, int unk)
     Netchan_Transmit(&client->netchan, msg.cursize, buf, unk);
     return true;
 }
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_UpdateToReliableMessages);
+void SV_ExtractFromUserinfo(client_t *cl);
+
+void SV_UpdateToReliableMessages(void)
+{
+    int i;
+    int j;
+    client_t *client;
+    UserMsg *pTail;
+
+    for (i = 0, host_client = svs.clients; i < svs.maxclients; i++, host_client++)
+    {
+        if (!host_client->edict)
+            continue;
+
+        if (host_client->sendinfo && host_client->sendinfo_time <= realtime)
+        {
+            host_client->sendinfo = false;
+            host_client->sendinfo_time = realtime + 1.0f;
+            SV_ExtractFromUserinfo(host_client);
+            SV_FullClientUpdate(host_client, &sv.reliable_datagram);
+        }
+
+        if (host_client->fakeclient)
+            continue;
+        if ((host_client->active || host_client->connected) && sv_gpNewUserMsgs)
+            SV_SendUserReg(&host_client->netchan.message);
+    }
+
+    if (sv_gpNewUserMsgs)
+    {
+        if (!sv_gpUserMsgs)
+        {
+            sv_gpUserMsgs = sv_gpNewUserMsgs;
+        }
+        else
+        {
+            pTail = sv_gpUserMsgs;
+            while (pTail->next)
+                pTail = pTail->next;
+            pTail->next = sv_gpNewUserMsgs;
+        }
+        sv_gpNewUserMsgs = NULL;
+    }
+
+    if (sv.datagram.overflowed)
+    {
+        Con_DPrintf("sv.datagram overflowed!\n");
+        SZ_Clear(&sv.datagram);
+    }
+
+    for (j = 0, client = svs.clients; j < svs.maxclients; j++, client++)
+    {
+        if (!client->active || client->fakeclient)
+            continue;
+        SZ_Write(&client->netchan.message, sv.reliable_datagram.data, sv.reliable_datagram.cursize);
+        SZ_Write(&client->datagram, sv.datagram.data, sv.datagram.cursize);
+    }
+
+    SZ_Clear(&sv.reliable_datagram);
+    SZ_Clear(&sv.datagram);
+}
 void SV_UpdateToReliableMessages(void);
 
 void SV_SendClientMessages(void)

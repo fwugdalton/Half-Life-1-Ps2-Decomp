@@ -16,6 +16,24 @@
 "sv_gpUserMsgs"
 ]
 },
+"SVC_GetChallenge": {
+"migrated": [
+"D_0038F1E0",
+"D_0038F200",
+"D_0038F228"
+],
+"refs": [
+"D_00334540",
+"D_0038F1E0",
+"D_0038F200",
+"D_0038F228",
+"D_003990F0",
+"net_from",
+"realtime",
+"sv",
+"svs"
+]
+},
 "SVC_Ping": {
 "migrated": [],
 "refs": [
@@ -789,24 +807,6 @@
 "func_0027D0F0": {
 "migrated": [],
 "refs": []
-},
-"func_0027D0F8": {
-"migrated": [
-"D_0038F1E0",
-"D_0038F200",
-"D_0038F228"
-],
-"refs": [
-"D_00334540",
-"D_0038F1E0",
-"D_0038F200",
-"D_0038F228",
-"D_003990F0",
-"net_from",
-"realtime",
-"sv",
-"svs"
-]
 },
 "func_0027D340": {
 "migrated": [],

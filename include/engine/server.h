@@ -222,12 +222,20 @@ typedef struct server_log_s
     FileHandle_t file;          /* 0x128 */
 } server_log_t;
 
+typedef struct challenge_s
+{
+    netadr_t adr;               /* 0x00 */
+    int challenge;              /* 0x08 */
+    int time;                   /* 0x0C */
+} challenge_t;
+
 typedef struct server_static_s
 {
     int maxclients;             /* 0x000 */
     int maxclientslimit;        /* 0x004 */
     int spawncount;             /* 0x008 */
-    byte unk_00C[0x110 - 0x00C];
+    int unk_00C;                /* 0x00C */
+    challenge_t challenges[16]; /* 0x010 */
     client_t *clients;          /* 0x110 */
     int serverflags;            /* 0x114 */
     server_log_t log;           /* 0x118 */
