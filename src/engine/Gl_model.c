@@ -1,6 +1,8 @@
 #include "common.h"
 #include "engine/cmd.h"
 #include "engine/model.h"
+#include "engine/mathlib.h"
+#include "engine/cvar.h"
 
 typedef void *FileHandle_t;
 
@@ -28,6 +30,15 @@ void Cache_Free(cache_user_t *c);
 FileHandle_t FS_Open(char *name, char *mode);
 void FS_Close(FileHandle_t f);
 void func_00222500(FileHandle_t f, char *fmt, ...);
+model_t *func_0029F908(model_t *mod, qboolean crash);
+void func_0029FED0(model_t *mod);
+void func_002A0100(model_t *mod);
+void func_002A0180(model_t *mod);
+void Mod_LoadStudioModelCached(model_t *mod);
+int strcasecmp(const char *, const char *);
+char *strstr(const char *, const char *);
+extern model_t *D_003994C0;
+extern cvar_t developer;
 
 void Mod_InitKnown(void)
 {
@@ -150,15 +161,169 @@ void Mod_Report_f(void)
 INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", Mod_Report_f);
 #endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", Mod_Extradata);
+void *Mod_Extradata(model_t *mod)
+{
+    if (mod->unk_198 == 2)
+    {
+        if (!Cache_Check(&mod->cache))
+            func_0029F908(mod, true);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", Mod_PointInLeaf);
+        if (!mod->cache.data)
+            Sys_Error("Mod_Extradata: caching failed");
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", func_0029F6A8);
+    return mod->cache.data;
+}
 
+mleaf_t *Mod_PointInLeaf(vec3_t p, model_t *model)
+{
+    mnode_t *node;
+    float d;
+    mplane_t *plane;
+
+    if (!model || !model->nodes)
+        Sys_Error("Mod_PointInLeaf: bad model");
+
+    node = model->nodes;
+    while (1)
+    {
+        if (node->contents < 0)
+            return (mleaf_t *)node;
+
+        plane = node->plane;
+        d = DotProduct(p, plane->normal) - plane->dist;
+        if (d > 0)
+            node = node->children[0];
+        else
+            node = node->children[1];
+    }
+}
+
+void func_0029F6A8(void)
+{
+    int i;
+    model_t *mod;
+
+    for (i = 0, mod = mod_level; i < mod_numlevel; i++, mod++)
+    {
+        if (mod->type == mod_sprite && !mod->needload)
+            func_002A0100(mod);
+
+        if (mod->type != mod_alias && mod->needload != 3)
+            mod->needload = 1;
+    }
+}
+
+#ifdef NON_MATCHING
+model_t *func_0029F760(char *name)
+{
+    int i;
+    model_t *mod;
+    qboolean found;
+
+    found = false;
+    mod = NULL;
+
+    for (i = 0; i < mod_numglobal; i++)
+    {
+        if (!strcasecmp(mod_global[i].name, name))
+        {
+            found = true;
+            mod = &mod_global[i];
+            break;
+        }
+    }
+
+    if (found)
+        return mod;
+
+    for (i = 0; i < mod_numgame; i++)
+    {
+        if (!strcasecmp(mod_game[i].name, name))
+        {
+            found = true;
+            mod = &mod_game[i];
+            break;
+        }
+    }
+
+    if (found)
+        return mod;
+
+    for (i = 0; i < mod_numlevel; i++)
+    {
+        if (!strcasecmp(mod_level[i].name, name))
+        {
+            found = true;
+            mod = &mod_level[i];
+            break;
+        }
+    }
+
+    if (found)
+        return mod;
+
+    mod = &mod_level[i];
+    memset(mod, 0, sizeof(model_t));
+    strcpy(mod->name, name);
+    mod->unk_198 = 2;
+    mod->needload = 1;
+    mod_numknown++;
+    mod_numlevel++;
+    return mod;
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", func_0029F760);
+#endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", func_0029F908);
+model_t *func_0029F908(model_t *mod, qboolean crash)
+{
+    if (!strstr(mod->name, ".bs2"))
+    {
+        if (mod->type == mod_alias || mod->type == mod_studio)
+        {
+            if ((unsigned int)mod->unk_198 < 2)
+                return mod;
+
+            if (Cache_Check(&mod->cache))
+            {
+                mod->needload = 0;
+                return mod;
+            }
+        }
+        else
+        {
+            if (!mod->needload)
+                return mod;
+            if (mod->needload == 3)
+                return mod;
+        }
+
+        if (developer.value > 1)
+            Con_DPrintf("loading %s\n", mod->name);
+
+        mod->needload = 0;
+
+        if (strstr(mod->name, ".dol"))
+        {
+            Mod_LoadStudioModelCached(mod);
+            return mod;
+        }
+
+        if (strstr(mod->name, ".spz"))
+            func_002A0180(mod);
+
+        return mod;
+    }
+
+    if (mod->needload)
+    {
+        D_003994C0 = mod;
+        func_0029FED0(mod);
+    }
+
+    return mod;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", Mod_ForName);
 
