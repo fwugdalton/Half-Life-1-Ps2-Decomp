@@ -65,6 +65,18 @@ int build_number(void);
 void SV_ClientPrintf(char *fmt, ...);
 void SV_CountPlayers(int *clients, int *spectators);
 int strcasecmp(const char *, const char *);
+#include "engine/mathlib.h"
+#include "engine/progdefs.h"
+#define FL_GODMODE 0x40
+#define FL_NOTARGET 0x80
+#define MOVETYPE_WALK 3
+#define MOVETYPE_NOCLIP 8
+extern int D_00399410;
+#define allow_cheats D_00399410
+extern edict_t *sv_player;
+extern qboolean noclip_anglehack;
+edict_t *SV_TestEntityPosition(edict_t *ent);
+void SV_ClientPrintf(char *fmt, ...);
 
 int sprintf(char *, const char *, ...);
 unsigned int strlen(const char *);
@@ -408,13 +420,107 @@ void Host_Status_f(void)
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_God_f);
+void Host_God_f(void)
+{
+    if (cmd_source == src_command)
+    {
+        Cmd_ForwardToServer();
+        return;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Notarget_f);
+    if (gGlobalVariables.deathmatch != 0 && !host_client->unk_73D0)
+        return;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00298570);
+    if (!allow_cheats)
+        return;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Noclip_f);
+    sv_player->v.flags ^= FL_GODMODE;
+    if (!(sv_player->v.flags & FL_GODMODE))
+        SV_ClientPrintf("godmode OFF\n");
+    else
+        SV_ClientPrintf("godmode ON\n");
+}
+
+void Host_Notarget_f(void)
+{
+    if (cmd_source == src_command)
+    {
+        Cmd_ForwardToServer();
+        return;
+    }
+
+    if (gGlobalVariables.deathmatch != 0 && !host_client->unk_73D0)
+        return;
+
+    sv_player->v.flags ^= FL_NOTARGET;
+    if (!(sv_player->v.flags & FL_NOTARGET))
+        SV_ClientPrintf("notarget OFF\n");
+    else
+        SV_ClientPrintf("notarget ON\n");
+}
+
+qboolean FindPassableSpace(edict_t *pEdict, vec_t *direction, float step)
+{
+    int i;
+
+    for (i = 0; i < 100; i++)
+    {
+        VectorMA(pEdict->v.origin, step, direction, pEdict->v.origin);
+        if (!SV_TestEntityPosition(pEdict))
+        {
+            VectorCopy(pEdict->v.origin, pEdict->v.oldorigin);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void Host_Noclip_f(void)
+{
+    vec3_t forward, right, up;
+
+    if (cmd_source == src_command)
+    {
+        Cmd_ForwardToServer();
+        return;
+    }
+
+    if (gGlobalVariables.deathmatch != 0 && !host_client->unk_73D0)
+        return;
+
+    if (!allow_cheats)
+        return;
+
+    if (sv_player->v.movetype != MOVETYPE_NOCLIP)
+    {
+        noclip_anglehack = true;
+        sv_player->v.movetype = MOVETYPE_NOCLIP;
+        SV_ClientPrintf("noclip ON\n");
+    }
+    else
+    {
+        noclip_anglehack = false;
+        sv_player->v.movetype = MOVETYPE_WALK;
+        VectorCopy(sv_player->v.origin, sv_player->v.oldorigin);
+        SV_ClientPrintf("noclip OFF\n");
+
+        if (SV_TestEntityPosition(sv_player))
+        {
+            AngleVectors(sv_player->v.v_angle, forward, right, up);
+            if (!FindPassableSpace(sv_player, forward, 1.0f) &&
+                !FindPassableSpace(sv_player, right, 1.0f) &&
+                !FindPassableSpace(sv_player, right, -1.0f) &&
+                !FindPassableSpace(sv_player, up, 1.0f) &&
+                !FindPassableSpace(sv_player, up, -1.0f) &&
+                !FindPassableSpace(sv_player, forward, -1.0f))
+            {
+                Con_DPrintf("Can't find the world\n");
+            }
+            VectorCopy(sv_player->v.oldorigin, sv_player->v.origin);
+        }
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Fly_f);
 

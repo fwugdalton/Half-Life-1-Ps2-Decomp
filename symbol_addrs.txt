@@ -1347,3 +1347,4 @@ rcon_password = 0x00333100; // size:0x14
 sv_redirectto = 0x003994B0; // size:0x8
 SV_Rcon = 0x00297D10; // type:func
 Host_Status_PrintClient = 0x00297F08; // type:func
+FindPassableSpace = 0x00298570; // type:func
