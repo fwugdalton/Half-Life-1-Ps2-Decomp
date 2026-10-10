@@ -98,7 +98,7 @@ byte *COM_LoadStackFile(char *path, void *buffer, int bufsize);
 void Q_strcpy(char *dest, char *src);
 void Q_strcat(char *dest, char *src);
 char *strcat(char *d, const char *s);
-void func_002CFF88(char *name, int *a, int *b, int *c);
+int func_002CFF88(char *name, int *a, int *b, int *c);
 byte *func_00225D48(int size, int align, char *file, int line);
 byte func_002388A0(int a, int b, byte *c, byte *d);
 wavinfo_t GetWavinfo(char *name, byte *wav, int wavlength);
@@ -327,13 +327,12 @@ sfxcache_t *S_LoadStreamChunk(sfx_t *s, int unused, byte *data, int len, int str
     return sc;
 }
 
-#ifdef NON_MATCHING
 sfxcache_t *S_LoadStreamSound(sfx_t *s, channel_t *ch)
 {
     char namebuffer[256];
     char name[64];
     int i;
-    int size;
+    unsigned int size;
     int flags;
     byte *buf;
     sfxcache_t *sc;
@@ -380,9 +379,6 @@ sfxcache_t *S_LoadStreamSound(sfx_t *s, channel_t *ch)
 
     return sc;
 }
-#else
-INCLUDE_ASM("asm/nonmatchings/engine/snd_mem", S_LoadStreamSound);
-#endif
 
 short GetLittleShort(void)
 {

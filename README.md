@@ -69,8 +69,13 @@ O `make` termina com `build/SLUS_200.66.rom: OK` quando o rebuild é idêntico a
 - `engine/pmove.c`: todo em C menos `PM_FlyMove`; `.rodata` e `.data` (`-ffast-math`). Junta o pmove do motor, o pm_debug e o pm_shared, que dividem a mesma string `"\n"`. No PS2 há um `playermove_t` por jogador local (`pmove[clientId]`)
 - `engine/pmovetst.c`: 15 de 18 funções e `.rodata` (`-ffast-math`); faltam `PM_TestPlayerPosition`, `PM_PlayerTrace` e `PM_PlayerTraceFast`, todas com o C pronto e só diferença de registradores
 - `engine/pr_cmds.c`: 100% (97 funções, `.data` e `.rodata`; `-ffast-math`)
+- `engine/pr_edict.c`: 100% (código, `.rodata` e `.data`)
+- `engine/r_trans.c`: 12 de 16 funções e `.rodata` (`-ffast-math`); objetos translúcidos e sprites
+- `engine/snd_mem.c`: 100% (11 funções, `.rodata`; carga de WAV e o streaming de sons `*nome`)
+- `engine/sv_main.c`: separado (84 funções ainda em asm)
 
 Funções que ainda não casam ficam com o C em `#ifdef NON_MATCHING` e o asm original via `INCLUDE_ASM`
 (`tools/wrap.py` envolve, `tools/unwrap.py` desfaz; depois `make split` com o venv). Strings que o splat não
 leva para o `.s` porque são compartilhadas com outra função são emitidas à mão no `#else` ou definidas
-como símbolo absoluto em `linker_script_extra.ld` (ver `Host.c`).
+como símbolo absoluto em `linker_script_extra.ld` (ver `Host.c`). Em arquivos grandes, `tools/rodata_blocks.py`
+gera esses blocos sozinho a partir da disassembly original da rodata (ver `sv_main.c`).
