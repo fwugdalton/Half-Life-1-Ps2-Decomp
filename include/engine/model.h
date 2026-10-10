@@ -23,9 +23,17 @@ typedef struct mnode_s
 
 typedef struct texture_s
 {
-    byte unk_00[0x10];
+    byte *pixels;               /* 0x00 */
+    byte *palette;              /* 0x04 */
+    byte unk_08[0x0C - 0x08];
+    unsigned short width;       /* 0x0C */
+    unsigned short height;      /* 0x0E */
     char name[16];              /* 0x10 */
-} texture_t;
+    byte unk_20[0x23 - 0x20];
+    byte nummips;               /* 0x23 */
+    int gl_texturenum;          /* 0x24 */
+    byte unk_28[0x40 - 0x28];
+} texture_t; /* 0x40 */
 
 /* no PS2 o mtexinfo_t vem embutido no começo da superfície */
 typedef struct msurface_s
@@ -109,18 +117,29 @@ typedef struct model_s
     int nummodelsurfaces;       /* 0x88 */
     int numsubmodels;           /* 0x8C */
     struct dmodel_s *submodels; /* 0x90 */
-    byte unk_94[0x9C - 0x94];
+    int numplanes;              /* 0x94 */
+    struct mplane_s *planes;    /* 0x98 */
     int numleafs;               /* 0x9C */
     mleaf_t *leafs;             /* 0xA0 */
-    byte unk_A4[0xB8 - 0xA4];
+    int numvertexes;            /* 0xA4 */
+    void *vertexes;             /* 0xA8 */
+    int numedges;               /* 0xAC */
+    void *edges;                /* 0xB0 */
+    int numnodes;               /* 0xB4 */
     mnode_t *nodes;             /* 0xB8 */
     int numsurfaces;            /* 0xBC */
     msurface_t *surfaces;       /* 0xC0 */
-    byte unk_C4[0xCC - 0xC4];
+    int numsurfedges;           /* 0xC4 */
+    int *surfedges;             /* 0xC8 */
     int numclipnodes;           /* 0xCC */
-    byte unk_D0[0xDC - 0xD0];
+    dclipnode_t *clipnodes;     /* 0xD0 */
+    int nummarksurfaces;        /* 0xD4 */
+    msurface_t **marksurfaces;  /* 0xD8 */
     hull_t hulls[4];            /* 0xDC */
-    byte unk_17C[0x18C - 0x17C];
+    int numtextures;            /* 0x17C */
+    texture_t *textures;        /* 0x180 */
+    byte *visdata;              /* 0x184 */
+    void *lightdata;            /* 0x188 */
     char *entities;             /* 0x18C */
     byte unk_190[0x194 - 0x190];
     cache_user_t cache;         /* 0x194 */

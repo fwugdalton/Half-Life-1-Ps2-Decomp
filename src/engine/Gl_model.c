@@ -6,6 +6,46 @@
 
 typedef void *FileHandle_t;
 
+typedef struct
+{
+    int version;
+    int planes;          /* 0x04 */
+    int nodes;           /* 0x08 */
+    int leafs;           /* 0x0C */
+    int edges;           /* 0x10 */
+    int surfedges;       /* 0x14 */
+    int vertexes;        /* 0x18 */
+    int hull0;           /* 0x1C */
+    int clipnodes;       /* 0x20 */
+    int submodels;       /* 0x24 */
+    int surfaces;        /* 0x28 */
+    int marksurfaces;    /* 0x2C */
+    int visdata;         /* 0x30 */
+    int lightdata;       /* 0x34 */
+    int textures;        /* 0x38 */
+    int entities;        /* 0x3C */
+    int unk_40[17];
+    int numplanes;       /* 0x84 */
+    int numnodes;        /* 0x88 */
+    int numleafs;        /* 0x8C */
+    int numedges;        /* 0x90 */
+    int numsurfedges;    /* 0x94 */
+    int numvertexes;     /* 0x98 */
+    int unk_9C;
+    int numclipnodes;    /* 0xA0 */
+    int numsubmodels;    /* 0xA4 */
+    int numsurfaces;     /* 0xA8 */
+    int nummarksurfaces; /* 0xAC */
+    int unk_B0[2];
+    int numtextures;     /* 0xB8 */
+} bs2header_t;
+
+bs2header_t *func_002A0450(model_t *mod);
+void func_0029FAB0(model_t *mod);
+void func_0029FCF8(model_t *mod, bs2header_t *header);
+void func_0029FE20(model_t *mod);
+int GL_LoadDecalTexture(char *name, int type, int width, int height, byte *pixels, byte *palette, byte nummips);
+
 #define MAX_KNOWN_MODELS 512
 #define IDSTUDIOHEADER 0x54534449 /* "IDST" */
 #define IDSPRITEHEADER_PS2 0x5A415053 /* "SPAZ" */
@@ -395,11 +435,109 @@ void func_0029FAB0(model_t *mod)
 INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", func_0029FAB0);
 #endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", func_0029FCF8);
+void func_0029FCF8(model_t *mod, bs2header_t *header)
+{
+    hull_t *hull;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", func_0029FE20);
+    hull = &D_003994C0->hulls[0];
+    hull->clipnodes = (dclipnode_t *)((byte *)header + header->hull0);
+    hull->firstclipnode = 0;
+    hull->lastclipnode = mod->numnodes - 1;
+    hull->planes = D_003994C0->planes;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", func_0029FED0);
+    hull = &D_003994C0->hulls[1];
+    hull->clipnodes = mod->clipnodes;
+    hull->firstclipnode = 0;
+    hull->lastclipnode = mod->numclipnodes - 1;
+    hull->planes = D_003994C0->planes;
+    hull->clip_mins[0] = -16;
+    hull->clip_mins[1] = -16;
+    hull->clip_mins[2] = -36;
+    hull->clip_maxs[0] = 16;
+    hull->clip_maxs[1] = 16;
+    hull->clip_maxs[2] = 36;
+
+    hull = &D_003994C0->hulls[2];
+    hull->clipnodes = mod->clipnodes;
+    hull->firstclipnode = 0;
+    hull->lastclipnode = mod->numclipnodes - 1;
+    hull->planes = D_003994C0->planes;
+    hull->clip_mins[0] = -32;
+    hull->clip_mins[1] = -32;
+    hull->clip_mins[2] = -32;
+    hull->clip_maxs[0] = 32;
+    hull->clip_maxs[1] = 32;
+    hull->clip_maxs[2] = 32;
+
+    hull = &D_003994C0->hulls[3];
+    hull->clipnodes = mod->clipnodes;
+    hull->firstclipnode = 0;
+    hull->lastclipnode = mod->numclipnodes - 1;
+    hull->planes = D_003994C0->planes;
+    hull->clip_mins[0] = -16;
+    hull->clip_mins[1] = -16;
+    hull->clip_mins[2] = -18;
+    hull->clip_maxs[0] = 16;
+    hull->clip_maxs[1] = 16;
+    hull->clip_maxs[2] = 18;
+}
+
+void func_0029FE20(model_t *mod)
+{
+    unsigned int i;
+    unsigned int num;
+    texture_t *tx;
+
+    num = mod->numtextures;
+    for (i = 0; i < num; i++)
+    {
+        tx = &mod->textures[i];
+        if (Q_strncmp(tx->name, "sky", 3))
+            tx->gl_texturenum = GL_LoadDecalTexture(tx->name, 4, tx->width, tx->height, tx->pixels, tx->palette, tx->nummips);
+    }
+}
+
+void func_0029FED0(model_t *mod)
+{
+    bs2header_t *header;
+
+    header = func_002A0450(mod);
+    mod->type = mod_brush;
+    mod->needload = 0;
+
+    mod->numsubmodels = header->numsubmodels;
+    mod->numplanes = header->numplanes;
+    mod->numleafs = header->numleafs;
+    mod->numvertexes = header->numvertexes;
+    mod->numedges = header->numedges;
+    mod->numnodes = header->numnodes;
+    mod->numsurfaces = header->numsurfaces;
+    mod->numsurfedges = header->numsurfedges;
+    mod->numclipnodes = header->numclipnodes;
+    mod->numtextures = header->numtextures;
+    mod->nummarksurfaces = header->nummarksurfaces;
+
+    mod->submodels = (void *)((byte *)header + header->submodels);
+    mod->planes = (void *)((byte *)header + header->planes);
+    mod->leafs = (void *)((byte *)header + header->leafs);
+    mod->vertexes = (void *)((byte *)header + header->vertexes);
+    mod->edges = (void *)((byte *)header + header->edges);
+    mod->nodes = (void *)((byte *)header + header->nodes);
+    mod->surfaces = (void *)((byte *)header + header->surfaces);
+    mod->surfedges = (void *)((byte *)header + header->surfedges);
+    mod->clipnodes = (void *)((byte *)header + header->clipnodes);
+    mod->textures = (void *)((byte *)header + header->textures);
+    mod->marksurfaces = (void *)((byte *)header + header->marksurfaces);
+    mod->visdata = (void *)((byte *)header + header->visdata);
+    mod->lightdata = (void *)((byte *)header + header->lightdata);
+    mod->entities = (char *)header + header->entities;
+    mod->flags = 0;
+    mod->numframes = 2;
+
+    func_0029FCF8(mod, header);
+    func_0029FAB0(mod);
+    func_0029FE20(mod);
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", func_002A0028);
 
