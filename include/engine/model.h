@@ -35,6 +35,13 @@ typedef struct texture_s
     byte unk_28[0x40 - 0x28];
 } texture_t; /* 0x40 */
 
+typedef struct glpoly_s
+{
+    struct glpoly_s *next;      /* 0x00 */
+    struct glpoly_s *chain;     /* 0x04 */
+    int numverts;               /* 0x08 */
+} glpoly_t;
+
 /* no PS2 o mtexinfo_t vem embutido no começo da superfície */
 typedef struct msurface_s
 {
@@ -47,7 +54,9 @@ typedef struct msurface_s
     byte unk_3C[0x40 - 0x3C];
     short texturemins[2];       /* 0x40 */
     short extents[2];           /* 0x44 */
-    byte unk_48[0x78 - 0x48];
+    glpoly_t *polys;            /* 0x48 */
+    struct msurface_s *texturechain; /* 0x4C */
+    byte unk_50[0x78 - 0x50];
     int cached_light;           /* 0x78: -1 força refazer o lightmap */
     byte unk_7C[0x90 - 0x7C];
 } msurface_t; /* 0x90 */
