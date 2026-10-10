@@ -282,6 +282,7 @@ void func_0022BBC0(char *name);
 extern char *pr_strings;
 void ReleaseEntityDLLFields(edict_t *pEdict);
 void InitEntityDLLFields(edict_t *pEdict);
+void func_00217678(char *dir, char *level);
 void SV_CountPlayers(int *clients, int *spectators);
 int strcasecmp(const char *, const char *);
 #include "engine/mathlib.h"
@@ -1823,7 +1824,114 @@ void EntityInit(edict_t *pEdict, string_t className)
         pEntityInit(&pEdict->v);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029AB70);
+SAVERESTOREDATA *LoadSaveData(char *level)
+{
+    char name[260];
+    int i;
+    int size;
+    int tableCount;
+    int tokenCount;
+    int tokenSize;
+    int pFile;
+    int result;
+    char *pszTokenList;
+    SAVERESTOREDATA *pSaveData;
+
+    sprintf(name, D_00392640, Host_SaveGameDirectory(), level);
+    COM_FixSlashes(name);
+    Con_Printf(D_00392788, name);
+
+    pFile = func_0022B118(name, D_003927B8);
+    if (!pFile)
+    {
+        func_00217678(Host_SaveGameDirectory(), level);
+        pFile = func_0022B118(name, D_003927B8);
+        if (!pFile)
+        {
+            Con_Printf("ERROR: couldn't open.\n");
+            return NULL;
+        }
+    }
+
+    func_0022B238(pFile);
+
+    result = func_0022B590(name, D_003927A8);
+    if (result != 1)
+    {
+        Con_Printf("ERROR: couldn't open.\n");
+        return NULL;
+    }
+
+    pFile = func_0022B118(D_003927A8, D_003927B8);
+    if (!pFile)
+    {
+        Con_Printf("ERROR: couldn't open.\n");
+        return NULL;
+    }
+
+    func_0022BE50(&i, sizeof(int), 1, pFile);
+    if (i != (('V' << 24) | ('L' << 16) | ('A' << 8) | 'V'))
+        return NULL;
+
+    func_0022BE50(&i, sizeof(int), 1, pFile);
+    if (i > SAVEGAME_VERSION)
+        return NULL;
+
+    func_0022BE50(&size, sizeof(int), 1, pFile);
+    func_0022BE50(&tableCount, sizeof(int), 1, pFile);
+    func_0022BE50(&tokenCount, sizeof(int), 1, pFile);
+    func_0022BE50(&tokenSize, sizeof(int), 1, pFile);
+
+    if (D_00331B00 >= (int)(tokenSize + sizeof(SAVERESTOREDATA) + sizeof(ENTITYTABLE) * tableCount + size))
+    {
+        D_00331B04 = result;
+        pSaveData = D_00331AFC;
+    }
+    else
+    {
+        pSaveData = Mem_DbgCalloc(tokenSize + sizeof(SAVERESTOREDATA) + sizeof(ENTITYTABLE) * tableCount + size, 1, D_00392628, 2258);
+        D_00331B04 = 0;
+    }
+
+    pSaveData->tableCount = tableCount;
+    pSaveData->tokenCount = tokenCount;
+    pSaveData->tokenSize = tokenSize;
+    strcpy(pSaveData->szCurrentMapName, level);
+
+    pszTokenList = (char *)(pSaveData + 1);
+
+    if (tokenSize > 0)
+    {
+        func_0022BE50(pszTokenList, pSaveData->tokenSize, 1, pFile);
+
+        if (!pSaveData->pTokens)
+            pSaveData->pTokens = Mem_DbgCalloc(tokenCount, sizeof(char *), D_00392628, 2276);
+
+        for (i = 0; i < tokenCount; i++)
+        {
+            pSaveData->pTokens[i] = *pszTokenList ? pszTokenList : NULL;
+            while (*pszTokenList++)
+                ;
+        }
+    }
+
+    pSaveData->pTable = (ENTITYTABLE *)pszTokenList;
+    pSaveData->connectionCount = 0;
+    pSaveData->size = 0;
+    pSaveData->pBaseData = (char *)(pSaveData->pTable + pSaveData->tableCount);
+    pSaveData->pCurrentData = pSaveData->pBaseData;
+    pSaveData->bufferSize = size;
+    pSaveData->fUseLandmark = 1;
+    pSaveData->time = 0;
+    VectorCopy(vec3_origin, pSaveData->vecLandmarkOffset);
+    gGlobalVariables.pSaveData = pSaveData;
+
+    func_0022BE50(pSaveData->pBaseData, size, 1, pFile);
+    func_0022B238(pFile);
+    func_0022B248(D_003927A8);
+
+    return pSaveData;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029AEE8);
 
