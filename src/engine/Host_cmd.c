@@ -3764,7 +3764,7 @@ void func_002885E8(void);
 void func_00288C00(void);
 void func_0028B188(void);
 void func_0028B2A0(void);
-void func_0029F3B0(void);
+void Mod_Report_f(void);
 void func_002A0320(void);
 void Host_FullInfo_f(void);
 extern char D_00392558[];
@@ -3774,7 +3774,7 @@ void Host_InitCommands(void)
     func_0023AFA8();
     func_002355D0();
     Cmd_AddCommand("ensureStatusToggle", func_00226300);
-    Cmd_AddCommand("modelreport", func_0029F3B0);
+    Cmd_AddCommand("modelreport", Mod_Report_f);
     Cmd_AddCommand("memfsdir", func_0022B900);
     func_002395B0();
     Cmd_AddCommand("printtoc", func_002373A8);

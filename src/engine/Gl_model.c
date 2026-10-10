@@ -1,18 +1,18 @@
 #include "common.h"
 
-INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", func_0029F030);
+INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", Mod_InitKnown);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", func_0029F0C0);
+INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", Mod_LoadGlobalModel);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", func_0029F180);
+INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", Mod_EndGlobalModels);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", func_0029F1A8);
+INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", Mod_LoadGameModel);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", func_0029F270);
+INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", Mod_ClearLevelModels);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", func_0029F388);
+INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", Mod_EndGameModels);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", func_0029F3B0);
+INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", Mod_Report_f);
 
 INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", Mod_Extradata);
 
