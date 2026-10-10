@@ -161,6 +161,36 @@ void Mem_Free(void *p);
 void COM_FixSlashes(char *pname);
 void func_0022B248(char *name);
 void func_0022B2B0(char *oldName, char *newName);
+
+typedef struct
+{
+    char mapName[32];           /* 0x00 */
+    char comment[80];           /* 0x20 */
+    int mapCount;               /* 0x70 */
+} GAME_HEADER;
+
+#define SAVEGAME_HEADER (('V' << 24) | ('A' << 16) | ('S' << 8) | 'J')
+#define SAVEGAME_VERSION 0x0071
+
+extern char D_00392640[];
+extern char D_00392658[];
+extern char D_00392668[];
+extern char D_00392690[];
+extern char D_00392698[];
+extern char D_003926A0[];
+extern char D_003926B8[];
+extern char D_003926C0[];
+extern char D_003926D0[];
+extern char D_00332F38[];
+SAVERESTOREDATA *SaveGamestate(void);
+void func_00217560(char *dir, char *mapname);
+void func_0022B310(char *name, int a1);
+int func_0029C220(char *pPath);
+void func_00244138(char *path, char *extension);
+int func_0022B118(char *name, char *mode);
+int func_0022BD98(void *data, int size, int count, int file);
+void func_0029BFC8(char *pPath, int file);
+void func_0022B238(int file);
 void SV_CountPlayers(int *clients, int *spectators);
 int strcasecmp(const char *, const char *);
 #include "engine/mathlib.h"
@@ -1141,7 +1171,106 @@ INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00392628);
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00392640);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", SaveGameSlot);
+int SaveGameSlot(char *pSaveName, char *pSaveComment)
+{
+    char name[256];
+    char pszFileName[256];
+    GAME_HEADER gameHeader;
+    char hlPath[256];
+    int tag;
+    char *pTokenData;
+    char *pszToken;
+    int i;
+    int next;
+    int file;
+    SAVERESTOREDATA *pSaveData;
+
+    pSaveData = SaveGamestate();
+    if (!pSaveData)
+        return 0;
+
+    if (0)
+    {
+overflow:
+        Con_Printf(D_00392668);
+        pSaveData->size = pSaveData->bufferSize;
+        goto done;
+    }
+
+    SaveExit(pSaveData);
+
+    sprintf(hlPath, D_00392640, Host_SaveGameDirectory(), sv.name);
+    func_00217560(Host_SaveGameDirectory(), sv.name);
+    func_0022B310(hlPath, 5);
+
+    pSaveData = SaveInit(0);
+
+    sprintf(name, "%s*.HL?", Host_SaveGameDirectory());
+    COM_FixSlashes(name);
+    gameHeader.mapCount = func_0029C220(name);
+    strcpy(gameHeader.mapName, sv.name);
+    strcpy(gameHeader.comment, pSaveComment);
+
+    gEntityInterface.pfnSaveWriteFields(pSaveData, D_00392658, &gameHeader, D_00332F38, 3);
+    gEntityInterface.pfnSaveGlobalState(pSaveData);
+
+    pTokenData = pSaveData->pCurrentData;
+
+    if (pSaveData->pTokens)
+    {
+        for (i = 0; i < pSaveData->tokenCount; i = next)
+        {
+            if (pSaveData->pTokens[i])
+            {
+                pszToken = pSaveData->pTokens[i];
+                pSaveData->size += strlen(pszToken) + 1;
+                if (pSaveData->size > pSaveData->bufferSize)
+                    goto overflow;
+                next = i + 1;
+                while ((*pSaveData->pCurrentData++ = *pszToken++) != 0)
+                    ;
+            }
+            else
+            {
+                pSaveData->size += 1;
+                if (pSaveData->size > pSaveData->bufferSize)
+                    goto overflow;
+                next = i + 1;
+                *pSaveData->pCurrentData++ = 0;
+            }
+        }
+    }
+done:
+    pSaveData->tokenSize = pSaveData->pCurrentData - pTokenData;
+    if (pSaveData->size < pSaveData->bufferSize)
+        pSaveData->size -= pSaveData->tokenSize;
+
+    sprintf(pszFileName, D_00392690, Host_SaveGameDirectory(), pSaveName);
+    func_00244138(pszFileName, D_00392698);
+    COM_FixSlashes(pszFileName);
+    Con_DPrintf(D_003926A0, pszFileName);
+
+    if (!strcasecmp(pSaveName, D_003926B8) || !strcasecmp(pSaveName, D_003926C0))
+        Host_SaveAgeList(pSaveName, 1);
+
+    file = func_0022B118(pszFileName, D_003926D0);
+
+    tag = SAVEGAME_HEADER;
+    func_0022BD98(&tag, sizeof(int), 1, file);
+    tag = SAVEGAME_VERSION;
+    func_0022BD98(&tag, sizeof(int), 1, file);
+    func_0022BD98(&pSaveData->size, sizeof(int), 1, file);
+    func_0022BD98(&pSaveData->tokenCount, sizeof(int), 1, file);
+    func_0022BD98(&pSaveData->tokenSize, sizeof(int), 1, file);
+    func_0022BD98(pTokenData, pSaveData->tokenSize, 1, file);
+    func_0022BD98(pSaveData->pBaseData, pSaveData->size, 1, file);
+    func_0029BFC8(name, file);
+    func_0022B238(file);
+    func_0022B310(pszFileName, 9);
+    SaveExit(pSaveData);
+
+    return 1;
+}
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00392658);
 

@@ -18,10 +18,10 @@ typedef struct
     void (*pfnSave)(edict_t *pent, struct saverestore_s *pSaveData); /* 0x1C */
     int (*pfnRestore)(edict_t *pent, struct saverestore_s *pSaveData, int globalEntity); /* 0x20 */
     void (*pfnSetAbsBox)(edict_t *pent);                        /* 0x24 */
-    void *pfnSaveWriteFields;                                   /* 0x28 */
-    void *pfnSaveReadFields;                                    /* 0x2C */
-    void *pfnSaveGlobalState;                                   /* 0x30 */
-    void *pfnRestoreGlobalState;                                /* 0x34 */
+    void (*pfnSaveWriteFields)(struct saverestore_s *pSaveData, const char *pname, void *pBaseData, void *pFields, int fieldCount); /* 0x28 */
+    void (*pfnSaveReadFields)(struct saverestore_s *pSaveData, const char *pname, void *pBaseData, void *pFields, int fieldCount); /* 0x2C */
+    void (*pfnSaveGlobalState)(struct saverestore_s *pSaveData); /* 0x30 */
+    void (*pfnRestoreGlobalState)(struct saverestore_s *pSaveData); /* 0x34 */
     void (*pfnResetGlobalState)(void);                          /* 0x38 */
     int (*pfnClientConnect)(edict_t *pEntity, const char *pszName, const char *pszAddress, char *szRejectReason); /* 0x3C */
     void (*pfnClientDisconnect)(edict_t *pEntity);              /* 0x40 */
