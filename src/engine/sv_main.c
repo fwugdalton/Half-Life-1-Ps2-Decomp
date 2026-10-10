@@ -755,10 +755,109 @@ qboolean SV_BuildSoundMsg(edict_t *entity, int channel, const char *sample, int 
     MSG_EndBitWriting(buffer);
     return true;
 }
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027B640);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_LookupSoundIndex);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027B820);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027B8D8);
+extern const char _ctype_[];
+#define isupper(c) ((_ctype_ + 1)[(int)(c)] & 1)
+
+extern int hashstrings_collisions;
+
+#define MAX_SOUNDS 512
+#define MAX_SOUNDS_HASHLOOKUP_SIZE (MAX_SOUNDS * 2 - 1)
+
+void SV_BuildHashedSoundLookupTable(void);
+void SV_AddSampleToHashedLookupTable(const char *pszSample, int iSampleIndex);
+
+static __inline__ int my_tolower(int c)
+{
+    return isupper(c) ? c - 'A' + 'a' : c;
+}
+
+unsigned int SV_HashString(const char *string, int iBounds)
+{
+    unsigned int hash;
+    const char *cc;
+
+    hash = 0;
+    for (cc = string; *cc; cc++)
+        hash = 2 * hash + my_tolower(*cc);
+
+    return hash % iBounds;
+}
+int SV_LookupSoundIndex(const char *sample)
+{
+    int index;
+    int starting_index;
+
+    starting_index = SV_HashString(sample, MAX_SOUNDS_HASHLOOKUP_SIZE);
+    index = starting_index;
+
+    if (!sv.sound_precache_hashedlookup_built)
+    {
+        if (sv.state != 1)
+        {
+            SV_BuildHashedSoundLookupTable();
+        }
+        else
+        {
+            for (index = 1; index < MAX_SOUNDS && sv.sound_precache[index]; index++)
+            {
+                if (!Q_strcasecmp(sample, sv.sound_precache[index]))
+                    return index;
+            }
+            return 0;
+        }
+    }
+
+    while (sv.sound_precache_hashedlookup[index])
+    {
+        if (!Q_strcasecmp(sample, sv.sound_precache[sv.sound_precache_hashedlookup[index]]))
+            return sv.sound_precache_hashedlookup[index];
+
+        index++;
+        if (index >= MAX_SOUNDS_HASHLOOKUP_SIZE)
+            index = 0;
+        if (index == starting_index)
+            return 0;
+    }
+
+    return 0;
+}
+void SV_BuildHashedSoundLookupTable(void)
+{
+    int i;
+
+    memset(sv.sound_precache_hashedlookup, 0, sizeof(sv.sound_precache_hashedlookup));
+
+    for (i = 0; i < MAX_SOUNDS; i++)
+    {
+        if (!sv.sound_precache[i])
+            break;
+
+        SV_AddSampleToHashedLookupTable(sv.sound_precache[i], i);
+    }
+
+    sv.sound_precache_hashedlookup_built = true;
+}
+void SV_AddSampleToHashedLookupTable(const char *pszSample, int iSampleIndex)
+{
+    int starting_index;
+    int index;
+
+    starting_index = SV_HashString(pszSample, MAX_SOUNDS_HASHLOOKUP_SIZE);
+    index = starting_index;
+    while (sv.sound_precache_hashedlookup[index])
+    {
+        index++;
+        hashstrings_collisions++;
+
+        if (index >= MAX_SOUNDS_HASHLOOKUP_SIZE)
+            index = 0;
+
+        if (index == starting_index)
+            Sys_Error("SV_AddSampleToHashedLookupTable: NO FREE SLOTS IN SOUND LOOKUP TABLE");
+    }
+
+    sv.sound_precache_hashedlookup[index] = iSampleIndex;
+}
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", Host_IsSinglePlayerGame);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027B9F8);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_Multicast);
