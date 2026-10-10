@@ -549,7 +549,7 @@ void MSG_StartBitWriting(sizebuf_t *buf);
 void MSG_EndBitWriting(sizebuf_t *buf);
 void MSG_WriteBitsUChar(byte *data, int numbits);
 void MSG_WriteBitsUShort(unsigned short *data, int numbits);
-void func_00242BC0(short *data, int numbits);
+void MSG_WriteBitsShort(short *data, int numbits);
 int SV_LookupSoundIndex(const char *sample);
 qboolean Host_IsSinglePlayerGame(void);
 
@@ -746,7 +746,7 @@ qboolean SV_BuildSoundMsg(edict_t *entity, int channel, const char *sample, int 
     for (i = 0; i < 3; i++)
     {
         coord = (int)(origin[i] * 8);
-        func_00242BC0(&coord, 16);
+        MSG_WriteBitsShort(&coord, 16);
     }
 
     if (field_mask & SND_PITCH)
@@ -2016,7 +2016,193 @@ int SV_PointLeafnum(vec_t *p)
 
     return 0;
 }
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027E480);
+void MSG_WriteBitsShort(short *data, int numbits);
+
+void func_0027E480(entity_state_t *from, entity_state_t *to, sizebuf_t *msg, qboolean force)
+{
+    int bits;
+    int i;
+    int mode;
+    float d;
+    byte bval;
+    unsigned short sval;
+    short coord;
+
+    bits = 0x2101;
+    if (to->rendermode != from->rendermode)
+        bits |= 0x400;
+
+    mode = to->rendermode & 0xF;
+    if (mode == 0 || mode == 1)
+    {
+        for (i = 0; i < 3; i++)
+        {
+            d = to->origin[i] - from->origin[i];
+            if (d < -0.1f || d > 0.1f)
+                bits |= (2 << i);
+        }
+
+        if (mode == 0)
+        {
+            for (i = 0; i < 3; i++)
+            {
+                d = to->angles[i] - from->angles[i];
+                if (d < -0.1f || d > 0.1f)
+                    bits |= (0x20 << i);
+            }
+        }
+    }
+
+    if (mode == 1 || mode == 2)
+    {
+        if (to->sequence != from->sequence || to->skin != from->skin)
+            bits |= 0x200;
+    }
+
+    if (to->modelindex != from->modelindex)
+        bits |= 0x800;
+    if (to->scale != from->scale)
+        bits |= 0x1000;
+    if (to->body != from->body)
+        bits |= 0x4000;
+    if ((*(int *)&to->rendercolor & 0xFFFFFF) != (*(int *)&from->rendercolor & 0xFFFFFF) || to->renderfx != from->renderfx)
+        bits |= 0x10000;
+    if (to->renderamt != from->renderamt)
+        bits |= 0x20000;
+    if (to->frame != from->frame)
+        bits |= 0x80000;
+    if ((int)to->animtime != (int)from->animtime)
+        bits |= 0x40000;
+
+    if (to->number >= 256)
+        bits |= 0x8000;
+    if (bits >= 0x100)
+        bits |= 1;
+    if (bits > 0xFFFF)
+        bits |= 0x100;
+    if (bits > 0xFFFFFF)
+        bits |= 0x800000;
+
+    if (!to->number)
+        Sys_Error("Unset entity number");
+
+    if (!bits && !force)
+        return;
+
+    bval = bits;
+    MSG_WriteBitsUChar(&bval, 8);
+    if (bits & 1)
+    {
+        bval = bits >> 8;
+        MSG_WriteBitsUChar(&bval, 8);
+    }
+    if (bits & 0x100)
+    {
+        bval = bits >> 16;
+        MSG_WriteBitsUChar(&bval, 8);
+    }
+    if (bits & 0x800000)
+    {
+        bval = bits >> 24;
+        MSG_WriteBitsUChar(&bval, 8);
+    }
+
+    if (bits & 0x8000)
+    {
+        sval = to->number;
+        MSG_WriteBitsUShort(&sval, 10);
+    }
+    else
+    {
+        bval = to->number;
+        MSG_WriteBitsUChar(&bval, 8);
+    }
+
+    if (bits & 2)
+    {
+        coord = to->origin[0] * 8;
+        MSG_WriteBitsShort(&coord, 16);
+    }
+    if (bits & 4)
+    {
+        coord = to->origin[1] * 8;
+        MSG_WriteBitsShort(&coord, 16);
+    }
+    if (bits & 8)
+    {
+        coord = to->origin[2] * 8;
+        MSG_WriteBitsShort(&coord, 16);
+    }
+    if (bits & 0x20)
+    {
+        coord = to->angles[0] * 8;
+        MSG_WriteBitsShort(&coord, 16);
+    }
+    if (bits & 0x40)
+    {
+        coord = to->angles[1] * 8;
+        MSG_WriteBitsShort(&coord, 16);
+    }
+    if (bits & 0x80)
+    {
+        coord = to->angles[2] * 8;
+        MSG_WriteBitsShort(&coord, 16);
+    }
+
+    if (bits & 0x200)
+    {
+        sval = to->sequence;
+        MSG_WriteBitsUShort(&sval, 16);
+        sval = to->skin;
+        MSG_WriteBitsUShort(&sval, 16);
+    }
+    if (bits & 0x400)
+    {
+        bval = to->rendermode;
+        MSG_WriteBitsUChar(&bval, 8);
+    }
+    if (bits & 0x800)
+    {
+        sval = to->modelindex;
+        MSG_WriteBitsUShort(&sval, 16);
+    }
+    if (bits & 0x1000)
+    {
+        bval = to->scale;
+        MSG_WriteBitsUChar(&bval, 8);
+    }
+    if (bits & 0x4000)
+    {
+        bval = to->body;
+        MSG_WriteBitsUChar(&bval, 8);
+    }
+    if (bits & 0x10000)
+    {
+        bval = to->rendercolor.r;
+        MSG_WriteBitsUChar(&bval, 8);
+        bval = to->rendercolor.g;
+        MSG_WriteBitsUChar(&bval, 8);
+        bval = to->rendercolor.b;
+        MSG_WriteBitsUChar(&bval, 8);
+        bval = to->renderfx;
+        MSG_WriteBitsUChar(&bval, 8);
+    }
+    if (bits & 0x20000)
+    {
+        bval = to->renderamt;
+        MSG_WriteBitsUChar(&bval, 8);
+    }
+    if (bits & 0x80000)
+    {
+        bval = to->frame;
+        MSG_WriteBitsUChar(&bval, 8);
+    }
+    if (bits & 0x40000)
+    {
+        bval = to->animtime;
+        MSG_WriteBitsUChar(&bval, 8);
+    }
+}
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027EA70);
 typedef struct packet_entities_s
 {
@@ -2154,13 +2340,6 @@ qboolean CM_HeadnodeVisible(mnode_t *node, byte *visbits);
 
 /* rodata não migrada: início */
 __asm__(".section .rodata\n"
-        ".align 3\n"
-        ".globl D_0038F310\n"
-        "D_0038F310:\n"
-        ".asciz \"Unset entity number\"\n"
-        ".align 2\n"
-        ".asciz \"\"\n"
-        ".align 2\n"
         ".align 3\n"
         ".globl D_0038F328\n"
         "D_0038F328:\n"
