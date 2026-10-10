@@ -2481,9 +2481,89 @@ void Host_ClearGameState(void)
     gEntityInterface.pfnResetGlobalState();
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Changelevel2_f);
+extern float D_003324AC;
+extern int protocol_version;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Version_f);
+void Host_Changelevel2_f(void)
+{
+    char level[64];
+    char oldlevel[64];
+    char _startspot[64];
+    char name[256];
+    char *startspot;
+    int newLevel;
+
+    newLevel = 0;
+    giActive = 4;
+
+    if (Cmd_Argc() < 2)
+    {
+        Con_Printf("changelevel2 <levelname> : continue game on a new level in the unit\n");
+        return;
+    }
+
+    if (!sv.active || sv.paused)
+    {
+        Con_Printf(D_003924F8);
+        return;
+    }
+
+    func_002AC478(0);
+    func_002CD340(1, 0);
+    func_0021C340();
+
+    strcpy(level, Cmd_Argv(1));
+
+    if (Cmd_Argc() == 2)
+    {
+        startspot = NULL;
+    }
+    else
+    {
+        strcpy(_startspot, Cmd_Argv(2));
+        startspot = NULL;
+        if (_startspot[0])
+            startspot = _startspot;
+    }
+
+    strcpy(oldlevel, sv.name);
+    SaveExit(SaveGamestate());
+
+    sprintf(name, D_00392640, Host_SaveGameDirectory(), sv.name);
+    func_00217560(Host_SaveGameDirectory(), sv.name);
+    func_0022B310(name, 5);
+
+    if (!SV_SpawnServer(false, level, startspot))
+    {
+        Sys_Error("Couldn't load map %s\n", level);
+        return;
+    }
+
+    if (!LoadGamestate(level, 0))
+    {
+        newLevel = 1;
+        SV_LoadEntities();
+    }
+
+    LoadAdjacentEntities(oldlevel, startspot);
+    func_00236A10();
+    D_00332F34 = 0;
+    sv.paused = true;
+    sv.loadgame = true;
+    gGlobalVariables.time = sv.time;
+
+    if (newLevel && D_003324AC != 0)
+        Host_ClearSaveDirectory();
+
+    SV_ActivateServer(0);
+}
+
+
+void Host_Version_f(void)
+{
+    Con_Printf("Protocol version %i\nExe version %s\n", protocol_version, gpszVersionString);
+    Con_Printf("Exe build: 19:15:23 Oct 19 2001 (%i)\n", build_number());
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_FullInfo_f);
 
