@@ -1434,7 +1434,39 @@ INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027D380);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027D480);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027D778);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027D938);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027DA98);
+//func_0027DA98
+typedef struct master_s
+{
+    int heartbeat;              /* 0x00 */
+    int unk_4;                  /* 0x04 */
+    int challenge;              /* 0x08 */
+    int unk_C[2];               /* 0x0C */
+    netadr_t adr;               /* 0x14 */
+    struct master_s *next;      /* 0x1C */
+} master_t;
+
+extern master_t *valvemaster_adr;
+qboolean NET_CompareAdr(netadr_t a, netadr_t b);
+int MSG_ReadLong(void);
+void Master_Heartbeat(master_t *p);
+
+void func_0027DA98(void)
+{
+    master_t *p;
+
+    if (!valvemaster_adr)
+        return;
+
+    for (p = valvemaster_adr; p; p = p->next)
+    {
+        if (!NET_CompareAdr(p->adr, net_from))
+            continue;
+        p->heartbeat = 0;
+        p->challenge = MSG_ReadLong();
+        Master_Heartbeat(p);
+        break;
+    }
+}
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027DB10);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027DE58);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027DEE8);
@@ -1515,8 +1547,19 @@ void SV_ClearDatagram(void)
 {
     SZ_Clear(&sv.datagram);
 }
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027E258);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027E3B0);
+INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_AddToFatPVS);
+//SV_FatPVS
+extern int fatbytes;
+extern byte fatpvs[];
+void SV_AddToFatPVS(float *org, mnode_t *node);
+
+byte *SV_FatPVS(float *org)
+{
+    fatbytes = (sv.worldmodel->numleafs + 31) >> 3;
+    memset(fatpvs, 0, fatbytes);
+    SV_AddToFatPVS(org, sv.worldmodel->nodes);
+    return fatpvs;
+}
 int SV_PointLeafnum(vec_t *p)
 {
     mleaf_t *leaf;
@@ -1534,7 +1577,17 @@ void func_0027F910(int a, int b, int c)
 {
     func_0027F670(0, a, b, c);
 }
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027F940);
+//func_0027F940
+extern int host_framecount;
+
+int func_0027F940(int a0)
+{
+    if (svs.maxclientslimit == 1)
+        return host_framecount % 30 == 0;
+    if (a0 == host_framecount % svs.maxclientslimit)
+        return 1;
+    return 0;
+}
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027F9A0);
 /* rodata não migrada: início */
 __asm__(".section .rodata\n"
@@ -1554,7 +1607,19 @@ __asm__(".section .rodata\n"
 /* rodata não migrada: fim */
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00280700);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00280B30);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00280C48);
+//SV_CleanupEnts
+void SV_CleanupEnts(void)
+{
+    int i;
+    edict_t *ent;
+
+    for (i = 1; i < sv.num_edicts; i++)
+    {
+        ent = &sv.edicts[i];
+        ent->v.effects &= ~2;
+        ent->v.effects &= ~0x20;
+    }
+}
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00280CB8);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00280FC8);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_002810D8);
@@ -1584,7 +1649,20 @@ void SV_LoadEntities(void)
 {
     ED_LoadFromFile(sv.worldmodel->entities);
 }
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00282DB8);
+//SV_ClearEntities
+void ReleaseEntityDLLFields(edict_t *pEdict);
+
+void SV_ClearEntities(void)
+{
+    int i;
+
+    for (i = 0; i < sv.num_edicts; i++)
+    {
+        edict_t *ent = sv.edicts + i;
+        if (!ent->free)
+            ReleaseEntityDLLFields(ent);
+    }
+}
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00282E40);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_SendUserReg);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00283018);

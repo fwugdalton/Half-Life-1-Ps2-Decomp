@@ -7,6 +7,14 @@
 "svs"
 ]
 },
+"SV_AddToFatPVS": {
+"migrated": [],
+"refs": [
+"fatbytes",
+"fatpvs",
+"sv"
+]
+},
 "SV_BroadcastCommand": {
 "migrated": [],
 "refs": [

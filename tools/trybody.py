@@ -16,6 +16,8 @@ try:
         if r.returncode: print(v, 'ERRO', r.stderr[-500:]); continue
         funcs, text, relocs = c.obj_funcs(obj)
         sa = c.symaddrs()
+        mm = re.match(r'func_([0-9A-Fa-f]{8})$', fn)
+        if mm and fn not in sa: sa[fn] = int(mm.group(1), 16)
         for name, off, size in funcs:
             if name == fn:
                 ok, diffs = c.compare(name, off, size, text, relocs, sa[name])

@@ -91,7 +91,7 @@ void Key_WriteBindings(FileHandle_t f);
 void Key_Init(void);
 void func_002CFD08(void *p);
 void func_0024FE00(int player);
-void func_00282DB8(void);
+void SV_ClearEntities(void);
 void func_002B05F8(void);
 void func_0029F6A8(void);
 void func_002885A0(client_t *cl);
@@ -617,7 +617,7 @@ void Host_ShutdownServer(qboolean crash)
             SV_DropClient(host_client, crash);
     }
 
-    func_00282DB8();
+    SV_ClearEntities();
     memset(&sv, 0, sizeof(sv));
     func_0024FE00(0);
     SV_ClearClientStates();
@@ -647,7 +647,7 @@ void Host_ClearMemory(qboolean bQuiet)
     int j;
 
     CM_FreePAS();
-    func_00282DB8();
+    SV_ClearEntities();
 
     if (!bQuiet)
         Con_DPrintf("Clearing memory\n");
