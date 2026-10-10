@@ -967,3 +967,4 @@ SV_AddEntitiesToPacket = 0x00280700; // type:func
 MSG_WriteBitsShort = 0x00242BC0; // type:func
 SV_SpawnServer = 0x002825C8; // type:func
 SV_ConnectClient = 0x0027C7F8; // type:func
+SV_WritePlayersToClient = 0x0027F9A0; // type:func

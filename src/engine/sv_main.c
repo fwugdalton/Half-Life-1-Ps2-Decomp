@@ -2199,11 +2199,11 @@ void SV_CheckTimeouts(void)
         }
     }
 }
-int func_0027E140(void)
+int func_0027E140(client_t *cl)
 {
     return 0;
 }
-int func_0027E148(void)
+int func_0027E148(client_t *cl)
 {
     return 0;
 }
@@ -2605,7 +2605,575 @@ int func_0027F940(int a0)
         return 1;
     return 0;
 }
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027F9A0);
+extern int D_00399354; /* PF_COMMAND */
+extern int D_00399358;
+extern int D_00399360;
+extern int D_00399364;
+extern int D_00399368;
+extern unsigned char D_0039936C;
+extern int D_00399370;
+extern int D_00399374;
+extern int D_00399378;
+extern int D_0039937C;
+extern unsigned char D_00399380;
+extern int D_00399384;
+extern int D_00399388;
+extern int D_0039938C;
+extern int D_00399390;
+extern int D_00399394; /* PF_MSEC */
+extern int D_00399398;
+extern int D_0039939C;
+extern int D_003993A0;
+extern unsigned char D_003993A4;
+extern int D_003993A8;
+extern int D_003993AC;
+extern int D_003993B0;
+extern unsigned char D_003993B4;
+extern int D_003993B8;
+extern int D_003993C0;
+extern int D_003993C4;
+extern int D_003993CC;
+extern int D_003993D0;
+extern unsigned char D_003993D4;
+extern int D_003993D8;
+extern int D_003993DC;
+extern int D_003993E0;
+extern int D_003993E4;
+extern float D_00334764;
+int func_0027E140(client_t *cl);
+int func_0027E148(client_t *cl);
+void func_00242C28(int *data, int numbits);
+void func_00242508(usercmd_t *from, usercmd_t *to);
+int SV_ModelIndex(char *name);
+
+extern int D_00399354; /* PF_COMMAND */
+extern int D_00399358;
+extern int D_00399360;
+extern int D_00399364;
+extern int D_00399368;
+extern unsigned char D_0039936C;
+extern int D_00399370;
+extern int D_00399374;
+extern int D_00399378;
+extern int D_0039937C;
+extern unsigned char D_00399380;
+extern int D_00399384;
+extern int D_00399388;
+extern int D_0039938C;
+extern int D_00399390;
+extern int D_00399394; /* PF_MSEC */
+extern int D_00399398;
+extern int D_0039939C;
+extern int D_003993A0;
+extern unsigned char D_003993A4;
+extern int D_003993A8;
+extern int D_003993AC;
+extern int D_003993B0;
+extern unsigned char D_003993B4;
+extern int D_003993B8;
+extern int D_003993C0;
+extern int D_003993C4;
+extern int D_003993CC;
+extern int D_003993D0;
+extern unsigned char D_003993D4;
+extern int D_003993D8;
+extern int D_003993DC;
+extern int D_003993E0;
+extern int D_003993E4;
+extern float D_00334764;
+int func_0027E140(client_t *cl);
+int func_0027E148(client_t *cl);
+void func_00242C28(int *data, int numbits);
+void func_00242508(usercmd_t *from, usercmd_t *to);
+int SV_ModelIndex(char *name);
+
+extern int D_00399354; /* PF_COMMAND */
+extern int D_00399358;
+extern int D_00399360;
+extern int D_00399364;
+extern int D_00399368;
+extern unsigned char D_0039936C;
+extern int D_00399370;
+extern int D_00399374;
+extern int D_00399378;
+extern int D_0039937C;
+extern unsigned char D_00399380;
+extern int D_00399384;
+extern int D_00399388;
+extern int D_0039938C;
+extern int D_00399390;
+extern int D_00399394; /* PF_MSEC */
+extern int D_00399398;
+extern int D_0039939C;
+extern int D_003993A0;
+extern unsigned char D_003993A4;
+extern int D_003993A8;
+extern int D_003993AC;
+extern int D_003993B0;
+extern unsigned char D_003993B4;
+extern int D_003993B8;
+extern int D_003993C0;
+extern int D_003993C4;
+extern int D_003993CC;
+extern int D_003993D0;
+extern unsigned char D_003993D4;
+extern int D_003993D8;
+extern int D_003993DC;
+extern int D_003993E0;
+extern int D_003993E4;
+extern float D_00334764;
+int func_0027E140(client_t *cl);
+int func_0027E148(client_t *cl);
+void func_00242C28(int *data, int numbits);
+void func_00242508(usercmd_t *from, usercmd_t *to);
+int SV_ModelIndex(char *name);
+
+extern int D_00399354; /* PF_COMMAND */
+extern int D_00399358;
+extern int D_00399360;
+extern int D_00399364;
+extern int D_00399368;
+extern unsigned char D_0039936C;
+extern int D_00399370;
+extern int D_00399374;
+extern int D_00399378;
+extern int D_0039937C;
+extern unsigned char D_00399380;
+extern int D_00399384;
+extern int D_00399388;
+extern int D_0039938C;
+extern int D_00399390;
+extern int D_00399394; /* PF_MSEC */
+extern int D_00399398;
+extern int D_0039939C;
+extern int D_003993A0;
+extern unsigned char D_003993A4;
+extern int D_003993A8;
+extern int D_003993AC;
+extern int D_003993B0;
+extern unsigned char D_003993B4;
+extern int D_003993B8;
+extern int D_003993C0;
+extern int D_003993C4;
+extern int D_003993CC;
+extern int D_003993D0;
+extern unsigned char D_003993D4;
+extern int D_003993D8;
+extern int D_003993DC;
+extern int D_003993E0;
+extern int D_003993E4;
+extern float D_00334764;
+int func_0027E140(client_t *cl);
+int func_0027E148(client_t *cl);
+void func_00242C28(int *data, int numbits);
+void func_00242508(usercmd_t *from, usercmd_t *to);
+int SV_ModelIndex(char *name);
+
+extern int D_00399354; /* PF_COMMAND */
+extern int D_00399358;
+extern int D_00399360;
+extern int D_00399364;
+extern int D_00399368;
+extern unsigned char D_0039936C;
+extern int D_00399370;
+extern int D_00399374;
+extern int D_00399378;
+extern int D_0039937C;
+extern unsigned char D_00399380;
+extern int D_00399384;
+extern int D_00399388;
+extern int D_0039938C;
+extern int D_00399390;
+extern int D_00399394; /* PF_MSEC */
+extern int D_00399398;
+extern int D_0039939C;
+extern int D_003993A0;
+extern unsigned char D_003993A4;
+extern int D_003993A8;
+extern int D_003993AC;
+extern int D_003993B0;
+extern unsigned char D_003993B4;
+extern int D_003993B8;
+extern int D_003993C0;
+extern int D_003993C4;
+extern int D_003993CC;
+extern int D_003993D0;
+extern unsigned char D_003993D4;
+extern int D_003993D8;
+extern int D_003993DC;
+extern int D_003993E0;
+extern int D_003993E4;
+extern float D_00334764;
+int func_0027E140(client_t *cl);
+int func_0027E148(client_t *cl);
+void func_00242C28(int *data, int numbits);
+void func_00242508(usercmd_t *from, usercmd_t *to);
+int SV_ModelIndex(char *name);
+
+void SV_WritePlayersToClient(client_t *client, byte *pvs, sizebuf_t *msg)
+{
+    usercmd_t cmd;
+    byte flags;
+    byte bval;
+    short sval;
+    unsigned short usval;
+    int j;
+    int ival;
+    int i;
+    client_t *cl;
+    edict_t *clent;
+    edict_t *ent;
+    int pflags;
+    int visible;
+    int forced;
+    int msec;
+
+    clent = client->edict;
+
+    for (j = 0, cl = svs.clients; j < svs.maxclients; j++, cl++)
+    {
+        if (!cl->spawned && !cl->active)
+            continue;
+
+        ent = cl->edict;
+        visible = 1;
+        forced = func_0027F940(j);
+
+        if (ent != clent && !(client->spec_track && client->spec_track - 1 == j))
+        {
+            if (cl->spectator)
+            {
+                visible = 0;
+            }
+            else if (ent->leafnums)
+            {
+                for (i = 0; i < ent->num_leafs; i++)
+                {
+                    if (pvs[ent->leafnums[i] >> 3] & (1 << (ent->leafnums[i] & 7)))
+                        break;
+                }
+                if (i == ent->num_leafs)
+                    visible = 0;
+            }
+        }
+
+        if (!visible && !forced)
+            continue;
+
+        pflags = D_00399394 | D_00399354;
+
+        if (ent->v.modelindex != sv_playermodel)
+        {
+            if (ent->v.modelindex >= 256)
+                pflags |= D_003993CC;
+            else
+                pflags |= D_0039939C;
+        }
+
+        if (ent->v.weaponmodel)
+            pflags |= D_003993D8;
+
+        if (ent->v.sequence || ent->v.animtime)
+            pflags |= D_00399388;
+
+        if (ent->v.gaitsequence)
+            pflags |= D_00399378;
+
+        if (ent->v.velocity[0] || ent->v.velocity[1])
+            pflags |= D_00399374;
+
+        if (ent->v.velocity[2])
+            pflags |= D_003993A0;
+
+        if (ent->v.effects)
+            pflags |= D_00399368;
+
+        if (ent->v.framerate != 1.0f)
+            pflags |= D_0039938C;
+
+        if (ent->v.clbasevelocity[0] || ent->v.clbasevelocity[1] || ent->v.clbasevelocity[2])
+            pflags |= D_0039937C;
+
+        for (i = 0; i < 4; i++)
+        {
+            if (ent->v.controller[i])
+                pflags |= D_003993B8 << i;
+        }
+
+        for (i = 0; i < 2; i++)
+        {
+            if (ent->v.blending[i])
+                pflags |= D_00399364 << i;
+        }
+
+        if (ent->v.body)
+            pflags |= D_00399360;
+
+        if (ent->v.skin)
+            pflags |= D_003993A8;
+
+        if (ent->v.friction != 1.0f)
+            pflags |= D_003993B0;
+
+        if (ent->v.rendermode || ent->v.renderamt || ent->v.renderfx
+            || ent->v.rendercolor[0] || ent->v.rendercolor[1] || ent->v.rendercolor[2])
+            pflags |= D_003993D0;
+
+        if (ent->v.health <= 0)
+            pflags |= D_00399370;
+
+        if (ent->v.movetype != 3)
+            pflags |= D_003993DC;
+
+        if (cl->spectator)
+            pflags &= D_00399374 | D_003993A0;
+        else if (ent == clent)
+            pflags &= ~D_00399394;
+
+        if (ent == clent && sv.active && cls[0].state == 5 && client->netchan.remote_address.type == 1
+            && D_00334764 == 0)
+            pflags |= D_00399374 | D_003993A0;
+
+        if (forced)
+        {
+            if (visible)
+                pflags |= D_00399384;
+            else
+                pflags = D_00399384;
+        }
+
+        flags = 0;
+        if (ent->v.flags & 0x1000000)
+            flags = D_003993D4;
+        if (ent->v.flags & 0x4000)
+            flags |= D_003993A4;
+        if (ent->v.flags & 0x1000)
+            flags |= D_003993B4;
+        if (ent->v.flags & 0x4000000)
+            flags |= D_0039936C;
+        if (ent->v.flags & 0x800)
+            flags |= D_00399380;
+
+        MSG_WriteByte(msg, 43);
+
+        if (pflags >= 256)
+            pflags |= D_00399398;
+        if (pflags > 0xFFFF)
+            pflags |= D_003993E4;
+        if (pflags > 0xFFFFFF)
+            pflags |= D_00399358;
+
+        MSG_WriteByte(msg, pflags);
+        if (pflags & D_00399398)
+            MSG_WriteByte(msg, pflags >> 8);
+        if (pflags & D_003993E4)
+            MSG_WriteByte(msg, pflags >> 16);
+        if (pflags & D_00399358)
+            MSG_WriteByte(msg, pflags >> 24);
+
+        MSG_StartBitWriting(msg);
+
+        if (cl->spectator)
+            j |= 0x40;
+        MSG_WriteBitsUChar((byte *)&j, 6);
+        MSG_WriteBitsUChar(&flags, 5);
+
+        for (i = 0; i < 3; i++)
+        {
+            ival = ent->v.origin[i] * 32;
+            func_00242C28(&ival, 18);
+        }
+
+        bval = ent->v.frame;
+        MSG_WriteBitsUChar(&bval, 8);
+
+        if (pflags & D_00399354)
+        {
+            usercmd_t nullcmd;
+
+            cmd = cl->lastcmd;
+
+            if (ent->v.health <= 0)
+            {
+                cmd.viewangles[0] = 0;
+                cmd.viewangles[1] = ent->v.angles[1];
+                cmd.viewangles[0] = 0;
+            }
+
+            cmd.buttons = 0;
+            cmd.impulse = 0;
+
+            memset(&nullcmd, 0, sizeof(nullcmd));
+            func_00242508(&cmd, &nullcmd);
+        }
+
+        if (pflags & D_00399394)
+        {
+            msec = 1000 * (sv.time - cl->localtime);
+            if (msec > 255)
+                msec = 255;
+            bval = msec;
+            MSG_WriteBitsUChar(&bval, 8);
+        }
+
+        if (pflags & D_00399374)
+        {
+            sval = ent->v.velocity[0] * 8;
+            MSG_WriteBitsShort(&sval, 14);
+            sval = ent->v.velocity[1] * 8;
+            MSG_WriteBitsShort(&sval, 14);
+        }
+
+        if (pflags & D_003993A0)
+        {
+            sval = ent->v.velocity[2] * 8;
+            MSG_WriteBitsShort(&sval, 14);
+        }
+
+        if (pflags & D_0039939C)
+        {
+            bval = ent->v.modelindex;
+            MSG_WriteBitsUChar(&bval, 8);
+        }
+        else if (pflags & D_003993CC)
+        {
+            usval = ent->v.modelindex;
+            MSG_WriteBitsUShort(&usval, 10);
+        }
+
+        if (pflags & D_003993A8)
+        {
+            usval = ent->v.skin;
+            MSG_WriteBitsUShort(&usval, 10);
+        }
+
+        if (pflags & D_00399368)
+        {
+            usval = ent->v.effects;
+            MSG_WriteBitsUShort(&usval, 10);
+        }
+
+        if ((pflags & D_003993D8) || (pflags & D_003993C0))
+        {
+            if (pflags & D_003993D8)
+            {
+                usval = SV_ModelIndex(pr_strings + ent->v.weaponmodel);
+                MSG_WriteBitsUShort(&usval, 10);
+            }
+            else
+            {
+                bval = SV_ModelIndex(pr_strings + ent->v.weaponmodel);
+                MSG_WriteBitsUChar(&bval, 8);
+            }
+        }
+
+        if (pflags & D_003993DC)
+        {
+            bval = ent->v.movetype;
+            MSG_WriteBitsUChar(&bval, 4);
+        }
+
+        if (pflags & D_00399388)
+        {
+            bval = ent->v.sequence;
+            MSG_WriteBitsUChar(&bval, 8);
+            bval = ent->v.animtime * 100;
+            MSG_WriteBitsUChar(&bval, 8);
+        }
+
+        if (pflags & D_003993D0)
+        {
+            bval = ent->v.rendermode;
+            MSG_WriteBitsUChar(&bval, 8);
+            bval = ent->v.renderamt;
+            MSG_WriteBitsUChar(&bval, 8);
+            bval = ent->v.rendercolor[0];
+            MSG_WriteBitsUChar(&bval, 8);
+            bval = ent->v.rendercolor[1];
+            MSG_WriteBitsUChar(&bval, 8);
+            bval = ent->v.rendercolor[2];
+            MSG_WriteBitsUChar(&bval, 8);
+            bval = ent->v.renderfx;
+            MSG_WriteBitsUChar(&bval, 8);
+        }
+
+        if (pflags & D_0039938C)
+        {
+            bval = ent->v.framerate * 16;
+            MSG_WriteBitsUChar(&bval, 8);
+        }
+
+        if (pflags & D_00399360)
+        {
+            bval = ent->v.body;
+            MSG_WriteBitsUChar(&bval, 8);
+        }
+
+        if (pflags & D_003993B8)
+        {
+            bval = ent->v.controller[0];
+            MSG_WriteBitsUChar(&bval, 8);
+        }
+        if (pflags & D_00399390)
+        {
+            bval = ent->v.controller[1];
+            MSG_WriteBitsUChar(&bval, 8);
+        }
+        if (pflags & D_003993AC)
+        {
+            bval = ent->v.controller[2];
+            MSG_WriteBitsUChar(&bval, 8);
+        }
+        if (pflags & D_003993E0)
+        {
+            bval = ent->v.controller[3];
+            MSG_WriteBitsUChar(&bval, 8);
+        }
+        if (pflags & D_00399364)
+        {
+            bval = ent->v.blending[0];
+            MSG_WriteBitsUChar(&bval, 8);
+        }
+        if (pflags & D_003993C4)
+        {
+            bval = ent->v.blending[1];
+            MSG_WriteBitsUChar(&bval, 8);
+        }
+
+        if (pflags & D_0039937C)
+        {
+            sval = ent->v.clbasevelocity[0] * 8;
+            MSG_WriteBitsShort((short *)&usval, 16);
+            sval = ent->v.clbasevelocity[1] * 8;
+            MSG_WriteBitsShort((short *)&usval, 16);
+            sval = ent->v.clbasevelocity[2] * 8;
+            MSG_WriteBitsShort((short *)&usval, 16);
+        }
+
+        if (pflags & D_003993B0)
+        {
+            usval = ent->v.friction * 8;
+            MSG_WriteBitsShort((short *)&usval, 16);
+        }
+
+        if (pflags & D_00399384)
+        {
+            usval = func_0027E140(cl);
+            MSG_WriteBitsUShort(&usval, 12);
+            bval = func_0027E148(cl);
+            bval = (bval > 63) ? 63 : bval;
+            MSG_WriteBitsUChar(&bval, 6);
+        }
+
+        if (pflags & D_00399378)
+        {
+            bval = ent->v.gaitsequence;
+            MSG_WriteBitsUChar(&bval, 8);
+        }
+
+        MSG_EndBitWriting(msg);
+    }
+}
 extern cvar_t D_00332718;
 extern int D_0033272C;
 extern int cl_numlocal;
@@ -2738,7 +3306,7 @@ void SV_AddEntitiesToPacket(full_packet_entities_t *pack, int start, byte *pvs)
     }
 }
 byte *SV_FatPVS(float *org);
-void func_0027F9A0(client_t *client, byte *pvs, sizebuf_t *msg);
+void SV_WritePlayersToClient(client_t *client, byte *pvs, sizebuf_t *msg);
 void SV_AddEntitiesToPacket(full_packet_entities_t *pack, int maxclients, byte *pvs);
 
 void SV_WriteEntitiesToClient(client_t *client, sizebuf_t *msg)
@@ -2762,7 +3330,7 @@ void SV_WriteEntitiesToClient(client_t *client, sizebuf_t *msg)
     }
 
     pvs = SV_FatPVS(org);
-    func_0027F9A0(client, pvs, msg);
+    SV_WritePlayersToClient(client, pvs, msg);
 
     fullpack.num_entities = 0;
     SV_AddEntitiesToPacket(&fullpack, svs.maxclients + 1, pvs);
