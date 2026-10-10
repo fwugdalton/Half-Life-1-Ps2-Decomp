@@ -1764,7 +1764,85 @@ void func_0027DA98(void)
         break;
     }
 }
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_ConnectionlessPacket);
+void MSG_BeginReading(void);
+char *MSG_ReadStringLine(void);
+int MSG_ReadByte(void);
+char *MSG_ReadString(void);
+void Cmd_TokenizeString(char *text);
+extern cvar_t sv_logrelay;
+void func_0027D0F0(void);
+void func_0027C7F8(void);
+void func_00297D10(netadr_t *adr);
+
+void SV_ConnectionlessPacket(void)
+{
+    char *args;
+    char *c;
+    char *line;
+
+    MSG_BeginReading();
+    MSG_ReadLong();
+
+    args = MSG_ReadStringLine();
+    line = args;
+    Cmd_TokenizeString(args);
+    c = Cmd_Argv(0);
+
+    if (!strcmp(c, "ping") || (c[0] == 'i' && (c[1] == 0 || c[1] == '\n')))
+    {
+        SVC_Ping();
+        return;
+    }
+
+    if (c[0] == 'l' && (c[1] == 0 || c[1] == '\n'))
+    {
+        MSG_BeginReading();
+        MSG_ReadLong();
+        MSG_ReadByte();
+        Con_DPrintf(MSG_ReadString());
+        return;
+    }
+
+    if (c[0] == 'j' && (c[1] == 0 || c[1] == '\n'))
+    {
+        Con_Printf("A2A_ACK from %s\n", NET_AdrToString(net_from));
+        return;
+    }
+
+    if (c[0] == 's' && (c[1] == 0 || c[1] == '\n'))
+    {
+        func_0027DA98();
+        return;
+    }
+
+    if (!strcasecmp(c, "log"))
+    {
+        if (sv_logrelay.value && args && strlen(args) > 4)
+        {
+            args += 4;
+            if (args && line[4])
+                Con_Printf("%s\n", args);
+        }
+    }
+    else if (!strcmp(c, "status"))
+        func_0027D0F0();
+    else if (!strcmp(c, "getchallenge"))
+        SVC_GetChallenge();
+    else if (!strcasecmp(c, "info"))
+        SVC_Info(false);
+    else if (!strcasecmp(c, "details"))
+        SVC_Info(true);
+    else if (!strcasecmp(c, "players"))
+        SVC_PlayerInfo();
+    else if (!strcasecmp(c, "rules"))
+        SVC_RuleInfo();
+    else if (!strcmp(c, "connect"))
+        func_0027C7F8();
+    else if (!strcmp(c, "rcon"))
+        func_00297D10(&net_from);
+    else
+        Con_Printf("bad connectionless packet from %s:\n%s\n", NET_AdrToString(net_from), args);
+}
 extern cvar_t sv_maxrate;
 extern cvar_t sv_minrate;
 
@@ -1823,70 +1901,6 @@ void SV_ReadPackets(void)
 extern cvar_t sv_timeout;
 void SV_BroadcastPrintf(char *fmt, ...);
 
-/* rodata não migrada: início */
-__asm__(".section .rodata\n"
-        ".align 3\n"
-        ".globl D_0038F280\n"
-        "D_0038F280:\n"
-        ".asciz \"log\"\n"
-        ".align 2\n"
-        ".asciz \"\"\n"
-        ".align 2\n"
-        ".align 3\n"
-        ".globl D_0038F288\n"
-        "D_0038F288:\n"
-        ".asciz \"%s\\n\"\n"
-        ".align 2\n"
-        ".asciz \"\"\n"
-        ".align 2\n"
-        ".align 3\n"
-        ".globl D_0038F290\n"
-        "D_0038F290:\n"
-        ".asciz \"status\"\n"
-        ".align 2\n"
-        ".align 3\n"
-        ".globl D_0038F298\n"
-        "D_0038F298:\n"
-        ".asciz \"getchallenge\"\n"
-        ".align 2\n"
-        ".align 3\n"
-        ".globl D_0038F2A8\n"
-        "D_0038F2A8:\n"
-        ".asciz \"info\"\n"
-        ".align 2\n"
-        ".align 3\n"
-        ".globl D_0038F2B0\n"
-        "D_0038F2B0:\n"
-        ".asciz \"details\"\n"
-        ".align 2\n"
-        ".align 3\n"
-        ".globl D_0038F2B8\n"
-        "D_0038F2B8:\n"
-        ".asciz \"players\"\n"
-        ".align 2\n"
-        ".align 3\n"
-        ".globl D_0038F2C0\n"
-        "D_0038F2C0:\n"
-        ".asciz \"rules\"\n"
-        ".align 2\n"
-        ".align 3\n"
-        ".globl D_0038F2C8\n"
-        "D_0038F2C8:\n"
-        ".asciz \"connect\"\n"
-        ".align 2\n"
-        ".align 3\n"
-        ".globl D_0038F2D0\n"
-        "D_0038F2D0:\n"
-        ".asciz \"rcon\"\n"
-        ".align 2\n"
-        ".align 3\n"
-        ".globl D_0038F2D8\n"
-        "D_0038F2D8:\n"
-        ".asciz \"bad connectionless packet from %s:\\n%s\\n\"\n"
-        ".align 2\n"
-        ".align 3\n"
-        ".section .text\n");
-/* rodata não migrada: fim */
 void SV_CheckTimeouts(void)
 {
     int i;
@@ -2193,7 +2207,99 @@ void SV_CleanupEnts(void)
         ent->v.effects &= ~0x20;
     }
 }
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_WriteClientdataToMessage);
+void func_00289058(void);
+void MSG_WriteHangle(sizebuf_t *sb, float f);
+void MSG_WriteChar(sizebuf_t *sb, int c);
+int SV_ModelIndex(char *name);
+
+#define svc_choke 44
+#define svc_addangle 38
+#define svc_setangle 10
+#define svc_clientdata 15
+#define DEFAULT_VIEWHEIGHT 22
+
+void SV_WriteClientdataToMessage(client_t *client, sizebuf_t *msg)
+{
+    int bits;
+    int i;
+    edict_t *ent;
+
+    ent = client->edict;
+
+    if (client->chokecount)
+    {
+        MSG_WriteByte(msg, svc_choke);
+        MSG_WriteByte(msg, client->chokecount);
+        client->chokecount = 0;
+    }
+
+    func_00289058();
+
+    if (ent->v.fixangle)
+    {
+        if (ent->v.fixangle == 2)
+        {
+            MSG_WriteByte(msg, svc_addangle);
+            MSG_WriteHangle(msg, ent->v.avelocity[1]);
+            ent->v.avelocity[1] = 0;
+        }
+        else
+        {
+            MSG_WriteByte(msg, svc_setangle);
+            for (i = 0; i < 3; i++)
+                MSG_WriteHangle(msg, ent->v.angles[i]);
+        }
+        ent->v.fixangle = 0;
+    }
+
+    bits = 0;
+
+    if (ent->v.view_ofs[2] != DEFAULT_VIEWHEIGHT)
+        bits |= 1;
+    if (ent->v.idealpitch)
+        bits |= 2;
+    if (ent->v.weapons)
+        bits |= 0x100;
+    if (ent->v.flags & 0x200)
+        bits |= 0x400;
+    if (ent->v.waterlevel >= 2)
+        bits |= 0x800;
+    if (ent->v.waterlevel >= 3)
+        bits |= 0x8000;
+    if (ent->v.viewmodel)
+        bits |= 0x200;
+
+    for (i = 0; i < 3; i++)
+    {
+        if (ent->v.punchangle[i])
+            bits |= (4 << i);
+        if (ent->v.velocity[i])
+            bits |= (0x20 << i);
+    }
+
+    MSG_WriteByte(msg, svc_clientdata);
+    MSG_WriteShort(msg, bits);
+
+    if (bits & 1)
+        MSG_WriteChar(msg, ent->v.view_ofs[2]);
+    if (bits & 2)
+        MSG_WriteChar(msg, ent->v.idealpitch);
+
+    for (i = 0; i < 3; i++)
+    {
+        if (bits & (4 << i))
+            MSG_WriteHangle(msg, ent->v.punchangle[i]);
+        if (bits & (0x20 << i))
+            MSG_WriteChar(msg, ent->v.velocity[i] / 16);
+    }
+
+    if (bits & 0x100)
+        MSG_WriteLong(msg, ent->v.weapons);
+    if (bits & 0x200)
+        MSG_WriteShort(msg, SV_ModelIndex(pr_strings + ent->v.viewmodel));
+
+    MSG_WriteShort(msg, ent->v.health);
+}
 void Netchan_Transmit(netchan_t *chan, int length, byte *data, int unk);
 void SV_WriteClientdataToMessage(client_t *client, sizebuf_t *msg);
 void SV_WriteEntitiesToClient(client_t *client, sizebuf_t *msg);

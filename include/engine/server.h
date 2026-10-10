@@ -188,7 +188,8 @@ typedef struct client_s
     qboolean uploading;         /* 0x000C */
     int spec_track;             /* 0x0010 */
     netchan_t netchan;          /* 0x0014 */
-    byte unk_73C4[0x73D4 - 0x73C4];
+    int chokecount;             /* 0x73C4 */
+    byte unk_73C8[0x73D4 - 0x73C8];
     qboolean unk_73D4;          /* 0x73D4 */
     qboolean spectator;         /* 0x73D8 */
     qboolean fakeclient;        /* 0x73DC */

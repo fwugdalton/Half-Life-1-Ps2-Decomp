@@ -332,7 +332,6 @@
 "D_0038F788"
 ],
 "refs": [
-"D_00332410",
 "D_00332428",
 "D_00332458",
 "D_00332470",
@@ -391,6 +390,7 @@
 "sv_friction",
 "sv_gravity",
 "sv_lan",
+"sv_logrelay",
 "sv_maxrate",
 "sv_maxspeed",
 "sv_maxvelocity",
