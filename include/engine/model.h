@@ -39,7 +39,9 @@ typedef struct msurface_s
     byte unk_3C[0x40 - 0x3C];
     short texturemins[2];       /* 0x40 */
     short extents[2];           /* 0x44 */
-    byte unk_48[0x90 - 0x48];
+    byte unk_48[0x78 - 0x48];
+    int cached_light;           /* 0x78: -1 força refazer o lightmap */
+    byte unk_7C[0x90 - 0x7C];
 } msurface_t; /* 0x90 */
 
 typedef struct mleaf_s

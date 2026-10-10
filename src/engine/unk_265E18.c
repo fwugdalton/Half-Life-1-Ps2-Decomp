@@ -44,7 +44,7 @@ extern unsigned int D_0053D1C8;
 extern float D_003995E0;
 extern int D_00399620;
 extern cvar_t crosshair;
-extern refdef_t D_004F94D0;
+extern refdef_t r_refdef;
 extern vrect_t scr_vrect;
 extern client_state_t cl[2];
 extern int cl_numlocal;
@@ -193,7 +193,7 @@ void func_00266188(int nClient)
 	{
 		x = scr_vrect.x + scr_vrect.width / 2;
 		y = scr_vrect.y + scr_vrect.height / 2;
-		VectorAdd(D_004F94D0.viewangles, cl[nClient].punchangle, angles);
+		VectorAdd(r_refdef.viewangles, cl[nClient].punchangle, angles);
 		AngleVectors(angles, forward, NULL, NULL);
 		VectorAdd(r_origin, forward, point);
 		ScreenTransform(point, screen);

@@ -6,7 +6,7 @@
 extern cvar_t sv_uploadinterval;
 extern float realtime;
 extern char sv_upld_flagstr[8];
-extern char sv_upld_typestr[32];
+extern char sv_upld_typestr[16];
 int sprintf(char *, const char *, ...);
 
 enum { t_sound = 0, t_skin, t_model, t_decal, t_generic };

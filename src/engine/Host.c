@@ -123,7 +123,7 @@ int build_number(void);
 void func_00294518(void);
 void func_00277B78(int protocol);
 void Memory_Init(void *buf, int size);
-void func_0028E548(void);
+void V_Init(void);
 void func_00247660(void);
 void COM_Init(char *basedir);
 void Host_InitCommands(void);
@@ -1551,7 +1551,7 @@ int Host_Init(quakeparms_t *parms)
     Cbuf_Init();
     Cmd_Init();
     Cvar_CmdInit();
-    func_0028E548();
+    V_Init();
     func_00247660();
     COM_Init(parms->basedir);
     Host_InitLocal();
