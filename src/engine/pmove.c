@@ -1206,7 +1206,7 @@ extern float pm_stucktime[3];
 extern float rgStuckCheckTime[][2];
 extern pmtrace_t pm_stucktrace;
 extern edict_t *sv_player;
-extern byte *D_003329F4;
+extern byte *g_playertouch;
 extern void (*gEntityInterface_pfnTouch)(edict_t *pentTouched, edict_t *pentOther);
 float Sys_FloatTime(void);
 int PM_TestPlayerPosition(vec3_t pos, int clientId);
@@ -1269,7 +1269,7 @@ int PM_CheckStuck(int clientId)
 	{
 		info = pmove[clientId].physents[hitent].info;
 		ent = EDICT_NUM(info);
-		if (!(ent->v.flags & FL_SPECTATOR) && !((D_003329F4[info / 8] >> (info % 8)) & 1))
+		if (!(ent->v.flags & FL_SPECTATOR) && !((g_playertouch[info / 8] >> (info % 8)) & 1))
 		{
 			trace.allsolid = pm_stucktrace.allsolid;
 			trace.startsolid = pm_stucktrace.startsolid;

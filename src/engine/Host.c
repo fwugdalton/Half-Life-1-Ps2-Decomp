@@ -141,7 +141,7 @@ void CL_Init(int player);
 void func_002C5430(void);
 void func_00294508(void);
 void func_00246FC8(void);
-void func_0027A6B8(void);
+void SV_DeallocateDynamicData(void);
 void func_002CBE40(void);
 void func_002C54C8(void);
 void NET_Shutdown(void);
@@ -1642,7 +1642,7 @@ void Host_Shutdown(void)
     if (cls[0].state != ca_dedicated)
         func_00246FC8();
 
-    func_0027A6B8();
+    SV_DeallocateDynamicData();
     Master_Shutdown(true);
     scr_disabled_for_loading = true;
     func_002CBE40();

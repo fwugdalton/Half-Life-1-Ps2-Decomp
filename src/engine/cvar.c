@@ -10,7 +10,7 @@ int sprintf(char *, const char *, ...);
 char *va(char *format, ...);
 char *Info_Serverinfo(void);
 void Info_SetValueForKey(char *s, char *key, char *value, int maxsize);
-void func_00282170(char *fmt, ...);
+void SV_BroadcastCommand(char *fmt, ...);
 void Log_Printf(char *fmt, ...);
 void SV_BroadcastPrintf(char *fmt, ...);
 void FS_FPrintf(FileHandle_t f, char *fmt, ...);
@@ -147,7 +147,7 @@ void Cvar_Set(char *var_name, char *value)
         if (cls[player].state == ca_dedicated)
         {
             Info_SetValueForKey(Info_Serverinfo(), var_name, value, 512);
-            func_00282170("fullserverinfo \"%s\"\n", Info_Serverinfo());
+            SV_BroadcastCommand("fullserverinfo \"%s\"\n", Info_Serverinfo());
         }
 
         if (cls[player].state != ca_dedicated)

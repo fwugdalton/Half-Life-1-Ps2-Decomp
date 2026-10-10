@@ -1,6 +1,43 @@
 #include "common.h"
 
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027A6B8);
+#include "common.h"
+#include "engine/mathlib.h"
+#include "engine/model.h"
+#include "engine/server.h"
+#include "engine/cvar.h"
+#include "engine/cmd.h"
+
+extern edict_t **g_moved_edict;
+extern vec3_t *g_moved_from;
+extern byte *g_playertouch;
+extern char localinfo[];
+
+double atof(const char *s);
+int atoi(const char *s);
+char *CopyString(char *in);
+char *Info_Serverinfo(void);
+void Info_SetValueForKey(char *s, char *key, char *value, int maxsize);
+void Info_Print(char *s);
+char *NET_AdrToString(netadr_t a);
+qboolean NET_StringToAdr(char *s, netadr_t *a);
+void SV_BroadcastCommand(char *fmt, ...);
+
+#define MAX_SERVERINFO_STRING 512
+#define MAX_LOCALINFO 0x8000
+
+void SV_DeallocateDynamicData(void)
+{
+    if (g_moved_edict)
+        Mem_Free(g_moved_edict);
+    if (g_moved_from)
+        Mem_Free(g_moved_from);
+    if (g_playertouch)
+        Mem_Free(g_playertouch);
+
+    g_moved_edict = NULL;
+    g_moved_from = NULL;
+    g_playertouch = NULL;
+}
 /* rodata não migrada: início */
 __asm__(".section .rodata\n"
         ".globl D_0038E628\n"
@@ -265,54 +302,135 @@ __asm__(".section .rodata\n"
         ".align 3\n"
         ".section .text\n");
 /* rodata não migrada: fim */
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027A730);
-/* rodata não migrada: início */
-__asm__(".section .rodata\n"
-        ".globl D_0038E8F8\n"
-        "D_0038E8F8:\n"
-        ".asciz \"engine/Sv_main.c\"\n"
-        ".align 2\n"
-        ".asciz \"\"\n"
-        ".align 2\n"
-        ".align 3\n"
-        ".globl D_0038E910\n"
-        "D_0038E910:\n"
-        ".asciz \"Reallocate on moved_from\\n\"\n"
-        ".align 2\n"
-        ".asciz \"\"\n"
-        ".align 2\n"
-        ".align 3\n"
-        ".globl D_0038E930\n"
-        "D_0038E930:\n"
-        ".asciz \"Reallocate on playertouch\\n\"\n"
-        ".align 2\n"
-        ".asciz \"\"\n"
-        ".align 2\n"
-        ".align 3\n"
-        ".section .text\n");
-/* rodata não migrada: fim */
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027A880);
-/* rodata não migrada: início */
-__asm__(".section .rodata\n"
-        ".globl D_0038E990\n"
-        "D_0038E990:\n"
-        ".asciz \"Star variables cannot be changed.\\n\"\n"
-        ".align 2\n"
-        ".asciz \"\"\n"
-        ".align 2\n"
-        ".align 3\n"
-        ".globl D_0038E9B8\n"
-        "D_0038E9B8:\n"
-        ".asciz \"fullserverinfo \\\"%s\\\"\\n\"\n"
-        ".align 2\n"
-        ".align 3\n"
-        ".section .text\n");
-/* rodata não migrada: fim */
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027A9B8);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027AA88);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027ABC0);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027ACD0);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027AE50);
+void SV_ReallocateDynamicData(void)
+{
+    int nSize;
+
+    if (!sv.max_edicts)
+    {
+        Con_DPrintf("SV_ReallocateDynamicData with sv.max_edicts == 0");
+        return;
+    }
+
+    nSize = sv.max_edicts;
+
+    if (g_moved_edict)
+        Con_Printf("Reallocate on moved_edict\n");
+    g_moved_edict = Mem_DbgMalloc(nSize * sizeof(edict_t *), "engine/Sv_main.c", 166);
+    memset(g_moved_edict, 0, nSize * sizeof(edict_t *));
+
+    if (g_moved_from)
+        Con_Printf("Reallocate on moved_from\n");
+    g_moved_from = Mem_DbgMalloc(nSize * sizeof(vec3_t), "engine/Sv_main.c", 172);
+    memset(g_moved_from, 0, nSize * sizeof(vec3_t));
+
+    if (g_playertouch)
+        Con_Printf("Reallocate on playertouch\n");
+    g_playertouch = Mem_DbgMalloc((nSize + 7) / 8, "engine/Sv_main.c", 178);
+    memset(g_playertouch, 0, (nSize + 7) / 8);
+}
+void SV_Serverinfo_f(void)
+{
+    cvar_t *var;
+
+    if (Cmd_Argc() == 1)
+    {
+        Con_Printf("Server info settings:\n");
+        Info_Print(Info_Serverinfo());
+        return;
+    }
+
+    if (Cmd_Argc() != 3)
+    {
+        Con_Printf("usage: serverinfo [ <key> <value> ]\n");
+        return;
+    }
+
+    if (Cmd_Argv(1)[0] == '*')
+    {
+        Con_Printf("Star variables cannot be changed.\n");
+        return;
+    }
+
+    Info_SetValueForKey(Info_Serverinfo(), Cmd_Argv(1), Cmd_Argv(2), MAX_SERVERINFO_STRING);
+
+    /* se for uma cvar, muda ela também */
+    var = Cvar_FindVar(Cmd_Argv(1));
+    if (var)
+    {
+        Z_Free(var->string); /* libera a string antiga */
+        var->string = CopyString(Cmd_Argv(2));
+        var->value = atof(var->string);
+    }
+
+    SV_BroadcastCommand("fullserverinfo \"%s\"\n", Info_Serverinfo());
+}
+void SV_Localinfo_f(void)
+{
+    if (Cmd_Argc() == 1)
+    {
+        Con_Printf("Local info settings:\n");
+        Info_Print(localinfo);
+        return;
+    }
+
+    if (Cmd_Argc() != 3)
+    {
+        Con_Printf("usage: localinfo [ <key> <value> ]\n");
+        return;
+    }
+
+    if (Cmd_Argv(1)[0] == '*')
+    {
+        Con_Printf("Star variables cannot be changed.\n");
+        return;
+    }
+
+    Info_SetValueForKey(localinfo, Cmd_Argv(1), Cmd_Argv(2), MAX_LOCALINFO);
+}
+void SV_SetLogAddress_f(void)
+{
+    char *s;
+    int nPort;
+    char szAdr[260];
+    netadr_t adr;
+
+    if (Cmd_Argc() != 3)
+    {
+        Con_Printf("logaddress:  usage\nlogaddress ip port\n");
+        if (svs.log.net_log)
+            Con_Printf("current:  %s\n", NET_AdrToString(svs.log.net_address));
+        return;
+    }
+
+    s = Cmd_Argv(1);
+    nPort = atoi(Cmd_Argv(2));
+    if (!nPort)
+    {
+        Con_Printf("logaddress:  must specify a valid port\n");
+        return;
+    }
+
+    if (!s || *s == '\0')
+    {
+        Con_Printf("logaddress:  unparseable address\n");
+        return;
+    }
+
+    sprintf(szAdr, "%s:%i", s, nPort);
+
+    if (NET_StringToAdr(szAdr, &adr))
+    {
+        svs.log.net_log = true;
+        svs.log.net_address = adr;
+        Con_Printf("logaddress:  %s\n", NET_AdrToString(adr));
+    }
+    else
+        Con_Printf("logaddress:  unable to resolve %s\n", szAdr);
+}
+INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_ServerLog_f);
+INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_User_f);
+INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_Users_f);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_CountPlayers);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027B030);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_StartParticle);
@@ -573,7 +691,7 @@ INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00281BC8);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00281D88);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00281D90);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00281D98);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00282170);
+INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_BroadcastCommand);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00282290);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_002822B0);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_002823C8);

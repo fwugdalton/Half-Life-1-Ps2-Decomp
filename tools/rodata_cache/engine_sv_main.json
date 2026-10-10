@@ -1,0 +1,1052 @@
+{
+"Host_IsSinglePlayerGame": {
+"migrated": [],
+"refs": [
+"cl_maxclients",
+"sv",
+"svs"
+]
+},
+"SV_BroadcastCommand": {
+"migrated": [],
+"refs": [
+"sv",
+"svs"
+]
+},
+"SV_BuildSoundMsg": {
+"migrated": [
+"D_0038ECA0",
+"D_0038ECC0",
+"D_0038ECE0",
+"D_0038ED00",
+"D_0038ED20",
+"D_0038ED40"
+],
+"refs": [
+"D_0038ECA0",
+"D_0038ECC0",
+"D_0038ECE0",
+"D_0038ED00",
+"D_0038ED20",
+"D_0038ED40",
+"sv"
+]
+},
+"SV_CountPlayers": {
+"migrated": [],
+"refs": [
+"svs"
+]
+},
+"SV_DeallocateDynamicData": {
+"migrated": [],
+"refs": [
+"g_moved_edict",
+"g_moved_from",
+"g_playertouch"
+]
+},
+"SV_ExtractFromUserinfo": {
+"migrated": [
+"D_0038F3D8",
+"D_0038F3E0",
+"D_0038F3E8",
+"D_0038F3F0",
+"D_0038F400"
+],
+"refs": [
+"D_0038F050",
+"D_0038F3D8",
+"D_0038F3E0",
+"D_0038F3E8",
+"D_0038F3F0",
+"D_0038F400",
+"D_0053DDC0"
+]
+},
+"SV_FullClientUpdate": {
+"migrated": [],
+"refs": [
+"D_004E2CD8"
+]
+},
+"SV_Init": {
+"migrated": [
+"D_0038F728",
+"D_0038F738",
+"D_0038F748",
+"D_0038F758",
+"D_0038F768",
+"D_0038F778",
+"D_0038F780",
+"D_0038F788"
+],
+"refs": [
+"D_003323E0",
+"D_003323F8",
+"D_00332410",
+"D_00332428",
+"D_00332458",
+"D_00332470",
+"D_00332488",
+"D_003324A0",
+"D_003324D0",
+"D_00332500",
+"D_00332518",
+"D_00332530",
+"D_00332548",
+"D_00332560",
+"D_00332578",
+"D_00332590",
+"D_003325A8",
+"D_003325D8",
+"D_003325F0",
+"D_00332608",
+"D_00332620",
+"D_00332638",
+"D_00332650",
+"D_00332668",
+"D_00332680",
+"D_00332698",
+"D_003326B0",
+"D_003326C8",
+"D_003326E0",
+"D_003326F8",
+"D_00332730",
+"D_00332748",
+"D_00332760",
+"D_00332778",
+"D_00332790",
+"D_003327A8",
+"D_003327C0",
+"D_003327D8",
+"D_003327F0",
+"D_00332808",
+"D_00332820",
+"D_00332838",
+"D_00332850",
+"D_00332868",
+"D_00332880",
+"D_00332898",
+"D_003328B0",
+"D_003328C8",
+"D_003328E0",
+"D_00332968",
+"D_00332980",
+"D_00332998",
+"D_003329B0",
+"D_0038F280",
+"D_0038F728",
+"D_0038F738",
+"D_0038F748",
+"D_0038F758",
+"D_0038F768",
+"D_0038F778",
+"D_0038F780",
+"D_0038F788",
+"D_004D7FC0",
+"SV_Localinfo_f",
+"SV_ServerLog_f",
+"SV_Serverinfo_f",
+"SV_SetLogAddress_f",
+"SV_User_f",
+"SV_Users_f",
+"func_0027BF20",
+"func_0028B308",
+"pm_pushfix",
+"sv_aim",
+"sv_lan",
+"svs",
+"violence_hblood"
+]
+},
+"SV_Localinfo_f": {
+"migrated": [
+"D_0038E9D0",
+"D_0038E9E8"
+],
+"refs": [
+"D_0038E990",
+"D_0038E9D0",
+"D_0038E9E8",
+"localinfo"
+]
+},
+"SV_ModelIndex": {
+"migrated": [
+"D_0038F410"
+],
+"refs": [
+"D_0038F410",
+"sv"
+]
+},
+"SV_Multicast": {
+"migrated": [],
+"refs": [
+"D_004C7FD0",
+"sv",
+"svs"
+]
+},
+"SV_ReallocateDynamicData": {
+"migrated": [
+"D_0038E8A0",
+"D_0038E8D8"
+],
+"refs": [
+"D_0038E8A0",
+"D_0038E8D8",
+"D_0038E8F8",
+"D_0038E910",
+"D_0038E930",
+"g_moved_edict",
+"g_moved_from",
+"g_playertouch",
+"sv"
+]
+},
+"SV_ServerLog_f": {
+"migrated": [
+"D_0038EAE0",
+"D_0038EB00",
+"D_0038EB18",
+"D_0038EB30",
+"D_0038EB38",
+"D_0038EB58",
+"D_0038EB60"
+],
+"refs": [
+"D_0038EAE0",
+"D_0038EB00",
+"D_0038EB18",
+"D_0038EB30",
+"D_0038EB38",
+"D_0038EB58",
+"D_0038EB60",
+"D_004E2CE0",
+"svs"
+]
+},
+"SV_Serverinfo_f": {
+"migrated": [
+"D_0038E950",
+"D_0038E968"
+],
+"refs": [
+"D_0038E950",
+"D_0038E968",
+"D_0038E990",
+"D_0038E9B8"
+]
+},
+"SV_SetLogAddress_f": {
+"migrated": [
+"D_0038EA10",
+"D_0038EA38",
+"D_0038EA48",
+"D_0038EA70",
+"D_0038EA98",
+"D_0038EAA0",
+"D_0038EAB8"
+],
+"refs": [
+"D_0038EA10",
+"D_0038EA38",
+"D_0038EA48",
+"D_0038EA70",
+"D_0038EA98",
+"D_0038EAA0",
+"D_0038EAB8",
+"svs"
+]
+},
+"SV_StartParticle": {
+"migrated": [],
+"refs": [
+"D_004C50B4",
+"sv"
+]
+},
+"SV_StartSound": {
+"migrated": [],
+"refs": [
+"D_004C7FD0"
+]
+},
+"SV_User_f": {
+"migrated": [
+"D_0038EB98",
+"D_0038EBC0",
+"D_0038EBE8"
+],
+"refs": [
+"D_0038EB98",
+"D_0038EBC0",
+"D_0038EBE8",
+"sv",
+"svs"
+]
+},
+"SV_Users_f": {
+"migrated": [
+"D_0038EC00",
+"D_0038EC28",
+"D_0038EC48",
+"D_0038EC68",
+"D_0038EC78"
+],
+"refs": [
+"D_0038EC00",
+"D_0038EC28",
+"D_0038EC48",
+"D_0038EC68",
+"D_0038EC78",
+"sv",
+"svs"
+]
+},
+"func_0027B030": {
+"migrated": [
+"D_0038EC88"
+],
+"refs": [
+"D_0038EC88",
+"D_0039940C",
+"sv"
+]
+},
+"func_0027B640": {
+"migrated": [],
+"refs": [
+"D_00397D81"
+]
+},
+"func_0027B6B0": {
+"migrated": [],
+"refs": [
+"sv"
+]
+},
+"func_0027B820": {
+"migrated": [],
+"refs": [
+"D_004C3FA0",
+"sv"
+]
+},
+"func_0027B8D8": {
+"migrated": [
+"D_0038ED68"
+],
+"refs": [
+"D_0033270C",
+"D_0038ED68",
+"sv"
+]
+},
+"func_0027B9F8": {
+"migrated": [
+"D_0038EDB0"
+],
+"refs": [
+"D_0038EDB0"
+]
+},
+"func_0027BBC8": {
+"migrated": [],
+"refs": [
+"movevars"
+]
+},
+"func_0027BCD0": {
+"migrated": [],
+"refs": [
+"D_0033273C",
+"D_00332754",
+"D_0033276C",
+"D_00332784",
+"D_0033279C",
+"D_003327CC",
+"D_0033285C",
+"D_00332874",
+"D_0033288C",
+"D_003328A4",
+"D_003328BC",
+"D_003328D4",
+"D_003328E4",
+"D_0033298C",
+"D_003329A4",
+"D_003329BC",
+"movevars",
+"svs"
+]
+},
+"func_0027BF20": {
+"migrated": [],
+"refs": []
+},
+"func_0027BF28": {
+"migrated": [
+"D_0038EDC8",
+"D_0038EDF8"
+],
+"refs": [
+"D_0038EDC8",
+"D_0038EDF8",
+"D_004A9750",
+"com_gamedir",
+"gGlobalVariables",
+"host_client",
+"pr_strings",
+"protocol_version",
+"sv",
+"svs"
+]
+},
+"func_0027C1B8": {
+"migrated": [
+"D_0038EE00",
+"D_0038EE10",
+"D_0038EE20",
+"D_0038EE28",
+"D_0038EE58",
+"D_0038EE78",
+"D_0038EE88"
+],
+"refs": [
+"D_003323D4",
+"D_00332680",
+"D_0038E9B8",
+"D_0038EE00",
+"D_0038EE10",
+"D_0038EE20",
+"D_0038EE28",
+"D_0038EE58",
+"D_0038EE78",
+"D_0038EE88",
+"D_004A96C4",
+"D_0053DD70",
+"cmd_source",
+"gGlobalVariables",
+"host_client",
+"realtime",
+"sv_gpUserMsgs"
+]
+},
+"func_0027C500": {
+"migrated": [
+"D_0038EE98"
+],
+"refs": [
+"D_0038EE98",
+"cmd_source",
+"host_client",
+"svs"
+]
+},
+"func_0027C5C8": {
+"migrated": [],
+"refs": [
+"net_message"
+]
+},
+"func_0027C658": {
+"migrated": [
+"D_0038EEB8"
+],
+"refs": [
+"D_0038EEB8",
+"net_message"
+]
+},
+"func_0027C6E0": {
+"migrated": [
+"D_0038EEC8"
+],
+"refs": [
+"D_0038EEC8",
+"pr_strings",
+"sv",
+"sv_player",
+"vec3_origin"
+]
+},
+"func_0027C7F8": {
+"migrated": [
+"D_0038EEE0",
+"D_0038EEF0",
+"D_0038EF10",
+"D_0038EF20",
+"D_0038EF40",
+"D_0038EF78",
+"D_0038EF88",
+"D_0038EFA0",
+"D_0038EFC0"
+],
+"refs": [
+"D_003325A8",
+"D_00334540",
+"D_0038E630",
+"D_0038EEE0",
+"D_0038EEF0",
+"D_0038EF10",
+"D_0038EF20",
+"D_0038EF40",
+"D_0038EF78",
+"D_0038EF88",
+"D_0038EFA0",
+"D_0038EFC0",
+"D_0038EFD0",
+"D_0038EFD8",
+"D_0038EFE8",
+"D_0038F050",
+"D_0038F058",
+"D_0038F0A8",
+"D_0038F0B8",
+"D_0038F0D8",
+"D_0038F100",
+"D_0038F118",
+"D_0038F130",
+"D_0038F148",
+"D_0038F158",
+"D_0038F190",
+"D_0038F1B0",
+"D_003997F8",
+"D_003997FF",
+"D_004A96C0",
+"D_004E2BE0",
+"D_0053DDD4",
+"g_userid",
+"host_client",
+"net_from",
+"protocol_version",
+"svs"
+]
+},
+"func_0027D098": {
+"migrated": [],
+"refs": [
+"net_from"
+]
+},
+"func_0027D0F0": {
+"migrated": [],
+"refs": []
+},
+"func_0027D0F8": {
+"migrated": [
+"D_0038F1E0",
+"D_0038F200",
+"D_0038F228"
+],
+"refs": [
+"D_00334540",
+"D_0038F1E0",
+"D_0038F200",
+"D_0038F228",
+"D_003990F0",
+"net_from",
+"realtime",
+"sv",
+"svs"
+]
+},
+"func_0027D340": {
+"migrated": [],
+"refs": [
+"D_0053DB38"
+]
+},
+"func_0027D380": {
+"migrated": [],
+"refs": [
+"D_0038E628",
+"D_0053DB38"
+]
+},
+"func_0027D480": {
+"migrated": [
+"D_0038F250"
+],
+"refs": [
+"D_003325A8",
+"D_0033473C",
+"D_00334740",
+"D_0038EFD0",
+"D_0038F250",
+"D_003997F8",
+"D_003997FF",
+"D_004A96D0",
+"D_0053DD70",
+"cls",
+"com_gamedir",
+"net_from",
+"protocol_version",
+"sv",
+"svs"
+]
+},
+"func_0027D778": {
+"migrated": [],
+"refs": [
+"net_from",
+"realtime",
+"sv",
+"svs"
+]
+},
+"func_0027D938": {
+"migrated": [],
+"refs": [
+"D_0038E630",
+"D_0038E678",
+"D_0038EFD0",
+"cvar_vars",
+"net_from",
+"sv",
+"svs"
+]
+},
+"func_0027DA98": {
+"migrated": [],
+"refs": [
+"net_from",
+"valvemaster_adr"
+]
+},
+"func_0027DB10": {
+"migrated": [
+"D_0038F260",
+"D_0038F268"
+],
+"refs": [
+"D_0033241C",
+"D_0038F260",
+"D_0038F268",
+"D_0038F280",
+"D_0038F288",
+"D_0038F290",
+"D_0038F298",
+"D_0038F2A8",
+"D_0038F2B0",
+"D_0038F2B8",
+"D_0038F2C0",
+"D_0038F2C8",
+"D_0038F2D0",
+"D_0038F2D8",
+"net_from"
+]
+},
+"func_0027DE58": {
+"migrated": [],
+"refs": [
+"D_003323EC",
+"D_00332404"
+]
+},
+"func_0027DEE8": {
+"migrated": [],
+"refs": [
+"net_from",
+"net_message",
+"svs"
+]
+},
+"func_0027E048": {
+"migrated": [
+"D_0038F300"
+],
+"refs": [
+"D_00332524",
+"D_0038F300",
+"realtime",
+"svs"
+]
+},
+"func_0027E140": {
+"migrated": [],
+"refs": []
+},
+"func_0027E148": {
+"migrated": [],
+"refs": []
+},
+"func_0027E238": {
+"migrated": [],
+"refs": [
+"D_004C50B4"
+]
+},
+"func_0027E258": {
+"migrated": [],
+"refs": [
+"D_00399414",
+"D_004A92B8",
+"sv"
+]
+},
+"func_0027E3B0": {
+"migrated": [],
+"refs": [
+"D_00399414",
+"D_004A92B8",
+"sv"
+]
+},
+"func_0027E430": {
+"migrated": [],
+"refs": [
+"sv"
+]
+},
+"func_0027E480": {
+"migrated": [],
+"refs": [
+"D_0038F310"
+]
+},
+"func_0027EA70": {
+"migrated": [],
+"refs": [
+"D_0038F310"
+]
+},
+"func_0027F670": {
+"migrated": [],
+"refs": []
+},
+"func_0027F910": {
+"migrated": [],
+"refs": []
+},
+"func_0027F940": {
+"migrated": [],
+"refs": [
+"D_004E2BCC",
+"host_framecount"
+]
+},
+"func_0027F9A0": {
+"migrated": [],
+"refs": [
+"D_00334764",
+"D_00399354",
+"D_00399358",
+"D_00399360",
+"D_00399364",
+"D_00399368",
+"D_0039936C",
+"D_00399370",
+"D_00399374",
+"D_00399378",
+"D_0039937C",
+"D_00399380",
+"D_00399384",
+"D_00399388",
+"D_0039938C",
+"D_00399390",
+"D_00399394",
+"D_00399398",
+"D_0039939C",
+"D_003993A0",
+"D_003993A4",
+"D_003993A8",
+"D_003993AC",
+"D_003993B0",
+"D_003993B4",
+"D_003993B8",
+"D_003993C0",
+"D_003993C4",
+"D_003993CC",
+"D_003993D0",
+"D_003993D4",
+"D_003993D8",
+"D_003993DC",
+"D_003993E0",
+"D_003993E4",
+"D_0039940C",
+"cls",
+"pr_strings",
+"sv",
+"svs"
+]
+},
+"func_00280700": {
+"migrated": [
+"D_0038F340"
+],
+"refs": [
+"D_00332718",
+"D_0033272C",
+"D_0038F340",
+"cl_numlocal",
+"pr_strings",
+"sv"
+]
+},
+"func_00280B30": {
+"migrated": [],
+"refs": [
+"svs"
+]
+},
+"func_00280C48": {
+"migrated": [],
+"refs": [
+"sv"
+]
+},
+"func_00280CB8": {
+"migrated": [],
+"refs": [
+"pr_strings"
+]
+},
+"func_00280FC8": {
+"migrated": [
+"D_0038F370",
+"D_0038F398"
+],
+"refs": [
+"D_0038F370",
+"D_0038F398",
+"D_004A96C4"
+]
+},
+"func_002810D8": {
+"migrated": [
+"D_0038F3B8"
+],
+"refs": [
+"D_003323D4",
+"D_0038F3B8",
+"D_004C50B4",
+"D_004C6068",
+"host_client",
+"realtime",
+"sv",
+"sv_gpUserMsgs",
+"svs"
+]
+},
+"func_00281328": {
+"migrated": [],
+"refs": [
+"host_client",
+"svs"
+]
+},
+"func_002817E0": {
+"migrated": [
+"D_0038F438"
+],
+"refs": [
+"D_0038F438",
+"sv"
+]
+},
+"func_00281888": {
+"migrated": [
+"D_0038F468",
+"D_0038F498",
+"D_0038F4D0"
+],
+"refs": [
+"D_0038F468",
+"D_0038F498",
+"D_0038F4D0",
+"cmd_source",
+"host_client",
+"sv",
+"svs"
+]
+},
+"func_00281B08": {
+"migrated": [
+"D_0038F4E8"
+],
+"refs": [
+"D_0038F4E8",
+"sv"
+]
+},
+"func_00281BC8": {
+"migrated": [
+"D_0038F508"
+],
+"refs": [
+"D_0038F508",
+"D_004C27A4",
+"D_004C37A4",
+"D_004C47A8",
+"sv",
+"sv_decalnamecount",
+"sv_decalnames"
+]
+},
+"func_00281D88": {
+"migrated": [],
+"refs": []
+},
+"func_00281D90": {
+"migrated": [],
+"refs": []
+},
+"func_00281D98": {
+"migrated": [],
+"refs": [
+"D_004C16B8",
+"D_004C83E4",
+"pr_strings",
+"sv",
+"svs"
+]
+},
+"func_00282290": {
+"migrated": [
+"D_0038F510"
+],
+"refs": [
+"D_0038F510"
+]
+},
+"func_002822B0": {
+"migrated": [],
+"refs": [
+"D_004A9228",
+"D_0053DD70",
+"host_client",
+"svs"
+]
+},
+"func_002823C8": {
+"migrated": [
+"D_0038F520",
+"D_0038F540"
+],
+"refs": [
+"D_003323D4",
+"D_0038E630",
+"D_0038E6C0",
+"D_0038F520",
+"D_0038F540",
+"D_0053DDC4",
+"host_client",
+"host_frametime",
+"sv",
+"sv_gpUserMsgs",
+"svs"
+]
+},
+"func_002825C8": {
+"migrated": [
+"D_0038F550",
+"D_0038F580",
+"D_0038F598",
+"D_0038F5A8",
+"D_0038F5B8",
+"D_0038F5D0",
+"D_0038F5E8",
+"D_0038F5F8",
+"D_0038F600",
+"D_0038F608",
+"D_0038F618",
+"D_0038F638",
+"D_0038F658",
+"D_0038F670"
+],
+"refs": [
+"D_003323C8",
+"D_00332548",
+"D_00332F2C",
+"D_00332F34",
+"D_00334740",
+"D_0038E6F8",
+"D_0038F550",
+"D_0038F580",
+"D_0038F598",
+"D_0038F5A8",
+"D_0038F5B8",
+"D_0038F5D0",
+"D_0038F5E8",
+"D_0038F5F8",
+"D_0038F600",
+"D_0038F608",
+"D_0038F618",
+"D_0038F638",
+"D_0038F658",
+"D_0038F670",
+"D_00399410",
+"D_003994B8",
+"D_003995D0",
+"D_004A96D0",
+"D_004C50C8",
+"D_004C607C",
+"D_004C7030",
+"D_004C7FE4",
+"D_004C843C",
+"D_004D7FC0",
+"D_0053DD70",
+"coop",
+"gGlobalVariables",
+"pr_strings",
+"skill",
+"sv",
+"svs"
+]
+},
+"func_00282D90": {
+"migrated": [],
+"refs": [
+"sv_worldmodel"
+]
+},
+"func_00282DB8": {
+"migrated": [],
+"refs": [
+"sv"
+]
+},
+"func_00282E40": {
+"migrated": [],
+"refs": [
+"D_003323D4",
+"D_003323DC",
+"D_0038E8F8",
+"sv_gpUserMsgs"
+]
+},
+"func_00282F80": {
+"migrated": [],
+"refs": [
+"D_003323D4"
+]
+},
+"func_00283018": {
+"migrated": [
+"D_0038F698",
+"D_0038F6B0",
+"D_0038F6D0"
+],
+"refs": [
+"D_0038F698",
+"D_0038F6B0",
+"D_0038F6D0",
+"D_0038F6E0",
+"sv",
+"svs"
+]
+},
+"func_00283130": {
+"migrated": [
+"D_0038F700"
+],
+"refs": [
+"D_0038F6E0",
+"D_0038F700",
+"svs"
+]
+}
+}
