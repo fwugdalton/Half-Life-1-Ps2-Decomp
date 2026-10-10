@@ -1,4 +1,60 @@
 #include "common.h"
+#include "engine/cmd.h"
+#include "engine/cvar.h"
+#include "engine/server.h"
+#include "engine/client.h"
+#include "engine/eiface.h"
+
+/* host_cmd.c: comandos do host (status, map, save/restore, rcon...) */
+
+#define RD_NONE 0
+#define RD_CLIENT 1
+#define RD_PACKET 2
+#define A2C_PRINT 'l'
+#define A2M_GET_MOTD 'g'
+#define svc_print 8
+#define NS_CLIENT 0
+#define NS_SERVER 2
+
+typedef struct master_s
+{
+    qboolean sent;              /* 0x00 */
+    float time;                 /* 0x04 */
+    int challenge;              /* 0x08 */
+    int sequence;               /* 0x0C */
+    float last_heartbeat;       /* 0x10 */
+    netadr_t adr;               /* 0x14 */
+    struct master_s *next;      /* 0x1C */
+} master_t;
+
+typedef struct quakeparms_s
+{
+    char *basedir;
+    char *cachedir;
+    int argc;
+    char **argv;
+    void *membase;
+    int memsize;
+} quakeparms_t;
+
+extern quakeparms_t host_parms;
+extern qboolean gfNoMasterServer;
+extern master_t *valvemaster_adr;
+extern int sv_redirected;
+extern char outputbuf[1400];
+extern netadr_t sv_redirectto;
+extern cvar_t rcon_password;
+
+int sprintf(char *, const char *, ...);
+unsigned int strlen(const char *);
+int strcmp(const char *, const char *);
+void Cbuf_Execute(void);
+void func_002C68B0(char *basedir);
+void func_002C70A8(qboolean multiplayer);
+char *NET_AdrToString(netadr_t a);
+void NET_SendPacket(int sock, int length, void *data, netadr_t to, int unk);
+void MSG_WriteLong(sizebuf_t *sb, int c);
+void MSG_WriteString(sizebuf_t *sb, const char *s);
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00391EE8);
 
@@ -66,19 +122,114 @@ INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00392078);
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00392080);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_002979A0);
+void Host_InitializeGameDLL(void)
+{
+    Cbuf_Execute();
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Motd_f);
+    if (svs.unk_00C)
+    {
+        Con_DPrintf("Sys_InitializeGameDLL called twice, skipping second call\n");
+        return;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00297AD0);
+    svs.unk_00C = true;
+    func_002C68B0(host_parms.basedir);
+    gEntityInterface.pfnGameInit();
+    Cbuf_Execute();
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", SV_FlushRedirect);
+void Host_Motd_f(void)
+{
+    char szMsg[2048];
+    master_t *p;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", SV_BeginRedirect);
+    if (gfNoMasterServer)
+        return;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", SV_EndRedirect);
+    if (!valvemaster_adr)
+        return;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00297CC0);
+    func_002C70A8(true);
+    sprintf(szMsg, "%c\n", A2M_GET_MOTD);
+
+    p = valvemaster_adr;
+    Con_DPrintf("Requesting MOTD from master(s)\n", NET_AdrToString(p->adr));
+
+    for (; p; p = p->next)
+        NET_SendPacket(NS_CLIENT, strlen(szMsg), szMsg, p->adr, 2);
+}
+
+void SV_InactivateClients(void)
+{
+    int i;
+    client_t *cl;
+
+    for (i = 0, cl = svs.clients; i < svs.maxclients; i++, cl++)
+    {
+        if (!cl->active && !cl->connected && !cl->spawned)
+            continue;
+
+        cl->active = false;
+        cl->connected = true;
+        cl->spawned = false;
+
+        if (!cl->fakeclient)
+        {
+            SZ_Clear(&cl->netchan.message);
+            cl->maxspeed = 0;
+        }
+    }
+}
+
+void SV_FlushRedirect(void)
+{
+    sizebuf_t buf;
+    byte data[1425];
+
+    if (sv_redirected == RD_PACKET)
+    {
+        buf.maxsize = sizeof(data);
+        buf.data = data;
+        buf.cursize = 0;
+
+        MSG_WriteLong(&buf, -1);
+        MSG_WriteByte(&buf, A2C_PRINT);
+        MSG_WriteString(&buf, outputbuf);
+        MSG_WriteByte(&buf, 0);
+        NET_SendPacket(NS_SERVER, buf.cursize, buf.data, sv_redirectto, 0);
+    }
+    else if (sv_redirected == RD_CLIENT)
+    {
+        MSG_WriteByte(&host_client->netchan.message, svc_print);
+        MSG_WriteString(&host_client->netchan.message, outputbuf);
+    }
+
+    outputbuf[0] = 0;
+}
+
+void SV_BeginRedirect(int rd, netadr_t *addr)
+{
+    sv_redirected = rd;
+    sv_redirectto = *addr;
+    outputbuf[0] = 0;
+}
+
+void SV_EndRedirect(void)
+{
+    SV_FlushRedirect();
+    sv_redirected = RD_NONE;
+}
+
+int Rcon_Validate(void)
+{
+    if (!strlen(rcon_password.string))
+        return 0;
+
+    if (strcmp(Cmd_Argv(1), rcon_password.string))
+        return 0;
+
+    return 1;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00297D10);
 
