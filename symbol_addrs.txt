@@ -1351,3 +1351,4 @@ FindPassableSpace = 0x00298570; // type:func
 Host_Map = 0x00298A18; // type:func
 Host_ValidGame = 0x002988B0; // type:func
 Host_FindRecentSave = 0x00299008; // type:func
+Host_SaveGameDirectory = 0x00299400; // type:func

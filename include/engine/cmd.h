@@ -193,7 +193,7 @@ typedef struct client_static_s
     netchan_t netchan;          /* 0x0004 */
     byte unk_73B4[0x73C8 - 0x73B4];
     int signon;                 /* 0x73C8 */
-    byte unk_73CC[0x74D0 - 0x73CC];
+    char servername[260];       /* 0x73CC */
     qboolean demoplayback;      /* 0x74D0 */
     char mapstring[64];         /* 0x74D4 */
     char spawnparms[2048];      /* 0x7514 */

@@ -91,7 +91,7 @@ void func_002CFB90(char *pszSubString);
 extern char D_003924F8[];
 extern char D_00392520[];
 void func_002CD340(int a0, int a1);
-char *func_00299400(void);
+char *Host_SaveGameDirectory(void);
 int func_0022B6F0(char *pattern, char *data);
 float func_0022B8E0(char *data);
 int func_0022B810(int h, char *data);
@@ -99,6 +99,17 @@ void func_0022B8A0(int h);
 void func_00239488(void);
 void func_00228CF0(char *dst, char *src);
 void func_00228EE0(char *dst, char *fmt, ...);
+extern cvar_t D_003330E8;
+#define host_map D_003330E8
+extern char D_00392558[];
+int func_0029A0A0(char *pName);
+int func_00228DC0(const char *s);
+int func_00228E40(const char *s1, const char *s2, int n);
+void MSG_WriteChar(sizebuf_t *sb, int c);
+char *Cmd_Args(void);
+char *strncpy(char *, const char *, unsigned int);
+void func_00250B08(int player);
+char *func_0022E958(void);
 void SV_CountPlayers(int *clients, int *spectators);
 int strcasecmp(const char *, const char *);
 #include "engine/mathlib.h"
@@ -823,7 +834,7 @@ char *Host_FindRecentSave(char *pszOut)
 
     found = 0;
     latest = -1.0f;
-    sprintf(pszOut, "%s*.sav", func_00299400());
+    sprintf(pszOut, "%s*.sav", Host_SaveGameDirectory());
 
     h = func_0022B6F0(pszOut, data);
     while (h != -1)
@@ -875,15 +886,72 @@ void Host_Restartdecay_f(void)
     Host_Map(false, cmd, name, false);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Reload_f);
+void Host_Reload_f(void)
+{
+    char name[260];
+    char *pSaveName;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Reconnect_f);
+    func_0021C340();
+
+    if (!sv.active)
+        return;
+
+    if (cmd_source != src_command)
+        return;
+
+    func_0029C388();
+    SV_InactivateClients();
+
+    pSaveName = Host_FindRecentSave(name);
+    if (pSaveName && func_0029A0A0(pSaveName))
+        return;
+
+    func_00239488();
+
+    if (func_00228DC0(host_map.string) >= 4 && !func_00228E40(host_map.string, "c0a0", 4))
+        Cvar_Set(D_00392070, "c1a0");
+
+    SV_SpawnServer(false, host_map.string, NULL);
+    SV_LoadEntities();
+    SV_ActivateServer(1);
+}
+
+void Host_Reconnect_f(void)
+{
+    if (cls[0].state < ca_connected)
+        return;
+
+    func_002AC478(0);
+    cls[0].state = ca_connected;
+    cls[0].signon = 0;
+    MSG_WriteChar(&cls[0].netchan.message, clc_stringcmd);
+    MSG_WriteString(&cls[0].netchan.message, D_00392558);
+}
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00392558);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Connect_f);
+void Host_Connect_f(void)
+{
+    char name[64];
+    int i;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00299400);
+    if (Cmd_Argc() < 2 || !Cmd_Args())
+    {
+        Con_Printf("Usage:  connect <server>\n");
+        return;
+    }
+
+    strcpy(name, Cmd_Args());
+    strncpy(cls[0].servername, name, sizeof(cls[0].servername) - 1);
+
+    for (i = 0; i < cl_numlocal; i++)
+        func_00250B08(i);
+}
+
+char *Host_SaveGameDirectory(void)
+{
+    return func_0022E958();
+}
 
 void func_00299420(void) {
 }
