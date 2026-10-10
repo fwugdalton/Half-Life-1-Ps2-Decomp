@@ -2925,9 +2925,121 @@ void Host_PreSpawn_f(void)
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Spawn_f);
+void MSG_WriteFloat(sizebuf_t *sb, float f);
+void MSG_WriteHangle(sizebuf_t *sb, float f);
+void SV_FullClientUpdate(client_t *cl, sizebuf_t *sb);
+void SV_WriteClientdataToMessage(client_t *client, sizebuf_t *msg);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Begin_f);
+void Host_Spawn_f(void)
+{
+    char szName[256];
+    SAVERESTOREDATA currentLevelData;
+    int i;
+    client_t *client;
+    edict_t *ent;
+
+    if (cmd_source == src_command)
+    {
+        Con_Printf("spawn is not valid from the console\n");
+        return;
+    }
+
+    if (!host_client->connected)
+    {
+        Con_Printf("Spawn not valid -- already spawned\n");
+        return;
+    }
+
+    if (atoi(Cmd_Argv(1)) != svs.spawncount)
+    {
+        Con_Printf("SV_Spawn_f from different level\n");
+        SV_New_f();
+        return;
+    }
+
+    if (sv.loadgame)
+    {
+        sv.paused = false;
+        D_00332F34 = 1;
+    }
+    else
+    {
+        ent = host_client->edict;
+        sv.state = 1;
+        ReleaseEntityDLLFields(ent);
+        memset(&ent->v, 0, sizeof(ent->v));
+        InitEntityDLLFields(ent);
+        ent->v.colormap = NUM_FOR_EDICT(ent);
+        ent->v.netname = host_client->name - pr_strings;
+        gGlobalVariables.time = sv.time;
+        gEntityInterface.pfnClientPutInServer(sv_player);
+        sv.state = 2;
+    }
+
+    SZ_Clear(&host_client->netchan.message);
+
+    MSG_WriteByte(&host_client->netchan.message, 7);
+    MSG_WriteFloat(&host_client->netchan.message, sv.time);
+
+    for (i = 0, client = svs.clients; i < svs.maxclients; i++, client++)
+        SV_FullClientUpdate(client, &host_client->netchan.message);
+
+    for (i = 0; i < 64; i++)
+    {
+        MSG_WriteByte(&host_client->netchan.message, 12);
+        MSG_WriteByte(&host_client->netchan.message, (char)i);
+        MSG_WriteString(&host_client->netchan.message, sv.lightstyles[i]);
+    }
+
+    ent = &sv.edicts[1 + (host_client - svs.clients)];
+    MSG_WriteByte(&host_client->netchan.message, 10);
+    for (i = 0; i < 2; i++)
+        MSG_WriteHangle(&host_client->netchan.message, ent->v.v_angle[i]);
+    MSG_WriteHangle(&host_client->netchan.message, 0);
+
+    SV_WriteClientdataToMessage(host_client, &host_client->netchan.message);
+
+    MSG_WriteByte(&host_client->netchan.message, 25);
+    MSG_WriteByte(&host_client->netchan.message, 2);
+    host_client->unk_73D4 = true;
+
+    if (sv.loadgame)
+    {
+        memset(&currentLevelData, 0, sizeof(SAVERESTOREDATA));
+        gGlobalVariables.pSaveData = &currentLevelData;
+        gEntityInterface.pfnParmsChangeLevel();
+
+        MSG_WriteByte(&host_client->netchan.message, 33);
+        sprintf(szName, D_00392850, Host_SaveGameDirectory(), sv.name);
+        COM_FixSlashes(szName);
+        MSG_WriteString(&host_client->netchan.message, szName);
+        MSG_WriteByte(&host_client->netchan.message, currentLevelData.connectionCount);
+
+        for (i = 0; i < currentLevelData.connectionCount; i++)
+            MSG_WriteString(&host_client->netchan.message, currentLevelData.levelList[i].mapName);
+
+        sv.loadgame = false;
+        gGlobalVariables.pSaveData = NULL;
+    }
+}
+
+void Host_Begin_f(void)
+{
+    if (cmd_source == src_command)
+    {
+        Con_Printf("begin is not valid from the console\n");
+        return;
+    }
+
+    host_client->active = true;
+    host_client->spawned = true;
+    host_client->connected = false;
+    host_client->netchan.frame_latency = 0;
+    host_client->netchan.frame_rate = 0;
+    host_client->netchan.drop_count = 0;
+    host_client->netchan.good_count = 0;
+    memset(host_client->netchan.latency, 0, sizeof(host_client->netchan.latency));
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Kick_f);
 
