@@ -82,6 +82,12 @@ void func_00236A10(void);
 void SV_ActivateServer(int runPhysics);
 char *strcpy(char *, const char *);
 void *memcpy(void *, const void *, unsigned int);
+extern char D_00392470[];
+extern char D_00392070[];
+extern cvar_t sv_lan;
+int PF_IsMapValid_I(char *mapname);
+void func_00245310(void);
+void func_002CFB90(char *pszSubString);
 void SV_CountPlayers(int *clients, int *spectators);
 int strcasecmp(const char *, const char *);
 #include "engine/mathlib.h"
@@ -683,11 +689,68 @@ void Host_Map(qboolean bIsDemo, char *mapstring, char *mapName, qboolean loadGam
         Cmd_ExecuteString("connect local", src_command);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Map_f);
+void Host_Map_f(void)
+{
+    int i;
+    char mapstring[64];
+    char name[64];
+
+    if (cmd_source != src_command)
+        return;
+
+    mapstring[0] = 0;
+    for (i = 0; i < Cmd_Argc(); i++)
+    {
+        strcat(mapstring, Cmd_Argv(i));
+        strcat(mapstring, D_00392178);
+    }
+    strcat(mapstring, D_00392278);
+
+    strcpy(name, Cmd_Argv(1));
+
+    if (!svs.unk_00C)
+        Host_InitializeGameDLL();
+
+    i = strlen(name);
+    if (i > 4 && !Q_strcasecmp(name + i - 4, ".bs2"))
+        name[i - 4] = 0;
+
+    if (!PF_IsMapValid_I(name))
+    {
+        Con_Printf("map change failed: '");
+        Con_Printf(name);
+        Con_Printf(D_00392470);
+        return;
+    }
+
+    if (svs.maxclients > 1 && sv_lan.value == 0)
+        func_00245310();
+
+    Cvar_Set(D_00392070, name);
+    Host_Map(false, mapstring, name, false);
+}
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00392470);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Maps_f);
+void Host_Maps_f(void)
+{
+    char *pszSubString;
+
+    if (Cmd_Argc() != 2)
+    {
+        Con_Printf("Usage:  maps <substring>\nmaps * for full listing\n");
+        return;
+    }
+
+    pszSubString = Cmd_Argv(1);
+    if (!pszSubString || !*pszSubString)
+        return;
+
+    if (*pszSubString == '*')
+        pszSubString = NULL;
+
+    func_002CFB90(pszSubString);
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Changelevel_f);
 
