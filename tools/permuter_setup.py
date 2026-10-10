@@ -19,15 +19,18 @@ asm = [p for p in subprocess.check_output(['find', 'asm/nonmatchings', '-name', 
 open(os.path.join(out, 'target.s'), 'w').write(
     '.include "%s/include/macro.inc"\n.set noat\n.set noreorder\n.section .text\n' % ROOT + open(os.path.join(ROOT, asm)).read())
 subprocess.check_call(['mips-linux-gnu-as', '-EL', '-march=r5900', '-mabi=eabi', '-G0', '-o', os.path.join(out, 'target.o'), os.path.join(out, 'target.s')])
+# flags extras do arquivo no Makefile (ex.: -ffast-math)
+obj = '$(BUILD_DIR)/' + os.path.splitext(src)[0] + '.o'
+extra = ' '.join(m.group(1).strip() for m in re.finditer(r'^%s: CFLAGS \+= (.*)$' % re.escape(obj), open(os.path.join(ROOT, 'Makefile')).read(), re.M))
 open(os.path.join(out, 'compile.sh'), 'w').write('''#!/bin/sh
 # uso: compile.sh entrada.c -o saida.o
 set -e
 T=$(mktemp -d)
-"%s" "%s" -O2 -G0 -S -o "$T/a.s" "$1"
+"%s" "%s" -O2 -G0 %s -S -o "$T/a.s" "$1"
 python3 "%s/tools/fixasm.py" "$T/a.s" "$T/b.s"
 mips-linux-gnu-as -EL -march=r5900 -mabi=eabi -G0 -o "$3" "$T/b.s"
 rm -rf "$T"
-''' % (wibo, gcc, ROOT))
+''' % (wibo, gcc, extra, ROOT))
 os.chmod(os.path.join(out, 'compile.sh'), 0o755)
 open(os.path.join(out, 'settings.toml'), 'w').write('func_name = "%s"\ncompiler_type = "gcc"\n' % fn)
 print(out)
