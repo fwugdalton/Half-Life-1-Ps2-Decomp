@@ -1099,7 +1099,7 @@ extern cvar_t sv_netsize;
 void SV_SendUserReg(sizebuf_t *msg);
 void SV_DropClient(client_t *cl, qboolean crash);
 char *va(char *format, ...);
-void func_0027C6E0(void);
+void SV_SpectatorSpawn(void);
 
 #define svc_stufftext 9
 
@@ -1185,7 +1185,7 @@ void SV_New_f(void)
     }
     else
     {
-        func_0027C6E0();
+        SV_SpectatorSpawn();
         gGlobalVariables.time = sv.time;
         gEntityInterface.unk_64();
         gEntityInterface.pfnSpectatorConnect(ent);
@@ -1197,13 +1197,115 @@ void SV_New_f(void)
     MSG_WriteByte(&host_client->netchan.message, svc_stufftext);
     MSG_WriteString(&host_client->netchan.message, va("fullserverinfo \"%s\"\n", Info_Serverinfo()));
 }
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027C500);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027C5C8);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027C658);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027C6E0);
+extern sizebuf_t net_message;
+extern edict_t *sv_player;
+extern vec3_t vec3_origin;
+void Cmd_ForwardToServer(void);
+void SV_ClientPrintf(char *fmt, ...);
+void NET_SendPacket(int sock, int length, void *data, netadr_t to, int unused);
+edict_t *EDICT_NUM(int n);
+
+#define S2C_CONNREJECT '9'
+#define S2C_BADPASSWORD '8'
+#define NS_SERVER 2
+
+void SV_Track_f(void)
+{
+    int i;
+
+    if (cmd_source == 1)
+    {
+        Cmd_ForwardToServer();
+        return;
+    }
+
+    if (Cmd_Argc() != 2)
+    {
+        host_client->spec_track = 0;
+        return;
+    }
+
+    i = atoi(Cmd_Argv(1));
+    if (i < 0 || i >= svs.maxclients || !svs.clients[i].active || svs.clients[i].spectator)
+    {
+        SV_ClientPrintf("Invalid client to track\n");
+        host_client->spec_track = 0;
+        return;
+    }
+
+    host_client->spec_track = i + 1;
+}
+void SV_RejectConnection(netadr_t *adr, char *reason)
+{
+    SZ_Clear(&net_message);
+    MSG_WriteLong(&net_message, -1);
+    MSG_WriteByte(&net_message, S2C_CONNREJECT);
+    MSG_WriteString(&net_message, reason);
+    NET_SendPacket(NS_SERVER, net_message.cursize, net_message.data, *adr, 0);
+    SZ_Clear(&net_message);
+}
+void SV_RejectConnectionForPassword(netadr_t *adr)
+{
+    SZ_Clear(&net_message);
+    MSG_WriteLong(&net_message, -1);
+    MSG_WriteByte(&net_message, S2C_BADPASSWORD);
+    MSG_WriteString(&net_message, "BADPASSWORD");
+    NET_SendPacket(NS_SERVER, net_message.cursize, net_message.data, *adr, 0);
+    SZ_Clear(&net_message);
+}
+void SV_SpectatorSpawn(void)
+{
+    int i;
+    edict_t *e;
+
+    VectorCopy(vec3_origin, sv_player->v.origin);
+    VectorCopy(vec3_origin, sv_player->v.view_ofs);
+    sv_player->v.view_ofs[2] = 22;
+
+    /* põe o espectador no ponto de partida */
+    for (i = 2; i < sv.num_edicts; i++)
+    {
+        e = EDICT_NUM(i);
+        if (!strcmp(pr_strings + e->v.classname, "info_player_start"))
+        {
+            VectorCopy(e->v.origin, sv_player->v.origin);
+            break;
+        }
+    }
+}
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027C7F8);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027D098);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027D0F0);
+extern netadr_t net_from;
+mleaf_t *Mod_PointInLeaf(vec_t *p, model_t *model);
+void ED_LoadFromFile(char *data);
+void func_0027F670(int a, int b, int c, int d);
+
+typedef struct
+{
+    byte unk_000[0x224];
+    int unk_224;
+    int unk_228;
+    int unk_22C;
+    int unk_230;
+} unk_53DB38_t;
+
+extern unk_53DB38_t D_0053DB38;
+
+void SVC_Ping(void)
+{
+    char data[6];
+
+    data[0] = 0xFF;
+    data[1] = 0xFF;
+    data[2] = 0xFF;
+    data[3] = 0xFF;
+    data[4] = 'j';
+    data[5] = 0;
+
+    NET_SendPacket(NS_SERVER, sizeof(data), data, net_from, 0);
+}
+void func_0027D0F0(void)
+{
+}
 /* rodata não migrada: início */
 __asm__(".section .rodata\n"
         ".globl D_0038EFD0\n"
@@ -1322,7 +1424,12 @@ __asm__(".section .rodata\n"
         ".section .text\n");
 /* rodata não migrada: fim */
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027D0F8);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027D340);
+void func_0027D340(void)
+{
+    memset(&D_0053DB38, 0, sizeof(D_0053DB38));
+    D_0053DB38.unk_224 = 1;
+    D_0053DB38.unk_22C = 1;
+}
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027D380);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027D480);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027D778);
@@ -1395,17 +1502,38 @@ __asm__(".section .rodata\n"
         ".section .text\n");
 /* rodata não migrada: fim */
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027E048);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027E140);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027E148);
+int func_0027E140(void)
+{
+    return 0;
+}
+int func_0027E148(void)
+{
+    return 0;
+}
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_FullClientUpdate);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027E238);
+void SV_ClearDatagram(void)
+{
+    SZ_Clear(&sv.datagram);
+}
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027E258);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027E3B0);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_PointLeafnum);
+int SV_PointLeafnum(vec_t *p)
+{
+    mleaf_t *leaf;
+
+    leaf = Mod_PointInLeaf(p, sv.worldmodel);
+    if (leaf)
+        return leaf - sv.worldmodel->leafs;
+
+    return 0;
+}
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027E480);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027EA70);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027F670);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027F910);
+void func_0027F910(int a, int b, int c)
+{
+    func_0027F670(0, a, b, c);
+}
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027F940);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027F9A0);
 /* rodata não migrada: início */
@@ -1437,15 +1565,25 @@ INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_002817E0);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00281888);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00281B08);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00281BC8);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00281D88);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00281D90);
+void func_00281D88(void)
+{
+}
+void func_00281D90(void)
+{
+}
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00281D98);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_BroadcastCommand);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00282290);
+void SV_ReconnectAllClients(void)
+{
+    SV_BroadcastCommand("reconnect\n");
+}
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_002822B0);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_002823C8);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_002825C8);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00282D90);
+void SV_LoadEntities(void)
+{
+    ED_LoadFromFile(sv.worldmodel->entities);
+}
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00282DB8);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00282E40);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_SendUserReg);

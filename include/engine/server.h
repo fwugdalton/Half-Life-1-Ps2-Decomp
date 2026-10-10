@@ -162,7 +162,7 @@ typedef struct client_s
     qboolean spawned;           /* 0x0004 */
     qboolean connected;         /* 0x0008 */
     qboolean uploading;         /* 0x000C */
-    byte unk_0010[0x14 - 0x10];
+    int spec_track;             /* 0x0010 */
     netchan_t netchan;          /* 0x0014 */
     byte unk_73C4[0x73D4 - 0x73C4];
     qboolean unk_73D4;          /* 0x73D4 */
