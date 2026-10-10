@@ -2565,11 +2565,165 @@ void Host_Version_f(void)
     Con_Printf("Exe build: 19:15:23 Oct 19 2001 (%i)\n", build_number());
 }
 
+void Info_SetValueForKey(char *s, char *key, char *value, int maxsize);
+void Info_Print(char *s);
+void Sys_Printf(char *fmt, ...);
+int RegUserMsg(const char *pszName, int iSize);
+void PF_MessageBegin_I(int msg_dest, int msg_type, const float *pOrigin, edict_t *ed);
+void PF_WriteByte_I(int iValue);
+void PF_WriteString_I(const char *sz);
+void PF_MessageEnd_I(void);
+extern cvar_t hostname;
+
+#ifdef NON_MATCHING
+void Host_FullInfo_f(void)
+{
+    char key[512];
+    char value[512];
+    char *o;
+    char *s;
+
+    if (Cmd_Argc() != 2)
+    {
+        Con_Printf("fullinfo <complete info string>\n");
+        return;
+    }
+
+    s = Cmd_Argv(1);
+    if (*s == '\\')
+        s++;
+
+    while (*s)
+    {
+        o = key;
+        while (*s && *s != '\\')
+            *o++ = *s++;
+        *o = 0;
+
+        if (!*s)
+        {
+            Con_Printf("MISSING VALUE\n");
+            return;
+        }
+
+        o = value;
+        s++;
+        while (*s && *s != '\\')
+            *o++ = *s++;
+        *o = 0;
+
+        if (*s)
+            s++;
+
+        if (cmd_source == src_command)
+        {
+            Info_SetValueForKey(cls[0].userinfo, key, value, MAX_INFO_STRING);
+            Cmd_ForwardToServer();
+            return;
+        }
+
+        Info_SetValueForKey(host_client->userinfo, key, value, MAX_INFO_STRING);
+        host_client->sendinfo = true;
+    }
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_FullInfo_f);
+#endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_SetInfo_f);
+void Host_SetInfo_f(void)
+{
+    int id;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029C948);
+    id = atoi(Cmd_Argv(1));
+
+    if (Cmd_Argc() == 2)
+    {
+        Info_Print(cls[id].userinfo);
+        return;
+    }
+
+    if (Cmd_Argc() != 4)
+    {
+        Con_Printf("usage: setinfo [ <client id> <key> <value> ]\n");
+        return;
+    }
+
+    if (cmd_source == src_command)
+    {
+        Info_SetValueForKey(cls[id].userinfo, Cmd_Argv(2), Cmd_Argv(3), MAX_INFO_STRING);
+        switch (id)
+        {
+        case 0:
+            Cmd_ForwardToServer();
+            break;
+        case 1:
+            Cmd_ForwardToServerUnreliable();
+            break;
+        }
+        return;
+    }
+
+    Info_SetValueForKey(host_client->userinfo, Cmd_Argv(2), Cmd_Argv(3), MAX_INFO_STRING);
+    host_client->sendinfo = true;
+}
+
+void func_0029C948(void)
+{
+    client_t *client;
+    client_t *save;
+    int j;
+    char *p;
+    char text[128];
+
+    if (cls[0].state)
+    {
+        if (cmd_source == src_command)
+            Cmd_ForwardToServer();
+        return;
+    }
+
+    if (Cmd_Argc() < 2)
+        return;
+
+    p = Cmd_Args();
+    if (!p)
+        return;
+
+    save = host_client;
+
+    if (*p == '"')
+    {
+        p++;
+        p[Q_strlen(p) - 1] = 0;
+    }
+
+    sprintf(text, "%c<%s> ", 1, hostname.string);
+
+    if (Q_strlen(p) > 63)
+        p[63] = 0;
+
+    j = sizeof(text) - 2 - Q_strlen(text);
+    if (Q_strlen(p) > j)
+        p[j] = 0;
+
+    strcat(text, p);
+    strcat(text, D_00392278);
+
+    for (j = 0, client = svs.clients; j < svs.maxclients; j++, client++)
+    {
+        if (!client || !client->active || !client->spawned || client->fakeclient)
+            continue;
+
+        host_client = client;
+        PF_MessageBegin_I(1, RegUserMsg("SayText", -1), NULL, &sv.edicts[j + 1]);
+        PF_WriteByte_I(0);
+        PF_WriteString_I(text);
+        PF_MessageEnd_I();
+    }
+
+    host_client = save;
+    Sys_Printf(D_00392990, text + 1);
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Say_f);
 
