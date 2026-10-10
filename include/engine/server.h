@@ -238,7 +238,8 @@ typedef struct client_s
     int spec_track;             /* 0x0010 */
     netchan_t netchan;          /* 0x0014 */
     int chokecount;             /* 0x73C4 */
-    byte unk_73C8[0x73D0 - 0x73C8];
+    int delta_sequence;         /* 0x73C8 */
+    byte unk_73CC[0x73D0 - 0x73CC];
     int unk_73D0;               /* 0x73D0 */
     qboolean unk_73D4;          /* 0x73D4 */
     qboolean spectator;         /* 0x73D8 */

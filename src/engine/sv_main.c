@@ -4740,7 +4740,7 @@ extern cvar_t D_00332560;
 extern cvar_t D_00332578;
 extern cvar_t D_00332590;
 extern cvar_t sv_spectatormaxspeed;
-extern cvar_t D_003326E0;
+extern cvar_t sv_showcmd;
 extern cvar_t pm_pushfix;
 extern cvar_t D_003326C8;
 extern cvar_t D_00332698;
@@ -4810,7 +4810,7 @@ void SV_Init(void)
     Cvar_RegisterVariable(&D_00332590);
     Cvar_RegisterVariable(&sv_spectatormaxspeed);
     Cvar_RegisterVariable(&sv_netsize);
-    Cvar_RegisterVariable(&D_003326E0);
+    Cvar_RegisterVariable(&sv_showcmd);
     Cvar_RegisterVariable(&pm_pushfix);
     Cvar_RegisterVariable(&D_003326C8);
     Cvar_RegisterVariable(&D_00332698);
