@@ -3518,17 +3518,144 @@ void Host_EndSection(char *pszSection)
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_WC_f);
+void func_00250248(int a0);
+qboolean CRC_MapFile(unsigned int *crcvalue, char *pszFileName);
+void func_00283130(void);
+void func_00251E18(void);
+void func_00277B78(int version);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_SoundFade_f);
+void Host_WC_f(void)
+{
+    Con_DPrintf("'WC' is only available under the Windows OS\n");
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_KillServer_f);
+void Host_SoundFade_f(void)
+{
+    int percent;
+    int inTime;
+    int holdTime;
+    int outTime;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Crc_f);
+    if (Cmd_Argc() != 3 && Cmd_Argc() != 5)
+    {
+        Con_Printf("soundfade <percent> <hold> [<out> <int>]\n");
+        return;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Logos_f);
+    percent = atoi(Cmd_Argv(1));
+    if (percent > 100)
+        percent = 100;
+    if (percent < 0)
+        percent = 0;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Protocol_f);
+    holdTime = atoi(Cmd_Argv(2));
+    if (holdTime > 255)
+        holdTime = 255;
+
+    inTime = 0;
+    outTime = 0;
+
+    if (Cmd_Argc() == 5)
+    {
+        outTime = atoi(Cmd_Argv(3));
+        if (outTime > 255)
+            outTime = 255;
+
+        inTime = atoi(Cmd_Argv(4));
+        if (inTime > 255)
+            inTime = 255;
+    }
+
+    cls[0].soundfade.soundFadeStartTime = realtime;
+    cls[0].soundfade.nStartPercent = percent;
+    cls[0].soundfade.soundFadeOutTime = outTime;
+    cls[0].soundfade.soundFadeHoldTime = holdTime;
+    cls[0].soundfade.soundFadeInTime = inTime;
+}
+
+
+void Host_KillServer_f(void)
+{
+    if (cmd_source == src_command)
+    {
+        Cmd_ForwardToServer();
+        return;
+    }
+
+    if (cls[0].state)
+    {
+        func_00250248(0);
+        return;
+    }
+
+    if (sv.active)
+        Host_ShutdownServer(false);
+
+    if (cls[0].state)
+        func_002C70A8(false);
+}
+
+void Host_Crc_f(void)
+{
+    char name[260];
+    unsigned int crc;
+    char *p;
+
+    p = Cmd_Argv(1);
+    if (!p)
+        return;
+
+    sprintf(name, "maps\\%s.bs2", p);
+    CRC32_Init(&crc);
+
+    if (CRC_MapFile(&crc, name))
+        Con_Printf("CRC of %s = %i\n", name, crc);
+    else
+        Con_Printf("Couldn't CRC %s\n", name);
+}
+
+void Host_Logos_f(void)
+{
+    if (sv.active)
+        func_00283130();
+
+    if (cls[0].state >= 2)
+        func_00251E18();
+}
+
+void Host_Protocol_f(void)
+{
+    int p;
+
+    if (Cmd_Argc() != 2)
+    {
+        Con_Printf("protocol is %i\n", protocol_version);
+        return;
+    }
+
+    if (sv.active)
+    {
+        Con_Printf("protocol cannot be changed while a server is running.\n");
+        return;
+    }
+
+    if (cls[0].state >= 2)
+    {
+        Con_Printf("protocol cannot be changed while in a game.\n");
+        return;
+    }
+
+    p = Q_atoi(Cmd_Argv(1));
+    if (p < 35 || p > 40)
+    {
+        Con_Printf("invalid protocol, valid protocols are 35 through %i\n", 40);
+        return;
+    }
+
+    protocol_version = p;
+    func_00277B78(p);
+    Con_Printf("protocol set to %i\n", protocol_version);
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_GetSv_f);
 
