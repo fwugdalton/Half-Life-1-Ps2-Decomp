@@ -120,7 +120,7 @@ void func_002CD788(void);
 void func_00251330(void);
 void func_002C63C0(void *p);
 int build_number(void);
-void func_00294518(void);
+void CL_InitUserMsgs(void);
 void func_00277B78(int protocol);
 void Memory_Init(void *buf, int size);
 void V_Init(void);
@@ -1545,7 +1545,7 @@ int Host_Init(quakeparms_t *parms)
             protocol_version = i;
     }
 
-    func_00294518();
+    CL_InitUserMsgs();
     func_00277B78(protocol_version);
     Memory_Init(parms->membase, parms->memsize);
     Cbuf_Init();

@@ -20,6 +20,22 @@ typedef struct screenfade_s
 #define FFADE_MODULATE 0x0002
 #define FFADE_STAYOUT 0x0004
 
+typedef struct player_info_s
+{
+    int userid;                 /* 0x000 */
+    char userinfo[196];         /* 0x004 */
+    char name[32];              /* 0x0C8 */
+    int unk_E8;                 /* 0x0E8 */
+    int spectator;              /* 0x0EC */
+    char model[64];             /* 0x0F0 */
+    int topcolor;               /* 0x130 */
+    int bottomcolor;            /* 0x134 */
+    byte pad138[0x344 - 0x138];
+    byte customdata[0x3C8 - 0x344]; /* 0x344: customization_t (cabeça da lista) */
+} player_info_t; /* 0x3C8 */
+
+#define MAX_CLIENTS 3
+
 typedef struct client_state_s
 {
     int max_edicts;             /* 0x000 */
@@ -58,14 +74,19 @@ typedef struct client_state_s
     byte pad3A8[0x3B0 - 0x3A8];
     int playernum;              /* 0x3B0 */
     qboolean paused;            /* 0x3B4 */
-    struct model_s *model_precache[1]; /* 0x3B8 */
-    byte pad3BC[0x13E0 - 0x3BC];
+    struct model_s *model_precache[512]; /* 0x3B8 */
+    struct sfx_s *sound_precache[512]; /* 0xBB8 */
+    byte pad13B8[0x13E0 - 0x13B8];
     int maxclients;             /* 0x13E0 */
     byte pad13E4[0x13E8 - 0x13E4];
     int viewentity;             /* 0x13E8 */
-    byte pad13EC[0x13FC - 0x13EC];
+    byte pad13EC[0x13F4 - 0x13EC];
+    int num_entities;           /* 0x13F4 */
+    byte pad13F8[0x13FC - 0x13F8];
     cl_entity_t viewent;        /* 0x13FC */
-    byte pad159C[0x212C - 0x159C];
+    byte pad159C[0x15C4 - 0x159C];
+    player_info_t players[MAX_CLIENTS]; /* 0x15C4 */
+    byte pad211C[0x212C - 0x211C];
 } client_state_t; /* 0x212C */
 
 extern client_state_t cl[2];
