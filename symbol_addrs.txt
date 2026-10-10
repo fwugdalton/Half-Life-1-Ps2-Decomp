@@ -1373,3 +1373,6 @@ LoadSaveData = 0x0029AB70; // type:func
 ParseSaveTables = 0x0029AEE8; // type:func
 EntityPatchRead = 0x0029B328; // type:func
 LoadGamestate = 0x0029B488; // type:func
+EntryInTable = 0x0029B818; // type:func
+LandmarkOrigin = 0x0029B8A8; // type:func
+EntityInSolid = 0x0029B970; // type:func

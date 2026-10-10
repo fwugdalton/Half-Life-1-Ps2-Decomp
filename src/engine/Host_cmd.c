@@ -291,6 +291,10 @@ extern char D_00392920[];
 void ED_Free(edict_t *ed);
 void SV_LinkEdict(edict_t *ent, qboolean touch_triggers);
 edict_t *CreateNamedEntity(string_t className);
+int SV_PointContents(const vec3_t p);
+#define MOVETYPE_FOLLOW 12
+#define FL_CLIENT 8
+#define CONTENTS_SOLID -2
 void SV_CountPlayers(int *clients, int *spectators);
 int strcasecmp(const char *, const char *);
 #include "engine/mathlib.h"
@@ -2147,11 +2151,52 @@ int LoadGamestate(char *level, int createPlayers)
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", LoadGamestate);
 #endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029B818);
+int EntryInTable(SAVERESTOREDATA *pSaveData, char *pMapName, int index)
+{
+    int i;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029B8A8);
+    for (i = index + 1; i < pSaveData->connectionCount; i++)
+    {
+        if (!strcmp(pSaveData->levelList[i].mapName, pMapName))
+            return i;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029B970);
+    return -1;
+}
+
+void LandmarkOrigin(SAVERESTOREDATA *pSaveData, vec3_t output, char *pLandmarkName)
+{
+    int i;
+
+    for (i = 0; i < pSaveData->connectionCount; i++)
+    {
+        if (!strcmp(pSaveData->levelList[i].landmarkName, pLandmarkName))
+        {
+            VectorCopy(pSaveData->levelList[i].vecLandmarkOrigin, output);
+            return;
+        }
+    }
+
+    VectorCopy(vec3_origin, output);
+}
+
+int EntityInSolid(edict_t *pent)
+{
+    vec3_t point;
+
+    if (pent->v.movetype == MOVETYPE_FOLLOW)
+    {
+        edict_t *pAimEnt = pent->v.aiment;
+        if (pAimEnt && (pAimEnt->v.flags & FL_CLIENT))
+            return 0;
+    }
+
+    point[0] = (pent->v.absmin[0] + pent->v.absmax[0]) * 0.5f;
+    point[1] = (pent->v.absmin[1] + pent->v.absmax[1]) * 0.5f;
+    point[2] = (pent->v.absmin[2] + pent->v.absmax[2]) * 0.5f;
+
+    return SV_PointContents(point) == CONTENTS_SOLID;
+}
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00392920);
 
