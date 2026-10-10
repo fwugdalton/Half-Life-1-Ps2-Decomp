@@ -1371,3 +1371,5 @@ CL_Save = 0x0029A958; // type:func
 EntityInit = 0x0029AB00; // type:func
 LoadSaveData = 0x0029AB70; // type:func
 ParseSaveTables = 0x0029AEE8; // type:func
+EntityPatchRead = 0x0029B328; // type:func
+LoadGamestate = 0x0029B488; // type:func

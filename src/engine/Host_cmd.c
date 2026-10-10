@@ -76,7 +76,7 @@ void Host_ShutdownServer(qboolean crash);
 void func_002AC478(int a0);
 void func_0029C388(void);
 int SV_SpawnServer(qboolean bIsDemo, char *server, char *startspot);
-int func_0029B488(char *level, int a1);
+int LoadGamestate(char *level, int a1);
 void SV_LoadEntities(void);
 void func_00236A10(void);
 void SV_ActivateServer(int runPhysics);
@@ -117,7 +117,7 @@ typedef struct
     edict_t *pent;              /* 0x04 */
     int location;               /* 0x08 */
     int size;                   /* 0x0C */
-    int flags;                  /* 0x10 */
+    unsigned int flags;         /* 0x10 */
     string_t classname;         /* 0x14 */
 } ENTITYTABLE;
 
@@ -287,6 +287,10 @@ extern char D_00392898[];
 void *Q_memcpy(void *dest, void *src, int count);
 void *Hunk_AllocName(int size, char *name);
 #define FENTTABLE_REMOVED 0x40000000
+extern char D_00392920[];
+void ED_Free(edict_t *ed);
+void SV_LinkEdict(edict_t *ent, qboolean touch_triggers);
+edict_t *CreateNamedEntity(string_t className);
 void SV_CountPlayers(int *clients, int *spectators);
 int strcasecmp(const char *, const char *);
 #include "engine/mathlib.h"
@@ -839,7 +843,7 @@ void Host_Map(qboolean bIsDemo, char *mapstring, char *mapName, qboolean loadGam
 
     if (loadGame)
     {
-        if (!func_0029B488(mapName, 1))
+        if (!LoadGamestate(mapName, 1))
             SV_LoadEntities();
         func_00236A10();
         sv.paused = true;
@@ -2021,11 +2025,127 @@ void EntityPatchWrite(SAVERESTOREDATA *pSaveData, char *level)
     func_0022BBC0(name);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029B328);
+void EntityPatchRead(SAVERESTOREDATA *pSaveData, char *level)
+{
+    char name[260];
+    ENTITYTABLE entity;
+    int size;
+    int entityId;
+    int i;
+    int pFile;
+
+    sprintf(name, D_00392898, Host_SaveGameDirectory(), level);
+    COM_FixSlashes(name);
+
+    pFile = func_0022B118(name, D_003927B8);
+    if (pFile)
+    {
+        func_0022BE50(&size, sizeof(int), 1, pFile);
+        for (i = 0; i < size; i++)
+        {
+            func_0022BE50(&entityId, sizeof(int), 1, pFile);
+            entity = pSaveData->pTable[entityId];
+            entity.flags = FENTTABLE_REMOVED;
+            pSaveData->pTable[entityId] = entity;
+        }
+        func_0022B238(pFile);
+    }
+}
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00392898);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029B488);
+#ifdef NON_MATCHING
+int LoadGamestate(char *level, int createPlayers)
+{
+    SAVE_HEADER header;
+    ENTITYTABLE entity;
+    int i;
+    edict_t *pent;
+    SAVERESTOREDATA *pSaveData;
+
+    pSaveData = LoadSaveData(level);
+    if (!pSaveData)
+        return 0;
+
+    ParseSaveTables(pSaveData, &header, 1);
+    EntityPatchRead(pSaveData, level);
+
+    Cvar_SetValue("skill", header.skillLevel);
+    strcpy(sv.name, header.mapName);
+    Cvar_Set("sv_skyname", header.skyName);
+    Cvar_SetValue("cl_skycolor_r", header.skyColor_r);
+    Cvar_SetValue("cl_skycolor_g", header.skyColor_g);
+    Cvar_SetValue("cl_skycolor_b", header.skyColor_b);
+    Cvar_SetValue("cl_skyvec_x", header.skyVec_x);
+    Cvar_SetValue("cl_skyvec_y", header.skyVec_y);
+    Cvar_SetValue("cl_skyvec_z", header.skyVec_z);
+
+    for (i = 0; i < pSaveData->tableCount; i++)
+    {
+        entity = pSaveData->pTable[i];
+
+        if (entity.classname && entity.size && !(entity.flags & FENTTABLE_REMOVED))
+        {
+            if (entity.id == 0)
+            {
+                pent = sv.edicts;
+                EntityInit(pent, entity.classname);
+            }
+            else if (entity.id < svs.maxclients + 1)
+            {
+                if (!(entity.flags & FENTTABLE_PLAYER))
+                    Sys_Error(D_00392920, i);
+
+                pent = svs.clients[entity.id - 1].edict;
+                if (createPlayers && pent)
+                    EntityInit(pent, entity.classname);
+                else
+                    pent = NULL;
+            }
+            else
+            {
+                pent = CreateNamedEntity(entity.classname);
+            }
+            entity.pent = pent;
+        }
+        else
+        {
+            entity.pent = NULL;
+        }
+
+        pSaveData->pTable[i] = entity;
+    }
+
+    for (i = 0; i < pSaveData->tableCount; i++)
+    {
+        entity = pSaveData->pTable[i];
+        pent = entity.pent;
+        pSaveData->currentIndex = i;
+        pSaveData->size = entity.location;
+        pSaveData->pCurrentData = pSaveData->pBaseData + entity.location;
+
+        if (pent)
+        {
+            if (gEntityInterface.pfnRestore(pent, pSaveData, 0) < 0)
+            {
+                ED_Free(pent);
+                entity.pent = NULL;
+            }
+            else
+            {
+                SV_LinkEdict(pent, false);
+            }
+        }
+    }
+
+    SaveExit(pSaveData);
+    sv.time = header.time;
+
+    return 1;
+}
+#else
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", LoadGamestate);
+#endif
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029B818);
 
