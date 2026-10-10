@@ -1102,7 +1102,7 @@ typedef struct
     void (*pfnClientUserInfoChanged)(edict_t *pEntity, char *infobuffer); /* 0x50 */
     void (*pfnServerActivate)(edict_t *pEdictList, int edictCount, int clientMax); /* 0x54 */
     void *unk_58[(0x64 - 0x58) / 4];
-    void (*unk_64)(void);                     /* 0x64 */
+    void (*pfnParmsNewLevel)(void);          /* 0x64 */
     void (*pfnParmsChangeLevel)(void);       /* 0x68 */
     const char *(*pfnGetGameDescription)(void); /* 0x6C */
     void *unk_70[(0x74 - 0x70) / 4];
@@ -1207,7 +1207,7 @@ void SV_New_f(void)
     {
         SV_SpectatorSpawn();
         gGlobalVariables.time = sv.time;
-        gEntityInterface.unk_64();
+        gEntityInterface.pfnParmsNewLevel();
         gEntityInterface.pfnSpectatorConnect(ent);
     }
 
@@ -1293,7 +1293,403 @@ void SV_SpectatorSpawn(void)
         }
     }
 }
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027C7F8);
+extern netadr_t net_from;
+extern netadr_t net_local_adr;
+extern cvar_t sv_lan;
+extern cvar_t sv_password;
+extern int D_00334540;
+extern int g_userid;
+qboolean func_002C6EA8(netadr_t adr);
+qboolean func_002C6D78(netadr_t a, netadr_t b);
+qboolean func_002C6CF8(netadr_t a, netadr_t b);
+qboolean func_002C6D58(netadr_t a);
+qboolean NET_CompareAdr(netadr_t a, netadr_t b);
+char *Info_ValueForKey(char *s, char *key);
+void func_00244AC8(char *s, char *key);
+void func_002885A0(client_t *cl);
+int func_002E60D8(const char *a, const char *b, int n);
+void Netchan_Setup(int sock, netchan_t *chan, netadr_t adr);
+void Netchan_OutOfBandPrint(int sock, netadr_t adr, int unk, char *format, ...);
+void Log_Printf(char *fmt, ...);
+void SV_ExtractFromUserinfo(client_t *cl);
+void SV_DropClient(client_t *cl, qboolean crash);
+
+extern netadr_t net_from;
+extern netadr_t net_local_adr;
+extern cvar_t sv_lan;
+extern cvar_t sv_password;
+extern int D_00334540;
+extern int g_userid;
+qboolean func_002C6EA8(netadr_t adr);
+qboolean func_002C6D78(netadr_t a, netadr_t b);
+qboolean func_002C6CF8(netadr_t a, netadr_t b);
+qboolean func_002C6D58(netadr_t a);
+qboolean NET_CompareAdr(netadr_t a, netadr_t b);
+char *Info_ValueForKey(char *s, char *key);
+void func_00244AC8(char *s, char *key);
+void func_002885A0(client_t *cl);
+int func_002E60D8(const char *a, const char *b, int n);
+void Netchan_Setup(int sock, netchan_t *chan, netadr_t adr);
+void Netchan_OutOfBandPrint(int sock, netadr_t adr, int unk, char *format, ...);
+void Log_Printf(char *fmt, ...);
+void SV_ExtractFromUserinfo(client_t *cl);
+void SV_DropClient(client_t *cl, qboolean crash);
+
+extern netadr_t net_from;
+extern netadr_t net_local_adr;
+extern cvar_t sv_lan;
+extern cvar_t sv_password;
+extern int D_00334540;
+extern int g_userid;
+qboolean func_002C6EA8(netadr_t adr);
+qboolean func_002C6D78(netadr_t a, netadr_t b);
+qboolean func_002C6CF8(netadr_t a, netadr_t b);
+qboolean func_002C6D58(netadr_t a);
+qboolean NET_CompareAdr(netadr_t a, netadr_t b);
+char *Info_ValueForKey(char *s, char *key);
+void func_00244AC8(char *s, char *key);
+void func_002885A0(client_t *cl);
+int func_002E60D8(const char *a, const char *b, int n);
+void Netchan_Setup(int sock, netchan_t *chan, netadr_t adr);
+void Netchan_OutOfBandPrint(int sock, netadr_t adr, int unk, char *format, ...);
+void Log_Printf(char *fmt, ...);
+void SV_ExtractFromUserinfo(client_t *cl);
+void SV_DropClient(client_t *cl, qboolean crash);
+
+extern netadr_t net_from;
+extern netadr_t net_local_adr;
+extern cvar_t sv_lan;
+extern cvar_t sv_password;
+extern int D_00334540;
+extern int g_userid;
+qboolean func_002C6EA8(netadr_t adr);
+qboolean func_002C6D78(netadr_t a, netadr_t b);
+qboolean func_002C6CF8(netadr_t a, netadr_t b);
+qboolean func_002C6D58(netadr_t a);
+qboolean NET_CompareAdr(netadr_t a, netadr_t b);
+char *Info_ValueForKey(char *s, char *key);
+void func_00244AC8(char *s, char *key);
+void func_002885A0(client_t *cl);
+int func_002E60D8(const char *a, const char *b, int n);
+void Netchan_Setup(int sock, netchan_t *chan, netadr_t adr);
+void Netchan_OutOfBandPrint(int sock, netadr_t adr, int unk, char *format, ...);
+void Log_Printf(char *fmt, ...);
+void SV_ExtractFromUserinfo(client_t *cl);
+void SV_DropClient(client_t *cl, qboolean crash);
+
+extern netadr_t net_from;
+extern netadr_t net_local_adr;
+extern cvar_t sv_lan;
+extern cvar_t sv_password;
+extern int D_00334540;
+extern int g_userid;
+qboolean func_002C6EA8(netadr_t adr);
+qboolean func_002C6D78(netadr_t a, netadr_t b);
+qboolean func_002C6CF8(netadr_t a, netadr_t b);
+qboolean func_002C6D58(netadr_t a);
+qboolean NET_CompareAdr(netadr_t a, netadr_t b);
+char *Info_ValueForKey(char *s, char *key);
+void func_00244AC8(char *s, char *key);
+void func_002885A0(client_t *cl);
+int func_002E60D8(const char *a, const char *b, int n);
+void Netchan_Setup(int sock, netchan_t *chan, netadr_t adr);
+void Netchan_OutOfBandPrint(int sock, netadr_t adr, int unk, char *format, ...);
+void Log_Printf(char *fmt, ...);
+void SV_ExtractFromUserinfo(client_t *cl);
+void SV_DropClient(client_t *cl, qboolean crash);
+
+extern netadr_t net_from;
+extern netadr_t net_local_adr;
+extern cvar_t sv_lan;
+extern cvar_t sv_password;
+extern int D_00334540;
+extern int g_userid;
+qboolean func_002C6EA8(netadr_t adr);
+qboolean func_002C6D78(netadr_t a, netadr_t b);
+qboolean func_002C6CF8(netadr_t a, netadr_t b);
+qboolean func_002C6D58(netadr_t a);
+qboolean NET_CompareAdr(netadr_t a, netadr_t b);
+char *Info_ValueForKey(char *s, char *key);
+void func_00244AC8(char *s, char *key);
+void func_002885A0(client_t *cl);
+int func_002E60D8(const char *a, const char *b, int n);
+void Netchan_Setup(int sock, netchan_t *chan, netadr_t adr);
+void Netchan_OutOfBandPrint(int sock, netadr_t adr, int unk, char *format, ...);
+void Log_Printf(char *fmt, ...);
+void SV_ExtractFromUserinfo(client_t *cl);
+void SV_DropClient(client_t *cl, qboolean crash);
+
+extern char D_0038E630[]; /* "0" */
+
+void SV_ConnectClient(void)
+{
+    netadr_t adr;
+    char userinfo[1024];
+    char name[128];
+    char cdkey[512];
+    int nClients;
+    int nSpectators;
+    edict_t *ent;
+    unsigned int authid;
+    unsigned int invalidid;
+    client_t *client;
+    client_t *cl;
+    int i;
+    int challenge;
+    int authprotocol;
+    int keylen;
+    int count;
+    char *s;
+
+    count = 0;
+    invalidid = 0xFFFFFFFF;
+    adr = net_from;
+    client = NULL;
+
+    if (atoi(Cmd_Argv(1)) != protocol_version)
+    {
+        SV_RejectConnection(&adr, "Bad protocol\n");
+        return;
+    }
+
+    if (Cmd_Argc() < 7)
+    {
+        SV_RejectConnection(&adr, "Insufficient connection info\n");
+        return;
+    }
+
+    challenge = atoi(Cmd_Argv(2));
+
+    if (!func_002C6EA8(adr))
+    {
+        for (i = 0; i < 16; i++)
+        {
+            if (func_002C6D78(net_from, svs.challenges[i].adr))
+            {
+                if (challenge == svs.challenges[i].challenge)
+                    break;
+                SV_RejectConnection(&adr, "Bad challenge.\n");
+                return;
+            }
+        }
+        if (i == 16)
+        {
+            SV_RejectConnection(&adr, "No challenge for your address.\n");
+            return;
+        }
+    }
+
+    if (D_00334540 || sv_lan.value)
+    {
+        if (net_from.type == 3 && !func_002C6CF8(net_from, net_local_adr) && !func_002C6D58(net_from))
+        {
+            SV_RejectConnection(&adr, "LAN servers are restricted to local clients (class C).\n");
+            return;
+        }
+    }
+
+    for (i = 0, cl = svs.clients; i < svs.maxclients; i++, cl++)
+    {
+        if (!cl->active && !cl->spawned && !cl->connected)
+            continue;
+
+        if (NET_CompareAdr(adr, cl->netchan.remote_address))
+        {
+            Con_Printf("%s:reconnect\n", NET_AdrToString(adr));
+            SV_DropClient(cl, false);
+        }
+    }
+
+    s = Cmd_Argv(3);
+    if (!s || !s[0])
+        goto invalid;
+    authprotocol = atoi(s);
+    if (authprotocol <= 0)
+        goto invalid;
+    if (authprotocol > 2)
+        goto invalid;
+
+    s = Cmd_Argv(4);
+    if (!s || !s[0])
+        goto invalid;
+    authid = atoi(s);
+
+    s = Cmd_Argv(5);
+    if (!s || !s[0])
+        goto invalid;
+    keylen = atoi(s);
+    if (keylen <= 0)
+        goto invalid;
+    if (keylen > 1024)
+    {
+invalid:
+        SV_RejectConnection(&adr, "Invalid connection.\n");
+        return;
+    }
+
+    s = Cmd_Argv(6);
+    if (!s)
+    {
+        SV_RejectConnection(&adr, "Invalid connection protocol.\n");
+        return;
+    }
+    memset(cdkey, 0, sizeof(cdkey));
+    strcpy(cdkey, s);
+
+    s = Cmd_Argv(7);
+    strncpy(userinfo, s, sizeof(userinfo) - 1);
+
+    s = Info_ValueForKey(userinfo, "spectator");
+    if (s[0] && strcmp(s, D_0038E630))
+        ;
+
+    if (!func_002C6EA8(adr) && sv_password.string[0] && strcasecmp(sv_password.string, "none")
+        && strcmp(sv_password.string, Info_ValueForKey(userinfo, "password")))
+    {
+        Con_Printf("%s:  password failed\n", NET_AdrToString(net_from));
+        SV_RejectConnectionForPassword(&net_from);
+        return;
+    }
+
+    if (0)
+    {
+        Con_Printf("%s:spectator password failed\n", NET_AdrToString(net_from));
+        SV_RejectConnection(&adr, "Invalid spectator password.\n");
+        Info_ValueForKey(userinfo, "*spectator");
+        return;
+    }
+
+    func_00244AC8(userinfo, "password");
+
+    s = Info_ValueForKey(userinfo, "name");
+    memset(name, 0, sizeof(name));
+    if (s)
+    {
+        strncpy(name, s, sizeof(name));
+        name[sizeof(name) - 1] = 0;
+    }
+    else
+    {
+        strcpy(name, "unconnected");
+    }
+
+    nSpectators = 0;
+    nClients = 0;
+    SV_CountPlayers(&nClients, &nSpectators);
+    nClients -= nSpectators;
+
+    if (0)
+    {
+        Con_Printf("%s:No space for spectator\n", NET_AdrToString(net_from));
+        SV_RejectConnection(&adr, "No more spectators allowed.\n");
+        return;
+    }
+
+    for (i = 0; i < svs.maxclients; i++)
+    {
+        client = &svs.clients[i];
+        if (!client->active && !client->spawned && !client->connected)
+            break;
+    }
+
+    if (i == svs.maxclients)
+    {
+        SV_RejectConnection(&net_from, "Server is full.");
+        return;
+    }
+
+    ent = EDICT_NUM(i + 1);
+
+    switch (authprotocol)
+    {
+    default:
+    case 1:
+        if (invalidid != authid)
+        {
+            SV_RejectConnection(&adr, "Invalid authentication userid.\n");
+            return;
+        }
+        break;
+
+    case 2:
+        if (!D_00334540)
+        {
+            SV_RejectConnection(&adr, "Invalid authentication message.\n");
+            return;
+        }
+        if (strlen(cdkey) != 32 || keylen != 32)
+        {
+            SV_RejectConnection(&adr, "Invalid CD Key.\n");
+            return;
+        }
+        for (i = 0, cl = svs.clients; i < svs.maxclients; i++, cl++)
+        {
+            if (!cl->active && !cl->spawned && !cl->connected)
+                continue;
+            if (!func_002E60D8(cdkey, cl->hashedcdkey, 32))
+                count++;
+        }
+        if (count >= 5)
+        {
+            SV_RejectConnection(&adr, "CD Key already in use.\n");
+            return;
+        }
+        break;
+    }
+
+    host_client = client;
+    func_002885A0(client);
+    memset(client, 0, sizeof(client_t));
+
+    client->resourcesonhand.pNext = client->resourcesonhand.pPrev = &client->resourcesonhand;
+    client->resourcesneeded.pNext = client->resourcesneeded.pPrev = &client->resourcesneeded;
+
+    Netchan_Setup(NS_SERVER, &client->netchan, adr);
+    Netchan_OutOfBandPrint(NS_SERVER, adr, *(int *)adr.ip, "%c0000000000000000", 'B');
+
+    if (!strcasecmp(NET_AdrToString(client->netchan.remote_address), "loopback"))
+        Con_DPrintf("Local connection.\n");
+    else if (0)
+        Con_DPrintf("Spectator %s connected\nAdr: %s\n", name, NET_AdrToString(client->netchan.remote_address));
+    else
+        Con_DPrintf("Client %s connected\nAdr: %s\n", name, NET_AdrToString(client->netchan.remote_address));
+
+    switch (authprotocol)
+    {
+    case 1:
+        break;
+    case 2:
+        strncpy(client->hashedcdkey, cdkey, 32);
+        client->hashedcdkey[32] = 0;
+        break;
+    }
+
+    client->active = false;
+    client->spawned = false;
+    client->connected = true;
+    client->uploading = false;
+    client->edict = ent;
+    client->maxspeed = 0;
+    client->userid = g_userid++;
+    client->WONid = authid;
+
+    Log_Printf("\"%s<%i><WON:%u>\" connected, address \"%s\"\n", name, client->userid, client->WONid,
+               NET_AdrToString(client->netchan.remote_address));
+
+    strncpy(client->userinfo, userinfo, MAX_INFO_STRING);
+    SV_ExtractFromUserinfo(client);
+
+    client->datagram.allowoverflow = true;
+    client->datagram.data = client->datagram_buf;
+    client->datagram.maxsize = sizeof(client->datagram_buf);
+    client->spectator = false;
+    client->unk_73D0 = 0;
+
+    if (!sv.loadgame)
+        gEntityInterface.pfnParmsNewLevel();
+
+    client->sendinfo_time = 0;
+}
 extern netadr_t net_from;
 mleaf_t *Mod_PointInLeaf(vec_t *p, model_t *model);
 void ED_LoadFromFile(char *data);
@@ -1338,124 +1734,6 @@ extern cvar_t sv_lan;
 void func_00245310(void);
 void Q_memcpy(void *dest, void *src, int count);
 
-/* rodata não migrada: início */
-__asm__(".section .rodata\n"
-        ".align 3\n"
-        ".globl D_0038EFD0\n"
-        "D_0038EFD0:\n"
-        ".asciz \"none\"\n"
-        ".align 2\n"
-        ".align 3\n"
-        ".globl D_0038EFD8\n"
-        "D_0038EFD8:\n"
-        ".asciz \"password\"\n"
-        ".align 2\n"
-        ".asciz \"\"\n"
-        ".align 2\n"
-        ".align 3\n"
-        ".globl D_0038EFE8\n"
-        "D_0038EFE8:\n"
-        ".asciz \"%s:  password failed\\n\"\n"
-        ".align 2\n"
-        ".align 3\n"
-        ".asciz \"%s:spectator password failed\\n\"\n"
-        ".align 2\n"
-        ".align 3\n"
-        ".asciz \"Invalid spectator password.\\n\"\n"
-        ".align 2\n"
-        ".align 3\n"
-        ".asciz \"*spectator\"\n"
-        ".align 2\n"
-        ".asciz \"\"\n"
-        ".align 2\n"
-        ".align 3\n"
-        ".globl D_0038F050\n"
-        "D_0038F050:\n"
-        ".asciz \"name\"\n"
-        ".align 2\n"
-        ".align 3\n"
-        ".globl D_0038F058\n"
-        "D_0038F058:\n"
-        ".asciz \"unconnected\"\n"
-        ".align 2\n"
-        ".asciz \"\"\n"
-        ".align 2\n"
-        ".align 3\n"
-        ".asciz \"%s:No space for spectator\\n\"\n"
-        ".align 2\n"
-        ".asciz \"\"\n"
-        ".align 2\n"
-        ".align 3\n"
-        ".asciz \"No more spectators allowed.\\n\"\n"
-        ".align 2\n"
-        ".align 3\n"
-        ".globl D_0038F0A8\n"
-        "D_0038F0A8:\n"
-        ".asciz \"Server is full.\"\n"
-        ".align 2\n"
-        ".align 3\n"
-        ".globl D_0038F0B8\n"
-        "D_0038F0B8:\n"
-        ".asciz \"Invalid authentication userid.\\n\"\n"
-        ".align 2\n"
-        ".align 3\n"
-        ".globl D_0038F0D8\n"
-        "D_0038F0D8:\n"
-        ".asciz \"Invalid authentication message.\\n\"\n"
-        ".align 2\n"
-        ".asciz \"\"\n"
-        ".align 2\n"
-        ".align 3\n"
-        ".globl D_0038F100\n"
-        "D_0038F100:\n"
-        ".asciz \"Invalid CD Key.\\n\"\n"
-        ".align 2\n"
-        ".asciz \"\"\n"
-        ".align 2\n"
-        ".align 3\n"
-        ".globl D_0038F118\n"
-        "D_0038F118:\n"
-        ".asciz \"CD Key already in use.\\n\"\n"
-        ".align 2\n"
-        ".align 3\n"
-        ".globl D_0038F130\n"
-        "D_0038F130:\n"
-        ".asciz \"%c0000000000000000\"\n"
-        ".align 2\n"
-        ".asciz \"\"\n"
-        ".align 2\n"
-        ".align 3\n"
-        ".globl D_0038F148\n"
-        "D_0038F148:\n"
-        ".asciz \"loopback\"\n"
-        ".align 2\n"
-        ".asciz \"\"\n"
-        ".align 2\n"
-        ".align 3\n"
-        ".globl D_0038F158\n"
-        "D_0038F158:\n"
-        ".asciz \"Local connection.\\n\"\n"
-        ".align 2\n"
-        ".asciz \"\"\n"
-        ".align 2\n"
-        ".align 3\n"
-        ".asciz \"Spectator %s connected\\nAdr: %s\\n\"\n"
-        ".align 2\n"
-        ".align 3\n"
-        ".globl D_0038F190\n"
-        "D_0038F190:\n"
-        ".asciz \"Client %s connected\\nAdr: %s\\n\"\n"
-        ".align 2\n"
-        ".align 3\n"
-        ".globl D_0038F1B0\n"
-        "D_0038F1B0:\n"
-        ".asciz \"\\\"%s<%i><WON:%u>\\\" connected, address \\\"%s\\\"\\n\"\n"
-        ".align 2\n"
-        ".asciz \"\"\n"
-        ".align 2\n"
-        ".align 3\n"
-        ".section .text\n");
-/* rodata não migrada: fim */
 #ifdef NON_MATCHING
 void SVC_GetChallenge(void)
 {
@@ -1542,7 +1820,6 @@ qboolean func_0027D380(char *a0, char *a1, int *a2, int *a3, int *a4, int *a5, c
     }
     return D_0053DB38.active;
 }
-extern char D_0038EFD0[]; /* "none" */
 extern int D_0033473C;
 extern netadr_t net_local_adr;
 extern cvar_t hostname;
@@ -1610,7 +1887,7 @@ void SVC_Info(qboolean bDetailed)
             MSG_WriteByte(&buf, 'l');
         MSG_WriteByte(&buf, 'l');
 
-        if (strlen(sv_password.string) && strcasecmp(sv_password.string, D_0038EFD0))
+        if (strlen(sv_password.string) && strcasecmp(sv_password.string, "none"))
             MSG_WriteByte(&buf, 1);
         else
             MSG_WriteByte(&buf, 0);
@@ -1719,7 +1996,7 @@ void SVC_RuleInfo(void)
         MSG_WriteString(&buf, var->name);
         if (var->flags & FCVAR_PROTECTED)
         {
-            if (strlen(var->string) > 0 && strcasecmp(var->string, D_0038EFD0))
+            if (strlen(var->string) > 0 && strcasecmp(var->string, "none"))
                 MSG_WriteString(&buf, D_0038E678);
             else
                 MSG_WriteString(&buf, D_0038E630);
@@ -1771,7 +2048,7 @@ char *MSG_ReadString(void);
 void Cmd_TokenizeString(char *text);
 extern cvar_t sv_logrelay;
 void func_0027D0F0(void);
-void func_0027C7F8(void);
+void SV_ConnectClient(void);
 void func_00297D10(netadr_t *adr);
 
 void SV_ConnectionlessPacket(void)
@@ -1837,7 +2114,7 @@ void SV_ConnectionlessPacket(void)
     else if (!strcasecmp(c, "rules"))
         SVC_RuleInfo();
     else if (!strcmp(c, "connect"))
-        func_0027C7F8();
+        SV_ConnectClient();
     else if (!strcmp(c, "rcon"))
         func_00297D10(&net_from);
     else
@@ -2724,7 +3001,6 @@ void SV_SendClientMessages(void)
 
     SV_CleanupEnts();
 }
-extern char D_0038F050[]; /* "name" */
 char *Info_ValueForKey(char *s, char *key);
 
 void SV_ExtractFromUserinfo(client_t *cl)
@@ -2736,7 +3012,7 @@ void SV_ExtractFromUserinfo(client_t *cl)
 
     gEntityInterface.pfnClientUserInfoChanged(cl->edict, cl->userinfo);
 
-    val = Info_ValueForKey(cl->userinfo, D_0038F050);
+    val = Info_ValueForKey(cl->userinfo, "name");
 
     strncpy(newname, val, sizeof(newname) - 1);
     newname[sizeof(newname) - 1] = 0;
@@ -2756,14 +3032,14 @@ void SV_ExtractFromUserinfo(client_t *cl)
 
     if (strcmp(val, newname))
     {
-        Info_SetValueForKey(cl->userinfo, D_0038F050, newname, MAX_INFO_STRING);
-        val = Info_ValueForKey(cl->userinfo, D_0038F050);
+        Info_SetValueForKey(cl->userinfo, "name", newname, MAX_INFO_STRING);
+        val = Info_ValueForKey(cl->userinfo, "name");
     }
 
     if (!val[0] || !strcasecmp(val, "console"))
     {
-        Info_SetValueForKey(cl->userinfo, D_0038F050, "unnamed", MAX_INFO_STRING);
-        val = Info_ValueForKey(cl->userinfo, D_0038F050);
+        Info_SetValueForKey(cl->userinfo, "name", "unnamed", MAX_INFO_STRING);
+        val = Info_ValueForKey(cl->userinfo, "name");
     }
 
     strncpy(cl->name, val, sizeof(cl->name) - 1);

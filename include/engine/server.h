@@ -219,7 +219,8 @@ typedef struct client_s
     int spec_track;             /* 0x0010 */
     netchan_t netchan;          /* 0x0014 */
     int chokecount;             /* 0x73C4 */
-    byte unk_73C8[0x73D4 - 0x73C8];
+    byte unk_73C8[0x73D0 - 0x73C8];
+    int unk_73D0;               /* 0x73D0 */
     qboolean unk_73D4;          /* 0x73D4 */
     qboolean spectator;         /* 0x73D8 */
     qboolean fakeclient;        /* 0x73DC */
@@ -229,7 +230,7 @@ typedef struct client_s
     float maxspeed;             /* 0x7444 */
     byte unk_7448[0x7454 - 0x7448];
     sizebuf_t datagram;         /* 0x7454 */
-    byte unk_7468[0x8408 - 0x7468];
+    byte datagram_buf[4000];    /* 0x7468 */
     float connection_started;   /* 0x8408 */
     qboolean send_message;      /* 0x840C */
     edict_t *edict;             /* 0x8410 */
@@ -287,7 +288,7 @@ typedef struct server_s
 {
     qboolean active;            /* 0x00000 */
     qboolean paused;            /* 0x00004 */
-    byte unk_00008[0x0C - 0x08];
+    qboolean loadgame;          /* 0x00008 */
     float time;                 /* 0x0000C */
     int lastcheck;              /* 0x00010 */
     float lastchecktime;        /* 0x00014 */
