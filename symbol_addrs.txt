@@ -1358,3 +1358,4 @@ SaveInit = 0x00299638; // type:func
 SaveExit = 0x00299828; // type:func
 SaveGameSlot = 0x00299890; // type:func
 SaveGamestate = 0x0029A340; // type:func
+SaveReadHeader = 0x00299D38; // type:func

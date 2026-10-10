@@ -191,6 +191,14 @@ int func_0022B118(char *name, char *mode);
 int func_0022BD98(void *data, int size, int count, int file);
 void func_0029BFC8(char *pPath, int file);
 void func_0022B238(int file);
+extern char D_003926F8[];
+extern char D_00392700[];
+extern char D_00392728[];
+extern int D_00399704;
+void func_00299420(char *pszComment);
+void func_00251DC0(char *pMessage, int a1);
+char *strstr(const char *, const char *);
+int func_0022BE50(void *buf, int size, int count, int file);
 void SV_CountPlayers(int *clients, int *spectators);
 int strcasecmp(const char *, const char *);
 #include "engine/mathlib.h"
@@ -1034,7 +1042,7 @@ char *Host_SaveGameDirectory(void)
     return func_0022E958();
 }
 
-void func_00299420(void) {
+void func_00299420(char *pszComment) {
 }
 
 void Host_SaveAgeList(char *pName, int count)
@@ -1288,14 +1296,121 @@ INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_003926C0);
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_003926D0);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Savegame_f);
+void Host_Savegame_f(void)
+{
+    char szComment[80];
+
+    if (!Host_ValidSave())
+        return;
+
+    if (Cmd_Argc() != 2)
+    {
+        Con_DPrintf("save <savename> : save a game\n");
+        return;
+    }
+
+    if (strstr(Cmd_Argv(1), D_003926F8))
+    {
+        Con_DPrintf(D_00392700);
+        return;
+    }
+
+    func_00299420(szComment);
+    SaveGameSlot(Cmd_Argv(1), szComment);
+    func_00251DC0(D_00392728, 0);
+}
 
 void Host_AutoSave_f(void) {
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00299CF8);
+void func_00299CF8(char *pSaveName, char *pSaveComment)
+{
+    int old;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00299D38);
+    old = D_00399704;
+    D_00399704 = 1;
+    SaveGameSlot(pSaveName, pSaveComment);
+    D_00399704 = old;
+}
+
+int SaveReadHeader(int pFile, GAME_HEADER *pHeader, int readGlobalState)
+{
+    int tag;
+    int size;
+    int tokenCount;
+    int tokenSize;
+    char *pszTokenList;
+    int i;
+    SAVERESTOREDATA *pSaveData;
+
+    func_0022BE50(&tag, sizeof(int), 1, pFile);
+    if (tag != SAVEGAME_HEADER)
+    {
+        func_0022B238(pFile);
+        return 0;
+    }
+
+    func_0022BE50(&tag, sizeof(int), 1, pFile);
+    if (tag != SAVEGAME_VERSION)
+    {
+        func_0022B238(pFile);
+        return 0;
+    }
+
+    func_0022BE50(&size, sizeof(int), 1, pFile);
+    func_0022BE50(&tokenCount, sizeof(int), 1, pFile);
+    func_0022BE50(&tokenSize, sizeof(int), 1, pFile);
+
+    if (D_00331B00 >= (int)(sizeof(SAVERESTOREDATA) + tokenSize + size))
+    {
+        pSaveData = D_00331AFC;
+        D_00331B04 = 1;
+    }
+    else
+    {
+        pSaveData = Mem_DbgCalloc(sizeof(SAVERESTOREDATA) + tokenSize + size, 1, D_00392628, 1766);
+        D_00331B04 = 0;
+    }
+
+    pSaveData->tableCount = 0;
+    pSaveData->pTable = NULL;
+    pSaveData->connectionCount = 0;
+
+    pszTokenList = (char *)(pSaveData + 1);
+
+    if (tokenSize > 0)
+    {
+        pSaveData->tokenCount = tokenCount;
+        pSaveData->tokenSize = tokenSize;
+        func_0022BE50(pszTokenList, tokenSize, 1, pFile);
+
+        if (!pSaveData->pTokens)
+            pSaveData->pTokens = Mem_DbgCalloc(tokenCount, sizeof(char *), D_00392628, 1786);
+
+        for (i = 0; i < tokenCount; i++)
+        {
+            pSaveData->pTokens[i] = *pszTokenList ? pszTokenList : NULL;
+            while (*pszTokenList++)
+                ;
+        }
+    }
+
+    pSaveData->size = 0;
+    pSaveData->bufferSize = size;
+    pSaveData->fUseLandmark = 0;
+    pSaveData->time = 0;
+    pSaveData->pCurrentData = pszTokenList;
+    pSaveData->pBaseData = pszTokenList;
+
+    func_0022BE50(pSaveData->pBaseData, size, 1, pFile);
+
+    gEntityInterface.pfnSaveReadFields(pSaveData, D_00392658, pHeader, D_00332F38, 3);
+    if (readGlobalState)
+        gEntityInterface.pfnRestoreGlobalState(pSaveData);
+
+    SaveExit(pSaveData);
+    return 1;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00299FB0);
 
