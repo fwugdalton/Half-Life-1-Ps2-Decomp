@@ -463,3 +463,30 @@ void SV_NewChaseDir2(edict_t *actor, vec_t *vecGoal, float dist)
     if (!SV_CheckBottom(actor))
         SV_FixCheckBottom(actor);
 }
+
+void SV_MoveToOrigin_I(edict_t *ent, const vec_t *pflGoal, float dist, int iStrafe)
+{
+    vec3_t vecGoal;
+    vec3_t vecDir;
+
+    VectorCopy(pflGoal, vecGoal);
+
+    if (ent->v.flags & (FL_ONGROUND | FL_SWIM | FL_FLY))
+    {
+        if (iStrafe)
+        {
+            VectorSubtract(vecGoal, ent->v.origin, vecDir);
+            if (!(ent->v.flags & (FL_SWIM | FL_FLY)))
+                vecDir[2] = 0;
+
+            VectorNormalize(vecDir);
+            VectorScale(vecDir, dist, vecDir);
+            SV_FlyDirection(ent, vecDir);
+        }
+        else
+        {
+            if (!SV_StepDirection(ent, ent->v.ideal_yaw, dist))
+                SV_NewChaseDir2(ent, vecGoal, dist);
+        }
+    }
+}

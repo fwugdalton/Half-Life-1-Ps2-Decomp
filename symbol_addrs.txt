@@ -978,3 +978,4 @@ SV_NewChaseDir = 0x002840D8; // type:func
 SV_CloseEnough = 0x00284538; // type:func
 SV_ReachedGoal = 0x002845A0; // type:func
 SV_NewChaseDir2 = 0x002845F8; // type:func
+SV_MoveToOrigin_I = 0x00284A58; // type:func
