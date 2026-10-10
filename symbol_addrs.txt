@@ -1149,3 +1149,4 @@ sv_num_touched_leafs = 0x00332DE2; // size:0x2
 sv_touched_leafnums = 0x00408A80; // size:0x800
 InsertLinkBefore = 0x002415B8; // type:func
 SV_LinkContents = 0x0028FE08; // type:func
+SV_TruePointContents = 0x002900C0; // type:func

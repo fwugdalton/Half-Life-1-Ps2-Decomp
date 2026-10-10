@@ -46,6 +46,15 @@ void *memcpy(void *, const void *, unsigned int);
 void SV_TouchLinks(edict_t *ent, areanode_t *node);
 void SV_FindTouchedLeafs(edict_t *ent, mnode_t *node, int *topnode);
 #define SOLID_NOT 0
+#define CONTENTS_TRANSLUCENT -15
+#define DIST_EPSILON (0.03125f)
+#define CONTENTS_WATER -3
+#define CONTENTS_CURRENT_0 -9
+#define CONTENTS_CURRENT_DOWN -14
+#define FL_MONSTERCLIP (1 << 23)
+int SV_LinkContents(areanode_t *node, vec3_t pos);
+trace_t SV_Move(const vec3_t start, const vec3_t mins, const vec3_t maxs, const vec3_t end, int type, edict_t *passedict, qboolean monsterClipBrush);
+void SV_SetGlobalTrace(trace_t *ptrace);
 #define MOVETYPE_FOLLOW 12
 void RemoveLink(link_t *l);
 void *memset(void *, int, unsigned int);
@@ -449,7 +458,33 @@ void SV_LinkEdict(edict_t *ent, qboolean touch_triggers)
         SV_TouchLinks(ent, sv_areanodes);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/world", SV_HullPointContents);
+int SV_HullPointContents(hull_t *hull, int num, vec3_t p)
+{
+    float d;
+    dclipnode_t *node;
+    mplane_t *plane;
+
+    while (num >= 0)
+    {
+        if (num < hull->firstclipnode || num > hull->lastclipnode)
+            Sys_Error("SV_HullPointContents: bad node number");
+
+        node = hull->clipnodes + num;
+        plane = hull->planes + node->planenum;
+
+        if (plane->type < 3)
+            d = p[plane->type] - plane->dist;
+        else
+            d = DotProduct(plane->normal, p) - plane->dist;
+
+        if (d < 0)
+            num = node->children[1];
+        else
+            num = node->children[0];
+    }
+
+    return num;
+}
 
 #ifdef NON_MATCHING
 int SV_LinkContents(areanode_t *node, vec3_t pos)
@@ -503,13 +538,149 @@ int SV_LinkContents(areanode_t *node, vec3_t pos)
 INCLUDE_ASM("asm/nonmatchings/engine/world", SV_LinkContents);
 #endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/world", SV_PointContents);
+int SV_PointContents(vec3_t p)
+{
+    int cont;
+    int entityContents;
 
-INCLUDE_ASM("asm/nonmatchings/engine/world", func_002900C0);
+    cont = SV_HullPointContents(&sv_worldmodel->hulls[0], 0, p);
+    if (cont <= CONTENTS_CURRENT_0 && cont >= CONTENTS_CURRENT_DOWN)
+        cont = CONTENTS_WATER;
 
-INCLUDE_ASM("asm/nonmatchings/engine/world", SV_TestEntityPosition);
+    if (cont != CONTENTS_SOLID)
+    {
+        entityContents = SV_LinkContents(&sv_areanodes[0], p);
+        if (entityContents != CONTENTS_EMPTY)
+            return entityContents;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/world", SV_RecursiveHullCheck);
+    return cont;
+}
+
+int SV_TruePointContents(vec3_t p)
+{
+    return SV_HullPointContents(&sv_worldmodel->hulls[0], 0, p);
+}
+
+edict_t *SV_TestEntityPosition(edict_t *ent)
+{
+    trace_t trace;
+
+    trace = SV_Move(ent->v.origin, ent->v.mins, ent->v.maxs, ent->v.origin, 0, ent, (ent->v.flags & FL_MONSTERCLIP) > 0);
+    if (trace.startsolid)
+    {
+        SV_SetGlobalTrace(&trace);
+        return trace.ent;
+    }
+
+    return NULL;
+}
+
+qboolean SV_RecursiveHullCheck(hull_t *hull, int num, float p1f, float p2f, vec3_t p1, vec3_t p2, trace_t *trace)
+{
+    dclipnode_t *node;
+    mplane_t *plane;
+    float t1, t2;
+    float frac;
+    int i;
+    vec3_t mid;
+    int side;
+    float midf;
+
+    if (num < 0)
+    {
+        if (num != CONTENTS_SOLID)
+        {
+            trace->allsolid = false;
+            if (num == CONTENTS_EMPTY)
+                trace->inopen = true;
+            else if (num != CONTENTS_TRANSLUCENT)
+                trace->inwater = true;
+        }
+        else
+        {
+            trace->startsolid = true;
+        }
+        return true;
+    }
+
+    if (num < hull->firstclipnode || num > hull->lastclipnode || !hull->planes)
+        Sys_Error("SV_RecursiveHullCheck: bad node number");
+
+    node = hull->clipnodes + num;
+    plane = hull->planes + node->planenum;
+
+    if (plane->type < 3)
+    {
+        t1 = p1[plane->type] - plane->dist;
+        t2 = p2[plane->type] - plane->dist;
+    }
+    else
+    {
+        t1 = DotProduct(plane->normal, p1) - plane->dist;
+        t2 = DotProduct(plane->normal, p2) - plane->dist;
+    }
+
+    if (t1 >= 0 && t2 >= 0)
+        return SV_RecursiveHullCheck(hull, node->children[0], p1f, p2f, p1, p2, trace);
+    if (t1 < 0 && t2 < 0)
+        return SV_RecursiveHullCheck(hull, node->children[1], p1f, p2f, p1, p2, trace);
+
+    if (t1 < 0)
+        frac = (t1 + DIST_EPSILON) / (t1 - t2);
+    else
+        frac = (t1 - DIST_EPSILON) / (t1 - t2);
+    if (frac < 0)
+        frac = 0;
+    if (frac > 1)
+        frac = 1;
+
+    midf = p1f + (p2f - p1f) * frac;
+    for (i = 0; i < 3; i++)
+        mid[i] = p1[i] + frac * (p2[i] - p1[i]);
+
+    side = (t1 < 0);
+
+    if (!SV_RecursiveHullCheck(hull, node->children[side], p1f, midf, p1, mid, trace))
+        return false;
+
+    if (SV_HullPointContents(hull, node->children[side ^ 1], mid) != CONTENTS_SOLID)
+        return SV_RecursiveHullCheck(hull, node->children[side ^ 1], midf, p2f, mid, p2, trace);
+
+    if (trace->allsolid)
+        return false;
+
+    if (!side)
+    {
+        VectorCopy(plane->normal, trace->plane.normal);
+        trace->plane.dist = plane->dist;
+    }
+    else
+    {
+        VectorSubtract(vec3_origin, plane->normal, trace->plane.normal);
+        trace->plane.dist = -plane->dist;
+    }
+
+    while (SV_HullPointContents(hull, hull->firstclipnode, mid) == CONTENTS_SOLID)
+    {
+        frac -= 0.1f;
+        if (frac < 0)
+        {
+            trace->fraction = midf;
+            VectorCopy(mid, trace->endpos);
+            Con_DPrintf("backup past 0\n");
+            return false;
+        }
+        midf = p1f + (p2f - p1f) * frac;
+        for (i = 0; i < 3; i++)
+            mid[i] = p1[i] + frac * (p2[i] - p1[i]);
+    }
+
+    trace->fraction = midf;
+    VectorCopy(mid, trace->endpos);
+
+    return false;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/world", func_00290628);
 
