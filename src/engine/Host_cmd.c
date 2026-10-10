@@ -3745,110 +3745,109 @@ void Host_GetCertificate_f(void)
         Con_Printf("WON Authentication successful\n");
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_InitCommands);
+extern cvar_t allowGame;
+extern cvar_t D_00332F18;
+void Master_ResetHeartbeats(void);
+void Master_SetMaster_f(void);
+void SV_SendResourceListBlock_f(void);
+void SV_Track_f(void);
+void func_00226300(void);
+void func_0022B900(void);
+void func_002355D0(void);
+void func_002373A8(void);
+void func_002373D0(void);
+void func_002391D8(void);
+void func_002395B0(void);
+void func_0023AFA8(void);
+void func_00283018(void);
+void func_002885E8(void);
+void func_00288C00(void);
+void func_0028B188(void);
+void func_0028B2A0(void);
+void func_0029F3B0(void);
+void func_002A0320(void);
+void Host_FullInfo_f(void);
+extern char D_00392558[];
 
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00393230);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00393240);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00393248);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00393250);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00393258);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00393260);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00393268);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00393270);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00393280);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00393288);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00393290);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_003932A0);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_003932B0);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_003932B8);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_003932C8);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_003932D0);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_003932D8);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_003932E8);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_003932F0);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_003932F8);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00393300);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00393308);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00393310);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00393320);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00393328);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00393330);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00393338);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00393340);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00393348);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00393358);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00393360);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00393370);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00393378);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00393388);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00393390);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00393398);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_003933A8);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_003933B8);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_003933C8);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_003933D8);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_003933E0);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_003933E8);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_003933F8);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00393408);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00393410);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00393420);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00393430);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00393438);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00393450);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00393460);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00393470);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00393480);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00393488);
+void Host_InitCommands(void)
+{
+    func_0023AFA8();
+    func_002355D0();
+    Cmd_AddCommand("ensureStatusToggle", func_00226300);
+    Cmd_AddCommand("modelreport", func_0029F3B0);
+    Cmd_AddCommand("memfsdir", func_0022B900);
+    func_002395B0();
+    Cmd_AddCommand("printtoc", func_002373A8);
+    Cmd_AddCommand("cdcachereport", func_002373D0);
+    Cmd_AddCommand("iopmemreport", func_002391D8);
+    Cmd_AddCommand("getcertificate", Host_GetCertificate_f);
+    Cmd_AddCommand("notify", Host_Notify_f);
+    Cmd_AddCommand("getsv", Host_GetSv_f);
+    Cmd_AddCommand("bgetsv", Host_BGetSv_f);
+    Cmd_AddCommand("bgetmod", Host_BGetMod_f);
+    Cmd_AddCommand("pingsv", Host_PingSv_f);
+    Cmd_AddCommand("protocol", Host_Protocol_f);
+    Cmd_AddCommand("logos", Host_Logos_f);
+    Cmd_AddCommand("crc", Host_Crc_f);
+    Cmd_AddCommand("killserver", Host_KillServer_f);
+    Cmd_AddCommand("soundfade", Host_SoundFade_f);
+    Cmd_AddCommand("wc", Host_WC_f);
+    Cmd_AddCommand("status", Host_Status_f);
+    Cmd_AddCommand("quit", Host_Quit_f);
+    Cmd_AddCommand("exit", Host_Quit_f);
+    Cmd_AddCommand("map", Host_Map_f);
+    Cmd_AddCommand("maps", Host_Maps_f);
+    Cmd_AddCommand("restartdecay", Host_Restartdecay_f);
+    Cmd_AddCommand("restart", Host_Restart_f);
+    Cmd_AddCommand("reload", Host_Reload_f);
+    Cmd_AddCommand("changelevel", Host_Changelevel_f);
+    Cmd_AddCommand("changelevel2", Host_Changelevel2_f);
+    Cmd_AddCommand("connect", Host_Connect_f);
+    Cmd_AddCommand("reconnect", Host_Reconnect_f);
+    Cmd_AddCommand("version", Host_Version_f);
+    Cmd_AddCommand("say", Host_Say_f);
+    Cmd_AddCommand("say_team", Host_Say_Team_f);
+    Cmd_AddCommand("tell", Host_Tell_f);
+    Cmd_AddCommand("kill", Host_Kill_f);
+    Cmd_AddCommand("pause", Host_Pause_f);
+    Cmd_AddCommand("spawn", Host_Spawn_f);
+    Cmd_AddCommand("begin", Host_Begin_f);
+    Cmd_AddCommand("prespawn", Host_PreSpawn_f);
+    Cmd_AddCommand("kick", Host_Kick_f);
+    Cmd_AddCommand("ping", Host_Ping_f);
+    Cmd_AddCommand("load", Host_Loadgame_f);
+    Cmd_AddCommand("save", Host_Savegame_f);
+    Cmd_AddCommand(D_003926C0, Host_AutoSave_f);
+    Cmd_AddCommand("setinfo", Host_SetInfo_f);
+    Cmd_AddCommand("fullinfo", Host_FullInfo_f);
+    Cmd_AddCommand("ptrack", SV_Track_f);
+    Cmd_AddCommand("customrsrclist", func_00288C00);
+    Cmd_AddCommand("god", Host_God_f);
+    Cmd_AddCommand("notarget", Host_Notarget_f);
+    Cmd_AddCommand("fly", Host_Fly_f);
+    Cmd_AddCommand("noclip", Host_Noclip_f);
+    Cmd_AddCommand("viewmodel", Host_Viewmodel_f);
+    Cmd_AddCommand("viewframe", Host_Viewframe_f);
+    Cmd_AddCommand("viewnext", Host_Viewnext_f);
+    Cmd_AddCommand("viewprev", Host_Viewprev_f);
+    Cmd_AddCommand("mcache", func_002A0320);
+    Cmd_AddCommand("interp", Host_Interp_f);
+    Cmd_AddCommand("setmaster", Master_SetMaster_f);
+    Cmd_AddCommand("heartbeat", Master_ResetHeartbeats);
+    Cmd_AddCommand("motd", Host_Motd_f);
+    Cmd_AddCommand("sv_print_custom", func_002885E8);
+    Cmd_AddCommand("download", Host_Download_f);
+    Cmd_AddCommand("nextdl", Host_Nextdl_f);
+    Cmd_AddCommand("sv_allow_download", Host_AllowDownload_f);
+    Cmd_AddCommand("sv_allow_upload", Host_AllowUpload_f);
+    Cmd_AddCommand("resourcelist", SV_SendResourceListBlock_f);
+    Cvar_RegisterVariable(&rcon_password);
+    Cvar_RegisterVariable(&allowGame);
+    Cvar_RegisterVariable(&D_00332F18);
+    Cmd_AddCommand(D_00392558, SV_New_f);
+    Cmd_AddCommand("dropclient", func_0028B188);
+    Cmd_AddCommand("info", func_0028B2A0);
+    Cvar_RegisterVariable(&host_map);
+    Cmd_AddCommand("keys", func_00283018);
+    Host_ClearSaveDirectory();
+}

@@ -1389,3 +1389,6 @@ FindViewthing = 0x0029D8F0; // type:func
 PrintFrameName = 0x0029DAB8; // type:func
 SV_GetFragmentSize = 0x0029DF60; // type:func
 Host_EndSection = 0x0029E2D0; // type:func
+D_00393230 = 0x00393230; // can_be_referenced:False
+D_00393330 = 0x00393330; // can_be_referenced:False
+D_00393430 = 0x00393430; // can_be_referenced:False
