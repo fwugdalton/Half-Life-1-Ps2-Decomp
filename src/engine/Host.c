@@ -96,7 +96,7 @@ void func_002B05F8(void);
 void func_0029F6A8(void);
 void func_002885A0(client_t *cl);
 void SV_ReadPackets(void);
-void func_00287A40(void);
+void SV_Physics(void);
 void SV_QueryMovevarsChanged(void);
 void SV_SendClientMessages(void);
 void func_00288A58(void);
@@ -744,7 +744,7 @@ void Host_ServerFrame(void)
         t[1] = Sys_FloatTime();
 
     if (!sv.paused && (svs.maxclients > 1 || (key_dest == 0 && (cls[0].state == ca_active || cls[0].state == ca_dedicated))))
-        func_00287A40();
+        SV_Physics();
 
     if (host_speeds.value != 0)
         t[2] = Sys_FloatTime();

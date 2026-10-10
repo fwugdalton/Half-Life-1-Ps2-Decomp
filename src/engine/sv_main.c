@@ -1098,7 +1098,9 @@ typedef struct
     void *unk_20[(0x3C - 0x20) / 4];
     int (*pfnClientConnect)(edict_t *pEntity, const char *pszName, const char *pszAddress, char *szRejectReason); /* 0x3C */
     void (*pfnClientDisconnect)(edict_t *pEntity); /* 0x40 */
-    void *unk_44[(0x64 - 0x44) / 4];
+    void *unk_44[(0x54 - 0x44) / 4];
+    void (*pfnServerActivate)(edict_t *pEdictList, int edictCount, int clientMax); /* 0x54 */
+    void *unk_58[(0x64 - 0x58) / 4];
     void (*unk_64)(void);                     /* 0x64 */
     void (*pfnParmsChangeLevel)(void);       /* 0x68 */
     void *unk_6C[(0x74 - 0x6C) / 4];
@@ -1479,7 +1481,50 @@ qboolean func_0027D380(char *a0, char *a1, int *a2, int *a3, int *a4, int *a5, c
     return D_0053DB38.active;
 }
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027D480);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027D778);
+void SVC_PlayerInfo(void)
+{
+    sizebuf_t buf;
+    byte data[2048];
+    int i;
+    int count;
+    client_t *client;
+
+    buf.maxsize = sizeof(data);
+    buf.data = data;
+    buf.cursize = 0;
+
+    if (!sv.active)
+        return;
+    if (svs.maxclients <= 1)
+        return;
+
+    MSG_WriteLong(&buf, -1);
+    MSG_WriteByte(&buf, 'D');
+
+    count = 0;
+    client = svs.clients;
+    for (i = 0; i < svs.maxclients; i++)
+    {
+        if (client[i].active)
+            count++;
+    }
+    MSG_WriteByte(&buf, count);
+
+    count = 0;
+    for (i = 0, client = svs.clients; i < svs.maxclients; i++, client++)
+    {
+        if (!svs.clients[i].active)
+            continue;
+
+        count++;
+        MSG_WriteByte(&buf, count);
+        MSG_WriteString(&buf, client->name);
+        MSG_WriteLong(&buf, (int)client->edict->v.frags);
+        MSG_WriteFloat(&buf, realtime - client->netchan.connect_time);
+    }
+
+    NET_SendPacket(NS_SERVER, buf.cursize, buf.data, net_from, 0);
+}
 extern char D_0038E630[]; /* "0" (ainda emitido pelo bloco de rodata) */
 extern char D_0038E678[]; /* "1" */
 extern char D_0038EFD0[]; /* "none" */
@@ -2013,14 +2058,46 @@ void SV_AddResource(int type, char *name, int size, int flags, int index)
     r->ucFlags |= flags != 0;
     r->nIndex = index;
 }
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00281BC8);
+#include "engine/decals.h"
+int Draw_DecalSize(int number);
+
+void SV_CreateResourceList(void)
+{
+    char **s;
+    int i;
+    qboolean ffirstsent = false;
+
+    sv.num_resources = 0;
+
+    for (i = 1, s = &sv.sound_precache[1]; *s; s++, i++)
+    {
+        if (**s != '!')
+        {
+            SV_AddResource(0, *s, 0, 0, i);
+        }
+        else if (!ffirstsent)
+        {
+            ffirstsent = true;
+            SV_AddResource(0, "!", 0, 1, i);
+        }
+    }
+
+    for (s = &sv.model_precache[1], i = 1; *s; s++, i++)
+        SV_AddResource(2, *s, 0, 1, i);
+
+    for (i = 0; i < sv_decalnamecount; i++)
+        SV_AddResource(3, sv_decalnames[i].name, Draw_DecalSize(i), 0, i);
+
+    for (s = &sv.generic_precache[1], i = 1; *s; s++, i++)
+        SV_AddResource(4, *s, 0, 1, i);
+}
 void func_00281D88(void)
 {
 }
 void func_00281D90(void)
 {
 }
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00281D98);
+INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_CreateBaseline);
 #include <stdarg.h>
 int vsprintf(char *buf, const char *fmt, va_list ap);
 
@@ -2081,7 +2158,64 @@ void SV_SaveSpawnparms(SAVERESTOREDATA *pSaveData)
         gEntityInterface.pfnSave(host_client->edict, pSaveData);
     }
 }
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_002823C8);
+extern char D_0038E6C0[]; /* "sv_newunit" */
+extern float host_frametime;
+void Cvar_Set(char *var_name, char *value);
+void SV_Physics(void);
+void SV_CreateBaseline(void);
+
+void SV_ActivateServer(int runPhysics)
+{
+    int i;
+    UserMsg *pTemp;
+
+    Cvar_Set(D_0038E6C0, D_0038E630);
+
+    gEntityInterface.pfnServerActivate(sv.edicts, sv.num_edicts, svs.maxclients);
+
+    sv.active = true;
+    sv.state = 2;
+
+    if (runPhysics)
+    {
+        host_frametime = 0.1f;
+        SV_Physics();
+        SV_Physics();
+    }
+    else
+    {
+        host_frametime = 0.001f;
+        SV_Physics();
+    }
+
+    SV_CreateBaseline();
+
+    sv.signon_buffer_size[sv.num_signon_buffers - 1] = sv.signon.cursize;
+
+    SV_CreateResourceList();
+
+    for (i = 0, host_client = svs.clients; i < svs.maxclients; i++, host_client++)
+    {
+        if (!host_client->active && !host_client->connected)
+            continue;
+
+        if (svs.maxclients <= 1)
+            SV_SendServerinfo(host_client);
+
+        if (sv_gpUserMsgs && !host_client->fakeclient)
+        {
+            pTemp = sv_gpNewUserMsgs;
+            sv_gpNewUserMsgs = sv_gpUserMsgs;
+            SV_SendUserReg(&host_client->netchan.message);
+            sv_gpNewUserMsgs = pTemp;
+        }
+    }
+
+    if (svs.maxclients > 1)
+        Con_DPrintf("%i player server started\n", svs.maxclients);
+    else
+        Con_DPrintf("Game started\n");
+}
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_002825C8);
 void SV_LoadEntities(void)
 {

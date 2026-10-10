@@ -22,6 +22,15 @@
 "net_from"
 ]
 },
+"SVC_PlayerInfo": {
+"migrated": [],
+"refs": [
+"net_from",
+"realtime",
+"sv",
+"svs"
+]
+},
 "SVC_RuleInfo": {
 "migrated": [],
 "refs": [
@@ -31,6 +40,25 @@
 "cvar_vars",
 "net_from",
 "sv",
+"svs"
+]
+},
+"SV_ActivateServer": {
+"migrated": [
+"D_0038F520",
+"D_0038F540"
+],
+"refs": [
+"D_0038E630",
+"D_0038E6C0",
+"D_0038F520",
+"D_0038F540",
+"D_0053DDC4",
+"host_client",
+"host_frametime",
+"sv",
+"sv_gpNewUserMsgs",
+"sv_gpUserMsgs",
 "svs"
 ]
 },
@@ -157,6 +185,30 @@
 "migrated": [],
 "refs": [
 "svs"
+]
+},
+"SV_CreateBaseline": {
+"migrated": [],
+"refs": [
+"D_004C16B8",
+"D_004C83E4",
+"pr_strings",
+"sv",
+"svs"
+]
+},
+"SV_CreateResourceList": {
+"migrated": [
+"D_0038F508"
+],
+"refs": [
+"D_0038F508",
+"D_004C27A4",
+"D_004C37A4",
+"D_004C47A8",
+"sv",
+"sv_decalnamecount",
+"sv_decalnames"
 ]
 },
 "SV_DeallocateDynamicData": {
@@ -791,15 +843,6 @@
 "svs"
 ]
 },
-"func_0027D778": {
-"migrated": [],
-"refs": [
-"net_from",
-"realtime",
-"sv",
-"svs"
-]
-},
 "func_0027DA98": {
 "migrated": [],
 "refs": [
@@ -916,20 +959,6 @@
 "svs"
 ]
 },
-"func_00281BC8": {
-"migrated": [
-"D_0038F508"
-],
-"refs": [
-"D_0038F508",
-"D_004C27A4",
-"D_004C37A4",
-"D_004C47A8",
-"sv",
-"sv_decalnamecount",
-"sv_decalnames"
-]
-},
 "func_00281D88": {
 "migrated": [],
 "refs": []
@@ -937,35 +966,6 @@
 "func_00281D90": {
 "migrated": [],
 "refs": []
-},
-"func_00281D98": {
-"migrated": [],
-"refs": [
-"D_004C16B8",
-"D_004C83E4",
-"pr_strings",
-"sv",
-"svs"
-]
-},
-"func_002823C8": {
-"migrated": [
-"D_0038F520",
-"D_0038F540"
-],
-"refs": [
-"D_0038E630",
-"D_0038E6C0",
-"D_0038F520",
-"D_0038F540",
-"D_0053DDC4",
-"host_client",
-"host_frametime",
-"sv",
-"sv_gpNewUserMsgs",
-"sv_gpUserMsgs",
-"svs"
-]
 },
 "func_002825C8": {
 "migrated": [
