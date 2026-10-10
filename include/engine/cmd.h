@@ -203,7 +203,8 @@ typedef struct client_static_s
     int dl_nCurStat;            /* 0x7EF0 */
     int dl_unk_7EF4;            /* 0x7EF4 */
     qboolean dl_custom;         /* 0x7EF8 */
-    byte unk_7EFC[0x7F18 - 0x7EFC];
+    float latency;              /* 0x7EFC */
+    byte unk_7F00[0x7F18 - 0x7F00];
 } client_static_t;              /* 0x7F18 */
 
 extern client_static_t cls[2];

@@ -20,6 +20,22 @@ typedef struct screenfade_s
 #define FFADE_MODULATE 0x0002
 #define FFADE_STAYOUT 0x0004
 
+/* frame_t do PS2 (0x330), cl.frames[cl_updatebackup] */
+typedef struct frame_s
+{
+    byte pad0[0x24];
+    float senttime;             /* 0x24 */
+    byte pad28[0x2C - 0x28];
+    float receivedtime;         /* 0x2C */
+    byte pad30[0x324 - 0x30];
+    short unk_324;              /* 0x324 */
+    short unk_326;              /* 0x326 */
+    short unk_328;              /* 0x328 */
+    short unk_32A;              /* 0x32A */
+    short unk_32C;              /* 0x32C */
+    short pad32E;
+} frame_t; /* 0x330 */
+
 typedef struct player_info_s
 {
     int userid;                 /* 0x000 */
@@ -42,15 +58,20 @@ typedef struct client_state_s
     int num_resources;          /* 0x004 */
     byte pad8[0x208 - 0x8];
     int servercount;            /* 0x208 */
-    byte pad20C[0x224 - 0x20C];
+    byte pad20C[0x210 - 0x20C];
+    int parsecount;             /* 0x210 */
+    byte pad214[0x224 - 0x214];
     float forwardmove;          /* 0x224: cmd.forwardmove */
     byte pad228[0x238 - 0x228];
     int stats[1];               /* 0x238: stats[STAT_HEALTH] */
     byte pad23C[0x240 - 0x23C];
     int weapon;                 /* 0x240: stats[STAT_WEAPON] */
-    byte pad244[0x2DC - 0x244];
+    byte pad244[0x2B8 - 0x244];
+    int items;                  /* 0x2B8 */
+    byte pad2BC[0x2DC - 0x2BC];
     vec3_t viewangles;          /* 0x2DC */
-    byte pad2E8[0x30C - 0x2E8];
+    vec3_t mvelocity[2];        /* 0x2E8: [0] atual, [1] anterior */
+    byte pad300[0x30C - 0x300];
     vec3_t punchangle;          /* 0x30C */
     vec3_t crosshairangle;      /* 0x318 */
     byte pad324[0x328 - 0x324];
@@ -67,7 +88,7 @@ typedef struct client_state_s
     screenfade_t sf;            /* 0x368 */
     qboolean unk_37C;           /* 0x37C: congela a câmera (V_RenderView) */
     qboolean onground;          /* 0x380 */
-    byte pad384[0x388 - 0x384];
+    qboolean inwater;           /* 0x384 */
     int waterlevel;             /* 0x388 */
     byte pad38C[0x390 - 0x38C];
     int intermission;           /* 0x390 */
@@ -75,7 +96,7 @@ typedef struct client_state_s
     float time;                 /* 0x3A0 */
     float oldtime;              /* 0x3A4 */
     byte pad3A8[0x3AC - 0x3A8];
-    struct frame_s *frames;     /* 0x3AC: frame_t[cl_updatebackup] (0x330 cada) */
+    frame_t *frames;     /* 0x3AC: frame_t[cl_updatebackup] (0x330 cada) */
     int playernum;              /* 0x3B0 */
     qboolean paused;            /* 0x3B4 */
     struct model_s *model_precache[512]; /* 0x3B8 */

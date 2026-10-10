@@ -9,6 +9,19 @@
 #define MAX_LOCAL 2
 #define MAX_QPATH 64
 #define MAX_OSPATH 260
+
+/* svc_clientdata */
+#define SU_VIEWHEIGHT (1 << 0)
+#define SU_IDEALPITCH (1 << 1)
+#define SU_PUNCH1 (1 << 2)
+#define SU_VELOCITY1 (1 << 5)
+#define SU_ITEMS (1 << 8)
+#define SU_WEAPONFRAME (1 << 9)
+#define SU_ONGROUND (1 << 10)
+#define SU_INWATER (1 << 11)
+#define SU_FULLYINWATER (1 << 15)
+#define DEFAULT_VIEWHEIGHT 22
+#define STAT_HEALTH 0
 #define SVC_LASTMSG 53
 #define MAX_USERMSGS 72
 
@@ -54,6 +67,7 @@ extern int D_0033451C;
 extern int cl_updatebackup[MAX_LOCAL];
 extern int cl_updatemask[MAX_LOCAL];
 extern int D_00399490[MAX_LOCAL];
+extern float D_00399498[MAX_LOCAL];
 extern char com_gamedir[];
 extern void (*D_003997C0)(char *gamedir);
 extern int protocol_version;
@@ -102,6 +116,11 @@ void func_00247028(int clientId);
 void Cbuf_AddText(char *text);
 void func_0024FF90(int unk, int clientId);
 void Cvar_SetValue(char *var_name, float value);
+int func_00243460(void);
+int func_00243370(void);
+float MSG_ReadCoord(void);
+float func_00243528(void);
+float func_002437A8(void);
 int atoi(const char *);
 void Host_Error(const char *error, ...);
 void Host_EndGame(const char *message, ...);
@@ -971,9 +990,124 @@ void CL_ParseServerInfo(int clientId)
     cls[clientId].state = ca_connected;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_parse", func_00296138);
+void CL_ParseBaseline(cl_entity_t *ent)
+{
+    int i;
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_parse", func_002962A0);
+    ent->baseline.entityType = MSG_ReadByte();
+    ent->baseline.modelindex = MSG_ReadShort();
+    ent->baseline.sequence = MSG_ReadByte();
+    ent->baseline.frame = MSG_ReadByte();
+
+    if (!ent->baseline.entityType)
+        ent->baseline.scale = func_00243460() * (1.0f / 256.0f);
+    else
+        ent->baseline.scale = MSG_ReadByte() * 0.1f;
+
+    ent->baseline.colormap = func_00243460();
+    ent->baseline.skin = MSG_ReadShort();
+    ent->baseline.solid = MSG_ReadByte();
+
+    for (i = 0; i < 3; i++)
+    {
+        ent->baseline.origin[i] = MSG_ReadCoord();
+        ent->baseline.angles[i] = func_00243528();
+        ent->baseline.mins[i] = MSG_ReadCoord();
+        ent->baseline.maxs[i] = MSG_ReadCoord();
+    }
+
+    ent->baseline.rendermode = MSG_ReadByte();
+    ent->baseline.renderamt = MSG_ReadByte();
+    ent->baseline.rendercolor.r = MSG_ReadByte();
+    ent->baseline.rendercolor.g = MSG_ReadByte();
+    ent->baseline.rendercolor.b = MSG_ReadByte();
+    ent->baseline.renderfx = MSG_ReadByte();
+}
+
+void CL_ParseClientdata(int bits, int clientId)
+{
+    int i;
+    frame_t *frame;
+    float latency;
+
+    i = cls[clientId].netchan.incoming_acknowledged;
+    cl[clientId].parsecount = i;
+    i &= cl_updatemask[clientId];
+    D_00399490[clientId] = i;
+    frame = &cl[clientId].frames[i];
+    D_00399498[clientId] = frame->senttime;
+    frame->receivedtime = realtime;
+
+    frame->unk_326 = 0;
+    frame->unk_328 = 0;
+    frame->unk_324 = 0;
+    frame->unk_32A = 0;
+    frame->unk_32C = 0;
+
+    latency = frame->receivedtime - frame->senttime;
+    if (latency < 0 || latency > 1.0f)
+    {
+    }
+    else
+    {
+        if (latency < cls[clientId].latency)
+            cls[clientId].latency = latency;
+        else
+            cls[clientId].latency += 0.001f;
+    }
+
+    if (bits & SU_VIEWHEIGHT)
+        cl[clientId].viewheight = func_00243370();
+    else
+        cl[clientId].viewheight = DEFAULT_VIEWHEIGHT;
+
+    if (bits & SU_IDEALPITCH)
+        cl[clientId].idealpitch = func_00243370();
+    else
+        cl[clientId].idealpitch = 0;
+
+    VectorCopy(cl[clientId].mvelocity[0], cl[clientId].mvelocity[1]);
+
+    for (i = 0; i < 3; i++)
+    {
+        if (bits & (SU_PUNCH1 << i))
+            cl[clientId].punchangle[i] = func_002437A8();
+        else
+            cl[clientId].punchangle[i] = 0;
+
+        if (bits & (SU_VELOCITY1 << i))
+            cl[clientId].mvelocity[0][i] = func_00243370() * 16;
+        else
+            cl[clientId].mvelocity[0][i] = 0;
+    }
+
+    if (bits & SU_ITEMS)
+        cl[clientId].items = MSG_ReadLong();
+
+    cl[clientId].onground = (bits & SU_ONGROUND) != 0;
+    cl[clientId].inwater = (bits & SU_INWATER) != 0;
+
+    if (cl[clientId].inwater)
+    {
+        if (bits & SU_FULLYINWATER)
+            cl[clientId].waterlevel = 3;
+        else
+            cl[clientId].waterlevel = 2;
+    }
+    else
+    {
+        cl[clientId].waterlevel = 0;
+    }
+
+    if (bits & SU_WEAPONFRAME)
+        cl[clientId].weapon = MSG_ReadShort();
+    else
+        cl[clientId].weapon = 0;
+
+    i = MSG_ReadShort();
+    if (cl[clientId].stats[STAT_HEALTH] != i)
+        cl[clientId].stats[STAT_HEALTH] = i;
+}
 
 void func_00296658(void) {
 }

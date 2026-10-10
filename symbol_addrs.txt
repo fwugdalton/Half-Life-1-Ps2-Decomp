@@ -1261,3 +1261,5 @@ CL_ReallocateDynamicData = 0x00295BC8; // type:func
 cl_updatebackup = 0x00332E10; // size:0x8
 CL_ParseServerInfo = 0x00295EA0; // type:func
 CL_CheckGameDirectory = 0x00295D70; // type:func
+CL_ParseBaseline = 0x00296138; // type:func
+CL_ParseClientdata = 0x002962A0; // type:func
