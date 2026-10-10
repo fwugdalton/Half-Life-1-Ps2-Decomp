@@ -1031,3 +1031,40 @@ void V_Init(void)
     D_00399448 = NULL;
     D_0039943C = 0;
 }
+
+/* zera o tremor e, com v_dark, começa a fase com a tela escurecendo */
+void V_ResetScreenEffects(int clientId)
+{
+    memset(&gVShake[clientId], 0, sizeof(screen_shake_t));
+
+    if (v_dark.value)
+    {
+        cl[clientId].sf.fadeEnd = 5;
+        cl[clientId].sf.fadeReset = 5;
+        cl[clientId].sf.fadealpha = 255;
+        cl[clientId].sf.fadeb = 0;
+        cl[clientId].sf.fadeg = 0;
+        cl[clientId].sf.fader = 0;
+        cl[clientId].sf.fadeFlags = 0;
+
+        if (cl[clientId].sf.fadeEnd)
+            cl[clientId].sf.fadeSpeed = (float)cl[clientId].sf.fadealpha / cl[clientId].sf.fadeEnd;
+
+        cl[clientId].sf.fadeReset += cl[clientId].time;
+        cl[clientId].sf.fadeEnd += cl[clientId].sf.fadeReset;
+
+        if (cl_numlocal < 2 || clientId == 1)
+            v_dark.value = 0;
+    }
+    else
+    {
+        cl[clientId].sf.fadeSpeed = 0;
+        cl[clientId].sf.fadeEnd = 0;
+        cl[clientId].sf.fadeReset = 0;
+        cl[clientId].sf.fadealpha = 0;
+        cl[clientId].sf.fadeb = 0;
+        cl[clientId].sf.fadeg = 0;
+        cl[clientId].sf.fader = 0;
+        cl[clientId].sf.fadeFlags = 0;
+    }
+}
