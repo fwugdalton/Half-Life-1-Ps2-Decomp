@@ -2667,7 +2667,7 @@ void Host_SetInfo_f(void)
     host_client->sendinfo = true;
 }
 
-void func_0029C948(void)
+void Host_Say(qboolean teamonly)
 {
     client_t *client;
     client_t *save;
@@ -2725,11 +2725,68 @@ void func_0029C948(void)
     Sys_Printf(D_00392990, text + 1);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Say_f);
+void Host_Say_f(void)
+{
+    Host_Say(false);
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Say_Team_f);
+void Host_Say_Team_f(void)
+{
+    Host_Say(true);
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Tell_f);
+void Host_Tell_f(void)
+{
+    client_t *client;
+    client_t *save;
+    int j;
+    char *p;
+    char text[64];
+
+    if (cmd_source == src_command)
+    {
+        Cmd_ForwardToServer();
+        return;
+    }
+
+    if (Cmd_Argc() < 3)
+        return;
+
+    Q_strcpy(text, host_client->name);
+    Q_strcat(text, ": ");
+
+    p = Cmd_Args();
+    if (!p)
+        return;
+
+    if (*p == '"')
+    {
+        p++;
+        p[Q_strlen(p) - 1] = 0;
+    }
+
+    j = sizeof(text) - 2 - Q_strlen(text);
+    if (Q_strlen(p) > j)
+        p[j] = 0;
+
+    strcat(text, p);
+    strcat(text, D_00392278);
+
+    save = host_client;
+    for (j = 0, client = svs.clients; j < svs.maxclients; j++, client++)
+    {
+        if (!client->active || !client->spawned || client->fakeclient)
+            continue;
+
+        if (Q_strcasecmp(client->name, Cmd_Argv(1)))
+            continue;
+
+        host_client = client;
+        SV_ClientPrintf(D_00392990, text);
+        break;
+    }
+    host_client = save;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Kill_f);
 
