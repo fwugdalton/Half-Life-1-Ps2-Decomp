@@ -8,6 +8,7 @@
 
 #define MAX_LOCAL 2
 #define MAX_QPATH 64
+#define MAX_OSPATH 260
 #define SVC_LASTMSG 53
 #define MAX_USERMSGS 72
 
@@ -50,6 +51,17 @@ extern cvar_t cl_downloadinterval;
 extern float realtime;
 extern qboolean noclip_anglehack;
 extern int D_0033451C;
+extern int cl_updatebackup[MAX_LOCAL];
+extern int cl_updatemask[MAX_LOCAL];
+extern int D_00399490[MAX_LOCAL];
+extern char com_gamedir[];
+extern void (*D_003997C0)(char *gamedir);
+extern int protocol_version;
+extern int D_00332F2C;
+extern float D_003334D4; /* r_decals.value */
+extern float D_003334EC; /* mp_decals.value */
+#define r_decals_value D_003334D4
+#define mp_decals_value D_003334EC
 extern char D_00409340[8];  /* static local */
 extern char D_00409348[12]; /* static local */
 
@@ -70,6 +82,26 @@ void COM_ExplainDisconnection(qboolean bPrint, char *fmt, ...);
 void CL_Disconnect(int clientId);
 struct model_s *Mod_ForName(char *name, qboolean crash);
 void Draw_DecalSetName(int decal, char *name);
+void *Mem_DbgMalloc(int size, const char *file, int line);
+void Mem_Free(void *p);
+void Mem_PushTag(void);
+void Mem_SetTag(int tag);
+void Mem_PopTag(void);
+void R_DestroyObjects(int clientId);
+void AllocTransObjectsData(int count, int clientId);
+int func_00245408(int nMaxClients);
+void COM_FileBase(char *in, char *out);
+void Host_WriteConfiguration(void);
+void func_002CF6F8(char *gamedir);
+void Decal_Init(void);
+void Draw_Init(void);
+void func_0028BD90(void);
+void func_00246E78(void);
+void func_00247088(int clientId);
+void func_00247028(int clientId);
+void Cbuf_AddText(char *text);
+void func_0024FF90(int unk, int clientId);
+void Cvar_SetValue(char *var_name, float value);
 int atoi(const char *);
 void Host_Error(const char *error, ...);
 void Host_EndGame(const char *message, ...);
@@ -536,7 +568,7 @@ int func_00295358(resource_t *pList)
     return n;
 }
 
-int func_00295380(struct model_s *model)
+int func_00295380(void *p)
 {
     return 1;
 }
@@ -779,7 +811,10 @@ void CL_ParseResourceList(int clientId)
         cls[clientId].state = ca_connected;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_parse", func_00295B58);
+int func_00295B58(void)
+{
+    return 0;
+}
 
 void func_00295B60(void) {
 }
@@ -787,13 +822,154 @@ void func_00295B60(void) {
 void func_00295B68(void) {
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_parse", func_00295B70);
+void CL_DeallocateDynamicData(int clientId)
+{
+    if (cl_entities[clientId])
+    {
+        Mem_Free(cl_entities[clientId]);
+        cl_entities[clientId] = NULL;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_parse", func_00295BC8);
+    R_DestroyObjects(clientId);
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_parse", func_00295D70);
+void CL_ReallocateDynamicData(int nMaxClients, int clientId)
+{
+    cl[clientId].max_edicts = func_00245408(nMaxClients);
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_parse", func_00295EA0);
+    if (cl[clientId].max_edicts <= 0)
+        Sys_Error("CL_ReallocateDynamicData allocating 0 entities");
+
+    if (cl_entities[clientId])
+        Con_Printf("CL_Reallocate cl_entities\n");
+
+    Mem_PushTag();
+    Mem_SetTag(2);
+    cl_entities[clientId] = Mem_DbgMalloc(cl[clientId].max_edicts * sizeof(cl_entity_t), "engine/Cl_parse.c", 1548);
+    memset(cl_entities[clientId], 0, cl[clientId].max_edicts * sizeof(cl_entity_t));
+    Mem_PopTag();
+
+    AllocTransObjectsData(cl[clientId].max_edicts, clientId);
+
+    cl_updatebackup[clientId] = 8;
+    cl_updatemask[clientId] = 7;
+    D_00399490[clientId] &= 7;
+
+    if (cl[clientId].frames)
+        Mem_Free(cl[clientId].frames);
+
+    cl[clientId].frames = Mem_DbgMalloc(cl_updatebackup[clientId] * 0x330, "engine/Cl_parse.c", 1571);
+    if (!cl[clientId].frames)
+        Sys_Error("CL_ReallocateDynamicData failed to allocate %i frames", cl_updatebackup[clientId]);
+
+    memset(cl[clientId].frames, 0, cl_updatebackup[clientId] * 0x330);
+}
+
+void CL_CheckGameDirectory(char *gamedir)
+{
+    char szGameDir[MAX_OSPATH];
+    int i;
+
+    if (!gamedir || !gamedir[0])
+    {
+        Con_Printf("Server didn't specify a gamedir, assuming no change\n");
+        return;
+    }
+
+    COM_FileBase(com_gamedir, szGameDir);
+    if (!strcasecmp(szGameDir, gamedir))
+        return;
+
+    Host_WriteConfiguration();
+    func_002CF6F8(gamedir);
+    if (D_003997C0)
+        D_003997C0(gamedir);
+
+    Decal_Init();
+    Draw_Init();
+    func_0028BD90();
+    func_00246E78();
+
+    for (i = 0; i < cl_numlocal; i++)
+        func_00247088(i);
+
+    for (i = 0; i < cl_numlocal; i++)
+        func_00247028(i);
+
+    Cbuf_AddText("exec config.cfg\n");
+    Con_Printf("Changed to game %s\n", gamedir);
+}
+
+void CL_ParseServerInfo(int clientId)
+{
+    char *str;
+    char *gamedir;
+    int i;
+
+    Con_DPrintf("Serverinfo packet received.\n");
+
+    func_0024FF90(0, clientId);
+    func_00247028(clientId);
+
+    i = MSG_ReadLong();
+    if (i != protocol_version)
+    {
+        Con_Printf("Server returned version %i, not %i\n", i, protocol_version);
+        return;
+    }
+
+    cl[clientId].servercount = MSG_ReadLong();
+    cl[clientId].unk_15A4 = MSG_ReadLong();
+    cl[clientId].unk_15A8 = MSG_ReadLong();
+
+    cl[clientId].maxclients = MSG_ReadByte();
+    if (cl[clientId].maxclients < 1 || cl[clientId].maxclients > MAX_CLIENTS)
+    {
+        Con_Printf("Bad maxclients (%u) from server\n", cl[clientId].maxclients);
+        return;
+    }
+
+    if (cl[clientId].maxclients > 1)
+    {
+        if (mp_decals_value < r_decals_value)
+            Cvar_SetValue("r_decals", mp_decals_value);
+    }
+
+    CL_DeallocateDynamicData(clientId);
+    CL_ReallocateDynamicData(cl[clientId].maxclients, clientId);
+
+    cl[clientId].playernum = MSG_ReadByte();
+    if (cl[clientId].playernum & 0x80)
+    {
+        cl[clientId].paused = true;
+        cl[clientId].playernum &= ~0x80;
+    }
+
+    cl[clientId].gametype = MSG_ReadByte();
+
+    gamedir = MSG_ReadString();
+    if (clientId == 0)
+        CL_CheckGameDirectory(gamedir);
+
+    cls[clientId].demoplayback = false;
+    str = MSG_ReadString();
+    if (str && str[0])
+    {
+        cls[clientId].demoplayback = true;
+        if (!func_00295380(str))
+            return;
+    }
+
+    str = MSG_ReadString();
+    strncpy(cl[clientId].levelname, str, sizeof(cl[clientId].levelname) - 1);
+    cl[clientId].num_resources = 0;
+
+    Con_DPrintf("Requesting resourcelist from server.\n");
+    MSG_WriteByte(&cls[clientId].netchan.message, clc_stringcmd);
+    MSG_WriteString(&cls[clientId].netchan.message, va("resourcelist %i 0", cl[clientId].servercount));
+    D_00332F2C = cl[clientId].servercount;
+    cls[clientId].state = ca_connected;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/cl_parse", func_00296138);
 

@@ -74,21 +74,25 @@ typedef struct client_state_s
     byte pad394[0x3A0 - 0x394];
     float time;                 /* 0x3A0 */
     float oldtime;              /* 0x3A4 */
-    byte pad3A8[0x3B0 - 0x3A8];
+    byte pad3A8[0x3AC - 0x3A8];
+    struct frame_s *frames;     /* 0x3AC: frame_t[cl_updatebackup] (0x330 cada) */
     int playernum;              /* 0x3B0 */
     qboolean paused;            /* 0x3B4 */
     struct model_s *model_precache[512]; /* 0x3B8 */
     struct sfx_s *sound_precache[512]; /* 0xBB8 */
-    byte pad13B8[0x13E0 - 0x13B8];
+    char levelname[40];         /* 0x13B8 */
     int maxclients;             /* 0x13E0 */
-    byte pad13E4[0x13E8 - 0x13E4];
+    int gametype;               /* 0x13E4 */
     int viewentity;             /* 0x13E8 */
     struct model_s *worldmodel; /* 0x13EC */
     byte pad13F0[0x13F4 - 0x13F0];
     int num_entities;           /* 0x13F4 */
     byte pad13F8[0x13FC - 0x13F8];
     cl_entity_t viewent;        /* 0x13FC */
-    byte pad159C[0x15C4 - 0x159C];
+    byte pad159C[0x15A4 - 0x159C];
+    int unk_15A4;               /* 0x15A4 */
+    int unk_15A8;               /* 0x15A8 */
+    byte pad15AC[0x15C4 - 0x15AC];
     player_info_t players[MAX_CLIENTS]; /* 0x15C4 */
     byte pad211C[0x212C - 0x211C];
 } client_state_t; /* 0x212C */
