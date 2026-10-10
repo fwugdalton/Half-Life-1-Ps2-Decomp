@@ -858,12 +858,154 @@ void SV_AddSampleToHashedLookupTable(const char *pszSample, int iSampleIndex)
 
     sv.sound_precache_hashedlookup[index] = iSampleIndex;
 }
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", Host_IsSinglePlayerGame);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027B9F8);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_Multicast);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027BBC8);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027BCD0);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027BF20);
+extern int cl_maxclients;
+byte *CM_LeafPVS(int leafnum);
+byte *CM_LeafPAS(int leafnum);
+int SV_PointLeafnum(vec_t *p);
+
+#define MSG_FL_PVS 1
+
+qboolean Host_IsSinglePlayerGame(void)
+{
+    if (!sv.active)
+        return cl_maxclients == 1;
+    else
+        return svs.maxclients == 1;
+}
+#ifdef NON_MATCHING
+qboolean SV_ValidClientMulticast(client_t *client, int soundLeaf, int to)
+{
+    byte *mask;
+    int bitNumber;
+
+    mask = NULL;
+
+    if (Host_IsSinglePlayerGame())
+        return true;
+
+    switch (to)
+    {
+    case MSG_FL_ALL:
+        break;
+
+    case MSG_FL_PAS:
+        mask = CM_LeafPAS(soundLeaf);
+        break;
+
+    case MSG_FL_PVS:
+        mask = CM_LeafPVS(soundLeaf);
+        break;
+
+    default:
+        Con_Printf("MULTICAST: Error %d!\n", to);
+        return false;
+    }
+
+    if (!mask)
+        return true;
+
+    bitNumber = SV_PointLeafnum(client->edict->v.origin);
+    if (mask[(bitNumber - 1) >> 3] & (1 << ((bitNumber - 1) & 7)))
+        return true;
+
+    return false;
+}
+#else
+INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_ValidClientMulticast);
+#endif
+void SV_Multicast(vec3_t origin, int to, qboolean reliable)
+{
+    client_t *client;
+    sizebuf_t *msg;
+    int j;
+
+    for (j = 0, client = svs.clients; j < svs.maxclients; j++, client++)
+    {
+        if (!client->active)
+            continue;
+
+        if (reliable)
+            msg = &client->netchan.message;
+        else
+            msg = &client->datagram;
+
+        if (sv.multicast.cursize < msg->maxsize - msg->cursize)
+            SZ_Write(msg, sv.multicast.data, sv.multicast.cursize);
+    }
+
+    SZ_Clear(&sv.multicast);
+}
+void MSG_WriteFloat(sizebuf_t *sb, float f);
+void MSG_WriteString(sizebuf_t *sb, const char *s);
+void SV_SetMoveVars(void);
+
+extern cvar_t sv_friction, sv_stopspeed, sv_gravity, sv_maxvelocity, sv_stepsize, sv_bounce;
+extern cvar_t sv_spectatormaxspeed, sv_airaccelerate, sv_wateraccelerate, sv_waterfriction;
+extern cvar_t sv_zmax, sv_wateramp, sv_skyname, sv_edgefriction, sv_maxspeed, sv_accelerate;
+
+#define svc_newmovevars 46
+
+void SV_WriteMovevarsToClient(sizebuf_t *message)
+{
+    MSG_WriteByte(message, svc_newmovevars);
+    MSG_WriteFloat(message, movevars.gravity);
+    MSG_WriteFloat(message, movevars.stopspeed);
+    MSG_WriteFloat(message, movevars.maxspeed);
+    MSG_WriteFloat(message, movevars.spectatormaxspeed);
+    MSG_WriteFloat(message, movevars.accelerate);
+    MSG_WriteFloat(message, movevars.airaccelerate);
+    MSG_WriteFloat(message, movevars.wateraccelerate);
+    MSG_WriteFloat(message, movevars.friction);
+    MSG_WriteFloat(message, movevars.edgefriction);
+    MSG_WriteFloat(message, movevars.waterfriction);
+    MSG_WriteFloat(message, movevars.entgravity);
+    MSG_WriteFloat(message, movevars.bounce);
+    MSG_WriteFloat(message, movevars.stepsize);
+    MSG_WriteFloat(message, movevars.maxvelocity);
+    MSG_WriteFloat(message, movevars.zmax);
+    MSG_WriteFloat(message, movevars.waveHeight);
+    MSG_WriteString(message, movevars.skyName);
+}
+void SV_QueryMovevarsChanged(void)
+{
+    int i;
+    client_t *cl;
+
+    if (sv_maxspeed.value != movevars.maxspeed ||
+        sv_gravity.value != movevars.gravity ||
+        sv_stopspeed.value != movevars.stopspeed ||
+        sv_spectatormaxspeed.value != movevars.spectatormaxspeed ||
+        sv_accelerate.value != movevars.accelerate ||
+        sv_airaccelerate.value != movevars.airaccelerate ||
+        sv_wateraccelerate.value != movevars.wateraccelerate ||
+        sv_friction.value != movevars.friction ||
+        sv_edgefriction.value != movevars.edgefriction ||
+        sv_waterfriction.value != movevars.waterfriction ||
+        movevars.entgravity != 1.0f ||
+        sv_bounce.value != movevars.bounce ||
+        sv_stepsize.value != movevars.stepsize ||
+        sv_maxvelocity.value != movevars.maxvelocity ||
+        sv_zmax.value != movevars.zmax ||
+        sv_wateramp.value != movevars.waveHeight ||
+        strcmp(sv_skyname.string, movevars.skyName))
+    {
+        SV_SetMoveVars();
+
+        for (i = 0, cl = svs.clients; i < svs.maxclients; i++, cl++)
+        {
+            if (cl->fakeclient)
+                continue;
+
+            if (!cl->active && !cl->spawned && !cl->connected)
+                continue;
+
+            SV_WriteMovevarsToClient(&cl->netchan.message);
+        }
+    }
+}
+void func_0027BF20(void)
+{
+}
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027BF28);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027C1B8);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027C500);
@@ -1070,7 +1212,7 @@ INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_FullClientUpdate);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027E238);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027E258);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027E3B0);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027E430);
+INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_PointLeafnum);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027E480);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027EA70);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027F670);

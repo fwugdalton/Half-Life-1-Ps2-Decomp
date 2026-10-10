@@ -104,6 +104,9 @@ typedef struct movevars_s
 	float bounce;                   /* 0x2C */
 	float stepsize;                 /* 0x30 */
 	float maxvelocity;              /* 0x34 */
+	float zmax;                     /* 0x38 */
+	float waveHeight;               /* 0x3C */
+	char skyName[32];               /* 0x40 */
 } movevars_t;
 
 typedef struct usercmd_s

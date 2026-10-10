@@ -171,7 +171,9 @@ typedef struct client_s
     usercmd_t lastcmd;          /* 0x73E4 */
     byte unk_7408[0x7444 - 0x7408];
     float maxspeed;             /* 0x7444 */
-    byte unk_7448[0x8408 - 0x7448];
+    byte unk_7448[0x7454 - 0x7448];
+    sizebuf_t datagram;         /* 0x7454 */
+    byte unk_7468[0x8408 - 0x7468];
     float connection_started;   /* 0x8408 */
     byte unk_840C[0x8410 - 0x840C];
     edict_t *edict;             /* 0x8410 */

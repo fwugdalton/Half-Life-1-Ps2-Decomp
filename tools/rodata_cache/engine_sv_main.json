@@ -113,29 +113,13 @@
 "D_003326C8",
 "D_003326E0",
 "D_003326F8",
-"D_00332730",
-"D_00332748",
-"D_00332760",
-"D_00332778",
-"D_00332790",
 "D_003327A8",
-"D_003327C0",
 "D_003327D8",
 "D_003327F0",
 "D_00332808",
 "D_00332820",
 "D_00332838",
-"D_00332850",
-"D_00332868",
-"D_00332880",
-"D_00332898",
-"D_003328B0",
-"D_003328C8",
-"D_003328E0",
 "D_00332968",
-"D_00332980",
-"D_00332998",
-"D_003329B0",
 "D_0038F280",
 "D_0038F728",
 "D_0038F738",
@@ -155,8 +139,24 @@
 "func_0027BF20",
 "func_0028B308",
 "pm_pushfix",
+"sv_accelerate",
 "sv_aim",
+"sv_airaccelerate",
+"sv_bounce",
+"sv_edgefriction",
+"sv_friction",
+"sv_gravity",
 "sv_lan",
+"sv_maxspeed",
+"sv_maxvelocity",
+"sv_skyname",
+"sv_spectatormaxspeed",
+"sv_stepsize",
+"sv_stopspeed",
+"sv_wateraccelerate",
+"sv_wateramp",
+"sv_waterfriction",
+"sv_zmax",
 "svs",
 "violence_hblood"
 ]
@@ -194,6 +194,12 @@
 "D_004C7FD0",
 "sv",
 "svs"
+]
+},
+"SV_PointLeafnum": {
+"migrated": [],
+"refs": [
+"sv"
 ]
 },
 "SV_ReallocateDynamicData": {
@@ -311,6 +317,14 @@
 "D_0038EC78",
 "sv",
 "svs"
+]
+},
+"SV_ValidClientMulticast": {
+"migrated": [
+"D_0038EDB0"
+],
+"refs": [
+"D_0038EDB0"
 ]
 },
 "func_0027B030": {
