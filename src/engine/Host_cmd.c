@@ -110,6 +110,57 @@ char *Cmd_Args(void);
 char *strncpy(char *, const char *, unsigned int);
 void func_00250B08(int player);
 char *func_0022E958(void);
+
+typedef struct
+{
+    int id;                     /* 0x00 */
+    edict_t *pent;              /* 0x04 */
+    int location;               /* 0x08 */
+    int size;                   /* 0x0C */
+    int flags;                  /* 0x10 */
+    string_t classname;         /* 0x14 */
+} ENTITYTABLE;
+
+typedef struct
+{
+    char mapName[32];           /* 0x00 */
+    char landmarkName[32];      /* 0x20 */
+    edict_t *pentLandmark;      /* 0x40 */
+    vec3_t vecLandmarkOrigin;   /* 0x44 */
+} LEVELLIST;
+
+#define MAX_LEVEL_CONNECTIONS 16
+
+typedef struct saverestore_s
+{
+    char *pBaseData;            /* 0x000 */
+    char *pCurrentData;         /* 0x004 */
+    int size;                   /* 0x008 */
+    int bufferSize;             /* 0x00C */
+    int tokenSize;              /* 0x010 */
+    int tokenCount;             /* 0x014 */
+    char **pTokens;             /* 0x018 */
+    int currentIndex;           /* 0x01C */
+    int tableCount;             /* 0x020 */
+    int connectionCount;        /* 0x024 */
+    ENTITYTABLE *pTable;        /* 0x028 */
+    LEVELLIST levelList[MAX_LEVEL_CONNECTIONS]; /* 0x02C */
+    int fUseLandmark;           /* 0x52C */
+    char szLandmarkName[20];    /* 0x530 */
+    vec3_t vecLandmarkOffset;   /* 0x544 */
+    float time;                 /* 0x550 */
+    char szCurrentMapName[32];  /* 0x554 */
+} SAVERESTOREDATA;              /* 0x574 */
+
+extern char D_00392628[];
+extern int D_00331B00;
+extern SAVERESTOREDATA *D_00331AFC;
+extern int D_00331B04;
+void *Mem_DbgCalloc(int num, int size, const char *file, int line);
+void Mem_Free(void *p);
+void COM_FixSlashes(char *pname);
+void func_0022B248(char *name);
+void func_0022B2B0(char *oldName, char *newName);
 void SV_CountPlayers(int *clients, int *spectators);
 int strcasecmp(const char *, const char *);
 #include "engine/mathlib.h"
@@ -956,19 +1007,141 @@ char *Host_SaveGameDirectory(void)
 void func_00299420(void) {
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00299428);
+void Host_SaveAgeList(char *pName, int count)
+{
+    char newName[260];
+    char oldName[260];
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00299568);
+    sprintf(newName, "%s%s%02d.sav", Host_SaveGameDirectory(), pName, count);
+    COM_FixSlashes(newName);
+    func_0022B248(newName);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00299638);
+    while (count > 0)
+    {
+        if (count == 1)
+            sprintf(oldName, "%s%s.sav", Host_SaveGameDirectory(), pName);
+        else
+            sprintf(oldName, "%s%s%02d.sav", Host_SaveGameDirectory(), pName, count - 1);
+        COM_FixSlashes(oldName);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00299828);
+        sprintf(newName, "%s%s%02d.sav", Host_SaveGameDirectory(), pName, count);
+        COM_FixSlashes(newName);
+
+        func_0022B2B0(oldName, newName);
+        count--;
+    }
+}
+
+int Host_ValidSave(void)
+{
+    if (cmd_source != src_command)
+        return 0;
+
+    if (!sv.active)
+    {
+        Con_Printf("Not playing a local game.\n");
+        return 0;
+    }
+
+    if (cl[0].intermission || cls[0].state != ca_active)
+    {
+        Con_Printf("Can't save in intermission.\n");
+        return 0;
+    }
+
+    if (svs.maxclients != 1)
+    {
+        Con_Printf("Can't save multiplayer games.\n");
+        return 0;
+    }
+
+    if (svs.clients->active && svs.clients->edict->v.health <= 0)
+    {
+        Con_Printf("Can't savegame with a dead player\n");
+        return 0;
+    }
+
+    return 1;
+}
+
+SAVERESTOREDATA *SaveInit(int size)
+{
+    int i;
+    SAVERESTOREDATA *pSaveData;
+    edict_t *pent;
+
+    if (size <= 0)
+        size = 0x40000;
+
+    if (D_00331B00 >= (int)(sizeof(SAVERESTOREDATA) + sizeof(ENTITYTABLE) * sv.num_edicts + size))
+    {
+        pSaveData = D_00331AFC;
+        D_00331B04 = 1;
+    }
+    else
+    {
+        pSaveData = Mem_DbgCalloc(sizeof(SAVERESTOREDATA) + sizeof(ENTITYTABLE) * sv.num_edicts + size, 1, D_00392628, 1479);
+        D_00331B04 = 0;
+    }
+
+    pSaveData->pTable = (ENTITYTABLE *)(pSaveData + 1);
+    pSaveData->tokenSize = 0;
+    pSaveData->tokenCount = 0xFFF;
+    pSaveData->pTokens = Mem_DbgCalloc(0xFFF, sizeof(char *), D_00392628, 1488);
+
+    for (i = 0; i < sv.num_edicts; i++)
+    {
+        pent = sv.edicts + i;
+        pSaveData->pTable[i].id = i;
+        pSaveData->pTable[i].pent = pent;
+        pSaveData->pTable[i].flags = 0;
+        pSaveData->pTable[i].location = 0;
+        pSaveData->pTable[i].size = 0;
+        pSaveData->pTable[i].classname = 0;
+    }
+
+    pSaveData->tableCount = sv.num_edicts;
+    pSaveData->connectionCount = 0;
+    pSaveData->pBaseData = (char *)(pSaveData->pTable + sv.num_edicts);
+    pSaveData->pCurrentData = pSaveData->pBaseData;
+    pSaveData->size = 0;
+    pSaveData->bufferSize = size;
+    pSaveData->time = gGlobalVariables.time;
+    VectorCopy(vec3_origin, pSaveData->vecLandmarkOffset);
+    pSaveData->fUseLandmark = 0;
+    gGlobalVariables.pSaveData = pSaveData;
+
+    return pSaveData;
+}
+
+
+
+
+void SaveExit(SAVERESTOREDATA *save)
+{
+    if (save->pTokens)
+    {
+        Mem_Free(save->pTokens);
+        save->pTokens = NULL;
+        save->tokenCount = 0;
+    }
+
+    if (save)
+    {
+        if (!D_00331B04)
+            Mem_Free(save);
+        else
+            D_00331B04 = 0;
+    }
+
+    gGlobalVariables.pSaveData = NULL;
+}
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00392628);
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00392640);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00299890);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", SaveGameSlot);
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00392658);
 
@@ -1031,7 +1204,7 @@ INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00392810);
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00392820);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029A340);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", SaveGamestate);
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029A958);
 

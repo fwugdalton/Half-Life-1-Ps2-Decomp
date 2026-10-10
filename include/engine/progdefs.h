@@ -34,6 +34,7 @@ typedef struct
     int maxClients;             /* 0x90 */
     int maxEntities;            /* 0x94 */
     char *pStringBase;          /* 0x98 */
+    void *pSaveData;            /* 0x9C */
 } globalvars_t;
 
 extern globalvars_t gGlobalVariables;
