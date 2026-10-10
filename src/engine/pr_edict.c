@@ -410,7 +410,7 @@ void ED_ReserveLeafs(edict_t *pEdict, int count)
             ed_leaf_allocs++;
             pEdict->max_leafs = count;
             pEdict->num_leafs = 0;
-            pEdict->unk_14 = 0;
+            pEdict->headnode = 0;
         }
         else
         {
@@ -447,7 +447,7 @@ void ED_FreeLeafs(edict_t *pEdict)
     pEdict->leafnums = NULL;
     pEdict->num_leafs = 0;
     pEdict->max_leafs = 0;
-    pEdict->unk_14 = 0;
+    pEdict->headnode = 0;
 }
 
 edict_t *PEntityOfEntOffset(int iEntOffset)

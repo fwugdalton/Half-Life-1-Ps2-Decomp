@@ -2143,6 +2143,15 @@ int func_0027F940(int a0)
     return 0;
 }
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027F9A0);
+extern cvar_t D_00332718;
+extern int D_0033272C;
+extern int cl_numlocal;
+void Cvar_RegisterVariable(cvar_t *variable);
+qboolean CM_HeadnodeVisible(mnode_t *node, byte *visbits);
+
+#define FL_CUSTOMENTITY (1 << 29)
+#define EF_NODRAW 128
+
 /* rodata não migrada: início */
 __asm__(".section .rodata\n"
         ".align 3\n"
@@ -2160,10 +2169,121 @@ __asm__(".section .rodata\n"
         ".align 3\n"
         ".section .text\n");
 /* rodata não migrada: fim */
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00280700);
+void SV_AddEntitiesToPacket(full_packet_entities_t *pack, int start, byte *pvs)
+{
+    int e;
+    int i;
+    int culled;
+    edict_t *ent;
+    entity_state_t *state;
+
+    if (!D_0033272C)
+        Cvar_RegisterVariable(&D_00332718);
+    D_0033272C++;
+
+    for (e = start; e < sv.num_edicts; e++)
+    {
+        ent = &sv.edicts[e];
+
+        if (ent->v.effects == EF_NODRAW)
+            continue;
+        if (!ent->v.modelindex)
+            continue;
+        if (!pr_strings[ent->v.model])
+            continue;
+
+        if (pvs)
+        {
+            if (ent->leafnums)
+            {
+                for (i = 0; i < ent->num_leafs; i++)
+                {
+                    if (pvs[ent->leafnums[i] >> 3] & (1 << (ent->leafnums[i] & 7)))
+                        break;
+                }
+                if (i == ent->num_leafs)
+                    continue;
+            }
+            else
+            {
+                if (D_00332718.value == 1.0f)
+                {
+                    if (!ent->num_leafs)
+                        culled = 1;
+                    else
+                        culled = (D_0033272C / cl_numlocal) & 1;
+                }
+                else
+                {
+                    culled = 0;
+                    if (!CM_HeadnodeVisible(sv.worldmodel->nodes + ent->headnode, pvs))
+                        culled = 1;
+                }
+                if (culled == 1)
+                    continue;
+            }
+        }
+
+        if (pack->num_entities >= 256)
+        {
+            Con_DPrintf("Too many entities in visible packet list.\n");
+            continue;
+        }
+
+        state = &pack->entities[pack->num_entities];
+        pack->num_entities++;
+
+        state->number = e;
+        state->msg_time = 0;
+        state->entityType = 0;
+        if (ent->v.flags & FL_CUSTOMENTITY)
+            state->entityType = 1;
+
+        VectorCopy(ent->v.origin, state->origin);
+        VectorCopy(ent->v.angles, state->angles);
+        VectorCopy(ent->v.mins, state->mins);
+        VectorCopy(ent->v.maxs, state->maxs);
+        VectorCopy(ent->v.velocity, state->velocity);
+
+        state->modelindex = ent->v.modelindex;
+        state->frame = ent->v.frame;
+        state->colormap = ent->v.colormap;
+        state->skin = ent->v.skin;
+        state->effects = ent->v.effects;
+        state->scale = ent->v.scale;
+        state->solid = ent->v.solid;
+        state->movetype = ent->v.movetype;
+        state->animtime = ent->v.animtime;
+        state->sequence = ent->v.sequence;
+        state->framerate = ent->v.framerate;
+        state->body = ent->v.body;
+
+        for (i = 0; i < 4; i++)
+            state->controller[i] = ent->v.controller[i];
+        for (i = 0; i < 2; i++)
+            state->blending[i] = ent->v.blending[i];
+
+        state->rendermode = ent->v.rendermode;
+        state->renderamt = ent->v.renderamt;
+        state->renderfx = ent->v.renderfx;
+        state->rendercolor.r = ent->v.rendercolor[0];
+        state->rendercolor.g = ent->v.rendercolor[1];
+        state->rendercolor.b = ent->v.rendercolor[2];
+
+        if (ent->v.aiment)
+            state->aiment = NUM_FOR_EDICT(ent->v.aiment);
+        else
+            state->aiment = 0;
+
+        if (ent->v.weaponmodel)
+            state->weaponmodel = SV_ModelIndex(pr_strings + ent->v.weaponmodel);
+        else
+            state->weaponmodel = 0;
+    }
+}
 byte *SV_FatPVS(float *org);
 void func_0027F9A0(client_t *client, byte *pvs, sizebuf_t *msg);
-void func_00280700(full_packet_entities_t *pack, int maxclients, byte *pvs);
+void SV_AddEntitiesToPacket(full_packet_entities_t *pack, int maxclients, byte *pvs);
 
 void SV_WriteEntitiesToClient(client_t *client, sizebuf_t *msg)
 {
@@ -2189,7 +2309,7 @@ void SV_WriteEntitiesToClient(client_t *client, sizebuf_t *msg)
     func_0027F9A0(client, pvs, msg);
 
     fullpack.num_entities = 0;
-    func_00280700(&fullpack, svs.maxclients + 1, pvs);
+    SV_AddEntitiesToPacket(&fullpack, svs.maxclients + 1, pvs);
 
     pack.num_entities = fullpack.num_entities;
     pack.entities = fullpack.entities;
@@ -2624,7 +2744,93 @@ void func_00281D88(void)
 void func_00281D90(void)
 {
 }
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_CreateBaseline);
+void MSG_WriteWord(sizebuf_t *sb, int c);
+void SV_FlushSignon(void);
+
+#define svc_spawnbaseline 22
+
+void SV_CreateBaseline(void)
+{
+    int i;
+    edict_t *svent;
+    int entnum;
+
+    for (entnum = 0; entnum < sv.num_edicts; entnum++)
+    {
+        svent = &sv.edicts[entnum];
+        if (svent->free)
+            continue;
+        if (entnum > svs.maxclients && !svent->v.modelindex)
+            continue;
+
+        svent->baseline.entityType = 0;
+        if (svent->v.flags & FL_CUSTOMENTITY)
+            svent->baseline.entityType = 1;
+
+        VectorCopy(svent->v.origin, svent->baseline.origin);
+        VectorCopy(svent->v.angles, svent->baseline.angles);
+        VectorCopy(svent->v.mins, svent->baseline.mins);
+        VectorCopy(svent->v.maxs, svent->baseline.maxs);
+        svent->baseline.frame = svent->v.frame;
+        svent->baseline.scale = svent->v.scale;
+        svent->baseline.skin = svent->v.skin;
+        svent->baseline.solid = (byte)svent->v.solid;
+
+        if (entnum > 0 && entnum <= svs.maxclients)
+        {
+            svent->baseline.colormap = entnum;
+        }
+        else
+        {
+            svent->baseline.colormap = 0;
+            svent->baseline.modelindex = SV_ModelIndex(pr_strings + svent->v.model);
+        }
+
+        svent->baseline.rendermode = (byte)svent->v.rendermode;
+        svent->baseline.renderamt = (byte)svent->v.renderamt;
+        svent->baseline.rendercolor.r = svent->v.rendercolor[0];
+        svent->baseline.rendercolor.g = svent->v.rendercolor[1];
+        svent->baseline.rendercolor.b = svent->v.rendercolor[2];
+        svent->baseline.renderfx = (byte)svent->v.renderfx;
+
+        SV_FlushSignon();
+
+        MSG_WriteByte(&sv.signon, svc_spawnbaseline);
+        MSG_WriteShort(&sv.signon, entnum);
+        MSG_WriteByte(&sv.signon, svent->baseline.entityType);
+        MSG_WriteShort(&sv.signon, svent->baseline.modelindex);
+
+        MSG_WriteByte(&sv.signon, svent->baseline.sequence);
+        svent->baseline.sequence = (byte)svent->baseline.sequence;
+        MSG_WriteByte(&sv.signon, svent->baseline.frame);
+        svent->baseline.frame = (byte)svent->baseline.frame;
+
+        if (svent->baseline.entityType == 0)
+            MSG_WriteWord(&sv.signon, svent->baseline.scale * 256);
+        else
+            MSG_WriteByte(&sv.signon, svent->baseline.scale);
+
+        MSG_WriteWord(&sv.signon, svent->baseline.colormap);
+        MSG_WriteShort(&sv.signon, svent->baseline.skin);
+        MSG_WriteByte(&sv.signon, svent->baseline.solid);
+        svent->baseline.solid = (byte)svent->baseline.solid;
+
+        for (i = 0; i < 3; i++)
+        {
+            MSG_WriteCoord(&sv.signon, svent->baseline.origin[i]);
+            MSG_WriteFloat(&sv.signon, svent->baseline.angles[i]);
+            MSG_WriteCoord(&sv.signon, svent->baseline.mins[i]);
+            MSG_WriteCoord(&sv.signon, svent->baseline.maxs[i]);
+        }
+
+        MSG_WriteByte(&sv.signon, svent->v.rendermode);
+        MSG_WriteByte(&sv.signon, svent->v.renderamt);
+        MSG_WriteByte(&sv.signon, svent->v.rendercolor[0]);
+        MSG_WriteByte(&sv.signon, svent->v.rendercolor[1]);
+        MSG_WriteByte(&sv.signon, svent->v.rendercolor[2]);
+        MSG_WriteByte(&sv.signon, svent->v.renderfx);
+    }
+}
 #include <stdarg.h>
 int vsprintf(char *buf, const char *fmt, va_list ap);
 

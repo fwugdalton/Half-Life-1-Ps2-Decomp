@@ -102,6 +102,19 @@
 "svs"
 ]
 },
+"SV_AddEntitiesToPacket": {
+"migrated": [
+"D_0038F340"
+],
+"refs": [
+"D_00332718",
+"D_0033272C",
+"D_0038F340",
+"cl_numlocal",
+"pr_strings",
+"sv"
+]
+},
 "SV_AddResource": {
 "migrated": [
 "D_0038F4E8"
@@ -943,19 +956,6 @@
 "sv",
 "sv_playermodel",
 "svs"
-]
-},
-"func_00280700": {
-"migrated": [
-"D_0038F340"
-],
-"refs": [
-"D_00332718",
-"D_0033272C",
-"D_0038F340",
-"cl_numlocal",
-"pr_strings",
-"sv"
 ]
 },
 "func_00281D88": {
