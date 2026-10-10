@@ -48,6 +48,12 @@ addr = {b[0]: b[1] for b in blocks}
 import json
 cache_path = os.path.join('tools', 'rodata_cache', base.replace('/', '_') + '.json')
 cache = json.load(open(cache_path)) if os.path.exists(cache_path) else {}
+# funções renomeadas em symbol_addrs.txt depois de entrarem no cache
+names = {}
+for line in open('symbol_addrs.txt'):
+    m = re.match(r'\s*(\w+)\s*=\s*0x([0-9A-Fa-f]+);', line)
+    if m: names['func_%08X' % int(m.group(2), 16)] = m.group(1)
+cache = {names.get(k, k): v for k, v in cache.items()}
 for f in glob.glob(asmdir + '/*.s'):
     t = open(f).read()
     fn = os.path.basename(f)[:-2]
@@ -99,7 +105,10 @@ for b in blocks:
         rest.append(b)
 
 def body(bl):
-    out = []
+    # alinha o início do bloco conforme o endereço do primeiro rótulo (o .align original
+    # fica no fim do rótulo anterior, que pode ter sido emitido pelo C)
+    a = bl[0][1]
+    out = ['.align %d\n' % (3 if a % 8 == 0 else 2 if a % 4 == 0 else 1 if a % 2 == 0 else 0)]
     for name, a, lines in bl:
         for l in lines:
             if l.startswith('dlabel'):

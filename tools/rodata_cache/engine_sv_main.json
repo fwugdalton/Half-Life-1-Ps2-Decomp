@@ -7,6 +7,31 @@
 "svs"
 ]
 },
+"SVC_Ping": {
+"migrated": [],
+"refs": [
+"net_from"
+]
+},
+"SV_AddResource": {
+"migrated": [
+"D_0038F4E8"
+],
+"refs": [
+"D_0038F4E8",
+"sv"
+]
+},
+"SV_AddSampleToHashedLookupTable": {
+"migrated": [
+"D_0038ED68"
+],
+"refs": [
+"D_0033270C",
+"D_0038ED68",
+"sv"
+]
+},
 "SV_AddToFatPVS": {
 "migrated": [],
 "refs": [
@@ -20,6 +45,13 @@
 "refs": [
 "sv",
 "svs"
+]
+},
+"SV_BuildHashedSoundLookupTable": {
+"migrated": [],
+"refs": [
+"D_004C3FA0",
+"sv"
 ]
 },
 "SV_BuildSoundMsg": {
@@ -38,6 +70,42 @@
 "D_0038ED00",
 "D_0038ED20",
 "D_0038ED40",
+"sv"
+]
+},
+"SV_CheckRate": {
+"migrated": [],
+"refs": [
+"D_003323EC",
+"D_00332404"
+]
+},
+"SV_CheckTimeouts": {
+"migrated": [
+"D_0038F300"
+],
+"refs": [
+"D_00332524",
+"D_0038F300",
+"realtime",
+"svs"
+]
+},
+"SV_CleanupEnts": {
+"migrated": [],
+"refs": [
+"sv"
+]
+},
+"SV_ClearDatagram": {
+"migrated": [],
+"refs": [
+"D_004C50B4"
+]
+},
+"SV_ClearEntities": {
+"migrated": [],
+"refs": [
 "sv"
 ]
 },
@@ -73,10 +141,34 @@
 "D_0053DDC0"
 ]
 },
+"SV_FatPVS": {
+"migrated": [],
+"refs": [
+"D_00399414",
+"D_004A92B8",
+"sv"
+]
+},
+"SV_FindModelNumbers": {
+"migrated": [
+"D_0038EC88"
+],
+"refs": [
+"D_0038EC88",
+"D_0039940C",
+"sv"
+]
+},
 "SV_FullClientUpdate": {
 "migrated": [],
 "refs": [
 "D_004E2CD8"
+]
+},
+"SV_HashString": {
+"migrated": [],
+"refs": [
+"D_00397D81"
 ]
 },
 "SV_Init": {
@@ -99,7 +191,6 @@
 "D_003324A0",
 "D_003324D0",
 "D_00332500",
-"D_00332518",
 "D_00332530",
 "D_00332548",
 "D_00332560",
@@ -161,12 +252,19 @@
 "sv_spectatormaxspeed",
 "sv_stepsize",
 "sv_stopspeed",
+"sv_timeout",
 "sv_wateraccelerate",
 "sv_wateramp",
 "sv_waterfriction",
 "sv_zmax",
 "svs",
 "violence_hblood"
+]
+},
+"SV_LoadEntities": {
+"migrated": [],
+"refs": [
+"sv_worldmodel"
 ]
 },
 "SV_Localinfo_f": {
@@ -204,10 +302,63 @@
 "svs"
 ]
 },
+"SV_New_f": {
+"migrated": [
+"D_0038EE00",
+"D_0038EE10",
+"D_0038EE20",
+"D_0038EE28",
+"D_0038EE58",
+"D_0038EE78",
+"D_0038EE88"
+],
+"refs": [
+"D_003323D4",
+"D_00332680",
+"D_0038E9B8",
+"D_0038EE00",
+"D_0038EE10",
+"D_0038EE20",
+"D_0038EE28",
+"D_0038EE58",
+"D_0038EE78",
+"D_0038EE88",
+"D_004A96C4",
+"D_0053DD70",
+"cmd_source",
+"gGlobalVariables",
+"host_client",
+"realtime",
+"sv_gpUserMsgs"
+]
+},
 "SV_PointLeafnum": {
 "migrated": [],
 "refs": [
 "sv"
+]
+},
+"SV_QueryMovevarsChanged": {
+"migrated": [],
+"refs": [
+"D_0033273C",
+"D_00332754",
+"D_0033276C",
+"D_00332784",
+"D_0033279C",
+"D_003327CC",
+"D_0033285C",
+"D_00332874",
+"D_0033288C",
+"D_003328A4",
+"D_003328BC",
+"D_003328D4",
+"D_003328E4",
+"D_0033298C",
+"D_003329A4",
+"D_003329BC",
+"movevars",
+"svs"
 ]
 },
 "SV_ReallocateDynamicData": {
@@ -227,10 +378,62 @@
 "sv"
 ]
 },
+"SV_ReconnectAllClients": {
+"migrated": [
+"D_0038F510"
+],
+"refs": [
+"D_0038F510"
+]
+},
+"SV_RejectConnection": {
+"migrated": [],
+"refs": [
+"net_message"
+]
+},
+"SV_RejectConnectionForPassword": {
+"migrated": [
+"D_0038EEB8"
+],
+"refs": [
+"D_0038EEB8",
+"net_message"
+]
+},
+"SV_SendClientDatagram": {
+"migrated": [
+"D_0038F370",
+"D_0038F398"
+],
+"refs": [
+"D_0038F370",
+"D_0038F398",
+"D_004A96C4"
+]
+},
+"SV_SendServerinfo": {
+"migrated": [
+"D_0038EDC8",
+"D_0038EDF8"
+],
+"refs": [
+"D_0038EDC8",
+"D_0038EDF8",
+"D_004A9750",
+"com_gamedir",
+"gGlobalVariables",
+"host_client",
+"pr_strings",
+"protocol_version",
+"sv",
+"svs"
+]
+},
 "SV_SendUserReg": {
 "migrated": [],
 "refs": [
-"sv_gpNewUserMsgs"
+"D_003323D4"
 ]
 },
 "SV_ServerLog_f": {
@@ -288,6 +491,18 @@
 "svs"
 ]
 },
+"SV_SpectatorSpawn": {
+"migrated": [
+"D_0038EEC8"
+],
+"refs": [
+"D_0038EEC8",
+"pr_strings",
+"sv",
+"sv_player",
+"vec3_origin"
+]
+},
 "SV_StartParticle": {
 "migrated": [],
 "refs": [
@@ -299,6 +514,17 @@
 "migrated": [],
 "refs": [
 "D_004C7FD0"
+]
+},
+"SV_Track_f": {
+"migrated": [
+"D_0038EE98"
+],
+"refs": [
+"D_0038EE98",
+"cmd_source",
+"host_client",
+"svs"
 ]
 },
 "SV_User_f": {
@@ -341,171 +567,27 @@
 "D_0038EDB0"
 ]
 },
-"func_0027B030": {
-"migrated": [
-"D_0038EC88"
-],
-"refs": [
-"D_0038EC88",
-"D_0039940C",
-"sv"
-]
-},
-"func_0027B640": {
+"SV_WriteClientdataToMessage": {
 "migrated": [],
 "refs": [
-"D_00397D81"
+"pr_strings"
 ]
 },
-"func_0027B6B0": {
+"SV_WriteEntitiesToClient": {
 "migrated": [],
 "refs": [
-"sv"
+"svs"
 ]
 },
-"func_0027B820": {
-"migrated": [],
-"refs": [
-"D_004C3FA0",
-"sv"
-]
-},
-"func_0027B8D8": {
-"migrated": [
-"D_0038ED68"
-],
-"refs": [
-"D_0033270C",
-"D_0038ED68",
-"sv"
-]
-},
-"func_0027B9F8": {
-"migrated": [
-"D_0038EDB0"
-],
-"refs": [
-"D_0038EDB0"
-]
-},
-"func_0027BBC8": {
+"SV_WriteMovevarsToClient": {
 "migrated": [],
 "refs": [
 "movevars"
 ]
 },
-"func_0027BCD0": {
-"migrated": [],
-"refs": [
-"D_0033273C",
-"D_00332754",
-"D_0033276C",
-"D_00332784",
-"D_0033279C",
-"D_003327CC",
-"D_0033285C",
-"D_00332874",
-"D_0033288C",
-"D_003328A4",
-"D_003328BC",
-"D_003328D4",
-"D_003328E4",
-"D_0033298C",
-"D_003329A4",
-"D_003329BC",
-"movevars",
-"svs"
-]
-},
 "func_0027BF20": {
 "migrated": [],
 "refs": []
-},
-"func_0027BF28": {
-"migrated": [
-"D_0038EDC8",
-"D_0038EDF8"
-],
-"refs": [
-"D_0038EDC8",
-"D_0038EDF8",
-"D_004A9750",
-"com_gamedir",
-"gGlobalVariables",
-"host_client",
-"pr_strings",
-"protocol_version",
-"sv",
-"svs"
-]
-},
-"func_0027C1B8": {
-"migrated": [
-"D_0038EE00",
-"D_0038EE10",
-"D_0038EE20",
-"D_0038EE28",
-"D_0038EE58",
-"D_0038EE78",
-"D_0038EE88"
-],
-"refs": [
-"D_003323D4",
-"D_00332680",
-"D_0038E9B8",
-"D_0038EE00",
-"D_0038EE10",
-"D_0038EE20",
-"D_0038EE28",
-"D_0038EE58",
-"D_0038EE78",
-"D_0038EE88",
-"D_004A96C4",
-"D_0053DD70",
-"cmd_source",
-"gGlobalVariables",
-"host_client",
-"realtime",
-"sv_gpUserMsgs"
-]
-},
-"func_0027C500": {
-"migrated": [
-"D_0038EE98"
-],
-"refs": [
-"D_0038EE98",
-"cmd_source",
-"host_client",
-"svs"
-]
-},
-"func_0027C5C8": {
-"migrated": [],
-"refs": [
-"net_message"
-]
-},
-"func_0027C658": {
-"migrated": [
-"D_0038EEB8"
-],
-"refs": [
-"D_0038EEB8",
-"net_message"
-]
-},
-"func_0027C6E0": {
-"migrated": [
-"D_0038EEC8"
-],
-"refs": [
-"D_0038EEC8",
-"pr_strings",
-"sv",
-"sv_player",
-"vec3_origin"
-]
 },
 "func_0027C7F8": {
 "migrated": [
@@ -557,12 +639,6 @@
 "net_from",
 "protocol_version",
 "svs"
-]
-},
-"func_0027D098": {
-"migrated": [],
-"refs": [
-"net_from"
 ]
 },
 "func_0027D0F0": {
@@ -673,29 +749,11 @@
 "net_from"
 ]
 },
-"func_0027DE58": {
-"migrated": [],
-"refs": [
-"D_003323EC",
-"D_00332404"
-]
-},
 "func_0027DEE8": {
 "migrated": [],
 "refs": [
 "net_from",
 "net_message",
-"svs"
-]
-},
-"func_0027E048": {
-"migrated": [
-"D_0038F300"
-],
-"refs": [
-"D_00332524",
-"D_0038F300",
-"realtime",
 "svs"
 ]
 },
@@ -706,34 +764,6 @@
 "func_0027E148": {
 "migrated": [],
 "refs": []
-},
-"func_0027E238": {
-"migrated": [],
-"refs": [
-"D_004C50B4"
-]
-},
-"func_0027E258": {
-"migrated": [],
-"refs": [
-"D_00399414",
-"D_004A92B8",
-"sv"
-]
-},
-"func_0027E3B0": {
-"migrated": [],
-"refs": [
-"D_00399414",
-"D_004A92B8",
-"sv"
-]
-},
-"func_0027E430": {
-"migrated": [],
-"refs": [
-"sv"
-]
 },
 "func_0027E480": {
 "migrated": [],
@@ -820,35 +850,6 @@
 "sv"
 ]
 },
-"func_00280B30": {
-"migrated": [],
-"refs": [
-"svs"
-]
-},
-"func_00280C48": {
-"migrated": [],
-"refs": [
-"sv"
-]
-},
-"func_00280CB8": {
-"migrated": [],
-"refs": [
-"pr_strings"
-]
-},
-"func_00280FC8": {
-"migrated": [
-"D_0038F370",
-"D_0038F398"
-],
-"refs": [
-"D_0038F370",
-"D_0038F398",
-"D_004A96C4"
-]
-},
 "func_002810D8": {
 "migrated": [
 "D_0038F3B8"
@@ -897,15 +898,6 @@
 "svs"
 ]
 },
-"func_00281B08": {
-"migrated": [
-"D_0038F4E8"
-],
-"refs": [
-"D_0038F4E8",
-"sv"
-]
-},
 "func_00281BC8": {
 "migrated": [
 "D_0038F508"
@@ -936,14 +928,6 @@
 "pr_strings",
 "sv",
 "svs"
-]
-},
-"func_00282290": {
-"migrated": [
-"D_0038F510"
-],
-"refs": [
-"D_0038F510"
 ]
 },
 "func_002822B0": {
@@ -1031,18 +1015,6 @@
 "svs"
 ]
 },
-"func_00282D90": {
-"migrated": [],
-"refs": [
-"sv_worldmodel"
-]
-},
-"func_00282DB8": {
-"migrated": [],
-"refs": [
-"sv"
-]
-},
 "func_00282E40": {
 "migrated": [],
 "refs": [
@@ -1050,12 +1022,6 @@
 "D_0038E8F8",
 "sv_gpNewUserMsgs",
 "sv_gpUserMsgs"
-]
-},
-"func_00282F80": {
-"migrated": [],
-"refs": [
-"D_003323D4"
 ]
 },
 "func_00283018": {

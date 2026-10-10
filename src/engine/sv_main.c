@@ -42,6 +42,7 @@ void SV_DeallocateDynamicData(void)
 }
 /* rodata não migrada: início */
 __asm__(".section .rodata\n"
+        ".align 3\n"
         ".globl D_0038E628\n"
         "D_0038E628:\n"
         ".byte 0x00\n"
@@ -1277,7 +1278,8 @@ INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027C7F8);
 extern netadr_t net_from;
 mleaf_t *Mod_PointInLeaf(vec_t *p, model_t *model);
 void ED_LoadFromFile(char *data);
-void func_0027F670(int a, int b, int c, int d);
+struct packet_entities_s;
+void func_0027F670(int a, client_t *client, struct packet_entities_s *pack, sizebuf_t *msg);
 
 typedef struct
 {
@@ -1308,6 +1310,7 @@ void func_0027D0F0(void)
 }
 /* rodata não migrada: início */
 __asm__(".section .rodata\n"
+        ".align 3\n"
         ".globl D_0038EFD0\n"
         "D_0038EFD0:\n"
         ".asciz \"none\"\n"
@@ -1434,7 +1437,6 @@ INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027D380);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027D480);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027D778);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027D938);
-//func_0027DA98
 typedef struct master_s
 {
     int heartbeat;              /* 0x00 */
@@ -1468,7 +1470,6 @@ void func_0027DA98(void)
     }
 }
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027DB10);
-//SV_CheckRate
 extern cvar_t sv_maxrate;
 extern cvar_t sv_minrate;
 
@@ -1486,8 +1487,12 @@ void SV_CheckRate(client_t *cl)
     }
 }
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027DEE8);
+extern cvar_t sv_timeout;
+void SV_BroadcastPrintf(char *fmt, ...);
+
 /* rodata não migrada: início */
 __asm__(".section .rodata\n"
+        ".align 3\n"
         ".globl D_0038F280\n"
         "D_0038F280:\n"
         ".asciz \"log\"\n"
@@ -1549,7 +1554,27 @@ __asm__(".section .rodata\n"
         ".align 3\n"
         ".section .text\n");
 /* rodata não migrada: fim */
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027E048);
+void SV_CheckTimeouts(void)
+{
+    int i;
+    client_t *cl;
+    float droptime;
+
+    droptime = realtime - sv_timeout.value;
+
+    for (i = 0, cl = svs.clients; i < svs.maxclients; i++, cl++)
+    {
+        if (cl->fakeclient)
+            continue;
+        if (!cl->connected && !cl->active && !cl->spawned)
+            continue;
+        if (cl->netchan.last_received < droptime)
+        {
+            SV_BroadcastPrintf("%s timed out\n", cl->name);
+            SV_DropClient(cl, false);
+        }
+    }
+}
 int func_0027E140(void)
 {
     return 0;
@@ -1564,7 +1589,6 @@ void SV_ClearDatagram(void)
     SZ_Clear(&sv.datagram);
 }
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_AddToFatPVS);
-//SV_FatPVS
 extern int fatbytes;
 extern byte fatpvs[];
 void SV_AddToFatPVS(float *org, mnode_t *node);
@@ -1589,11 +1613,27 @@ int SV_PointLeafnum(vec_t *p)
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027E480);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027EA70);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027F670);
-void func_0027F910(int a, int b, int c)
+typedef struct entity_state_s
 {
-    func_0027F670(0, a, b, c);
+    byte unk_00[0x94];
+} entity_state_t; /* 0x94 */
+
+typedef struct packet_entities_s
+{
+    int num_entities;
+    entity_state_t *entities;
+} packet_entities_t;
+
+typedef struct
+{
+    int num_entities;
+    entity_state_t entities[256];
+} full_packet_entities_t;
+
+void func_0027F910(client_t *client, packet_entities_t *pack, sizebuf_t *msg)
+{
+    func_0027F670(0, client, pack, msg);
 }
-//func_0027F940
 extern int host_framecount;
 
 int func_0027F940(int a0)
@@ -1607,6 +1647,7 @@ int func_0027F940(int a0)
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027F9A0);
 /* rodata não migrada: início */
 __asm__(".section .rodata\n"
+        ".align 3\n"
         ".globl D_0038F310\n"
         "D_0038F310:\n"
         ".asciz \"Unset entity number\"\n"
@@ -1622,8 +1663,40 @@ __asm__(".section .rodata\n"
         ".section .text\n");
 /* rodata não migrada: fim */
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00280700);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00280B30);
-//SV_CleanupEnts
+byte *SV_FatPVS(float *org);
+void func_0027F9A0(client_t *client, byte *pvs, sizebuf_t *msg);
+void func_00280700(full_packet_entities_t *pack, int maxclients, byte *pvs);
+
+void SV_WriteEntitiesToClient(client_t *client, sizebuf_t *msg)
+{
+    vec3_t org;
+    full_packet_entities_t fullpack;
+    packet_entities_t pack;
+    byte *pvs;
+    edict_t *clent;
+    edict_t *viewent;
+
+    clent = client->edict;
+    viewent = client->pViewEntity;
+    if (viewent)
+    {
+        VectorAdd(viewent->v.origin, viewent->v.view_ofs, org);
+    }
+    else
+    {
+        VectorAdd(clent->v.origin, clent->v.view_ofs, org);
+    }
+
+    pvs = SV_FatPVS(org);
+    func_0027F9A0(client, pvs, msg);
+
+    fullpack.num_entities = 0;
+    func_00280700(&fullpack, svs.maxclients + 1, pvs);
+
+    pack.num_entities = fullpack.num_entities;
+    pack.entities = fullpack.entities;
+    func_0027F910(client, &pack, msg);
+}
 void SV_CleanupEnts(void)
 {
     int i;
@@ -1636,15 +1709,66 @@ void SV_CleanupEnts(void)
         ent->v.effects &= ~0x20;
     }
 }
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00280CB8);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00280FC8);
+INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_WriteClientdataToMessage);
+void Netchan_Transmit(netchan_t *chan, int length, byte *data, int unk);
+void SV_WriteClientdataToMessage(client_t *client, sizebuf_t *msg);
+void SV_WriteEntitiesToClient(client_t *client, sizebuf_t *msg);
+
+#define svc_time 7
+
+qboolean SV_SendClientDatagram(client_t *client, int unk)
+{
+    byte buf[4000];
+    sizebuf_t msg;
+
+    msg.data = buf;
+    msg.maxsize = sizeof(buf);
+    msg.cursize = 0;
+    msg.allowoverflow = true;
+    msg.overflowed = false;
+
+    MSG_WriteByte(&msg, svc_time);
+    MSG_WriteFloat(&msg, sv.time);
+
+    SV_WriteClientdataToMessage(client, &msg);
+    SV_WriteEntitiesToClient(client, &msg);
+
+    if (client->datagram.overflowed)
+        Con_Printf("WARNING: datagram overflowed for %s\n", client->name);
+    else
+        SZ_Write(&msg, client->datagram.data, client->datagram.cursize);
+    SZ_Clear(&client->datagram);
+
+    if (msg.overflowed)
+    {
+        Con_Printf("WARNING: msg overflowed for %s\n", client->name);
+        SZ_Clear(&msg);
+    }
+
+    Netchan_Transmit(&client->netchan, msg.cursize, buf, unk);
+    return true;
+}
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_002810D8);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00281328);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_ExtractFromUserinfo);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_ModelIndex);
+int SV_ModelIndex(char *name)
+{
+    int i;
+
+    if (!name || !name[0])
+        return 0;
+
+    for (i = 0; i < 512 && sv.model_precache[i]; i++)
+    {
+        if (!Q_strcasecmp(sv.model_precache[i], name))
+            return i;
+    }
+    if (i == 512 || !sv.model_precache[i])
+        Sys_Error("SV_ModelIndex: model %s not precached", name);
+    return i;
+}
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_002817E0);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00281888);
-//SV_AddResource
 void SV_AddResource(int type, char *name, int size, int flags, int index)
 {
     resource_t *r = &sv.resourcelist[sv.num_resources];
@@ -1677,7 +1801,6 @@ void SV_LoadEntities(void)
 {
     ED_LoadFromFile(sv.worldmodel->entities);
 }
-//SV_ClearEntities
 void ReleaseEntityDLLFields(edict_t *pEdict);
 
 void SV_ClearEntities(void)
@@ -1692,7 +1815,6 @@ void SV_ClearEntities(void)
     }
 }
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00282E40);
-//SV_SendUserReg
 #define svc_newusermsg 39
 extern char D_0038F6E0[];
 
@@ -1716,9 +1838,9 @@ void SV_SendUserReg(sizebuf_t *msg)
     } while (pMsg);
 }
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_00283018);
-//func_00283130
 /* rodata não migrada: início */
 __asm__(".section .rodata\n"
+        ".align 3\n"
         ".globl D_0038F6E0\n"
         "D_0038F6E0:\n"
         ".asciz \"==========================\\n\"\n"

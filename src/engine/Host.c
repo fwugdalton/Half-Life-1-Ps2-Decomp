@@ -111,7 +111,7 @@ void func_002524F8(int player);
 void func_0024C120(int player);
 void func_002507A0(int player);
 int func_00295718(int player);
-void func_0027E048(void);
+void SV_CheckTimeouts(void);
 void func_00245848(void);
 void func_002C5228(int unk);
 void func_0024EFB8(int unk);
@@ -1312,7 +1312,7 @@ void _Host_Frame(float time)
             ;
     }
 
-    func_0027E048();
+    SV_CheckTimeouts();
     host_time += host_frametime;
     func_00245848();
 
