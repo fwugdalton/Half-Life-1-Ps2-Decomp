@@ -74,14 +74,14 @@ typedef struct
     gl_spriteframedesc_t frames[1];   /* 0x08 */
 } gl_sprite_t;
 
-void func_002A0028(char *buf, model_t *mod, int frame);
+void Mod_SpriteFrameName(char *buf, model_t *mod, int frame);
 void GL_FreeDecalTexture(char *name);
 int sprintf(char *, const char *, ...);
 
 bs2header_t *func_002A0450(model_t *mod);
-void func_0029FAB0(model_t *mod);
-void func_0029FCF8(model_t *mod, bs2header_t *header);
-void func_0029FE20(model_t *mod);
+void Mod_SetupSubmodels(model_t *mod);
+void Mod_MakeHulls(model_t *mod, bs2header_t *header);
+void Mod_LoadTextures(model_t *mod);
 int GL_LoadDecalTexture(char *name, int type, int width, int height, byte *pixels, byte *palette, byte nummips);
 
 #define MAX_KNOWN_MODELS 512
@@ -103,7 +103,7 @@ void *Mem_DbgMalloc(int size, const char *file, int line);
 void *memset(void *, int, unsigned int);
 char *strcpy(char *, const char *);
 void Mod_LoadStudioModel(model_t *mod, void *buffer);
-void func_002A01B8(model_t *mod, gl_sprite_t *psprite);
+void Mod_LoadSpriteModel(model_t *mod, gl_sprite_t *psprite);
 void *COM_LoadFile(char *path, int usehunk, int *pLength);
 void func_002AF9A0(int texnum);
 void *Cache_Check(cache_user_t *c);
@@ -111,15 +111,15 @@ void Cache_Free(cache_user_t *c);
 FileHandle_t FS_Open(char *name, char *mode);
 void FS_Close(FileHandle_t f);
 void func_00222500(FileHandle_t f, char *fmt, ...);
-model_t *func_0029F908(model_t *mod, qboolean crash);
-model_t *func_0029F760(char *name);
-void func_0029FED0(model_t *mod);
-void func_002A0100(model_t *mod);
-void func_002A0180(model_t *mod);
+model_t *Mod_LoadModel(model_t *mod, qboolean crash);
+model_t *Mod_FindName(char *name);
+void Mod_LoadBrushModel(model_t *mod);
+void Mod_UnloadSpriteTextures(model_t *mod);
+void Mod_LoadSpriteFile(model_t *mod);
 void Mod_LoadStudioModelCached(model_t *mod);
 int strcasecmp(const char *, const char *);
 char *strstr(const char *, const char *);
-extern model_t *D_003994C0;
+extern model_t *loadmodel;
 extern cvar_t developer;
 
 void Mod_InitKnown(void)
@@ -153,7 +153,7 @@ void Mod_LoadGlobalModel(char *name, void *buffer)
     case 0x50534449:
         break;
     case IDSPRITEHEADER_PS2:
-        func_002A01B8(mod, buffer);
+        Mod_LoadSpriteModel(mod, buffer);
         break;
     }
 }
@@ -182,7 +182,7 @@ void Mod_LoadGameModel(char *name, void *buffer)
     case 0x50534449:
         break;
     case IDSPRITEHEADER_PS2:
-        func_002A01B8(mod, buffer);
+        Mod_LoadSpriteModel(mod, buffer);
         break;
     }
 }
@@ -248,7 +248,7 @@ void *Mod_Extradata(model_t *mod)
     if (mod->unk_198 == 2)
     {
         if (!Cache_Check(&mod->cache))
-            func_0029F908(mod, true);
+            Mod_LoadModel(mod, true);
 
         if (!mod->cache.data)
             Sys_Error("Mod_Extradata: caching failed");
@@ -281,7 +281,7 @@ mleaf_t *Mod_PointInLeaf(vec3_t p, model_t *model)
     }
 }
 
-void func_0029F6A8(void)
+void Mod_ClearAll(void)
 {
     int i;
     model_t *mod;
@@ -289,7 +289,7 @@ void func_0029F6A8(void)
     for (i = 0, mod = mod_level; i < mod_numlevel; i++, mod++)
     {
         if (mod->type == mod_sprite && !mod->needload)
-            func_002A0100(mod);
+            Mod_UnloadSpriteTextures(mod);
 
         if (mod->type != mod_alias && mod->needload != 3)
             mod->needload = 1;
@@ -297,7 +297,7 @@ void func_0029F6A8(void)
 }
 
 #ifdef NON_MATCHING
-model_t *func_0029F760(char *name)
+model_t *Mod_FindName(char *name)
 {
     int i;
     model_t *mod;
@@ -355,10 +355,10 @@ model_t *func_0029F760(char *name)
     return mod;
 }
 #else
-INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", func_0029F760);
+INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", Mod_FindName);
 #endif
 
-model_t *func_0029F908(model_t *mod, qboolean crash)
+model_t *Mod_LoadModel(model_t *mod, qboolean crash)
 {
     if (!strstr(mod->name, ".bs2"))
     {
@@ -393,15 +393,15 @@ model_t *func_0029F908(model_t *mod, qboolean crash)
         }
 
         if (strstr(mod->name, ".spz"))
-            func_002A0180(mod);
+            Mod_LoadSpriteFile(mod);
 
         return mod;
     }
 
     if (mod->needload)
     {
-        D_003994C0 = mod;
-        func_0029FED0(mod);
+        loadmodel = mod;
+        Mod_LoadBrushModel(mod);
     }
 
     return mod;
@@ -411,16 +411,16 @@ model_t *Mod_ForName(char *name, qboolean crash)
 {
     model_t *mod;
 
-    mod = func_0029F760(name);
-    return func_0029F908(mod, crash);
+    mod = Mod_FindName(name);
+    return Mod_LoadModel(mod, crash);
 }
 
-void func_0029FA50(model_t *mod)
+void Mod_TouchModel(model_t *mod)
 {
     mod->needload = 3;
 }
 
-float func_0029FA60(vec3_t mins, vec3_t maxs)
+float RadiusFromBounds(vec3_t mins, vec3_t maxs)
 {
     int i;
     vec3_t corner;
@@ -432,7 +432,7 @@ float func_0029FA60(vec3_t mins, vec3_t maxs)
 }
 
 #ifdef NON_MATCHING
-void func_0029FAB0(model_t *mod)
+void Mod_SetupSubmodels(model_t *mod)
 {
     unsigned int i, j;
     unsigned int numsubmodels;
@@ -458,38 +458,38 @@ void func_0029FAB0(model_t *mod)
         VectorCopy(bm->maxs, mod->maxs);
         VectorCopy(bm->mins, mod->mins);
 
-        mod->radius = func_0029FA60(mod->mins, mod->maxs);
+        mod->radius = RadiusFromBounds(mod->mins, mod->maxs);
         mod->numleafs = bm->visleafs;
 
         if (i < mod->numsubmodels - 1)
         {
             sprintf(name, "*%i", i + 1);
-            D_003994C0 = func_0029F760(name);
-            *D_003994C0 = *mod;
-            Q_strcpy(D_003994C0->name, name);
-            mod = D_003994C0;
+            loadmodel = Mod_FindName(name);
+            *loadmodel = *mod;
+            Q_strcpy(loadmodel->name, name);
+            mod = loadmodel;
         }
     }
 }
 #else
-INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", func_0029FAB0);
+INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", Mod_SetupSubmodels);
 #endif
 
-void func_0029FCF8(model_t *mod, bs2header_t *header)
+void Mod_MakeHulls(model_t *mod, bs2header_t *header)
 {
     hull_t *hull;
 
-    hull = &D_003994C0->hulls[0];
+    hull = &loadmodel->hulls[0];
     hull->clipnodes = (dclipnode_t *)((byte *)header + header->hull0);
     hull->firstclipnode = 0;
     hull->lastclipnode = mod->numnodes - 1;
-    hull->planes = D_003994C0->planes;
+    hull->planes = loadmodel->planes;
 
-    hull = &D_003994C0->hulls[1];
+    hull = &loadmodel->hulls[1];
     hull->clipnodes = mod->clipnodes;
     hull->firstclipnode = 0;
     hull->lastclipnode = mod->numclipnodes - 1;
-    hull->planes = D_003994C0->planes;
+    hull->planes = loadmodel->planes;
     hull->clip_mins[0] = -16;
     hull->clip_mins[1] = -16;
     hull->clip_mins[2] = -36;
@@ -497,11 +497,11 @@ void func_0029FCF8(model_t *mod, bs2header_t *header)
     hull->clip_maxs[1] = 16;
     hull->clip_maxs[2] = 36;
 
-    hull = &D_003994C0->hulls[2];
+    hull = &loadmodel->hulls[2];
     hull->clipnodes = mod->clipnodes;
     hull->firstclipnode = 0;
     hull->lastclipnode = mod->numclipnodes - 1;
-    hull->planes = D_003994C0->planes;
+    hull->planes = loadmodel->planes;
     hull->clip_mins[0] = -32;
     hull->clip_mins[1] = -32;
     hull->clip_mins[2] = -32;
@@ -509,11 +509,11 @@ void func_0029FCF8(model_t *mod, bs2header_t *header)
     hull->clip_maxs[1] = 32;
     hull->clip_maxs[2] = 32;
 
-    hull = &D_003994C0->hulls[3];
+    hull = &loadmodel->hulls[3];
     hull->clipnodes = mod->clipnodes;
     hull->firstclipnode = 0;
     hull->lastclipnode = mod->numclipnodes - 1;
-    hull->planes = D_003994C0->planes;
+    hull->planes = loadmodel->planes;
     hull->clip_mins[0] = -16;
     hull->clip_mins[1] = -16;
     hull->clip_mins[2] = -18;
@@ -522,7 +522,7 @@ void func_0029FCF8(model_t *mod, bs2header_t *header)
     hull->clip_maxs[2] = 18;
 }
 
-void func_0029FE20(model_t *mod)
+void Mod_LoadTextures(model_t *mod)
 {
     unsigned int i;
     unsigned int num;
@@ -537,7 +537,7 @@ void func_0029FE20(model_t *mod)
     }
 }
 
-void func_0029FED0(model_t *mod)
+void Mod_LoadBrushModel(model_t *mod)
 {
     bs2header_t *header;
 
@@ -574,17 +574,17 @@ void func_0029FED0(model_t *mod)
     mod->flags = 0;
     mod->numframes = 2;
 
-    func_0029FCF8(mod, header);
-    func_0029FAB0(mod);
-    func_0029FE20(mod);
+    Mod_MakeHulls(mod, header);
+    Mod_SetupSubmodels(mod);
+    Mod_LoadTextures(mod);
 }
 
-void func_002A0028(char *buf, model_t *mod, int frame)
+void Mod_SpriteFrameName(char *buf, model_t *mod, int frame)
 {
     sprintf(buf, "%s_%i", mod->name, frame);
 }
 
-void func_002A0050(model_t *mod)
+void Mod_FreeSpriteDecals(model_t *mod)
 {
     int i;
     char name[256];
@@ -606,12 +606,12 @@ void func_002A0050(model_t *mod)
 
     for (i = 0; i < psprite->numframes; i++)
     {
-        func_002A0028(name, mod, i);
+        Mod_SpriteFrameName(name, mod, i);
         GL_FreeDecalTexture(name);
     }
 }
 
-void func_002A0100(model_t *mod)
+void Mod_UnloadSpriteTextures(model_t *mod)
 {
     int i;
     gl_sprite_t *psprite;
@@ -635,14 +635,14 @@ void func_002A0100(model_t *mod)
     }
 }
 
-void func_002A0180(model_t *mod)
+void Mod_LoadSpriteFile(model_t *mod)
 {
     int length;
 
-    func_002A01B8(mod, COM_LoadFile(mod->name, 1, &length));
+    Mod_LoadSpriteModel(mod, COM_LoadFile(mod->name, 1, &length));
 }
 
-void func_002A01B8(model_t *mod, gl_sprite_t *psprite)
+void Mod_LoadSpriteModel(model_t *mod, gl_sprite_t *psprite)
 {
     int i;
     char name[256];
@@ -660,7 +660,7 @@ void func_002A01B8(model_t *mod, gl_sprite_t *psprite)
         frame = frames[i].frame;
         palette = frame->palette;
         pixels = frame->pixels;
-        func_002A0028(name, mod, i);
+        Mod_SpriteFrameName(name, mod, i);
         frames[i].gl_texturenum = GL_LoadDecalTexture(name, 5, frame->width, frame->height, pixels, palette, frame->nummips);
     }
 
@@ -674,7 +674,7 @@ void func_002A01B8(model_t *mod, gl_sprite_t *psprite)
     mod->synctype = 0;
 }
 
-void func_002A0320(void)
+void Mod_Print(void)
 {
     int i;
     model_t *mod;
@@ -684,7 +684,7 @@ void func_002A0320(void)
         Con_Printf("%8p : %s\n", mod->cache.data, mod->name);
 }
 
-qboolean func_002A03A8(void *pheader, void *pdata, int lump)
+qboolean Mod_CheckLumpPointer(void *pheader, void *pdata, int lump)
 {
     bs2lumps_t *header;
     byte *ptr;

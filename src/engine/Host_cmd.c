@@ -3765,7 +3765,7 @@ void func_00288C00(void);
 void func_0028B188(void);
 void func_0028B2A0(void);
 void Mod_Report_f(void);
-void func_002A0320(void);
+void Mod_Print(void);
 void Host_FullInfo_f(void);
 extern char D_00392558[];
 
@@ -3830,7 +3830,7 @@ void Host_InitCommands(void)
     Cmd_AddCommand("viewframe", Host_Viewframe_f);
     Cmd_AddCommand("viewnext", Host_Viewnext_f);
     Cmd_AddCommand("viewprev", Host_Viewprev_f);
-    Cmd_AddCommand("mcache", func_002A0320);
+    Cmd_AddCommand("mcache", Mod_Print);
     Cmd_AddCommand("interp", Host_Interp_f);
     Cmd_AddCommand("setmaster", Master_SetMaster_f);
     Cmd_AddCommand("heartbeat", Master_ResetHeartbeats);

@@ -93,7 +93,7 @@ void func_002CFD08(void *p);
 void func_0024FE00(int player);
 void SV_ClearEntities(void);
 void func_002B05F8(void);
-void func_0029F6A8(void);
+void Mod_ClearAll(void);
 void SV_ClearResourceLists(client_t *cl);
 void SV_ReadPackets(void);
 void SV_Physics(void);
@@ -653,7 +653,7 @@ void Host_ClearMemory(qboolean bQuiet)
         Con_DPrintf("Clearing memory\n");
 
     func_002B05F8();
-    func_0029F6A8();
+    Mod_ClearAll();
 
     if (host_hunklevel)
     {
