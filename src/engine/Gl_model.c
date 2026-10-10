@@ -10,6 +10,7 @@ typedef void *FileHandle_t;
 #define IDSTUDIOHEADER 0x54534449 /* "IDST" */
 #define IDSPRITEHEADER_PS2 0x5A415053 /* "SPAZ" */
 #define mod_studio 3
+#define fabs(x) ((x) < 0 ? -(x) : (x))
 
 extern model_t *mod_known;
 extern model_t *mod_global;
@@ -31,6 +32,7 @@ FileHandle_t FS_Open(char *name, char *mode);
 void FS_Close(FileHandle_t f);
 void func_00222500(FileHandle_t f, char *fmt, ...);
 model_t *func_0029F908(model_t *mod, qboolean crash);
+model_t *func_0029F760(char *name);
 void func_0029FED0(model_t *mod);
 void func_002A0100(model_t *mod);
 void func_002A0180(model_t *mod);
@@ -325,13 +327,73 @@ model_t *func_0029F908(model_t *mod, qboolean crash)
     return mod;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", Mod_ForName);
+model_t *Mod_ForName(char *name, qboolean crash)
+{
+    model_t *mod;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", func_0029FA50);
+    mod = func_0029F760(name);
+    return func_0029F908(mod, crash);
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", func_0029FA60);
+void func_0029FA50(model_t *mod)
+{
+    mod->needload = 3;
+}
 
+float func_0029FA60(vec3_t mins, vec3_t maxs)
+{
+    int i;
+    vec3_t corner;
+
+    for (i = 0; i < 3; i++)
+        corner[i] = fabs(mins[i]) > fabs(maxs[i]) ? fabs(mins[i]) : fabs(maxs[i]);
+
+    return Length(corner);
+}
+
+#ifdef NON_MATCHING
+void func_0029FAB0(model_t *mod)
+{
+    unsigned int i, j;
+    unsigned int numsubmodels;
+    dmodel_t *bm;
+    char name[10];
+
+    numsubmodels = mod->numsubmodels;
+
+    for (i = 0; i < numsubmodels; i++)
+    {
+        bm = &mod->submodels[i];
+
+        mod->hulls[0].firstclipnode = bm->headnode[0];
+        for (j = 1; j < 4; j++)
+        {
+            mod->hulls[j].firstclipnode = bm->headnode[j];
+            mod->hulls[j].lastclipnode = mod->numclipnodes - 1;
+        }
+
+        mod->firstmodelsurface = bm->firstface;
+        mod->nummodelsurfaces = bm->numfaces;
+
+        VectorCopy(bm->maxs, mod->maxs);
+        VectorCopy(bm->mins, mod->mins);
+
+        mod->radius = func_0029FA60(mod->mins, mod->maxs);
+        mod->numleafs = bm->visleafs;
+
+        if (i < mod->numsubmodels - 1)
+        {
+            sprintf(name, "*%i", i + 1);
+            D_003994C0 = func_0029F760(name);
+            *D_003994C0 = *mod;
+            Q_strcpy(D_003994C0->name, name);
+            mod = D_003994C0;
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", func_0029FAB0);
+#endif
 
 INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", func_0029FCF8);
 

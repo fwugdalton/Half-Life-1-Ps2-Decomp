@@ -66,6 +66,21 @@ typedef struct dclipnode_s
     short children[2];
 } dclipnode_t;
 
+typedef struct dmodel_s
+{
+    float mins[3];              /* 0x00 (vetores alinhados em 16 no PS2) */
+    int pad_0C;
+    float maxs[3];              /* 0x10 */
+    int pad_1C;
+    float origin[3];            /* 0x20 */
+    int pad_2C;
+    int headnode[4];            /* 0x30 */
+    int visleafs;               /* 0x40 */
+    int firstface;              /* 0x44 */
+    int numfaces;               /* 0x48 */
+    int pad_4C;
+} dmodel_t; /* 0x50 */
+
 typedef struct hull_s
 {
     dclipnode_t *clipnodes;
@@ -86,18 +101,24 @@ typedef struct model_s
     float mins[3];              /* 0x50 */
     int unk_5C;
     float maxs[3];              /* 0x60 */
-    byte unk_6C[0x80 - 0x6C];
+    byte unk_6C[0x70 - 0x6C];
+    float radius;               /* 0x70 */
+    byte unk_74[0x80 - 0x74];
     int flags;                  /* 0x80 */
-    byte unk_84[0x8C - 0x84];
+    int firstmodelsurface;      /* 0x84 */
+    int nummodelsurfaces;       /* 0x88 */
     int numsubmodels;           /* 0x8C */
-    byte unk_90[0x9C - 0x90];
+    struct dmodel_s *submodels; /* 0x90 */
+    byte unk_94[0x9C - 0x94];
     int numleafs;               /* 0x9C */
     mleaf_t *leafs;             /* 0xA0 */
     byte unk_A4[0xB8 - 0xA4];
     mnode_t *nodes;             /* 0xB8 */
     int numsurfaces;            /* 0xBC */
     msurface_t *surfaces;       /* 0xC0 */
-    byte unk_C4[0xDC - 0xC4];
+    byte unk_C4[0xCC - 0xC4];
+    int numclipnodes;           /* 0xCC */
+    byte unk_D0[0xDC - 0xD0];
     hull_t hulls[4];            /* 0xDC */
     byte unk_17C[0x18C - 0x17C];
     char *entities;             /* 0x18C */
