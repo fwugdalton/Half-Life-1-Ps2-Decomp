@@ -40,6 +40,17 @@ typedef struct
     int numtextures;     /* 0xB8 */
 } bs2header_t;
 
+typedef struct
+{
+    byte pad0[7];
+    byte numframes;  /* 0x07 */
+    int frames[1];   /* 0x08 */
+} gl_sprite_t;
+
+void func_002A0028(char *buf, model_t *mod, int frame);
+void GL_FreeDecalTexture(char *name);
+int sprintf(char *, const char *, ...);
+
 bs2header_t *func_002A0450(model_t *mod);
 void func_0029FAB0(model_t *mod);
 void func_0029FCF8(model_t *mod, bs2header_t *header);
@@ -539,9 +550,37 @@ void func_0029FED0(model_t *mod)
     func_0029FE20(mod);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", func_002A0028);
+void func_002A0028(char *buf, model_t *mod, int frame)
+{
+    sprintf(buf, "%s_%i", mod->name, frame);
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", func_002A0050);
+void func_002A0050(model_t *mod)
+{
+    int i;
+    char name[256];
+    gl_sprite_t *psprite;
+
+    if (mod->type != mod_sprite)
+        return;
+
+    mod->needload = 1;
+    psprite = (gl_sprite_t *)mod->cache.data;
+    if (!psprite)
+        return;
+
+    {
+        int *p = psprite->frames;
+        for (i = 0; i < psprite->numframes; i++)
+            *p = 0;
+    }
+
+    for (i = 0; i < psprite->numframes; i++)
+    {
+        func_002A0028(name, mod, i);
+        GL_FreeDecalTexture(name);
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", func_002A0100);
 
