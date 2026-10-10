@@ -2480,7 +2480,358 @@ void func_0027E480(entity_state_t *from, entity_state_t *to, sizebuf_t *msg, qbo
         MSG_WriteBitsUChar(&bval, 8);
     }
 }
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027EA70);
+void func_00242C90(int numbits, float angle);
+void func_00242B58(signed char *data, int numbits);
+
+void func_00242C90(int numbits, float angle);
+void func_00242B58(signed char *data, int numbits);
+
+#ifdef NON_MATCHING
+void SV_WriteDelta(entity_state_t *from, entity_state_t *to, sizebuf_t *msg, qboolean force)
+{
+    unsigned int bits;
+    unsigned int bits2;
+    int i;
+    float d;
+    byte bval;
+    unsigned short usval;
+    short coord;
+    signed char cval;
+    short sbody;
+    byte t;
+
+    if (to->entityType)
+    {
+        func_0027E480(from, to, msg, force);
+        return;
+    }
+
+    bits = 0;
+    bits2 = 0;
+
+    for (i = 0; i < 3; i++)
+    {
+        d = to->origin[i] - from->origin[i];
+        if (d < -0.1f || d > 0.1f)
+            bits |= (2 << i);
+    }
+
+    if (to->angles[0] != from->angles[0])
+        bits |= 0x200;
+    if (to->angles[1] != from->angles[1])
+        bits |= 0x20;
+    if (to->angles[2] != from->angles[2])
+        bits |= 0x400;
+
+    if (to->movetype != from->movetype)
+        bits |= 0x40;
+    if (to->colormap != from->colormap)
+        bits |= 0x40000;
+    if (*(int *)&to->skin != *(int *)&from->skin)
+        bits |= 0x80000;
+    if (to->frame != from->frame)
+        bits |= 0x80;
+    if (to->scale != from->scale)
+        bits |= 0x40000000;
+    if (to->effects != from->effects)
+        bits |= 0x4000;
+    if (to->modelindex != from->modelindex)
+        bits |= 0x800;
+    if (to->animtime != from->animtime || to->sequence != from->sequence)
+        bits |= 0x1000;
+    if (to->framerate != from->framerate)
+        bits |= 0x10000;
+    if (to->body != from->body)
+        bits |= 0x400000;
+    if (to->controller[0] != from->controller[0])
+        bits |= 0x1000000;
+    if (to->controller[1] != from->controller[1])
+        bits |= 0x2000000;
+    if (to->controller[2] != from->controller[2])
+        bits |= 0x4000000;
+    if (to->controller[3] != from->controller[3])
+        bits |= 0x8000000;
+    if (to->blending[0] != from->blending[0])
+        bits |= 0x10000000;
+    if (to->blending[1] != from->blending[1])
+        bits |= 0x20000000;
+
+    if (to->rendermode != from->rendermode || to->renderamt != from->renderamt || to->renderfx != from->renderfx
+        || (*(int *)&to->rendercolor & 0xFFFFFF) != (*(int *)&from->rendercolor & 0xFFFFFF))
+        bits |= 0x100000;
+
+    if (to->animtime && !to->velocity[0] && !to->velocity[1] && !to->velocity[2])
+        bits |= 0x200000;
+
+    for (i = 0; i < 3; i++)
+    {
+        d = to->mins[i] - from->mins[i];
+        if (d < -0.1f || d > 0.1f)
+            bits2 |= (1 << i);
+        d = to->maxs[i] - from->maxs[i];
+        if (d < -0.1f || d > 0.1f)
+            bits2 |= (8 << i);
+    }
+
+    if (to->aiment != from->aiment)
+        bits2 |= 0x40;
+    if (to->weaponmodel != from->weaponmodel)
+        bits2 |= 0x100;
+
+    if (to->movetype == 12 && to->aiment)
+        bits &= ~0xE;
+    else if (to->aiment != from->aiment)
+        bits |= 0xE;
+
+    if (to->number >= 256)
+        bits |= 0x8000;
+    if (bits >= 0x100)
+        bits |= 1;
+    if (bits > 0xFFFF)
+        bits |= 0x100;
+    if (bits > 0xFFFFFF)
+        bits |= 0x800000;
+
+    if (bits2)
+        bits |= 0x80800101;
+
+    if (!to->number)
+        Sys_Error("Unset entity number");
+
+    if (!bits && !bits2 && !force)
+        return;
+
+    bval = bits;
+    MSG_WriteBitsUChar(&bval, 8);
+    if (bits & 1)
+    {
+        bval = bits >> 8;
+        MSG_WriteBitsUChar(&bval, 8);
+    }
+    if (bits & 0x100)
+    {
+        bval = bits >> 16;
+        MSG_WriteBitsUChar(&bval, 8);
+    }
+    if (bits & 0x800000)
+    {
+        bval = bits >> 24;
+        MSG_WriteBitsUChar(&bval, 8);
+    }
+    if (bits & 0x80000000)
+    {
+        bval = bits2;
+        MSG_WriteBitsUChar(&bval, 8);
+    }
+
+    if (bits & 0x8000)
+    {
+        usval = to->number;
+        MSG_WriteBitsUShort(&usval, 10);
+    }
+    else
+    {
+        bval = to->number;
+        MSG_WriteBitsUChar(&bval, 8);
+    }
+
+    if (bits & 0x800)
+    {
+        if (to->modelindex >= 256)
+        {
+            bval = 1;
+            MSG_WriteBitsUChar(&bval, 1);
+            usval = to->modelindex;
+            MSG_WriteBitsUShort(&usval, 10);
+        }
+        else
+        {
+            bval = 0;
+            MSG_WriteBitsUChar(&bval, 1);
+            bval = to->modelindex;
+            MSG_WriteBitsUChar(&bval, 8);
+        }
+    }
+
+    if (bits & 0x80)
+    {
+        bval = to->frame;
+        MSG_WriteBitsUChar(&bval, 8);
+    }
+    if (bits & 0x40)
+    {
+        bval = to->movetype;
+        MSG_WriteBitsUChar(&bval, 4);
+    }
+    if (bits & 0x40000)
+    {
+        usval = to->colormap;
+        MSG_WriteBitsUShort(&usval, 16);
+    }
+    if (bits & 0x80000)
+    {
+        usval = to->skin;
+        MSG_WriteBitsUShort(&usval, 10);
+        bval = to->solid;
+        MSG_WriteBitsUChar(&bval, 3);
+    }
+    if (bits & 0x40000000)
+    {
+        usval = to->scale * 256;
+        MSG_WriteBitsUShort(&usval, 16);
+    }
+    if (bits & 0x4000)
+    {
+        usval = to->effects;
+        MSG_WriteBitsUShort(&usval, 10);
+    }
+
+    if (bits & 2)
+    {
+        coord = to->origin[0] * 8;
+        MSG_WriteBitsShort(&coord, 16);
+    }
+    if (bits & 0x200)
+        func_00242C90(11, to->angles[0]);
+    if (bits & 4)
+    {
+        coord = to->origin[1] * 8;
+        MSG_WriteBitsShort(&coord, 16);
+    }
+    if (bits & 0x20)
+        func_00242C90(13, to->angles[1]);
+    if (bits & 8)
+    {
+        coord = to->origin[2] * 8;
+        MSG_WriteBitsShort(&coord, 16);
+    }
+    if (bits & 0x400)
+        func_00242C90(11, to->angles[2]);
+
+    if (bits & 0x1000)
+    {
+        bval = to->sequence;
+        t = to->animtime * 100;
+        MSG_WriteBitsUChar(&bval, 8);
+        bval = t;
+        MSG_WriteBitsUChar(&bval, 8);
+    }
+    if (bits & 0x10000)
+    {
+        cval = to->framerate * 16;
+        func_00242B58(&cval, 8);
+    }
+
+    if (bits & 0x1000000)
+    {
+        bval = to->controller[0];
+        MSG_WriteBitsUChar(&bval, 8);
+    }
+    if (bits & 0x2000000)
+    {
+        bval = to->controller[1];
+        MSG_WriteBitsUChar(&bval, 8);
+    }
+    if (bits & 0x4000000)
+    {
+        bval = to->controller[2];
+        MSG_WriteBitsUChar(&bval, 8);
+    }
+    if (bits & 0x8000000)
+    {
+        bval = to->controller[3];
+        MSG_WriteBitsUChar(&bval, 8);
+    }
+    if (bits & 0x10000000)
+    {
+        bval = to->blending[0];
+        MSG_WriteBitsUChar(&bval, 8);
+    }
+    if (bits & 0x20000000)
+    {
+        bval = to->blending[1];
+        MSG_WriteBitsUChar(&bval, 8);
+    }
+
+    if (bits & 0x400000)
+    {
+        bval = to->body;
+        sbody = to->body;
+        MSG_WriteBitsUShort((unsigned short *)&sbody, 10);
+    }
+
+    if (bits & 0x100000)
+    {
+        bval = to->rendermode;
+        MSG_WriteBitsUChar(&bval, 8);
+        bval = to->renderamt;
+        MSG_WriteBitsUChar(&bval, 8);
+        bval = to->rendercolor.r;
+        MSG_WriteBitsUChar(&bval, 8);
+        bval = to->rendercolor.g;
+        MSG_WriteBitsUChar(&bval, 8);
+        bval = to->rendercolor.b;
+        MSG_WriteBitsUChar(&bval, 8);
+        bval = to->renderfx;
+        MSG_WriteBitsUChar(&bval, 8);
+    }
+
+    if (bits2 & 1)
+    {
+        coord = to->mins[0] * 8;
+        MSG_WriteBitsShort(&coord, 16);
+    }
+    if (bits2 & 2)
+    {
+        coord = to->mins[1] * 8;
+        MSG_WriteBitsShort(&coord, 16);
+    }
+    if (bits2 & 4)
+    {
+        coord = to->mins[2] * 8;
+        MSG_WriteBitsShort(&coord, 16);
+    }
+    if (bits2 & 8)
+    {
+        coord = to->maxs[0] * 8;
+        MSG_WriteBitsShort(&coord, 16);
+    }
+    if (bits2 & 0x10)
+    {
+        coord = to->maxs[1] * 8;
+        MSG_WriteBitsShort(&coord, 16);
+    }
+    if (bits2 & 0x20)
+    {
+        coord = to->maxs[2] * 8;
+        MSG_WriteBitsShort(&coord, 16);
+    }
+    if (bits2 & 0x40)
+    {
+        coord = to->aiment;
+        MSG_WriteBitsUShort((unsigned short *)&coord, 10);
+    }
+    if (bits2 & 0x100)
+    {
+        if (to->weaponmodel >= 256)
+        {
+            bval = 1;
+            MSG_WriteBitsUChar(&bval, 1);
+            usval = to->weaponmodel;
+            MSG_WriteBitsUShort(&usval, 10);
+        }
+        else
+        {
+            bval = 0;
+            MSG_WriteBitsUChar(&bval, 1);
+            bval = to->weaponmodel;
+            MSG_WriteBitsUChar(&bval, 8);
+        }
+    }
+}
+#else
+INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_WriteDelta);
+#endif
 typedef struct packet_entities_s
 {
     int num_entities;
@@ -2494,7 +2845,7 @@ typedef struct
 } full_packet_entities_t;
 
 void MSG_WriteBitsUInt(unsigned int *data, int numbits);
-void func_0027EA70(entity_state_t *from, entity_state_t *to, sizebuf_t *msg, qboolean force);
+void SV_WriteDelta(entity_state_t *from, entity_state_t *to, sizebuf_t *msg, qboolean force);
 
 #define svc_packetentities 41
 #define U_REMOVE 0x10
@@ -2528,7 +2879,7 @@ int SV_EmitPacketEntities(int unused, client_t *client, struct packet_entities_s
 
         if (newnum == oldnum)
         {
-            func_0027EA70(&from->entities[oldindex], &to->entities[newindex], msg, false);
+            SV_WriteDelta(&from->entities[oldindex], &to->entities[newindex], msg, false);
             oldindex++;
             newindex++;
             continue;
@@ -2537,7 +2888,7 @@ int SV_EmitPacketEntities(int unused, client_t *client, struct packet_entities_s
         if (newnum < oldnum)
         {
             ent = EDICT_NUM(newnum);
-            func_0027EA70(&ent->baseline, &to->entities[newindex], msg, true);
+            SV_WriteDelta(&ent->baseline, &to->entities[newindex], msg, true);
             newindex++;
             continue;
         }

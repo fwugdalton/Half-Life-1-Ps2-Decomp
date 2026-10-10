@@ -899,6 +899,12 @@
 "pr_strings"
 ]
 },
+"SV_WriteDelta": {
+"migrated": [],
+"refs": [
+"D_0038F310"
+]
+},
 "SV_WriteEntitiesToClient": {
 "migrated": [],
 "refs": [
@@ -993,12 +999,6 @@
 "refs": []
 },
 "func_0027E480": {
-"migrated": [],
-"refs": [
-"D_0038F310"
-]
-},
-"func_0027EA70": {
 "migrated": [],
 "refs": [
 "D_0038F310"
