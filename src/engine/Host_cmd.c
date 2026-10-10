@@ -68,7 +68,7 @@ INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00392080);
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_002979A0);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00297A10);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Motd_f);
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00297AD0);
 
@@ -82,7 +82,7 @@ INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00297CC0);
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00297D10);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00297EA0);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Quit_f);
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00392178);
 
@@ -90,31 +90,31 @@ INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00297F08);
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00392278);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00298170);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Status_f);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00298428);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_God_f);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_002984D0);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Notarget_f);
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00298570);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00298618);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Noclip_f);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00298810);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Fly_f);
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_002988B0);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00298940);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Ping_f);
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00298A18);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00298CD0);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Map_f);
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00392470);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00298E60);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Maps_f);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00298EC8);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Changelevel_f);
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_003924F8);
 
@@ -122,17 +122,17 @@ INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00392520);
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00299008);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00299110);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Restart_f);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00299198);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Restartdecay_f);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_002991F0);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Reload_f);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_002992E0);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Reconnect_f);
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00392558);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00299358);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Connect_f);
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00299400);
 
@@ -169,9 +169,9 @@ INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_003926C0);
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_003926D0);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00299C48);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Savegame_f);
 
-void func_00299CF0(void) {
+void Host_AutoSave_f(void) {
 }
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00299CF8);
@@ -186,7 +186,7 @@ INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00392700);
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00392728);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_00299FF0);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Loadgame_f);
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029A060);
 
@@ -262,89 +262,89 @@ INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029C330);
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029C388);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029C3C0);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Changelevel2_f);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029C5E8);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Version_f);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029C638);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_FullInfo_f);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029C7E0);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_SetInfo_f);
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029C948);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029CB70);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Say_f);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029CB90);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Say_Team_f);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029CBB0);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Tell_f);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029CD80);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Kill_f);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029CE00);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Pause_f);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029CF68);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_PreSpawn_f);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029D140);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Spawn_f);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029D548);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Begin_f);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029D5B8);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Kick_f);
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029D8F0);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029D9B0);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Viewmodel_f);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029DA40);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Viewframe_f);
 
 void func_0029DAB8(void) {
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029DAC0);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Viewnext_f);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029DB58);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Viewprev_f);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029DBD0);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Interp_f);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029DC18);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Nextdl_f);
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029DDB8);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029DE70);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_AllowDownload_f);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029DEE0);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_AllowUpload_f);
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029DF60);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029E008);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Download_f);
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00392E30);
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029E2D0);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029E440);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_WC_f);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029E460);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_SoundFade_f);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029E590);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_KillServer_f);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029E618);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Crc_f);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029E6A0);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Logos_f);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029E6E8);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Protocol_f);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029E7C8);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_GetSv_f);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029E868);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_BGetSv_f);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029E908);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_BGetMod_f);
 
-void func_0029E9C0(void) {
+void Host_PingSv_f(void) {
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029E9C8);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Notify_f);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029E9E8);
+INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_GetCertificate_f);
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_InitCommands);
 
