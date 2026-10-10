@@ -52,10 +52,20 @@ typedef struct msurface_s
     byte unk_7C[0x90 - 0x7C];
 } msurface_t; /* 0x90 */
 
+typedef struct efrag_s
+{
+    struct mleaf_s *leaf;       /* 0x00 */
+    struct efrag_s *leafnext;   /* 0x04 */
+    struct cl_entity_s *entity; /* 0x08 */
+    struct efrag_s *entnext;    /* 0x0C */
+} efrag_t;
+
 typedef struct mleaf_s
 {
     int contents;               /* 0x00 */
-    byte unk_04[0x2C];
+    byte unk_04[0x0C - 0x04];
+    efrag_t *efrags;            /* 0x0C */
+    byte unk_10[0x30 - 0x10];
     byte *compressed_vis;       /* 0x30 */
     byte unk_34[0x0C];
 } mleaf_t; /* 0x40 */

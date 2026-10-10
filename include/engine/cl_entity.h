@@ -15,9 +15,13 @@ typedef struct cl_entity_s
     byte pad24[0x2C - 0x24];
     int index;                  /* 0x2C */
     int unk_30;                 /* 0x30 */
-    byte pad34[0x50 - 0x34];
+    byte pad34[0x38 - 0x34];
+    int visframe;               /* 0x38 */
+    byte pad3C[0x50 - 0x3C];
     struct model_s *model;      /* 0x50 */
-    byte pad54[0x60 - 0x54];
+    struct efrag_s *efrag;      /* 0x54 */
+    void *topnode;              /* 0x58 */
+    byte pad5C[0x60 - 0x5C];
     float frame;                /* 0x60 */
     byte pad64[0x6C - 0x64];
     float scale;                /* 0x6C */

@@ -71,6 +71,9 @@ $(BUILD_DIR)/src/engine/Host_cmd.o: CFLAGS += -ffast-math
 $(BUILD_DIR)/src/engine/Gl_model.o: CFLAGS += -ffast-math
 $(BUILD_DIR)/src/engine/qgl.o: CFLAGS += -ffast-math
 $(BUILD_DIR)/src/engine/r_efrag.o: CFLAGS += -ffast-math
+$(BUILD_DIR)/src/engine/gl_warp.o: CFLAGS += -ffast-math
+# a .rodata do gl_warp começa alinhada em 16 no original
+$(BUILD_DIR)/src/engine/gl_warp.o: SECTALIGN_C := --set-section-alignment .text=8 --set-section-alignment .data=4 --set-section-alignment .rodata=16
 
 $(BUILD_DIR)/src/%.o: src/%.c $(shell find include -name "*.h")
 	@mkdir -p $(dir $@)

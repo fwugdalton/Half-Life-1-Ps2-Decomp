@@ -108,7 +108,7 @@ typedef struct client_state_s
     int gametype;               /* 0x13E4 */
     int viewentity;             /* 0x13E8 */
     struct model_s *worldmodel; /* 0x13EC */
-    byte pad13F0[0x13F4 - 0x13F0];
+    struct efrag_s *free_efrags; /* 0x13F0 */
     int num_entities;           /* 0x13F4 */
     byte pad13F8[0x13FC - 0x13F8];
     cl_entity_t viewent;        /* 0x13FC */

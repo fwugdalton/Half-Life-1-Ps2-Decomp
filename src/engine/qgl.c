@@ -1,3 +1,12 @@
 #include "common.h"
 
-INCLUDE_ASM("asm/nonmatchings/engine/qgl", func_002A07D0);
+int strcmp(const char *, const char *);
+void func_0023C450(void);
+
+void *qwglGetProcAddress(const char *name)
+{
+    if (!strcmp(name, "glColorTableEXT"))
+        return (void *)func_0023C450;
+
+    return NULL;
+}
