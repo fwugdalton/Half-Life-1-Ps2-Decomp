@@ -3091,4 +3091,142 @@ void func_00283130(void)
     }
     Con_Printf("==========================\n");
 }
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_Init);
+void Pmove_Init(void);
+void func_0028B308(void);
+extern char D_004D7FC0[512][5];
+extern cvar_t D_003326F8;
+extern cvar_t D_00332968;
+extern cvar_t sv_aim;
+extern cvar_t D_00332428;
+extern cvar_t violence_hblood;
+extern cvar_t D_00332458;
+extern cvar_t D_00332470;
+extern cvar_t D_00332488;
+extern cvar_t D_003324A0;
+extern cvar_t sv_gravity;
+extern cvar_t sv_friction;
+extern cvar_t sv_edgefriction;
+extern cvar_t sv_stopspeed;
+extern cvar_t sv_maxspeed;
+extern cvar_t sv_accelerate;
+extern cvar_t sv_stepsize;
+extern cvar_t D_003327A8;
+extern cvar_t sv_bounce;
+extern cvar_t D_003327D8;
+extern cvar_t sv_airaccelerate;
+extern cvar_t sv_wateraccelerate;
+extern cvar_t sv_waterfriction;
+extern cvar_t D_003327F0;
+extern cvar_t D_00332808;
+extern cvar_t D_00332820;
+extern cvar_t D_00332838;
+extern cvar_t D_00332530;
+extern cvar_t D_00332500;
+extern cvar_t sv_zmax;
+extern cvar_t sv_wateramp;
+extern cvar_t sv_skyname;
+extern cvar_t sv_maxvelocity;
+extern cvar_t D_003324D0;
+extern cvar_t D_00332548;
+extern cvar_t D_00332560;
+extern cvar_t D_00332578;
+extern cvar_t D_00332590;
+extern cvar_t sv_spectatormaxspeed;
+extern cvar_t D_003326E0;
+extern cvar_t pm_pushfix;
+extern cvar_t D_003326C8;
+extern cvar_t D_00332698;
+extern cvar_t D_003326B0;
+extern cvar_t D_003325D8;
+extern cvar_t D_003325F0;
+extern cvar_t D_00332608;
+extern cvar_t D_00332620;
+extern cvar_t D_00332638;
+extern cvar_t D_00332650;
+extern cvar_t D_00332668;
+
+void SV_Init(void)
+{
+    int i;
+    client_t *cl;
+
+    Cmd_AddCommand("logaddress", SV_SetLogAddress_f);
+    Cmd_AddCommand("log", SV_ServerLog_f);
+    Cmd_AddCommand("serverinfo", SV_Serverinfo_f);
+    Cmd_AddCommand("localinfo", SV_Localinfo_f);
+    Cmd_AddCommand("leafdatatrace", func_0027BF20);
+    Cmd_AddCommand("showinfo", func_0028B308);
+    Cmd_AddCommand("user", SV_User_f);
+    Cmd_AddCommand("users", SV_Users_f);
+
+    Cvar_RegisterVariable(&sv_logrelay);
+    Cvar_RegisterVariable(&D_003326F8);
+    Cvar_RegisterVariable(&sv_lan);
+    Cvar_RegisterVariable(&sv_password);
+    Cvar_RegisterVariable(&D_00332968);
+    Cvar_RegisterVariable(&sv_aim);
+    Cvar_RegisterVariable(&D_00332428);
+    Cvar_RegisterVariable(&violence_hblood);
+    Cvar_RegisterVariable(&D_00332458);
+    Cvar_RegisterVariable(&D_00332470);
+    Cvar_RegisterVariable(&D_00332488);
+    Cvar_RegisterVariable(&D_003324A0);
+    Cvar_RegisterVariable(&sv_gravity);
+    Cvar_RegisterVariable(&sv_friction);
+    Cvar_RegisterVariable(&sv_edgefriction);
+    Cvar_RegisterVariable(&sv_stopspeed);
+    Cvar_RegisterVariable(&sv_maxspeed);
+    Cvar_RegisterVariable(&sv_accelerate);
+    Cvar_RegisterVariable(&sv_stepsize);
+    Cvar_RegisterVariable(&D_003327A8);
+    Cvar_RegisterVariable(&sv_bounce);
+    Cvar_RegisterVariable(&D_003327D8);
+    Cvar_RegisterVariable(&sv_airaccelerate);
+    Cvar_RegisterVariable(&sv_wateraccelerate);
+    Cvar_RegisterVariable(&sv_waterfriction);
+    Cvar_RegisterVariable(&D_003327F0);
+    Cvar_RegisterVariable(&D_00332808);
+    Cvar_RegisterVariable(&D_00332820);
+    Cvar_RegisterVariable(&D_00332838);
+    Cvar_RegisterVariable(&D_00332530);
+    Cvar_RegisterVariable(&sv_timeout);
+    Cvar_RegisterVariable(&D_00332500);
+    Cvar_RegisterVariable(&sv_zmax);
+    Cvar_RegisterVariable(&sv_wateramp);
+    Cvar_RegisterVariable(&sv_skyname);
+    Cvar_RegisterVariable(&sv_maxvelocity);
+    Cvar_RegisterVariable(&D_003324D0);
+    Cvar_RegisterVariable(&D_00332548);
+    Cvar_RegisterVariable(&D_00332560);
+    Cvar_RegisterVariable(&D_00332578);
+    Cvar_RegisterVariable(&D_00332590);
+    Cvar_RegisterVariable(&sv_spectatormaxspeed);
+    Cvar_RegisterVariable(&sv_netsize);
+    Cvar_RegisterVariable(&D_003326E0);
+    Cvar_RegisterVariable(&pm_pushfix);
+    Cvar_RegisterVariable(&D_003326C8);
+    Cvar_RegisterVariable(&D_00332698);
+    Cvar_RegisterVariable(&D_003326B0);
+    Cvar_RegisterVariable(&sv_minrate);
+    Cvar_RegisterVariable(&sv_maxrate);
+    Cvar_RegisterVariable(&D_003325D8);
+    Cvar_RegisterVariable(&D_003325F0);
+    Cvar_RegisterVariable(&D_00332608);
+    Cvar_RegisterVariable(&D_00332620);
+    Cvar_RegisterVariable(&D_00332638);
+    Cvar_RegisterVariable(&D_00332650);
+    Cvar_RegisterVariable(&D_00332668);
+
+    Pmove_Init();
+
+    for (i = 0; i < 512; i++)
+        sprintf(D_004D7FC0[i], "*%i", i);
+
+    for (i = 0; i < svs.maxclientslimit; i++)
+    {
+        cl = &svs.clients[i];
+        memset(cl, 0, sizeof(client_t));
+        cl->resourcesneeded.pNext = cl->resourcesneeded.pPrev = &cl->resourcesneeded;
+        cl->resourcesonhand.pNext = cl->resourcesonhand.pPrev = &cl->resourcesonhand;
+    }
+}
