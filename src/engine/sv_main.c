@@ -428,16 +428,335 @@ void SV_SetLogAddress_f(void)
     else
         Con_Printf("logaddress:  unable to resolve %s\n", szAdr);
 }
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_ServerLog_f);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_User_f);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_Users_f);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_CountPlayers);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027B030);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_StartParticle);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_StartSound);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_BuildSoundMsg);
+void Log_Open(void);
+void Log_Close(void);
+
+void SV_ServerLog_f(void)
+{
+    if (Cmd_Argc() != 2)
+    {
+        Con_Printf("usage:  log < on | off >\n");
+
+        if (svs.log.active)
+            Con_Printf("currently logging\n");
+        else
+            Con_Printf("not currently logging\n");
+        return;
+    }
+
+    if (!strcasecmp(Cmd_Argv(1), "off"))
+    {
+        if (svs.log.active)
+        {
+            if (svs.log.file)
+                Log_Close();
+            Con_Printf("Server logging disabled.\n");
+            svs.log.active = false;
+        }
+    }
+    else if (!strcasecmp(Cmd_Argv(1), "on"))
+    {
+        svs.log.active = true;
+        Log_Open();
+    }
+    else
+    {
+        Con_Printf("log:  unknown parameter %s, 'on' and 'off' are valid\n", Cmd_Argv(1));
+    }
+}
+void SV_User_f(void)
+{
+    int i;
+    int uid;
+    client_t *cl;
+
+    if (!sv.active)
+    {
+        Con_Printf("Can't 'user', not running a server\n");
+        return;
+    }
+
+    if (Cmd_Argc() != 2)
+    {
+        Con_Printf("Usage: user <username / userid>\n");
+        return;
+    }
+
+    uid = atoi(Cmd_Argv(1));
+
+    for (i = 0, cl = svs.clients; i < svs.maxclients; i++, cl++)
+    {
+        if (!cl->active && !cl->spawned && !cl->connected)
+            continue;
+
+        if (cl->fakeclient)
+            continue;
+
+        if (!cl->name[0])
+            continue;
+
+        if (cl->userid == uid || !strcmp(cl->name, Cmd_Argv(1)))
+        {
+            Info_Print(cl->userinfo);
+            return;
+        }
+    }
+
+    Con_Printf("User not in server.\n");
+}
+void SV_Users_f(void)
+{
+    int i;
+    int c;
+    client_t *cl;
+
+    if (!sv.active)
+    {
+        Con_Printf("Can't 'users', not running a server\n");
+        return;
+    }
+
+    Con_Printf("userid : uniqueid : name\n");
+    Con_Printf("------ : ---------: ----\n");
+
+    c = 0;
+    for (i = 0, cl = svs.clients; i < svs.maxclients; i++, cl++)
+    {
+        if (!cl->active && !cl->spawned && !cl->connected)
+            continue;
+
+        if (cl->fakeclient)
+            continue;
+
+        if (cl->name[0])
+        {
+            Con_Printf("%6i : %u : %s\n", cl->userid, cl->WONid, cl->name);
+            c++;
+        }
+    }
+
+    Con_Printf("%i users\n", c);
+}
+void MSG_WriteCoord(sizebuf_t *sb, float f);
+void MSG_WriteChar(sizebuf_t *sb, int c);
+qboolean SV_BuildSoundMsg(edict_t *entity, int channel, const char *sample, int volume, float attenuation, int fFlags, int pitch, const float *origin, sizebuf_t *buffer);
+void SV_Multicast(vec3_t origin, int to, qboolean reliable);
+int NUM_FOR_EDICT(edict_t *e);
+void MSG_StartBitWriting(sizebuf_t *buf);
+void MSG_EndBitWriting(sizebuf_t *buf);
+void MSG_WriteBitsUChar(byte *data, int numbits);
+void MSG_WriteBitsUShort(unsigned short *data, int numbits);
+void func_00242BC0(short *data, int numbits);
+int SV_LookupSoundIndex(const char *sample);
+qboolean Host_IsSinglePlayerGame(void);
+
+extern int sv_playermodel;
+
+#define svc_particle 18
+#define CHAN_STATIC 6
+#define SND_STOP (1 << 5)
+#define MSG_FL_ALL 0
+#define MSG_FL_PAS 2
+
+#define svc_sound 6
+#define SND_VOLUME (1 << 0)
+#define SND_ATTENUATION (1 << 1)
+#define SND_LARGE_INDEX (1 << 2)
+#define SND_PITCH (1 << 3)
+#define SND_SENTENCE (1 << 4)
+#define DEFAULT_SOUND_PACKET_VOLUME 255
+#define DEFAULT_SOUND_PACKET_ATTENUATION 1.0f
+#define DEFAULT_SOUND_PACKET_PITCH 100
+#define CVOXFILESENTENCEMAX 1536
+
+void SV_CountPlayers(int *clients, int *spectators)
+{
+    int i;
+    client_t *cl;
+
+    *clients = 0;
+    if (spectators)
+        *spectators = 0;
+
+    for (i = 0, cl = svs.clients; i < svs.maxclients; i++, cl++)
+    {
+        if (cl->active || cl->spawned || cl->connected)
+        {
+            (*clients)++;
+            if (cl->spectator && spectators)
+                (*spectators)++;
+        }
+    }
+}
+void SV_FindModelNumbers(void)
+{
+    int i;
+
+    sv_playermodel = -1;
+
+    for (i = 0; i < 512; i++)
+    {
+        if (!sv.model_precache[i])
+            break;
+
+        /* use case-sensitive names to increase performance */
+        if (!Q_strcasecmp(sv.model_precache[i], "models/player.dol"))
+            sv_playermodel = i;
+    }
+}
+void SV_StartParticle(const float *org, const float *dir, int color, int count)
+{
+    int i, v;
+
+    if (sv.datagram.cursize > 4000 - 16)
+        return;
+
+    MSG_WriteByte(&sv.datagram, svc_particle);
+    MSG_WriteCoord(&sv.datagram, org[0]);
+    MSG_WriteCoord(&sv.datagram, org[1]);
+    MSG_WriteCoord(&sv.datagram, org[2]);
+    for (i = 0; i < 3; i++)
+    {
+        v = dir[i] * 16;
+        if (v > 127)
+            v = 127;
+        else if (v < -128)
+            v = -128;
+        MSG_WriteChar(&sv.datagram, v);
+    }
+    MSG_WriteByte(&sv.datagram, count);
+    MSG_WriteByte(&sv.datagram, color);
+}
+void SV_StartSound(edict_t *entity, int channel, const char *sample, int volume, float attenuation, int fFlags, int pitch)
+{
+    int i;
+    int sendPAS;
+    vec3_t origin;
+
+    for (i = 0; i < 3; i++)
+        origin[i] = entity->v.origin[i] + (entity->v.mins[i] + entity->v.maxs[i]) * 0.5f;
+
+    if (SV_BuildSoundMsg(entity, channel, sample, volume, attenuation, fFlags, pitch, origin, &sv.multicast))
+    {
+        if (channel == CHAN_STATIC || (fFlags & SND_STOP))
+            sendPAS = false;
+        else
+            sendPAS = true;
+        if (sendPAS)
+        {
+            SV_Multicast(origin, MSG_FL_PAS, false);
+        }
+        else
+        {
+            if (Host_IsSinglePlayerGame())
+                SV_Multicast(origin, MSG_FL_ALL, false);
+            else
+                SV_Multicast(origin, MSG_FL_ALL, true);
+        }
+    }
+}
+qboolean SV_BuildSoundMsg(edict_t *entity, int channel, const char *sample, int volume, float attenuation, int fFlags, int pitch, const float *origin, sizebuf_t *buffer)
+{
+    int i;
+    int sound_num;
+    int field_mask;
+    int ent;
+    unsigned short sval;
+    byte bval;
+    short coord;
+
+    if (volume < 0 || volume > 255)
+        Sys_Error("SV_StartSound: volume = %i", volume);
+    if (attenuation < 0 || attenuation > 4)
+        Sys_Error("SV_StartSound: attenuation = %f", attenuation);
+    if (channel < 0 || channel > 7)
+        Sys_Error("SV_StartSound: channel = %i", channel);
+    if (pitch < 0 || pitch > 255)
+        Sys_Error("SV_StartSound: pitch = %i", pitch);
+
+    if (sample && *sample == '!')
+    {
+        fFlags |= SND_SENTENCE;
+        sound_num = atoi(sample + 1);
+        if (sound_num >= CVOXFILESENTENCEMAX)
+        {
+            Con_Printf("invalid sentence number: %s", sample + 1);
+            return false;
+        }
+    }
+    else
+    {
+        sound_num = SV_LookupSoundIndex(sample);
+        if (!sound_num || !sv.sound_precache[sound_num])
+        {
+            Con_Printf("SV_StartSound: %s not precached (%d)\n", sample, sound_num);
+            return false;
+        }
+    }
+
+    ent = NUM_FOR_EDICT(entity);
+
+    field_mask = fFlags;
+    if (volume != DEFAULT_SOUND_PACKET_VOLUME)
+        field_mask |= SND_VOLUME;
+    if (attenuation != DEFAULT_SOUND_PACKET_ATTENUATION)
+        field_mask |= SND_ATTENUATION;
+    if (pitch != DEFAULT_SOUND_PACKET_PITCH)
+        field_mask |= SND_PITCH;
+    if (sound_num > 255)
+        field_mask |= SND_LARGE_INDEX;
+
+    MSG_WriteByte(buffer, svc_sound);
+    MSG_StartBitWriting(buffer);
+
+    sval = field_mask;
+    MSG_WriteBitsUShort(&sval, 9);
+
+    if (field_mask & SND_VOLUME)
+    {
+        bval = volume;
+        MSG_WriteBitsUChar(&bval, 8);
+    }
+    if (field_mask & SND_ATTENUATION)
+    {
+        bval = (int)(attenuation * 64);
+        MSG_WriteBitsUChar(&bval, 8);
+    }
+
+    bval = channel;
+    MSG_WriteBitsUChar(&bval, 3);
+
+    sval = ent;
+    MSG_WriteBitsUShort(&sval, 10);
+
+    if (sound_num > 255)
+    {
+        sval = sound_num;
+        MSG_WriteBitsUShort(&sval, 16);
+    }
+    else
+    {
+        bval = sound_num;
+        MSG_WriteBitsUChar(&bval, 8);
+    }
+
+    for (i = 0; i < 3; i++)
+    {
+        coord = (int)(origin[i] * 8);
+        func_00242BC0(&coord, 16);
+    }
+
+    if (field_mask & SND_PITCH)
+    {
+        bval = pitch;
+        MSG_WriteBitsUChar(&bval, 8);
+    }
+
+    MSG_EndBitWriting(buffer);
+    return true;
+}
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027B640);
-INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027B6B0);
+INCLUDE_ASM("asm/nonmatchings/engine/sv_main", SV_LookupSoundIndex);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027B820);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", func_0027B8D8);
 INCLUDE_ASM("asm/nonmatchings/engine/sv_main", Host_IsSinglePlayerGame);

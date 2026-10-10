@@ -173,6 +173,12 @@
 "localinfo"
 ]
 },
+"SV_LookupSoundIndex": {
+"migrated": [],
+"refs": [
+"sv"
+]
+},
 "SV_ModelIndex": {
 "migrated": [
 "D_0038F410"
@@ -766,10 +772,10 @@
 "D_003993DC",
 "D_003993E0",
 "D_003993E4",
-"D_0039940C",
 "cls",
 "pr_strings",
 "sv",
+"sv_playermodel",
 "svs"
 ]
 },
