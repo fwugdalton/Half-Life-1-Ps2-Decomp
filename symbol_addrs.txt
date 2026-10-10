@@ -1387,3 +1387,5 @@ Host_ClearGameState = 0x0029C388; // type:func
 Host_Say = 0x0029C948; // type:func
 FindViewthing = 0x0029D8F0; // type:func
 PrintFrameName = 0x0029DAB8; // type:func
+SV_GetFragmentSize = 0x0029DF60; // type:func
+Host_EndSection = 0x0029E2D0; // type:func

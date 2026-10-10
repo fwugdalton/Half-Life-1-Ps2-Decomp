@@ -3314,19 +3314,209 @@ void Host_Nextdl_f(void)
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029DDB8);
+void CRC32_Init(unsigned int *pulCRC);
+unsigned int CRC32_Final(unsigned int pulCRC);
+extern cvar_t D_00332698;
+extern cvar_t D_003326B0;
+extern float D_003326D4;
+extern float D_003326A4;
+extern int D_00399798;
+int strncasecmp(const char *, const char *, unsigned int);
+void func_00241C18(char *hex, int len, unsigned char *out);
+int func_002D04E8(char *name);
+byte *COM_LoadFile(char *path, int usehunk, int *pLength);
+long func_002E3718(char *s);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_AllowDownload_f);
+void func_0029DDB8(int nBlock, unsigned int crc)
+{
+    unsigned int testCRC;
+    int nCount;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_AllowUpload_f);
+    if (nBlock < 0)
+        return;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029DF60);
+    if (host_client->unk_8550)
+        return;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_Download_f);
+    nCount = nBlock * 1024;
+    if (host_client->downloadsize < nCount)
+        return;
 
-INCLUDE_RODATA("asm/nonmatchings/engine/Host_cmd", D_00392E30);
+    CRC32_Init(&testCRC);
+    CRC32_ProcessBuffer(&testCRC, host_client->download, nCount);
+    testCRC = CRC32_Final(testCRC);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", func_0029E2D0);
+    if (testCRC != crc)
+        return;
+
+    host_client->unk_8548 = 1;
+    host_client->downloadcount = nCount;
+    host_client->downloadCRC = crc;
+}
+
+
+void Host_AllowDownload_f(void)
+{
+    D_00332698.value = (D_00332698.value == 0) ? 1.0f : 0.0f;
+
+    if (D_00332698.value)
+        Con_Printf("Server downloading enabled.\n");
+    else
+        Con_Printf("Server downloading disabled.\n");
+}
+
+void Host_AllowUpload_f(void)
+{
+    D_003326B0.value = (D_003326B0.value == 0) ? 1.0f : 0.0f;
+
+    if (D_003326B0.value)
+        Con_Printf("Server uploading enabled.\nMax. upload size is %i", (int)D_003326D4);
+    else
+        Con_Printf("Server uploading disabled.\n");
+}
+
+int SV_GetFragmentSize(client_t *cl)
+{
+    if (!cl)
+        return 64;
+
+    if (!cl->active)
+        return 128;
+
+    if (cl->netchan.rate == 0)
+        return 64;
+
+    if (cl->netchan.rate > 9900)
+        return 256;
+
+    if (cl->netchan.rate > 4900)
+        return 192;
+
+    if (cl->netchan.rate > 3400)
+        return 128;
+
+    return 64;
+}
+
+void Host_Download_f(void)
+{
+    unsigned char md5[16];
+    char unk[80];
+    char *name;
+
+    if (cmd_source == src_command)
+        return;
+
+    if (Cmd_Argc() < 2)
+        return;
+
+    name = Cmd_Argv(1);
+    if (!name || !name[0])
+        return;
+
+    if (strstr(name, D_003926F8) || D_003326A4 == 0)
+    {
+        MSG_WriteByte(&host_client->netchan.message, 40);
+        MSG_WriteShort(&host_client->netchan.message, -1);
+        MSG_WriteShort(&host_client->netchan.message, -1);
+        MSG_WriteLong(&host_client->netchan.message, -1);
+        MSG_WriteByte(&host_client->netchan.message, 0);
+        return;
+    }
+
+    if (host_client->download)
+    {
+        func_002CFD08(host_client->download);
+        host_client->download = NULL;
+    }
+
+    if (strlen(name) == 36 && !strncasecmp(name, "!MD5", 4))
+    {
+        memset(unk, 0, sizeof(unk));
+        func_00241C18(name + 4, 32, md5);
+        host_client->unk_8550 = 1;
+        host_client->unk_8554 = SV_GetFragmentSize(host_client);
+    }
+    else
+    {
+        host_client->downloadsize = func_002D04E8(name);
+        if (host_client->downloadsize != -1)
+            host_client->download = COM_LoadFile(name, 5, NULL);
+        host_client->unk_8554 = 1024;
+        host_client->unk_8550 = 0;
+    }
+
+    host_client->downloadcount = 0;
+
+    if (host_client->downloadsize == -1 || !host_client->download)
+    {
+        MSG_WriteByte(&host_client->netchan.message, 40);
+        MSG_WriteShort(&host_client->netchan.message, -1);
+        MSG_WriteShort(&host_client->netchan.message, -1);
+        MSG_WriteLong(&host_client->netchan.message, -2);
+        MSG_WriteByte(&host_client->netchan.message, 0);
+        return;
+    }
+
+    host_client->unk_8548 = 0;
+    CRC32_Init(&host_client->downloadCRC);
+
+    if (Cmd_Argc() == 4)
+        func_0029DDB8(atoi(Cmd_Argv(2)), func_002E3718(Cmd_Argv(3)));
+
+    Host_Nextdl_f();
+    Con_DPrintf("Downloading %s to %s\n", name, host_client->name);
+}
+
+
+void Host_EndSection(char *pszSection)
+{
+    giActive = 3;
+    D_00399798 = 1;
+    giStateInfo = 1;
+
+    if (!pszSection || !*pszSection)
+    {
+        Con_Printf(" endsection with no arguments\n");
+    }
+    else if (!strcasecmp(pszSection, "_oem_end_training"))
+    {
+        giStateInfo = 1;
+    }
+    else if (!strcasecmp(pszSection, "_oem_end_logo"))
+    {
+        giStateInfo = 2;
+    }
+    else if (!strcasecmp(pszSection, "_oem_end_demo"))
+    {
+        giStateInfo = 3;
+    }
+    else if (!strcasecmp(pszSection, "_end_decay"))
+    {
+        giStateInfo = 6;
+    }
+    else if (!strcasecmp(pszSection, "_end_deathmatch"))
+    {
+        giStateInfo = 7;
+    }
+    else
+    {
+        Con_DPrintf(" endsection with unknown Section keyvalue\n");
+    }
+
+    switch (cl_numlocal)
+    {
+    case 1:
+        Cbuf_AddText("\ndisconnect 0\n");
+        break;
+    case 2:
+        Cbuf_AddText("\ndisconnect 0;disconnect 1\n");
+        break;
+    default:
+        Cbuf_AddText("\ndisconnect 0\n");
+        break;
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_WC_f);
 

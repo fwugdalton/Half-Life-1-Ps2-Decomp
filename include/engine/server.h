@@ -238,7 +238,7 @@ typedef struct client_s
     byte *download;             /* 0x853C */
     int downloadsize;           /* 0x8540 */
     int downloadcount;          /* 0x8544 */
-    byte unk_8548[0x854C - 0x8548];
+    qboolean unk_8548;          /* 0x8548 */
     unsigned int downloadCRC;   /* 0x854C */
     qboolean unk_8550;          /* 0x8550 */
     int unk_8554;               /* 0x8554 */
