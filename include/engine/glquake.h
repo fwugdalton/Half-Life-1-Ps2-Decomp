@@ -30,6 +30,7 @@ typedef struct
 #define GL_QUADS 7
 #define GL_ONE 1
 #define GL_SRC_ALPHA 0x302
+#define GL_ONE_MINUS_SRC_ALPHA 0x303
 #define GL_DEPTH_TEST 0xB71
 #define GL_ALPHA_TEST 0xBC0
 #define GL_BLEND 0xBE2
@@ -45,5 +46,13 @@ extern gltexture_t D_004F9DD8[]; /* gltextures */
 extern int currenttexture;
 
 void GL_Bind(int texnum);
+
+/* vetor de 16 bytes para pacotes de VU/DMA */
+typedef struct
+{
+    float v[4];
+} __attribute__((aligned(16))) qvec_t;
+
+#define UNCACHED(p) ((void *)((unsigned int)(p) | 0x30000000))
 
 #endif

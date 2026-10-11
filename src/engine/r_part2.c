@@ -52,6 +52,8 @@ extern particle_t *D_0039966C;  /* free_particles */
 extern particle_t *D_00399660;  /* active_particles */
 extern int D_003339AC;          /* r_drawparticles */
 extern vec3_t r_origin;
+extern vec3_t vpn, vup, vright;
+extern unsigned short *host_basepal;
 
 int COM_CheckParm(char *parm);
 int Q_atoi(char *str);
@@ -73,7 +75,42 @@ extern float D_00334148;        /* beamlength */
 extern particle_t *D_00399668;
 extern int D_00333900[8];       /* ramp1 */
 extern int D_00333940[8];       /* ramp3 */
+extern int D_00333920[8];       /* ramp2 */
+extern int D_00333960[9];       /* gSparkRamp */
+extern int D_00399540;          /* particletexture */
+extern int D_0033102C;
+extern int D_00331044;
+extern cvar_t sv_gravity;
+
+void glEnable(int cap);
+void glDisable(int cap);
+void glTexEnvf(int target, int pname, float param);
+void glBlendFunc(int sfactor, int dfactor);
+void func_0023AF68(void);
+void func_002B3EE8(int clientId);
+void func_002B7CA8(int clientId);
+void func_002B0D58(particle_t **ppparticles, int clientId);
 extern int D_00414280;          /* tracercount */
+
+#define PART_BUFVERTS 0x4A
+
+extern qvec_t D_00414300[2][PART_BUFVERTS]; /* vértices */
+extern qvec_t D_00414C80[2][PART_BUFVERTS]; /* cores */
+extern qvec_t D_00415600[2][PART_BUFVERTS]; /* st */
+extern qvec_t *D_00334168;      /* ponteiro de vértice (uncached) */
+extern qvec_t *D_0033416C;      /* ponteiro de cor (uncached) */
+extern int D_00334164;          /* buffer atual */
+extern int D_00334170;          /* número de vértices */
+extern int D_00399534;
+extern int D_00399598;
+extern qvec_t *D_00331030;
+extern qvec_t *D_00331034;
+extern qvec_t *D_00331038;
+extern int D_0033103C;
+
+void func_0023D520(void);
+int func_0023D5F0(void);
+void func_0023D618(int);
 extern cvar_t D_00331B70;        /* tracerlength */
 
 
@@ -701,15 +738,271 @@ void func_002B2F08(vec3_t start, vec3_t end, int type, int clientId)
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B3598);
+void func_002B3598(void)
+{
+    int i, j;
+    qvec_t *st;
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B3628);
+    for (i = 0; i < 2; i++)
+    {
+        st = D_00415600[i];
+        for (j = 0; j < PART_BUFVERTS; j += 3)
+        {
+            st->v[0] = 0;
+            st->v[1] = 0;
+            st->v[2] = 1.0f;
+            st->v[3] = 0;
+            st++;
+            st->v[0] = 1.0f;
+            st->v[1] = 0;
+            st->v[2] = 1.0f;
+            st->v[3] = 0;
+            st++;
+            st->v[0] = 0;
+            st->v[1] = 1.0f;
+            st->v[2] = 1.0f;
+            st->v[3] = 0;
+            st++;
+        }
+    }
+}
 
+void func_002B3628(void)
+{
+    if (D_00334170 > 0)
+    {
+        D_00399534++;
+        D_00399598 += D_00334170;
+        D_00334170 = 0;
+        func_0023D520();
+        D_00334164 = !D_00334164;
+    }
+}
+
+#ifdef NON_MATCHING
+void func_002B3680(void)
+{
+    int done = 0;
+    int n;
+
+    if (D_00334170 > 0 && (n = D_00334170 + 3) < PART_BUFVERTS)
+    {
+        D_00331038 = &D_00415600[D_00334164][D_00334170];
+        D_00334168 = UNCACHED(&D_00414300[D_00334164][D_00334170]);
+        D_0033416C = UNCACHED(&D_00414C80[D_00334164][D_00334170]);
+        D_0033103C = 3;
+        D_00331030 = &D_00414300[D_00334164][D_00334170];
+        D_00331034 = &D_00414C80[D_00334164][D_00334170];
+        D_00334170 = n;
+        if (func_0023D5F0() == 1)
+        {
+            done = 1;
+            func_0023D618(0);
+        }
+    }
+
+    if (!done)
+    {
+        func_002B3628();
+        D_00334168 = UNCACHED(&D_00414300[D_00334164][0]);
+        D_00331038 = &D_00415600[D_00334164][0];
+        D_0033416C = UNCACHED(&D_00414C80[D_00334164][0]);
+        D_00334170 = 3;
+        D_00331030 = &D_00414300[D_00334164][0];
+        D_00331034 = &D_00414C80[D_00334164][0];
+        D_0033103C = 3;
+        func_0023D618(0);
+    }
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B3680);
+#endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B37F8);
+void func_002B37F8(particle_t *p, vec3_t up, vec3_t right)
+{
+    unsigned short *pal;
+    float r, g, b;
+    float scale;
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B3A10);
+    func_002B3680();
+
+    pal = host_basepal + p->color * 4;
+    b = pal[2] * (1.0f / 255);
+    g = pal[1] * (1.0f / 255);
+    r = pal[0] * (1.0f / 255);
+
+    scale = (p->org[0] - r_origin[0]) * vpn[0] + (p->org[1] - r_origin[1]) * vpn[1] + (p->org[2] - r_origin[2]) * vpn[2];
+
+    D_0033416C->v[0] = b;
+    D_0033416C->v[1] = g;
+    D_0033416C->v[2] = r;
+    D_0033416C->v[3] = 1.0f;
+    D_0033416C++;
+    D_0033416C->v[0] = b;
+    D_0033416C->v[1] = g;
+    D_0033416C->v[2] = r;
+    D_0033416C->v[3] = 1.0f;
+    D_0033416C++;
+    D_0033416C->v[0] = b;
+    D_0033416C->v[1] = g;
+    D_0033416C->v[2] = r;
+    D_0033416C->v[3] = 1.0f;
+    D_0033416C++;
+
+    scale = 1 + scale * 0.004f;
+
+    D_00334168->v[0] = p->org[0];
+    D_00334168->v[1] = p->org[1];
+    D_00334168->v[2] = p->org[2];
+    D_00334168->v[3] = 1.0f;
+    D_00334168++;
+    D_00334168->v[0] = p->org[0] + up[0] * scale;
+    D_00334168->v[1] = p->org[1] + up[1] * scale;
+    D_00334168->v[2] = p->org[2] + up[2] * scale;
+    D_00334168->v[3] = 1.0f;
+    D_00334168++;
+    D_00334168->v[0] = p->org[0] + right[0] * scale;
+    D_00334168->v[1] = p->org[1] + right[1] * scale;
+    D_00334168->v[2] = p->org[2] + right[2] * scale;
+    D_00334168->v[3] = 1.0f;
+    D_00334168++;
+}
+
+void func_002B3A10(int clientId)
+{
+    particle_t *p;
+    float frametime, grav, time1, time2, time3, dvel;
+    vec3_t up, right;
+    int i;
+    int first = 1;
+
+    if (!D_003339AC)
+        return;
+
+    glEnable(GL_ALPHA_TEST);
+    glEnable(GL_BLEND);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    VectorScale(vup, 1.5f, up);
+    VectorScale(vright, 1.5f, right);
+
+    frametime = cl[clientId].time - cl[clientId].oldtime;
+    time3 = frametime * 15;
+    time2 = frametime * 10;
+    time1 = frametime * 5;
+    grav = frametime * sv_gravity.value * 0.05f;
+    dvel = 4 * frametime;
+
+    func_002B0D58(&D_00399660, clientId);
+
+    D_0033102C = 1;
+    D_00331044 = 5;
+
+    for (p = D_00399660; p; p = p->next)
+    {
+        if (p->type != pt_blob)
+        {
+            if (first)
+            {
+                first = 0;
+                GL_Bind(D_00399540);
+                func_0023AF68();
+            }
+            func_002B37F8(p, up, right);
+        }
+
+        p->org[0] += p->vel[0] * frametime;
+        p->org[1] += p->vel[1] * frametime;
+        p->org[2] += p->vel[2] * frametime;
+
+        switch (p->type)
+        {
+        case pt_static:
+            break;
+
+        case pt_fire:
+            p->ramp += time1;
+            if (p->ramp >= 6)
+                p->die = -1;
+            else
+            {
+                p->color = D_00333940[(int)p->ramp];
+                p->packedColor = 0;
+            }
+            p->vel[2] += grav;
+            break;
+
+        case pt_explode:
+            p->ramp += time2;
+            if (p->ramp >= 8)
+                p->die = -1;
+            else
+            {
+                p->color = D_00333900[(int)p->ramp];
+                p->packedColor = 0;
+            }
+            for (i = 0; i < 3; i++)
+                p->vel[i] += p->vel[i] * dvel;
+            p->vel[2] -= grav;
+            break;
+
+        case pt_explode2:
+            p->ramp += time3;
+            if (p->ramp >= 8)
+                p->die = -1;
+            else
+            {
+                p->color = D_00333920[(int)p->ramp];
+                p->packedColor = 0;
+            }
+            for (i = 0; i < 3; i++)
+                p->vel[i] -= p->vel[i] * frametime;
+            p->vel[2] -= grav;
+            break;
+
+        case pt_blob:
+        case pt_blob2:
+            p->ramp += time2;
+            if (p->ramp >= 9)
+                p->ramp = 0;
+            p->color = D_00333960[(int)p->ramp];
+            p->packedColor = 0;
+            p->vel[0] -= p->vel[0] * (frametime * 0.5f);
+            p->vel[1] -= p->vel[1] * (frametime * 0.5f);
+            p->vel[2] -= grav * 5;
+            if (RandomLong(0, 3))
+                p->type = pt_blob;
+            else
+                p->type = pt_blob2;
+            break;
+
+        case pt_grav:
+            p->vel[2] -= grav * 20;
+            break;
+
+        case pt_slowgrav:
+            p->vel[2] = grav;
+            break;
+
+        case pt_vox_grav:
+            p->vel[2] -= grav * 8;
+            break;
+
+        case pt_vox_slowgrav:
+            p->vel[2] -= grav * 4;
+            break;
+        }
+    }
+
+    func_002B3628();
+    D_0033102C = 0;
+    func_002B3EE8(clientId);
+    func_002B7CA8(clientId);
+
+    glDisable(GL_BLEND);
+    glDisable(GL_ALPHA_TEST);
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B3EE8);
 
@@ -765,6 +1058,8 @@ INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B7318);
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B74D0);
 
+/* jump tables do gcc são alinhadas em 16 */
+__asm__(".section .rodata\n.align 4\n.section .text");
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B75F0);
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B7CA8);
