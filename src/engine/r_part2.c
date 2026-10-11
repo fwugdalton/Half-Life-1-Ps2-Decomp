@@ -71,6 +71,7 @@ void func_002B75F0(BEAM *pbeam, float frametime, int clientId);
 #define FBEAM_ENDENTITY 0x00000002
 #define FBEAM_FOREVER 0x80000000
 #define TE_BEAMFOLLOW 22
+#define TE_BEAMRING 24
 
 int func_002B74D0(float *start, float *end, int pvsOnly, int clientId);
 
@@ -1439,9 +1440,77 @@ BEAM *func_002B5028(int startEnt, int modelIndex, float life, float width, float
     return pbeam;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B50F0);
+BEAM *func_002B50F0(int startEnt, int endEnt, int modelIndex, float life, float width, float amplitude, float brightness, float speed, int startFrame, float framerate, float r, float g, float b, int clientId)
+{
+    BEAM *pbeam;
 
+    if (life != 0)
+    {
+        if (!cl_entities[clientId][startEnt].model)
+            return NULL;
+        if (!cl_entities[clientId][endEnt].model)
+            return NULL;
+    }
+
+    pbeam = func_002B4680(vec3_origin, vec3_origin, modelIndex, life, width, amplitude, brightness, speed, clientId);
+    if (!pbeam)
+        return NULL;
+
+    pbeam->type = TE_BEAMRING;
+    pbeam->flags = FBEAM_STARTENTITY | FBEAM_ENDENTITY;
+    if (life == 0)
+        pbeam->flags |= FBEAM_FOREVER;
+    pbeam->startEntity = startEnt;
+    pbeam->endEntity = endEnt;
+
+    func_002B4920(pbeam, r, g, b, framerate, startFrame);
+    return pbeam;
+}
+
+#ifdef NON_MATCHING
+void func_002B5228(int deadEntity, int clientId)
+{
+    BEAM *pbeam, *pnewlist, *pnext;
+    particle_t *pHead;
+
+    pbeam = D_00414290[clientId];
+    pnewlist = NULL;
+    while (pbeam)
+    {
+        pnext = pbeam->next;
+        if (pbeam->startEntity == deadEntity)
+        {
+            pbeam->flags &= ~(FBEAM_STARTENTITY | FBEAM_ENDENTITY);
+            if (pbeam->type != TE_BEAMFOLLOW)
+            {
+                pbeam->die = cl[clientId].time - 0.1f;
+
+                pHead = pbeam->particles;
+                while (pHead)
+                {
+                    pHead->die = cl[clientId].time - 0.1f;
+                    pHead = pHead->next;
+                }
+
+                func_002B0D58(&pbeam->particles, clientId);
+                memset(pbeam, 0, sizeof(*pbeam));
+                pbeam->next = D_00414298[clientId];
+                D_00414298[clientId] = pbeam;
+                pbeam = pnext;
+                continue;
+            }
+        }
+
+        pbeam->next = pnewlist;
+        pnewlist = pbeam;
+        pbeam = pnext;
+    }
+
+    D_00414290[clientId] = pnewlist;
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B5228);
+#endif
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B53A0);
 
