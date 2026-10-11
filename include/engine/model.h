@@ -59,7 +59,7 @@ typedef struct msurface_s
     int visframe;               /* 0x30 */
     byte unk_34[0x38 - 0x34];
     void *unk_38;               /* 0x38 */
-    byte unk_3C[0x40 - 0x3C];
+    float unk_3C;               /* 0x3C */
     short texturemins[2];       /* 0x40 */
     short extents[2];           /* 0x44 */
     glpoly_t *polys;            /* 0x48 */

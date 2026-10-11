@@ -111,6 +111,12 @@ void glBegin(int mode);
 void glEnd(void);
 void glTexCoord2f(float s, float t);
 void glVertex3fv(float *v);
+extern float D_00333268, D_0032F26C;
+void func_002A72F0(msurface_t *surf, byte *dest, int stride, int clientId);
+void func_002A7AF8(msurface_t *surf);
+void func_002A7238(byte *p);
+#define SURF_DRAWSCROLL 0x20
+#define MAXLIGHTMAPS 4
 extern cl_entity_t *cl_entities[2];
 extern int D_00399520, D_00399590;
 extern cvar_t r_wateralpha, gl_polyoffset;
@@ -1491,7 +1497,142 @@ void DrawGLPolyScroll(msurface_t *psurface, cl_entity_t *pEntity)
     glEnd();
 }
 
+#ifdef NON_MATCHING
+void R_RenderBrushPolyChain(msurface_t *s, int clientId)
+{
+    texture_t *t;
+    texture_t *lasttex = NULL;
+    msurface_t *scrollchain = NULL;
+    msurface_t *next;
+    int special;
+    int is_dynamic;
+    int maps;
+    byte *base;
+
+    for (; s && !(s->flags & 0x104); s = next)
+    {
+        t = s->texture;
+        if (currententity->frame)
+        {
+            if (t->alternate_anims)
+                t = t->alternate_anims;
+        }
+        if (t->anim_total)
+            t = R_TextureAnimation2(s, t);
+
+        if (!(TEXINFO_FLAGS(s) & 0x4200000))
+        {
+            if (lasttex != t || D_00333268 != s->unk_3C)
+            {
+                func_0023D520();
+                lasttex = t;
+                D_00333268 = s->unk_3C;
+                GL_Bind(t->gl_texturenum);
+                func_0023AF68();
+            }
+        }
+
+        special = 0;
+        if (s->flags & 0x400)
+        {
+            special = 1;
+        }
+        else
+        {
+            if (s->flags & SURF_DRAWSCROLL)
+            {
+                special = 1;
+            }
+            else
+            {
+                D_0032F26C = s->unk_3C;
+                func_002A7238((byte *)s->polys);
+                D_0032F26C = 0;
+            }
+
+            s->polys->chain = lightmap_polys[s->lightmaptexturenum];
+            lightmap_polys[s->lightmaptexturenum] = s->polys;
+
+            if (s->pdecals)
+            {
+                gDecalSurfs[gDecalSurfCount] = s;
+                gDecalSurfCount++;
+            }
+
+            is_dynamic = 0;
+            if (s->dlightframe == r_framecount)
+            {
+                is_dynamic = 1;
+            }
+            else if (s->cached_dlight)
+            {
+                is_dynamic = 1;
+            }
+            else
+            {
+                for (maps = 0; maps < MAXLIGHTMAPS && s->styles[maps] != 255; maps++)
+                {
+                    if (d_lightstylevalue[s->styles[maps]] != s->cached_light[maps])
+                    {
+                        is_dynamic = 1;
+                        break;
+                    }
+                }
+            }
+
+            if (is_dynamic == 1)
+            {
+                lightmap_modified[s->lightmaptexturenum] = true;
+                base = lightmaps + s->lightmaptexturenum * lightmap_bytes * BLOCK_WIDTH * BLOCK_HEIGHT;
+                base += s->light_t * BLOCK_WIDTH * lightmap_bytes + s->light_s * lightmap_bytes;
+                func_002A72F0(s, base, BLOCK_WIDTH * lightmap_bytes, clientId);
+            }
+        }
+
+        next = s->texturechain;
+        if (special == 1)
+        {
+            s->texturechain = scrollchain;
+            scrollchain = s;
+        }
+    }
+
+    func_0023D520();
+    D_00333268 = 0;
+
+    for (s = scrollchain; s && !(s->flags & 0x104); s = s->texturechain)
+    {
+        t = s->texture;
+        if (currententity->frame)
+        {
+            if (t->alternate_anims)
+                t = t->alternate_anims;
+        }
+        if (t->anim_total)
+            t = R_TextureAnimation2(s, t);
+
+        if (lasttex != t)
+        {
+            lasttex = t;
+            GL_Bind(t->gl_texturenum);
+            func_0023AF68();
+        }
+
+        if (s->flags & 0x400)
+        {
+            func_002A7AF8(s);
+        }
+        else if (s->flags & SURF_DRAWSCROLL)
+        {
+            D_0032F26C = s->unk_3C;
+            DrawGLPolyScroll(s, currententity);
+            D_0032F26C = 0;
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", R_RenderBrushPolyChain);
+#endif
 
 #ifdef NON_MATCHING
 void func_002A7238(byte *p)
