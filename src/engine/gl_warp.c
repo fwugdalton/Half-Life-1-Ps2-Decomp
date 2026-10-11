@@ -43,6 +43,13 @@ extern int D_003331C0[6][3]; /* vec_to_st */
 #define vec_to_st D_003331C0
 extern vec3_t D_00333130[6]; /* skyclip */
 #define skyclip D_00333130
+extern int D_00333178[6][3]; /* st_to_vec */
+#define st_to_vec D_00333178
+extern float D_004A8B58;
+#define sky_min (1.0f / 512.0f)
+#define sky_max (511.0f / 512.0f)
+void func_0023C048(float s, float t); /* glTexCoord2f */
+void func_0023C298(float *v);         /* glVertex3fv */
 
 float *func_002A3C60(glpoly_t *p);
 void func_002A13D0(int nump, vec3_t vecs, int stage);
@@ -308,6 +315,54 @@ void func_002A1918(void)
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_warp", func_002A1970);
+void func_002A1970(float s, float t, int axis)
+{
+    vec3_t v, b;
+    int j, k;
+    float dist;
+
+    dist = D_004A8B58 * 0.57735f;
+
+    if (s < -1)
+        s = -1;
+    else if (s > 1)
+        s = 1;
+
+    if (t < -1)
+        t = -1;
+    else if (t > 1)
+        t = 1;
+
+    b[0] = s * dist;
+    b[1] = t * dist;
+    b[2] = dist;
+
+    for (j = 0; j < 3; j++)
+    {
+        k = st_to_vec[axis][j];
+        if (k < 0)
+            v[j] = -b[-k - 1];
+        else
+            v[j] = b[k - 1];
+        v[j] += r_origin[j];
+    }
+
+    s = (s + 1) * 0.5f;
+    t = (t + 1) * 0.5f;
+
+    if (s < sky_min)
+        s = sky_min;
+    else if (s > sky_max)
+        s = sky_max;
+
+    if (t < sky_min)
+        t = sky_min;
+    else if (t > sky_max)
+        t = sky_max;
+
+    t = 1.0f - t;
+    func_0023C048(s, t);
+    func_0023C298(v);
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_warp", func_002A1B60);
