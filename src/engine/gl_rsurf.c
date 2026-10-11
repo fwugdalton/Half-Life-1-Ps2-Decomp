@@ -58,8 +58,11 @@ typedef struct decal_s
     msurface_t *psurface;       /* 0x04 */
     byte pad08[0x14 - 0x08];
     short texture;              /* 0x14 */
-    byte pad16[0x1C - 0x16];
+    unsigned short flags;       /* 0x16 */
+    byte pad18[0x1C - 0x18];
 } decal_t;
+
+#define FDECAL_PERMANENT 0x01
 
 typedef struct
 {
@@ -84,6 +87,15 @@ float *R_DecalVertsClip(float *pOutVerts, decal_t *pdecal, msurface_t *psurf, te
 extern qboolean r_drawdecals, r_drawvls;
 extern int lightmap_bytes;
 extern byte *lightmaps;
+
+extern cvar_t r_decals;
+extern float *D_00333258, *D_0033325C;
+void func_002A63C8(int count);
+float fmodf(float x, float y);
+void func_0023D618(int);
+extern int D_00399560, D_00399584, D_00413620;
+extern int D_0033102C, D_00331034, D_0033103C, D_00331044;
+extern void *D_00331030, *D_00331038;
 
 #define BLOCK_WIDTH 128
 #define BLOCK_HEIGHT 128
@@ -595,7 +607,33 @@ void func_002A4978(void)
         ;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A4990);
+decal_t *R_DecalAlloc(decal_t *pdecal)
+{
+    int limit = MAX_DECALS;
+    int count;
+
+    if (r_decals.value < limit)
+        limit = r_decals.value;
+
+    if (!limit)
+        return NULL;
+
+    if (!pdecal)
+    {
+        count = 0;
+        do
+        {
+            gDecalCount++;
+            if (gDecalCount >= limit)
+                gDecalCount = 0;
+            pdecal = gDecalPool + gDecalCount;
+            count++;
+        } while ((pdecal->flags & FDECAL_PERMANENT) && count < limit);
+    }
+
+    R_DecalUnlink(pdecal);
+    return pdecal;
+}
 
 void R_DecalRemoveAll(int textureIndex)
 {
@@ -644,7 +682,29 @@ INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A5968);
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A5C50);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A5D30);
+int Inside(float *vert, int edge)
+{
+    switch (edge)
+    {
+    case 0:
+        if (vert[3] > 0.0f)
+            return 1;
+        return 0;
+    case 1:
+        if (vert[3] < 1.0f)
+            return 1;
+        return 0;
+    case 2:
+        if (vert[4] > 0.0f)
+            return 1;
+        return 0;
+    case 3:
+        if (vert[4] < 1.0f)
+            return 1;
+        return 0;
+    }
+    return 0;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A5DE0);
 
@@ -679,7 +739,27 @@ void func_002A6380(void)
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A63C8);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A6518);
+void func_002A6518(float *v, int count)
+{
+    float *pv, *pt;
+
+    func_002A63C8(count);
+    for (; count; count--, v += 7)
+    {
+        pv = D_00333258;
+        pt = D_0033325C;
+        pv[0] = v[0];
+        pv[1] = v[1];
+        pv[2] = v[2];
+        pv[3] = 1.0f;
+        D_00333258 = pv + 4;
+        pt[0] = v[3];
+        pt[1] = v[4];
+        pt[2] = 1.0f;
+        pt[3] = 0;
+        D_0033325C = pt + 4;
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A65C0);
 
@@ -703,7 +783,27 @@ INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A6DA0);
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A6E78);
 
+#ifdef NON_MATCHING
+void func_002A7238(byte *p)
+{
+    int *active = &D_0033102C;
+    void **a = &D_00331030;
+    void **b = &D_00331038;
+
+    D_00399560 += *(int *)(p + 8);
+    D_00399584++;
+    *a = func_002A3C60(p);
+    D_00331034 = D_00413620;
+    *b = func_002A3C68(p);
+    D_00331044 = 5;
+    *active = 1;
+    D_0033103C = *(int *)(p + 8);
+    func_0023D618(1);
+    *active = 0;
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A7238);
+#endif
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A72F0);
 
@@ -711,6 +811,20 @@ INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A7600);
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A76F8);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A7A48);
+float ScrollOffset(msurface_t *psurface, cl_entity_t *pEntity)
+{
+    float speed, sOffset;
+
+    speed = (float)((pEntity->rendercolor.g << 8) + pEntity->rendercolor.b) / 16.0f;
+    if (pEntity->rendercolor.r == 0)
+        speed = -speed;
+
+    sOffset = speed * cl[0].time * (1.0f / (float)psurface->texture->srcwidth);
+    if (sOffset < 0)
+        sOffset = fmodf(sOffset, -1.0f);
+    else
+        sOffset = fmodf(sOffset, 1.0f);
+    return sOffset;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A7AF8);

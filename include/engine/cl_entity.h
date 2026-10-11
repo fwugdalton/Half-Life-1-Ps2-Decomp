@@ -28,7 +28,9 @@ typedef struct cl_entity_s
     byte pad70[0x84 - 0x70];
     vec3_t origin;              /* 0x84 */
     vec3_t angles;              /* 0x90 */
-    byte pad9C[0xF8 - 0x9C];
+    byte pad9C[0xE4 - 0x9C];
+    color24 rendercolor;        /* 0xE4 */
+    byte padE7[0xF8 - 0xE7];
     entity_state_t baseline;    /* 0xF8 */
     byte pad18C[0x1A0 - 0x18C];
 } cl_entity_t; /* 0x1A0 */

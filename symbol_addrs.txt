@@ -1499,3 +1499,7 @@ R_DecalRemoveAll = 0x002A4A50; // type:func
 R_DecalShoot = 0x002A58C8; // type:func
 R_DecalVertsClip = 0x002A6050; // type:func
 R_DecalCacheVerts = 0x002A62F8; // type:func
+fmodf = 0x002D8128; // type:func
+R_DecalAlloc = 0x002A4990; // type:func
+Inside = 0x002A5D30; // type:func
+ScrollOffset = 0x002A7A48; // type:func
