@@ -5,6 +5,7 @@
 #include "engine/render.h"
 #include "engine/model.h"
 #include "engine/glquake.h"
+#include "engine/cl_entity.h"
 
 typedef enum
 {
@@ -62,6 +63,11 @@ typedef struct beam_s
 } BEAM; /* 0x7C */
 
 int ModelFrameCount(struct model_s *model);
+int CL_FxBlend(cl_entity_t *ent);
+void func_002B75F0(BEAM *pbeam, float frametime, int clientId);
+
+extern int D_00399658[2];               /* cl_numbeamentities */
+extern cl_entity_t *D_0050EF88[2][64];  /* cl_beamentities */
 
 #define MAX_BEAMS 128
 
@@ -1266,9 +1272,64 @@ void func_002B4770(BEAM *pbeam, float *start, float *end, int modelIndex, float 
     pbeam->pFollowModel = NULL;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B4920);
+void func_002B4920(BEAM *pbeam, float r, float g, float b, float framerate, int startFrame)
+{
+    pbeam->frame = (float)startFrame;
+    pbeam->frameRate = framerate;
+    pbeam->r = r;
+    pbeam->g = g;
+    pbeam->b = b;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B4948);
+void func_002B4948(int clientId, float frametime)
+{
+    int i;
+    BEAM beam;
+    cl_entity_t *pbeam;
+    int beamType;
+
+    for (i = 0; i < D_00399658[clientId]; i++)
+    {
+        pbeam = D_0050EF88[clientId][i];
+        beamType = pbeam->rendermode & 0x0F;
+
+        /* movetype (0x1C) guarda o modelindex do feixe */
+        func_002B4770(&beam, pbeam->origin, pbeam->angles, pbeam->movetype, 0, pbeam->scale,
+                      pbeam->body * 0.01f, CL_FxBlend(pbeam) * (1.0f / 255.0f), pbeam->animtime, clientId);
+        func_002B4920(&beam, pbeam->rendercolor.r * (1.0f / 255.0f), pbeam->rendercolor.g * (1.0f / 255.0f),
+                      pbeam->rendercolor.b * (1.0f / 255.0f), 0, pbeam->frame);
+
+        switch (beamType)
+        {
+        case 0:
+            break;
+        case 2:
+            beam.type = 0;
+            beam.flags = 3;
+            beam.startEntity = pbeam->sequence;
+            beam.endEntity = pbeam->skin;
+            break;
+        case 1:
+            beam.type = 0;
+            beam.flags = 2;
+            beam.startEntity = 0;
+            beam.endEntity = pbeam->skin;
+            break;
+        }
+
+        if (pbeam->rendermode & 0x10)
+            beam.flags |= 0x10;
+        if (pbeam->rendermode & 0x20)
+            beam.flags |= 0x20;
+        if (pbeam->rendermode & 0x40)
+            beam.flags |= 0x40;
+        if (pbeam->rendermode & 0x80)
+            beam.flags |= 0x80;
+
+        beam.pFollowModel = NULL;
+        func_002B75F0(&beam, frametime, clientId);
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B4BB0);
 
