@@ -251,9 +251,71 @@ void Draw_Init(void)
     D_0050EF58[2] = 1.0f / D_00399634->rows;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", Draw_Character);
+void glColor4f(float r, float g, float b, float a);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", Draw_String);
+#ifdef NON_MATCHING
+int Draw_Character(int x, int y, int num)
+{
+    int c;
+    int width, height;
+    int code;
+    float s, t, s2, t2;
+
+    if (y <= -font->height)
+        return 0;
+
+    c = func_002AFE28(num & 0xFF);
+    width = font->chars[c].width;
+
+    if (y < 0 || c == ' ')
+        return width;
+
+    height = font->height;
+    code = font->chars[c].x;
+
+    s = (code & 0xFF) * D_0050EF58[0];
+    t = (code >> 8) * D_0050EF58[1];
+    s2 = s + width * D_0050EF58[0];
+    t2 = t + height * D_0050EF58[1];
+
+    glEnable(GL_BLEND);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+    glEnable(GL_ALPHA_TEST);
+    glDisable(GL_DEPTH_TEST);
+    glBlendFunc(GL_ONE, GL_ONE);
+    glColor4f(1, 1, 1, 1);
+    GL_DisableMultitexture();
+    GL_Bind(D_00399644);
+
+    glBegin(GL_QUADS);
+    D_00399570++;
+    D_00399558 += 4;
+    glTexCoord2f(s, t);
+    glVertex2f(x, y);
+    glTexCoord2f(s2, t);
+    glVertex2f(x + width, y);
+    glTexCoord2f(s2, t2);
+    glVertex2f(x + width, y + height);
+    glTexCoord2f(s, t2);
+    glVertex2f(x, y + height);
+    glEnd();
+
+    glDisable(GL_ALPHA_TEST);
+    return width;
+}
+#else
+INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", Draw_Character);
+#endif
+
+int Draw_String(int x, int y, char *str)
+{
+    while (*str)
+    {
+        x += Draw_Character(x, y, *str);
+        str++;
+    }
+    return x;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002ADA70);
 
