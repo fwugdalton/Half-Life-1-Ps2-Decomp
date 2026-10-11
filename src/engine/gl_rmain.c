@@ -133,6 +133,21 @@ int V_FadeAlpha(int clientId);
 void GL_Bind(int texnum);
 void glBlendFunc(int sfactor, int dfactor);
 void glColor4ubv(byte *v);
+extern float D_00333444; /* r_norefresh */
+extern void *D_004F9288;
+extern cvar_t D_00333498; /* r_speeds */
+extern int D_00399580;
+extern int D_00399534, D_00399538, D_0039953C, D_00399548, D_0039954C, D_0039955C;
+extern int D_00399560, D_00399568, D_0039956C, D_00399574, D_00399578, D_0039957C;
+extern int D_00399584, D_0039958C, D_00399594, D_00399598, D_003995A8;
+void Sys_Error(const char *fmt, ...);
+float Sys_FloatTime(void);
+void R_Clear(void);
+void R_PreDrawViewModel(int clientId);
+void R_RenderScene(int clientId);
+void R_DrawViewModel(int clientId);
+void R_ScreenFade(int clientId);
+void func_002AB0B8(int x, int y, char *fmt, ...);
 
 void R_SetupFrame(int clientId);
 void R_SetFrustum(int clientId);
@@ -988,7 +1003,7 @@ void R_RenderScene(int clientId)
     func_002B3A10(clientId);
 }
 
-void func_002AAD48(void)
+void R_Clear(void)
 {
     gldepthmin = 0;
     gldepthmax = 1;
@@ -996,8 +1011,45 @@ void func_002AAD48(void)
     glDepthRange(gldepthmin, gldepthmax);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rmain", R_RenderView);
+void R_RenderView(int clientId)
+{
+    float time1;
 
-void func_002AB0B8(int a, int b, int c, ...)
+    if (D_00333444)
+        return;
+
+    if (!D_004F9288 || !cl[clientId].worldmodel)
+        Sys_Error("R_RenderView: NULL worldmodel");
+
+    if (D_00333498.value)
+        time1 = Sys_FloatTime();
+
+    D_00399580 = 0;
+    R_Clear();
+
+    R_PreDrawViewModel(clientId);
+    R_RenderScene(clientId);
+    R_DrawViewModel(clientId);
+    R_ScreenFade(clientId);
+    func_002CD9F8(clientId);
+
+    if (D_00333498.value)
+    {
+        func_002AB0B8(0, 0, "       starts    verts\n");
+        func_002AB0B8(0, 2, "glply: (%5d)  (%5d)\n", D_00399584, D_00399560);
+        func_002AB0B8(0, 4, "lmap : (%5d)  (%5d)\n", D_0039953C, D_00399578);
+        func_002AB0B8(0, 6, "maskd: (%5d)  (%5d)\n", D_00399548, D_0039955C);
+        func_002AB0B8(0, 8, "water: (%5d)  (%5d)\n", D_003995A8, D_00399538);
+        func_002AB0B8(0, 10, "decal: (%5d)  (%5d)\n", D_00399594, D_0039958C);
+        func_002AB0B8(0, 12, "misc : (%5d)  (%5d)\n", D_00399570, D_00399558);
+        func_002AB0B8(0, 14, "parts: (%5d)  (%5d)\n", D_00399534, D_00399598);
+        func_002AB0B8(0, 16, "model: (%5d)  (%5d)  (%d tris)\n", D_00399574, D_0039954C, D_00399568);
+        func_002AB0B8(0, 18, "total: (%5d)  (%5d)\n",
+                      D_0039956C + D_00399548 + D_0039953C + D_003995A8 + D_00399594 + D_00399584 + D_00399570 + D_00399534 + D_00399574,
+                      D_0039957C + D_0039955C + D_00399578 + D_00399538 + D_0039958C + D_00399560 + D_00399558 + D_00399598 + D_0039954C);
+    }
+}
+
+void func_002AB0B8(int x, int y, char *fmt, ...)
 {
 }
