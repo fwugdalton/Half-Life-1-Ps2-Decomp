@@ -33,7 +33,6 @@ extern int d_lightstylevalue[];
 extern dlight_t cl_dlights[MAX_DLIGHTS];
 extern int r_framecount;
 extern int r_dlightframecount; /* r_dlightframecount */
-extern model_t *D_0055746C;
 extern vec3_t lightspot; /* lightspot */
 extern mplane_t *lightplane; /* lightplane */
 
@@ -97,7 +96,7 @@ void R_MarkLights(dlight_t *light, int bit, mnode_t *node)
         return;
     }
 
-    surf = D_0055746C->surfaces + node->firstsurface;
+    surf = cl[0].worldmodel->surfaces + node->firstsurface;
     for (i = 0; i < node->numsurfaces; i++, surf++)
     {
         maxdist = light->radius - __builtin_fabsf(dist);
@@ -176,7 +175,7 @@ int RecursiveLightPoint(mnode_t *node, vec3_t start, vec3_t end, colorVec *c)
     VectorCopy(mid, lightspot);
     lightplane = plane;
 
-    surf = D_0055746C->surfaces + node->firstsurface;
+    surf = cl[0].worldmodel->surfaces + node->firstsurface;
     for (i = 0; i < node->numsurfaces; i++, surf++)
     {
         if (surf->flags & SURF_DRAWTILED)
@@ -230,10 +229,10 @@ colorVec R_LightVec(vec3_t start, vec3_t end)
 
     memset(&c, 0, sizeof(c));
 
-    if (D_0055746C->lightdata)
+    if (cl[0].worldmodel->lightdata)
     {
         VectorSubtract(start, end, dir);
-        RecursiveLightPoint(D_0055746C->nodes, start, end, &c);
+        RecursiveLightPoint(cl[0].worldmodel->nodes, start, end, &c);
 
         c.r += r_refdef.ambientlight.r;
         c.g += r_refdef.ambientlight.g;

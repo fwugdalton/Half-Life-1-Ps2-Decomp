@@ -14,7 +14,8 @@ typedef struct cl_entity_s
     int rendermode;             /* 0x10 */
     byte pad14[0x20 - 0x14];
     int unk_20;                 /* 0x20: body do viewmodel (svc_weaponanim) */
-    byte pad24[0x2C - 0x24];
+    int sequence;               /* 0x24 */
+    byte pad28[0x2C - 0x28];
     int index;                  /* 0x2C */
     int unk_30;                 /* 0x30 */
     byte pad34[0x38 - 0x34];
@@ -23,9 +24,10 @@ typedef struct cl_entity_s
     struct model_s *model;      /* 0x50 */
     struct efrag_s *efrag;      /* 0x54 */
     void *topnode;              /* 0x58 */
-    byte pad5C[0x60 - 0x5C];
+    float framerate;            /* 0x5C */
     float frame;                /* 0x60 */
-    byte pad64[0x6C - 0x64];
+    byte pad64[0x68 - 0x64];
+    float animtime;             /* 0x68 */
     float scale;                /* 0x6C */
     byte pad70[0x84 - 0x70];
     vec3_t origin;              /* 0x84 */

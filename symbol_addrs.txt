@@ -1589,3 +1589,6 @@ frustum = 0x004F91E8; // size:0x50
 ProjectPointOnPlane = 0x002A8848; // type:func
 PerpendicularVector = 0x002A88E8; // type:func
 CalcFov = 0x002AA588; // type:func
+R_RenderScene = 0x002AABD8; // type:func
+R_DrawViewModel = 0x002A9B28; // type:func
+R_SetupFrame = 0x002AA288; // type:func

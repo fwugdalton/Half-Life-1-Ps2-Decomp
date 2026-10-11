@@ -44,6 +44,33 @@ float tanf(float x);
 float atanf(float x);
 
 extern mplane_t frustum[4];
+extern vec3_t r_origin, vpn, vright, vup;
+extern vec3_t D_00551760[], D_00553DB0[], D_00551788[], D_00551718[];
+
+#define GL_FOG 0xB60
+#define STAT_HEALTH 0
+
+extern cl_entity_t *currententity;
+extern qboolean cam_thirdperson;
+extern cvar_t r_drawentities;
+extern int D_00333290;
+extern float D_00333474;
+extern float D_00331694;
+extern int D_00399588;
+int R_StudioDrawModel(int flags, int clientId, int unk);
+
+void R_SetupFrame(int clientId);
+void func_002AA078(int clientId);
+void func_002AA620(int clientId);
+void R_MarkLeaves(int clientId);
+void R_DrawWorld(int clientId);
+void func_002CD9F8(int clientId);
+void func_002A9420(int clientId);
+void R_DrawTEntitiesOnList(int clientId);
+void R_DrawStudioTEntities(int clientId);
+void func_002AB188(void);
+void GL_DisableMultitexture(void);
+void func_002B3A10(int clientId);
 
 extern int D_00399564;
 extern int D_0032EF68, D_0032EF6C, D_0032EF74;
@@ -258,7 +285,38 @@ INCLUDE_ASM("asm/nonmatchings/engine/gl_rmain", func_002A9420);
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rmain", func_002A9890);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rmain", func_002A9B28);
+#ifdef NON_MATCHING
+void R_DrawViewModel(int clientId)
+{
+    currententity = &cl[clientId].viewent;
+    D_00333290 = 1;
+
+    if (D_00333474 && !cam_thirdperson && !D_00331694 && !D_00399588 && r_drawentities.value
+        && cl[clientId].stats[STAT_HEALTH] > 0 && currententity->model
+        && cl[clientId].viewentity <= cl[clientId].maxclients && !cl[clientId].paused)
+    {
+        switch ((unsigned)currententity->model->type)
+        {
+        case mod_brush:
+            break;
+        case mod_alias:
+            break;
+        case mod_studio:
+            if (!cl[clientId].weaponstarttime)
+                cl[clientId].weaponstarttime = cl[clientId].time;
+            currententity->sequence = cl[clientId].weaponsequence;
+            currententity->frame = 0;
+            currententity->framerate = 1;
+            currententity->animtime = cl[clientId].weaponstarttime;
+            R_StudioDrawModel(2, clientId, 1);
+            break;
+        }
+    }
+    D_00333290 = 0;
+}
+#else
+INCLUDE_ASM("asm/nonmatchings/engine/gl_rmain", R_DrawViewModel);
+#endif
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rmain", func_002A9CA0);
 
@@ -277,7 +335,7 @@ int SignbitsForPlane(mplane_t *out)
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rmain", func_002AA078);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rmain", func_002AA288);
+INCLUDE_ASM("asm/nonmatchings/engine/gl_rmain", R_SetupFrame);
 
 void MYgluPerspective(float fovy, float aspect, float zNear, float zFar)
 {
@@ -311,7 +369,29 @@ float CalcFov(float fov_x, float width, float height)
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rmain", func_002AA620);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rmain", func_002AABD8);
+void R_RenderScene(int clientId)
+{
+    R_SetupFrame(clientId);
+
+    VectorCopy(r_origin, D_00551760[clientId]);
+    VectorCopy(vpn, D_00553DB0[clientId]);
+    VectorCopy(vright, D_00551788[clientId]);
+    VectorCopy(vup, D_00551718[clientId]);
+
+    func_002AA078(clientId);
+    func_002AA620(clientId);
+    R_MarkLeaves(clientId);
+    R_DrawWorld(clientId);
+    func_002CD9F8(clientId);
+    func_002A9420(clientId);
+    R_DrawTEntitiesOnList(clientId);
+    glDisable(GL_FOG);
+    R_DrawStudioTEntities(clientId);
+    func_002CD9F8(clientId);
+    func_002AB188();
+    GL_DisableMultitexture();
+    func_002B3A10(clientId);
+}
 
 void func_002AAD48(void)
 {
