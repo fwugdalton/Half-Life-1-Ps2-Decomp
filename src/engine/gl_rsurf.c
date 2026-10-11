@@ -69,8 +69,8 @@ typedef struct decal_s
 
 #define FDECAL_PERMANENT 0x01
 #define MAX_OVERLAP_DECALS 4
-extern unsigned short gDecalFlags;
-extern short gDecalEntity;
+extern int gDecalFlags;
+extern int gDecalEntity;
 
 typedef struct
 {
@@ -86,7 +86,12 @@ extern decalcache_t gDecalCache[DECAL_CACHEENTRIES];
 extern int D_00333264, D_00413AD0;
 #define MAX_LIGHTMAPS 64
 extern int allocated[MAX_LIGHTMAPS][128];
-void R_DecalShoot_(int, int, int, int, int, int, int);
+void R_DecalShoot_(texture_t *ptexture, int index, int entity, int modelIndex, vec3_t position, int flags, int clientId);
+extern vec3_t gDecalPos;
+extern model_t *gDecalModel;
+extern int gDecalIndex;
+extern int gDecalSize;
+void R_DecalNode(mnode_t *node);
 void *Hunk_AllocName(int size, char *name);
 void func_00225860(void *dst, int c, int n);
 void func_0023D520(void);
@@ -1222,7 +1227,7 @@ void R_DecalRemoveAll(int textureIndex)
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A4AC0);
+INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", R_DecalNode);
 
 int func_002A4FB0(decalentry_t *list, int count)
 {
@@ -1349,11 +1354,79 @@ int R_DecalUnProject(decal_t *pdecal, vec_t *position)
     return entityIndex;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", R_DecalShoot_);
+void R_DecalShoot_(texture_t *ptexture, int index, int entity, int modelIndex, vec3_t position, int flags, int clientId)
+{
+    cl_entity_t *ent;
+    mnode_t *pnodes;
+    hull_t *phull;
+    vec3_t temp, forward, right, up;
+
+    VectorCopy(position, gDecalPos);
+
+    ent = &cl_entities[clientId][entity];
+    if (ent)
+    {
+        gDecalModel = ent->model;
+        if (!gDecalModel)
+        {
+            if (modelIndex)
+                gDecalModel = cl[clientId].model_precache[modelIndex];
+            if (!gDecalModel && sv.active)
+                gDecalModel = sv.models[sv.edicts[entity].v.modelindex];
+        }
+    }
+    else
+    {
+        gDecalModel = NULL;
+    }
+
+    if (!ent || !gDecalModel || gDecalModel->type != mod_brush || !ptexture)
+    {
+        Con_DPrintf("Decals must hit mod_brush!\n");
+        return;
+    }
+
+    pnodes = gDecalModel->nodes;
+    if (entity)
+    {
+        phull = &gDecalModel->hulls[0];
+        if (gDecalModel->firstmodelsurface)
+        {
+            VectorSubtract(position, phull->clip_mins, gDecalPos);
+            VectorSubtract(gDecalPos, ent->origin, gDecalPos);
+            pnodes += phull->firstclipnode;
+        }
+
+        if (ent->angles[0] || ent->angles[1] || ent->angles[2])
+        {
+            AngleVectors(ent->angles, forward, right, up);
+            VectorCopy(gDecalPos, temp);
+            gDecalPos[0] = DotProduct(temp, forward);
+            gDecalPos[1] = -DotProduct(temp, right);
+            gDecalPos[2] = DotProduct(temp, up);
+        }
+    }
+
+    if (!(flags & FDECAL_DONTSAVE))
+        flags |= FDECAL_CLIPTEST;
+
+    gDecalTexture = ptexture;
+    gDecalIndex = index;
+    gDecalFlags = flags;
+    gDecalEntity = entity;
+    gDecalSize = ptexture->srcwidth >> 1;
+    if ((ptexture->srcheight >> 1) > gDecalSize)
+        gDecalSize = ptexture->srcheight >> 1;
+
+    R_DecalNode(pnodes);
+}
+
+/* a tabela de saltos do func_002A7AF8 começa alinhada em 16 */
+__asm__(".section .rodata\n.align 4\n.section .text");
 
 void R_DecalShoot(int textureIndex, int entity, int modelIndex, int position, int flags, int unk)
 {
-    R_DecalShoot_((int)Draw_DecalTexture(textureIndex), textureIndex, entity, modelIndex, position, flags, unk);
+    R_DecalShoot_(Draw_DecalTexture(textureIndex), textureIndex, entity, modelIndex, position, flags, unk);
 }
 
 void func_002A5948(int a0, int a1, int a2, int a3, int t0, int t1, int t2)
