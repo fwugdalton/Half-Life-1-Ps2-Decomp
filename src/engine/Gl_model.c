@@ -160,7 +160,7 @@ char *strcpy(char *, const char *);
 void Mod_LoadStudioModel(model_t *mod, void *buffer);
 void Mod_LoadSpriteModel(model_t *mod, gl_sprite_t *psprite);
 void *COM_LoadFile(char *path, int usehunk, int *pLength);
-void func_002AF9A0(int texnum);
+void GL_UnloadTextureByNum(int texnum);
 void *Cache_Check(cache_user_t *c);
 void Cache_Free(cache_user_t *c);
 FileHandle_t FS_Open(char *name, char *mode);
@@ -684,7 +684,7 @@ void Mod_UnloadSpriteTextures(model_t *mod)
         gl_spriteframedesc_t *frames = psprite->frames;
         for (i = 0; i < psprite->numframes; i++)
         {
-            func_002AF9A0(frames[i].gl_texturenum);
+            GL_UnloadTextureByNum(frames[i].gl_texturenum);
             frames[i].gl_texturenum = 0;
         }
     }

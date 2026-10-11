@@ -12,7 +12,7 @@ extern int D_003333D0;                 /* oldtarget */
 extern int D_00333278[];               /* cnttextures */
 void func_0023C430(int target, int texture);
 int func_00234F58(void *font, char *str);
-int func_002AFE28(int c);
+int Draw_RemapChar(int c);
 
 typedef struct
 {
@@ -53,12 +53,12 @@ void GL_SelectTexture(int target)
     currenttexture = D_00333278[target - TEXTURE0_SGIS];
 }
 
-int func_002AD060(char *str)
+int Draw_StringLen(char *str)
 {
     return func_00234F58(font, str);
 }
 
-int func_002AD088(short *widths)
+int Draw_GetFontInfo(short *widths)
 {
     int i;
 
@@ -67,7 +67,7 @@ int func_002AD088(short *widths)
         if (widths)
         {
             for (i = 0; i < 256; i++)
-                widths[i] = D_00399634->chars[func_002AFE28(i)].width;
+                widths[i] = D_00399634->chars[Draw_RemapChar(i)].width;
         }
         return D_00399634->height;
     }
@@ -90,7 +90,7 @@ void glVertex2f(float x, float y);
 void GL_DisableMultitexture(void);
 
 #ifdef NON_MATCHING
-int func_002AD110(int x, int y, int ch, int r, int g, int b)
+int Draw_ColoredCharacter(int x, int y, int ch, int r, int g, int b)
 {
     int c;
     int width, height;
@@ -100,7 +100,7 @@ int func_002AD110(int x, int y, int ch, int r, int g, int b)
     if (y <= -D_00399634->height)
         return 0;
 
-    c = func_002AFE28(ch & 0xFF);
+    c = Draw_RemapChar(ch & 0xFF);
     height = D_00399634->height;
     width = D_00399634->chars[c].width;
     code = D_00399634->chars[c].x;
@@ -135,7 +135,7 @@ int func_002AD110(int x, int y, int ch, int r, int g, int b)
     return width;
 }
 #else
-INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002AD110);
+INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", Draw_ColoredCharacter);
 #endif
 
 INCLUDE_RODATA("asm/nonmatchings/engine/gl_draw", D_00394798);
@@ -161,7 +161,7 @@ extern int D_003333C8;        /* gl_filter_min */
 extern int D_003333CC;        /* gl_filter_max */
 void func_0023C600(int target, int pname, float param); /* glTexParameterf */
 
-void func_002AD388(void)
+void Draw_TextureMode_f(void)
 {
     int i;
     gltexture_t *glt;
@@ -212,7 +212,7 @@ extern int D_00399644, D_00399638;
 extern font_t *D_0039964C;
 void func_002ACFA0(void);
 void GL_TextureStats_f(void);
-void func_002AD388(void);
+void Draw_TextureMode_f(void);
 int func_00235EA0(char *name, void *out, int *size);
 int GL_LoadDecalTexture(char *name, int type, int width, int height, byte *pixels, byte *palette, byte nummips);
 
@@ -222,7 +222,7 @@ void Draw_Init(void)
     font_t *f;
 
     D_00331C58 = 1;
-    Cmd_AddCommand("gl_texturemode", func_002AD388);
+    Cmd_AddCommand("gl_texturemode", Draw_TextureMode_f);
     Cmd_AddCommand("texture_usage", GL_TextureStats_f);
     Cmd_AddCommand("texture_dump", func_002ACFA0);
 
@@ -264,7 +264,7 @@ int Draw_Character(int x, int y, int num)
     if (y <= -font->height)
         return 0;
 
-    c = func_002AFE28(num & 0xFF);
+    c = Draw_RemapChar(num & 0xFF);
     width = font->chars[c].width;
 
     if (y < 0 || c == ' ')
@@ -317,19 +317,19 @@ int Draw_String(int x, int y, char *str)
     return x;
 }
 
-void func_002ADA70(void)
+void Draw_BindAlphaFont(void)
 {
     GL_Bind(D_00399638);
 }
 
 #ifdef NON_MATCHING
-void func_002ADA98(int ch, int *width, int *height, float *s, float *t, float *s2, float *t2)
+void Draw_GetAlphaFontChar(int ch, int *width, int *height, float *s, float *t, float *s2, float *t2)
 {
     int c;
     int code;
     float fs, ft, fs2, ft2;
 
-    c = func_002AFE28(ch & 0xFF);
+    c = Draw_RemapChar(ch & 0xFF);
     *width = D_0039964C->chars[c].width;
     code = D_0039964C->chars[c].x;
     *height = D_0039964C->height;
@@ -343,11 +343,11 @@ void func_002ADA98(int ch, int *width, int *height, float *s, float *t, float *s
     *t2 = ft2;
 }
 #else
-INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002ADA98);
+INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", Draw_GetAlphaFontChar);
 #endif
 
 #ifdef NON_MATCHING
-int func_002ADB98(int x, int y, int num, float sx, float sy)
+int Draw_ScaledCharacter(int x, int y, int num, float sx, float sy)
 {
     int c;
     int w;
@@ -358,7 +358,7 @@ int func_002ADB98(int x, int y, int num, float sx, float sy)
     if (y <= -font->height)
         return 0;
 
-    c = func_002AFE28(num & 0xFF);
+    c = Draw_RemapChar(num & 0xFF);
     w = font->chars[c].width;
 
     if (y < 0 || c == ' ')
@@ -400,7 +400,7 @@ int func_002ADB98(int x, int y, int num, float sx, float sy)
     return width;
 }
 #else
-INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002ADB98);
+INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", Draw_ScaledCharacter);
 #endif
 
 typedef struct
@@ -415,7 +415,7 @@ typedef struct
     glpic_t gl;                 /* 0x08 */
 } glqpic_t;
 
-void func_002ADE10(int x, int y, glqpic_t *pic)
+void Draw_Pic(int x, int y, glqpic_t *pic)
 {
     glpic_t *gl;
 
@@ -444,7 +444,7 @@ void func_002ADE10(int x, int y, glqpic_t *pic)
     glEnd();
 }
 
-void func_002ADFB0(int x, int y, qpic_t *pic, int a)
+void Draw_PsiPic(int x, int y, qpic_t *pic, int a)
 {
     if (!pic)
         return;
@@ -471,7 +471,7 @@ void func_002ADFB0(int x, int y, qpic_t *pic, int a)
 }
 
 #ifdef NON_MATCHING
-void func_002AE158(int x, int y, int srcx, int srcy, int width, int height, glqpic_t *pic, unsigned int *color, int alpha)
+void Draw_SubPicColored(int x, int y, int srcx, int srcy, int width, int height, glqpic_t *pic, unsigned int *color, int alpha)
 {
     glpic_t *gl;
     float newsl, newtl, newsh, newth;
@@ -513,12 +513,12 @@ void func_002AE158(int x, int y, int srcx, int srcy, int width, int height, glqp
     glDisable(GL_BLEND);
 }
 #else
-INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002AE158);
+INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", Draw_SubPicColored);
 #endif
 
 void glColor3f(float r, float g, float b);
 
-void func_002AE468(int x, int y, glqpic_t *pic, unsigned int *color, int alpha)
+void Draw_AdditivePic(int x, int y, glqpic_t *pic, unsigned int *color, int alpha)
 {
     glpic_t *gl;
     float a;
@@ -555,7 +555,7 @@ void func_002AE468(int x, int y, glqpic_t *pic, unsigned int *color, int alpha)
     glDisable(GL_BLEND);
 }
 
-void func_002AE718(int x, int y, glqpic_t *pic, unsigned int *color, int alpha)
+void Draw_AlphaPic(int x, int y, glqpic_t *pic, unsigned int *color, int alpha)
 {
     glpic_t *gl;
 
@@ -591,7 +591,7 @@ void func_002AE718(int x, int y, glqpic_t *pic, unsigned int *color, int alpha)
     func_0023C600(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, D_003333CC);
 }
 
-void func_002AEA00(int x, int y, int w, int h, glqpic_t *pic)
+void Draw_StretchPic(int x, int y, int w, int h, glqpic_t *pic)
 {
     glpic_t *gl;
 
@@ -636,7 +636,7 @@ extern int D_00333430;                                       /* giScissorTest */
 
 #define clamp(val, min, max) (((val) > (max)) ? (max) : (((val) < (min)) ? (min) : (val)))
 
-void func_002AEB98(int x, int y, int width, int height)
+void EnableScissorTest(int x, int y, int width, int height)
 {
     x = clamp(x, 0, r_viddef.width);
     y = clamp(y, 0, r_viddef.height);
@@ -675,7 +675,7 @@ typedef struct
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
-void func_002AEC60(void)
+void DisableScissorTest(void)
 {
     D_00333420 = 0;
     D_00333428 = 0;
@@ -684,7 +684,7 @@ void func_002AEC60(void)
     D_00333430 = 0;
 }
 
-qboolean func_002AEC90(wrect_t *prc)
+qboolean ValidateWRect(wrect_t *prc)
 {
     if (!prc)
         return false;
@@ -695,7 +695,7 @@ qboolean func_002AEC90(wrect_t *prc)
     return true;
 }
 
-qboolean func_002AECD0(wrect_t *prc1, wrect_t *prc2, wrect_t *prc)
+qboolean IntersectWRect(wrect_t *prc1, wrect_t *prc2, wrect_t *prc)
 {
     wrect_t rc;
 
@@ -717,20 +717,20 @@ qboolean func_002AECD0(wrect_t *prc1, wrect_t *prc2, wrect_t *prc)
     return false;
 }
 
-void func_002AED58(spriteframe_t *pFrame, float *pfLeft, float *pfRight, float *pfTop, float *pfBottom, int *pw, int *ph, wrect_t *prcSubRect)
+void AdjustSubRect(spriteframe_t *pFrame, float *pfLeft, float *pfRight, float *pfTop, float *pfBottom, int *pw, int *ph, wrect_t *prcSubRect)
 {
     wrect_t rc;
     float f;
     spritepic_t *pic;
 
-    if (!func_002AEC90(prcSubRect))
+    if (!ValidateWRect(prcSubRect))
         return;
 
     rc.top = rc.left = 0;
     rc.right = *pw;
     rc.bottom = *ph;
 
-    if (!func_002AECD0(prcSubRect, &rc, &rc))
+    if (!IntersectWRect(prcSubRect, &rc, &rc))
         return;
 
     *pw = rc.right - rc.left;
@@ -749,7 +749,7 @@ void func_002AED58(spriteframe_t *pFrame, float *pfLeft, float *pfRight, float *
 extern cvar_t D_003336D8; /* gl_spriteblend */
 void glDepthMask(int flag);
 
-void func_002AEEC0(spriteframe_t *pFrame, int ix, int iy, wrect_t *prcSubRect)
+void Draw_SpriteFrame(spriteframe_t *pFrame, int ix, int iy, wrect_t *prcSubRect)
 {
     float fLeft = 0;
     float fRight = 1;
@@ -763,7 +763,7 @@ void func_002AEEC0(spriteframe_t *pFrame, int ix, int iy, wrect_t *prcSubRect)
         Con_Printf("ERROR: Scissoring Enabled\n");
 
     if (prcSubRect)
-        func_002AED58(pFrame, &fLeft, &fRight, &fTop, &fBottom, &iWidth, &iHeight, prcSubRect);
+        AdjustSubRect(pFrame, &fLeft, &fRight, &fTop, &fBottom, &iWidth, &iHeight, prcSubRect);
 
     x = ix;
     y = iy;
@@ -787,12 +787,12 @@ void func_002AEEC0(spriteframe_t *pFrame, int ix, int iy, wrect_t *prcSubRect)
     glDisable(0xC11);
 }
 
-void func_002AF0A8(spriteframe_t *pFrame, void *pPalette, int x, int y, wrect_t *prcSubRect)
+void Draw_SpriteFrameNormal(spriteframe_t *pFrame, void *pPalette, int x, int y, wrect_t *prcSubRect)
 {
-    func_002AEEC0(pFrame, x, y, prcSubRect);
+    Draw_SpriteFrame(pFrame, x, y, prcSubRect);
 }
 
-void func_002AF0D0(spriteframe_t *pFrame, void *pPalette, int x, int y, wrect_t *prcSubRect)
+void Draw_SpriteFrameHoles(spriteframe_t *pFrame, void *pPalette, int x, int y, wrect_t *prcSubRect)
 {
     glEnable(GL_ALPHA_TEST);
     if (D_003336D8.value)
@@ -800,16 +800,16 @@ void func_002AF0D0(spriteframe_t *pFrame, void *pPalette, int x, int y, wrect_t 
         glBlendFunc(GL_SRC_ALPHA, 0x303);
         glEnable(GL_BLEND);
     }
-    func_002AEEC0(pFrame, x, y, prcSubRect);
+    Draw_SpriteFrame(pFrame, x, y, prcSubRect);
     glDisable(GL_ALPHA_TEST);
     glDisable(GL_BLEND);
 }
 
-void func_002AF170(spriteframe_t *pFrame, void *pPalette, int x, int y, wrect_t *prcSubRect)
+void Draw_SpriteFrameAdditive(spriteframe_t *pFrame, void *pPalette, int x, int y, wrect_t *prcSubRect)
 {
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE, GL_ONE);
-    func_002AEEC0(pFrame, x, y, prcSubRect);
+    Draw_SpriteFrame(pFrame, x, y, prcSubRect);
     glDisable(GL_BLEND);
 }
 
@@ -832,7 +832,7 @@ void glPopMatrix(void);
 void glLoadIdentity(void);
 void glOrtho(float left, float right, float bottom, float top, float zNear, float zFar);
 void glViewport(int x, int y, int width, int height);
-void func_002AF7A8(int a);
+void Draw_BeginDisc(int a);
 int sprintf(char *buf, const char *fmt, ...);
 
 void Draw_ConsoleBackground(int lines)
@@ -877,15 +877,15 @@ void Draw_ConsoleBackground(int lines)
     glPopMatrix();
 
     if (D_00331C18 && lines == r_viddef.height)
-        func_002AF7A8(0);
+        Draw_BeginDisc(0);
 
     sprintf(ver, D_00394938);
-    x = r_viddef.conwidth - func_002AD060(ver);
+    x = r_viddef.conwidth - Draw_StringLen(ver);
     if (!D_00331C18 && !(D_00399798 & 4))
         Draw_String(x, 24, ver);
 }
 
-void func_002AF498(int x, int y, int width, int height, int r, int g, int b, int a)
+void Draw_FillRGBA(int x, int y, int width, int height, int r, int g, int b, int a)
 {
     float fx = x;
     float fy = y;
@@ -913,12 +913,12 @@ void func_002AC148(qpic_t *pic, int a);
 void func_0023C7C8(int n, int *textures); /* glDeleteTextures */
 void *memset(void *s, int c, unsigned int n);
 
-void func_002AF668(int x, int y, int w, int h, int c)
+void Draw_Fill(int x, int y, int w, int h, int c)
 {
-    func_002AF498(x, y, w, h, host_basepal[c * 4], host_basepal[c * 4 + 1], host_basepal[c * 4 + 2], 255);
+    Draw_FillRGBA(x, y, w, h, host_basepal[c * 4], host_basepal[c * 4 + 1], host_basepal[c * 4 + 2], 255);
 }
 
-void func_002AF6A0(void)
+void Draw_FadeScreen(void)
 {
     glEnable(GL_BLEND);
     glDisable(GL_TEXTURE_2D);
@@ -936,7 +936,7 @@ void func_002AF6A0(void)
     glDisable(GL_BLEND);
 }
 
-void func_002AF7A8(int a)
+void Draw_BeginDisc(int a)
 {
     if (D_003333C0)
         func_002AC148(D_003333C0, a);
@@ -945,7 +945,7 @@ void func_002AF7A8(int a)
 void func_002AF7D8(void) {
 }
 
-void func_002AF7E0(gltexture_t *glt)
+void GL_FreeTexture(gltexture_t *glt)
 {
     int texnum;
 
@@ -964,7 +964,7 @@ extern int D_00332F2C; /* servercount */
 extern void (*qglColorTableEXT)(int target, int internalformat, int width, int format, int type, void *table);
 int strcmp(const char *s1, const char *s2);
 
-void func_002AF838(void)
+void GL_UnloadTextures(void)
 {
     int i;
     int count = 0;
@@ -975,7 +975,7 @@ void func_002AF838(void)
     {
         if (glt->servercount > 0 && glt->servercount != D_00332F2C)
         {
-            func_002AF7E0(glt);
+            GL_FreeTexture(glt);
             count++;
         }
     }
@@ -993,14 +993,14 @@ void GL_FreeDecalTexture(char *identifier)
         if (!strcmp(identifier, glt->identifier))
         {
             if (glt->servercount >= 0)
-                func_002AF7E0(glt);
+                GL_FreeTexture(glt);
             return;
         }
     }
     Con_Printf("WARNING: Texture not found [%s]\n", identifier);
 }
 
-void func_002AF9A0(int texnum)
+void GL_UnloadTextureByNum(int texnum)
 {
     int i;
     gltexture_t *glt;
@@ -1011,14 +1011,14 @@ void func_002AF9A0(int texnum)
         if (glt->texnum == texnum)
         {
             if (glt->servercount >= 0)
-                func_002AF7E0(glt);
+                GL_FreeTexture(glt);
             return;
         }
     }
     Con_Printf("WARNING: Texture not found [%d]\n", texnum);
 }
 
-void func_002AFA30(byte *palette)
+void GL_SetPalette(byte *palette)
 {
     if (qglColorTableEXT)
         qglColorTableEXT(GL_TEXTURE_2D, 0x1908, 256, 0x8801, 0x1401, palette);
@@ -1096,7 +1096,7 @@ retry:
         glt->servercount = 0;
 
     GL_Bind(glt->texnum);
-    func_002AFA30(palette);
+    GL_SetPalette(palette);
 
     if (identifier[0] == '@')
         func_0023C600(GL_TEXTURE_2D, 0x2805, 1.0f);
@@ -1180,7 +1180,7 @@ void GL_BuildDecal(psidecal_t *d)
 INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", GL_BuildDecal);
 #endif
 
-int func_002AFE28(int c)
+int Draw_RemapChar(int c)
 {
     int r;
 

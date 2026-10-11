@@ -58,7 +58,7 @@ typedef void (*cachecallback_t)(cache_user_t *c, unsigned int mode);
 
 int GL_LoadDecalTexture(char *name, int type, int width, int height, byte *pixels, byte *palette, byte nummips);
 void GL_Bind(int texnum);
-void func_002AF9A0(int texnum);
+void GL_UnloadTextureByNum(int texnum);
 void glTexImage2D(int target, int level, int internalformat, int width, int height, int border, int format, int type, void *pixels);
 void *COM_LoadFileCached(char *path, cache_user_t *cu, cachecallback_t callback);
 char *strcpy(char *dst, const char *src);
@@ -165,7 +165,7 @@ void Mod_StudioCacheCallback(cache_user_t *c, unsigned int mode)
 		ptexture = (mstudiotexture_t *)((byte *)phdr + phdr->textureindex);
 		for (i = 0; i < phdr->numtextures; i++)
 		{
-			func_002AF9A0(ptexture[i].texture);
+			GL_UnloadTextureByNum(ptexture[i].texture);
 			ptexture[i].texture = 0;
 		}
 		break;

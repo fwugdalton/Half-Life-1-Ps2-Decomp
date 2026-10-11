@@ -14,7 +14,7 @@ int atoi(const char *);
 float sinf(float);
 #define fabs(x) ((x) < 0 ? -(x) : (x))
 float sqrtf(float);
-int func_002AD110(int a0, int a1, int a2, int a3, int a4, int a5);
+int Draw_ColoredCharacter(int a0, int a1, int a2, int a3, int a4, int a5);
 double atof(const char *);
 float powf(float, float);
 #define max(a, b) ((a) > (b) ? (a) : (b))
@@ -123,7 +123,7 @@ int func_0028BF00(int a0, int a1, int a2, int a3, int a4, int a5)
 {
     if (!a3 && !a4 && !a5)
         return 0;
-    return func_002AD110(a0, a1, a2, a3, a4, a5);
+    return Draw_ColoredCharacter(a0, a1, a2, a3, a4, a5);
 }
 
 #ifdef NON_MATCHING

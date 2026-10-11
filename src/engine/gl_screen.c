@@ -55,8 +55,8 @@ void SCR_UpdateScreen(void);
 void Con_ClearNotify(void);
 void Con_DrawConsole(int lines, qboolean drawinput);
 void Con_DrawNotify(void);
-void func_002AF7A8(void);
-void func_002ADFB0(int x, int y, qpic_t *pic, int a);
+void Draw_BeginDisc(void);
+void Draw_PsiPic(int x, int y, qpic_t *pic, int a);
 
 void SCR_CenterPrint(char *str, int clientId)
 {
@@ -264,7 +264,7 @@ void SCR_Init(void)
 
 void func_002AC148(qpic_t *pic, int a)
 {
-    func_002ADFB0(D_003995E8 / 2 - pic->width / 2, D_003995DC / 2 - pic->height / 2, pic, a);
+    Draw_PsiPic(D_003995E8 / 2 - pic->width / 2, D_003995DC / 2 - pic->height / 2, pic, a);
 }
 
 void func_002AC1A8(void) {
@@ -274,7 +274,7 @@ void func_002AC1A8(void) {
 void func_002AC1B0(int clientId)
 {
     if (D_00399618)
-        func_002AF7A8();
+        Draw_BeginDisc();
 }
 #else
 INCLUDE_ASM("asm/nonmatchings/engine/gl_screen", func_002AC1B0);
@@ -518,7 +518,7 @@ extern int D_003995E4;
 void V_RenderView(int clientId);
 void func_002A8358(int clientId);
 void func_00266188(int clientId);
-void func_002AF6A0(void);
+void Draw_FadeScreen(void);
 void func_002A8610(void);
 void func_002470E0(int intermission, int nClient, int flags);
 void func_002A8708(void);
@@ -540,7 +540,7 @@ void SCR_UpdateClientScreen(int clientId)
         if (D_003995E4)
         {
             func_00266188(clientId);
-            func_002AF6A0();
+            Draw_FadeScreen();
             SCR_DrawNotifyString();
             D_00399620 = 1;
         }
