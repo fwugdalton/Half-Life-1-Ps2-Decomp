@@ -14,7 +14,7 @@ typedef struct mnode_s
     struct mnode_s *parent;     /* 0x04 */
     short visframe[2];          /* 0x08: um por jogador local */
     struct mplane_s *plane;     /* 0x0C */
-    byte unk_10[0x30 - 0x10];
+    float minmaxs[8];           /* 0x10: mins em 0x10, maxs em 0x20 */
     struct mnode_s *children[2]; /* 0x30 */
     unsigned short firstsurface; /* 0x38 */
     unsigned short numsurfaces; /* 0x3A */
@@ -33,7 +33,7 @@ typedef struct texture_s
     byte unk_20[0x23 - 0x20];
     byte nummips;               /* 0x23 */
     int gl_texturenum;          /* 0x24 */
-    int unk_28;
+    struct msurface_s *texturechain; /* 0x28 */
     int anim_total;             /* 0x2C */
     int anim_min, anim_max;     /* 0x30 */
     struct texture_s *anim_next; /* 0x38 */
@@ -56,7 +56,8 @@ typedef struct msurface_s
     texture_t *texture;         /* 0x24 */
     struct color24_s *samples;  /* 0x28 */
     struct mplane_s *plane;     /* 0x2C */
-    byte unk_30[0x38 - 0x30];
+    int visframe;               /* 0x30 */
+    byte unk_34[0x38 - 0x34];
     void *unk_38;               /* 0x38 */
     byte unk_3C[0x40 - 0x3C];
     short texturemins[2];       /* 0x40 */
@@ -89,7 +90,9 @@ typedef struct mleaf_s
     efrag_t *efrags;            /* 0x0C */
     byte unk_10[0x30 - 0x10];
     byte *compressed_vis;       /* 0x30 */
-    byte unk_34[0x0C];
+    struct msurface_s **firstmarksurface; /* 0x34 */
+    unsigned short nummarksurfaces; /* 0x38 */
+    byte unk_3A[0x40 - 0x3A];
 } mleaf_t; /* 0x40 */
 
 typedef enum

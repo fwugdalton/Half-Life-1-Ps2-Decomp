@@ -111,6 +111,11 @@ void glBegin(int mode);
 void glEnd(void);
 void glTexCoord2f(float s, float t);
 void glVertex3fv(float *v);
+qboolean R_CullBox(float *mins, float *maxs);
+void R_StoreEfrags(efrag_t **ppefrag, int clientId);
+#define SURF_PLANEBACK 2
+#define SURF_UNDERWATER 0x80
+#define BACKFACE_EPSILON 0.01f
 byte *Mod_LeafPVS(mleaf_t *leaf, model_t *model);
 extern mleaf_t *r_viewleaf[2], *r_oldviewleaf[2];
 extern cvar_t r_novis;
@@ -546,7 +551,89 @@ void R_SetRenderMode(byte *pEntity)
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", R_DrawBrushModel);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", R_RecursiveWorldNode);
+void R_RecursiveWorldNode(mnode_t *node, int clientId)
+{
+    int c, side;
+    mplane_t *plane;
+    msurface_t *surf, **mark;
+    mleaf_t *pleaf;
+    float dot;
+
+    if (node->contents == CONTENTS_SOLID)
+        return;
+    if (node->visframe[clientId] != r_visframecount[clientId])
+        return;
+    if (R_CullBox(node->minmaxs, node->minmaxs + 4))
+        return;
+
+    if (node->contents < 0)
+    {
+        pleaf = (mleaf_t *)node;
+        mark = pleaf->firstmarksurface;
+        c = pleaf->nummarksurfaces;
+        if (c)
+        {
+            do
+            {
+                (*mark)->visframe = r_framecount;
+                mark++;
+            } while (--c);
+        }
+        if (pleaf->efrags)
+            R_StoreEfrags(&pleaf->efrags, clientId);
+        return;
+    }
+
+    plane = node->plane;
+    switch (plane->type)
+    {
+    case 0:
+        dot = modelorg[0] - plane->dist;
+        break;
+    case 1:
+        dot = modelorg[1] - plane->dist;
+        break;
+    case 2:
+        dot = modelorg[2] - plane->dist;
+        break;
+    default:
+        dot = DotProduct(modelorg, plane->normal) - plane->dist;
+        break;
+    }
+
+    if (dot >= 0)
+        side = 0;
+    else
+        side = 1;
+
+    R_RecursiveWorldNode(node->children[side], clientId);
+
+    c = node->numsurfaces;
+    if (c)
+    {
+        surf = cl[clientId].worldmodel->surfaces + node->firstsurface;
+
+        if (dot < -BACKFACE_EPSILON)
+            side = SURF_PLANEBACK;
+        else if (dot > BACKFACE_EPSILON)
+            side = 0;
+
+        for (; c; c--, surf++)
+        {
+            if (surf->visframe != r_framecount)
+                continue;
+            if (surf->flags & 0x100)
+                continue;
+            if (!(surf->flags & SURF_UNDERWATER) && ((dot < 0) ^ !!(surf->flags & SURF_PLANEBACK)))
+                continue;
+
+            surf->texturechain = surf->texture->texturechain;
+            surf->texture->texturechain = surf;
+        }
+    }
+
+    R_RecursiveWorldNode(node->children[!side], clientId);
+}
 
 void R_DrawWorld(int clientId)
 {
