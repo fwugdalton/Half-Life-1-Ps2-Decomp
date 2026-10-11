@@ -14,6 +14,9 @@ void Sys_Error(const char *fmt, ...);
 #define GL_RGBA 0x1908
 #define GL_LUMINANCE 0x1909
 #define GL_INTENSITY 0x8049
+#define GL_RGBA4 0x8056
+extern int D_00399504;
+int COM_CheckParm(char *parm);
 
 #define MAX_DLIGHTS 32
 #define fabs(x) ((x) < 0 ? -(x) : (x))
@@ -1061,17 +1064,58 @@ void GL_CreateSurfaceLightmap(msurface_t *surf)
     surf->lightmaptexturenum = AllocBlock(smax, tmax, &surf->light_s, &surf->light_t);
 }
 
-INCLUDE_RODATA("asm/nonmatchings/engine/gl_rsurf", D_00394438);
+/* as opções -lm_* também são usadas pelo func_002A43C0 (o ee-gcc não junta strings iguais) */
+__asm__(".section .rodata\n"
+        ".align 3\nD_00394438: .asciz \"-lm_1\"\n"
+        ".align 3\nD_00394440: .asciz \"-lm_a\"\n"
+        ".align 3\nD_00394448: .asciz \"-lm_i\"\n"
+        ".align 3\nD_00394450: .asciz \"-lm_2\"\n"
+        ".align 3\nD_00394458: .asciz \"-lm_4\"\n"
+        ".section .text");
+extern char D_00394438[], D_00394440[], D_00394448[], D_00394450[], D_00394458[];
 
-INCLUDE_RODATA("asm/nonmatchings/engine/gl_rsurf", D_00394440);
+void func_002A4180(void)
+{
+    int i, count;
 
-INCLUDE_RODATA("asm/nonmatchings/engine/gl_rsurf", D_00394448);
+    gl_lightmap_format = GL_RGBA;
+    if (COM_CheckParm(D_00394438))
+        gl_lightmap_format = GL_LUMINANCE;
+    if (COM_CheckParm(D_00394440))
+        gl_lightmap_format = GL_ALPHA;
+    if (COM_CheckParm(D_00394448))
+        gl_lightmap_format = GL_INTENSITY;
+    if (COM_CheckParm(D_00394450))
+        gl_lightmap_format = GL_RGBA4;
+    if (COM_CheckParm(D_00394458))
+        gl_lightmap_format = GL_RGBA;
 
-INCLUDE_RODATA("asm/nonmatchings/engine/gl_rsurf", D_00394450);
+    switch (gl_lightmap_format)
+    {
+    case GL_RGBA:
+        lightmap_bytes = 4;
+        if (gl_monolights.value)
+            D_00399504 = 4;
+        else
+            D_00399504 = 3;
+        break;
+    case GL_RGBA4:
+        D_00399504 = lightmap_bytes = 2;
+        break;
+    case GL_LUMINANCE:
+    case GL_INTENSITY:
+    case GL_ALPHA:
+        lightmap_bytes = 1;
+        D_00399504 = 1;
+        break;
+    }
 
-INCLUDE_RODATA("asm/nonmatchings/engine/gl_rsurf", D_00394458);
+    count = 0;
+    for (i = 0; i < MAX_LIGHTMAPS && allocated[i][0]; i++)
+        count++;
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A4180);
+    lightmaps = Hunk_AllocName(count * lightmap_bytes * BLOCK_WIDTH * BLOCK_HEIGHT, "Lightmaps");
+}
 
 void func_002A4340(msurface_t *surf, int clientId)
 {
