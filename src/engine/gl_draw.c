@@ -444,7 +444,31 @@ void func_002ADE10(int x, int y, glqpic_t *pic)
     glEnd();
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002ADFB0);
+void func_002ADFB0(int x, int y, qpic_t *pic, int a)
+{
+    if (!pic)
+        return;
+
+    glEnable(GL_TEXTURE_2D);
+    glDisable(GL_BLEND);
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_ALPHA_TEST);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, 7681.0f);
+    glColor4f(1, 1, 1, 1);
+    GL_Bind(pic->texnum);
+    glBegin(GL_QUADS);
+    D_00399570++;
+    D_00399558 += 4;
+    glTexCoord2f(0, 0);
+    glVertex2f(x, y);
+    glTexCoord2f(1, 0);
+    glVertex2f(x + pic->width, y);
+    glTexCoord2f(1, 1);
+    glVertex2f(x + pic->width, y + pic->height);
+    glTexCoord2f(0, 1);
+    glVertex2f(x, y + pic->height);
+    glEnd();
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002AE158);
 
