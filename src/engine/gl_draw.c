@@ -1180,4 +1180,17 @@ void GL_BuildDecal(psidecal_t *d)
 INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", GL_BuildDecal);
 #endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002AFE28);
+int func_002AFE28(int c)
+{
+    int r;
+
+    if (c >= 0xBF)
+        r = c - 0x3F;
+    else
+    {
+        r = c;
+        if (c == 0xA1)
+            r = 0xC1;
+    }
+    return r;
+}
