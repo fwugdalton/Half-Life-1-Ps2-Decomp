@@ -470,7 +470,51 @@ void func_002ADFB0(int x, int y, qpic_t *pic, int a)
     glEnd();
 }
 
+#ifdef NON_MATCHING
+void func_002AE158(int x, int y, int srcx, int srcy, int width, int height, glqpic_t *pic, unsigned int *color, int alpha)
+{
+    glpic_t *gl;
+    float newsl, newtl, newsh, newth;
+    float oldglwidth, oldglheight;
+    float a;
+
+    if (!pic)
+        return;
+
+    gl = &pic->gl;
+    glBlendFunc(GL_ONE, GL_ONE);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+    glEnable(GL_BLEND);
+    glEnable(GL_ALPHA_TEST);
+
+    oldglwidth = pic->width;
+    oldglheight = pic->height;
+    a = alpha * (1.0f / 255.0f);
+    newsl = srcx / oldglwidth;
+    newsh = newsl + width / oldglwidth;
+    newtl = srcy / oldglheight;
+    newth = newtl + height / oldglheight;
+
+    glColor4f(a * color[0] / 256.0f, a * color[1] / 256.0f, a * color[2] / 256.0f, 1.0f);
+    GL_Bind(gl->texnum);
+    glBegin(GL_QUADS);
+    D_00399570++;
+    D_00399558 += 4;
+    glTexCoord2f(newsl, newtl);
+    glVertex2f(x, y);
+    glTexCoord2f(newsh, newtl);
+    glVertex2f(x + width, y);
+    glTexCoord2f(newsh, newth);
+    glVertex2f(x + width, y + height);
+    glTexCoord2f(newsl, newth);
+    glVertex2f(x, y + height);
+    glEnd();
+
+    glDisable(GL_BLEND);
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002AE158);
+#endif
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002AE468);
 
