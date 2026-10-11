@@ -41,6 +41,9 @@ void glVertex2f(float x, float y);
 void glColor3f(float r, float g, float b);
 void glColor4f(float r, float g, float b, float a);
 float tanf(float x);
+float atanf(float x);
+
+extern mplane_t frustum[4];
 
 extern int D_00399564;
 extern int D_0032EF68, D_0032EF6C, D_0032EF74;
@@ -175,15 +178,77 @@ void func_002A8750(void)
     glColor4f(1, 1, 1, 1);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rmain", func_002A8848);
+void ProjectPointOnPlane(vec3_t dst, vec3_t p, vec3_t normal)
+{
+    float d;
+    vec3_t n;
+    float inv_denom;
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rmain", func_002A88E8);
+    inv_denom = 1.0f / DotProduct(normal, normal);
+
+    d = DotProduct(normal, p) * inv_denom;
+
+    n[0] = normal[0] * inv_denom;
+    n[1] = normal[1] * inv_denom;
+    n[2] = normal[2] * inv_denom;
+
+    dst[0] = p[0] - d * n[0];
+    dst[1] = p[1] - d * n[1];
+    dst[2] = p[2] - d * n[2];
+}
+
+void PerpendicularVector(vec3_t dst, vec3_t src)
+{
+    int pos;
+    int i;
+    float minelem = 1.0f;
+    vec3_t tempvec;
+
+    for (pos = 0, i = 0; i < 3; i++)
+    {
+        if (__builtin_fabsf(src[i]) < minelem)
+        {
+            pos = i;
+            minelem = __builtin_fabsf(src[i]);
+        }
+    }
+    tempvec[0] = tempvec[1] = tempvec[2] = 0.0f;
+    tempvec[pos] = 1.0f;
+
+    ProjectPointOnPlane(dst, tempvec, src);
+
+    VectorNormalize(dst);
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rmain", func_002A8990);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rmain", R_CullBox);
+qboolean R_CullBox(vec3_t mins, vec3_t maxs)
+{
+    int i;
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rmain", func_002A8C20);
+    for (i = 0; i < 4; i++)
+    {
+        if (BoxOnPlaneSide(mins, maxs, &frustum[i]) == 2)
+            return true;
+    }
+    return false;
+}
+
+qboolean func_002A8C20(vec3_t mins, vec3_t maxs)
+{
+    int i;
+    qboolean inside = true;
+
+    for (i = 0; i < 4; i++)
+    {
+        if (BoxOnPlaneSide(mins, maxs, &frustum[i]) != 1)
+        {
+            inside = false;
+            break;
+        }
+    }
+    return inside;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rmain", func_002A8CB0);
 
@@ -227,7 +292,22 @@ void MYgluPerspective(float fovy, float aspect, float zNear, float zFar)
     glFrustum(xmin, xmax, ymin, ymax, zNear, zFar);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rmain", func_002AA588);
+float CalcFov(float fov_x, float width, float height)
+{
+    float a;
+    float x;
+
+    if (fov_x < 1 || fov_x > 179)
+        fov_x = 90;
+
+    x = width / tanf(fov_x * (3.141593f / 360.0f));
+
+    a = atanf(height / x);
+
+    a = a * (360.0f / M_PI);
+
+    return a;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rmain", func_002AA620);
 
