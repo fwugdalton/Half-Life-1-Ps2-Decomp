@@ -885,7 +885,28 @@ void Draw_ConsoleBackground(int lines)
         Draw_String(x, 24, ver);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002AF498);
+void func_002AF498(int x, int y, int width, int height, int r, int g, int b, int a)
+{
+    float fx = x;
+    float fy = y;
+
+    glDisable(GL_TEXTURE_2D);
+    glEnable(GL_BLEND);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+    glColor4f(r * (1.0f / 255.0f), g * (1.0f / 255.0f), b * (1.0f / 255.0f), a * (1.0f / 255.0f));
+    glBegin(GL_QUADS);
+    D_00399570++;
+    D_00399558 += 4;
+    glVertex2f(fx, fy);
+    glVertex2f(x + width, fy);
+    glVertex2f(x + width, y + height);
+    glVertex2f(fx, y + height);
+    glEnd();
+    glColor3f(1, 1, 1);
+    glEnable(GL_TEXTURE_2D);
+    glDisable(GL_BLEND);
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002AF668);
 
