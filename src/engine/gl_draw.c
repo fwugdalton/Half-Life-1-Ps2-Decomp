@@ -1,12 +1,76 @@
 #include "common.h"
+#include "engine/cmd.h"
+#include "engine/cvar.h"
+#include "engine/client.h"
+#include "engine/render.h"
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", GL_Bind);
+extern int currenttexture;
+extern qboolean gl_mtexable;
+extern int TEXTURE0_SGIS;
+extern void (*D_003994C4)(int target); /* qglSelectTextureSGIS */
+extern int D_003333D0;                 /* oldtarget */
+extern int D_00333278[];               /* cnttextures */
+extern void *font;
+void func_0023C430(int target, int texture);
+int func_00234F58(void *font, char *str);
+int func_002AFE28(int c);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", GL_SelectTexture);
+typedef struct
+{
+    short x;
+    short width;
+} fontchar_t;
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002AD060);
+typedef struct
+{
+    byte pad0[0xC];
+    int height;                 /* 0x0C */
+    fontchar_t chars[256];      /* 0x10 */
+} font_t;
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002AD088);
+extern font_t *D_00399634;
+
+void GL_Bind(int texnum)
+{
+    if (currenttexture == texnum)
+        return;
+    currenttexture = texnum;
+    func_0023C430(0xDE1, texnum);
+}
+
+void GL_SelectTexture(int target)
+{
+    if (!gl_mtexable)
+        return;
+    D_003994C4(target);
+    if (target == D_003333D0)
+        return;
+    D_00333278[D_003333D0 - TEXTURE0_SGIS] = currenttexture;
+    D_003333D0 = target;
+    currenttexture = D_00333278[target - TEXTURE0_SGIS];
+}
+
+int func_002AD060(char *str)
+{
+    return func_00234F58(font, str);
+}
+
+int func_002AD088(short *widths)
+{
+    int i;
+
+    if (D_00399634)
+    {
+        if (widths)
+        {
+            for (i = 0; i < 256; i++)
+                widths[i] = D_00399634->chars[func_002AFE28(i)].width;
+        }
+        return D_00399634->height;
+    }
+
+    return 0;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002AD110);
 
