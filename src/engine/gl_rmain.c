@@ -149,6 +149,47 @@ void R_DrawViewModel(int clientId);
 void R_ScreenFade(int clientId);
 void func_002AB0B8(int x, int y, char *fmt, ...);
 
+typedef struct
+{
+    byte pad0[0x1C];
+    unsigned short width;       /* 0x1C */
+    unsigned short height;      /* 0x1E */
+} gltexture_t;
+
+typedef struct
+{
+    int gl_texturenum;          /* 0x00 */
+    gltexture_t *texture;       /* 0x04 */
+} mspriteframe_t;
+
+typedef struct
+{
+    byte pad0[4];
+    byte type;                  /* 0x04 */
+} msprite_t;
+
+#define kRenderNormal 0
+#define kRenderTransColor 1
+#define kRenderGlow 3
+#define kRenderTransAlpha 4
+#define kRenderTransAdd 5
+#define GL_ONE 1
+#define GL_ALPHA 6406.0f
+#define GL_REPLACE 7681.0f
+#define GL_MODULATE 8448.0f
+#define GL_TEXTURE_ENV_MODE 0x2200
+#define GL_TEXTURE_ENV 0x2300
+
+extern cvar_t D_003336D8; /* gl_spriteblend */
+mspriteframe_t *R_GetSpriteFrame(msprite_t *psprite, int frame);
+void R_SpriteColor(colorVec *color, cl_entity_t *ent, int alpha);
+void R_GetSpriteAxes(cl_entity_t *ent, int type, vec3_t forward, vec3_t right, vec3_t up);
+void glTexEnvf(int target, int pname, float param);
+void glColor4ub(byte r, byte g, byte b, byte a);
+void glDepthMask(int flag);
+void glTexCoord2f(float s, float t);
+void glVertex3fv(float *v);
+
 void R_SetupFrame(int clientId);
 void R_SetFrustum(int clientId);
 void R_SetupGL(int clientId);
@@ -466,7 +507,140 @@ void R_RotateForEntity(cl_entity_t *e)
     glRotatef(angles[2], 1, 0, 0);
 }
 
+#ifdef NON_MATCHING
+void R_DrawSpriteModel(cl_entity_t *e, int clientId)
+{
+    vec3_t point, forward, right, up;
+    msprite_t *psprite;
+    mspriteframe_t *frame;
+    float scale;
+    float fup, fdown, fleft, fright;
+    colorVec color;
+
+    psprite = e->model->cache.data;
+    frame = R_GetSpriteFrame(psprite, (int)e->frame);
+
+    if (e->renderfx == 21 && clientId)
+        return;
+    if (e->renderfx == 22 && !clientId)
+        return;
+
+    scale = 1;
+    if (e->scale > 0)
+        scale = e->scale;
+
+    if (e->rendermode == kRenderNormal)
+        r_blend = 1.0f;
+
+    R_SpriteColor(&color, e, r_blend * 255);
+
+    if (D_003336D8.value || e->rendermode)
+    {
+        if (e->rendermode == kRenderTransColor)
+        {
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_ALPHA);
+            glColor4ub(color.r, color.g, color.b, r_blend * 255);
+        }
+        else if (e->rendermode == kRenderTransAdd)
+        {
+            glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+            glBlendFunc(GL_ONE, GL_ONE);
+            glColor4ub(color.r, color.g, color.b, 255);
+            glDepthMask(0);
+        }
+        else if (e->rendermode == kRenderGlow)
+        {
+            glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+            glBlendFunc(GL_ONE, GL_ONE);
+            glColor4ub(color.r, color.g, color.b, 255);
+            glDisable(GL_DEPTH_TEST);
+            glDepthMask(0);
+        }
+        else if (e->rendermode == kRenderTransAlpha)
+        {
+            glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            glColor4ub(color.r, color.g, color.b, r_blend * 255);
+            glDepthMask(0);
+        }
+        else
+        {
+            glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            glColor4ub(color.r, color.g, color.b, r_blend * 255);
+        }
+        glEnable(GL_BLEND);
+    }
+    else
+    {
+        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+        glColor4ub(color.r, color.g, color.b, 255);
+        glDisable(GL_BLEND);
+    }
+
+    R_GetSpriteAxes(e, psprite->type, forward, right, up);
+
+    fdown = -(frame->texture->height >> 1);
+    fleft = -(frame->texture->width >> 1);
+    fright = frame->texture->width >> 1;
+    fup = frame->texture->height >> 1;
+
+    if (e->renderfx == 21 || e->renderfx == 22)
+    {
+        fleft = -1;
+        fup = 1;
+        fright = fup;
+        fdown = fleft;
+    }
+
+    fdown *= scale;
+    fleft *= scale;
+    fup *= scale;
+    fright *= scale;
+
+    GL_DisableMultitexture();
+    GL_Bind(frame->gl_texturenum);
+    glEnable(GL_ALPHA_TEST);
+    glBegin(GL_QUADS);
+    D_00399570++;
+    D_00399558 += 4;
+
+    glTexCoord2f(0, 1);
+    VectorMA(r_entorigin, fdown, up, point);
+    VectorMA(point, fleft, right, point);
+    glVertex3fv(point);
+
+    glTexCoord2f(0, 0);
+    VectorMA(r_entorigin, fup, up, point);
+    VectorMA(point, fleft, right, point);
+    glVertex3fv(point);
+
+    glTexCoord2f(1, 0);
+    VectorMA(r_entorigin, fup, up, point);
+    VectorMA(point, fright, right, point);
+    glVertex3fv(point);
+
+    glTexCoord2f(1, 1);
+    VectorMA(r_entorigin, fdown, up, point);
+    VectorMA(point, fright, right, point);
+    glVertex3fv(point);
+
+    glEnd();
+
+    glDisable(GL_ALPHA_TEST);
+    glDepthMask(1);
+
+    if (e->rendermode || D_003336D8.value)
+    {
+        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+        glDisable(GL_BLEND);
+        glEnable(GL_DEPTH_TEST);
+    }
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rmain", R_DrawSpriteModel);
+#endif
 
 #ifdef NON_MATCHING
 void R_DrawEntitiesOnList(int clientId)

@@ -1605,3 +1605,4 @@ R_SetupGL = 0x002AA620; // type:func
 glColor4ubv = 0x0023C158; // type:func
 R_ScreenFade = 0x002A9CA0; // type:func
 R_Clear = 0x002AAD48; // type:func
+glColor4ub = 0x0023C0E0; // type:func
