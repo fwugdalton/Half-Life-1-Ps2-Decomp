@@ -648,13 +648,101 @@ void func_002AEB98(int x, int y, int width, int height)
     D_00333430 = 1;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002AEC60);
+typedef struct
+{
+    int left, right, top, bottom;
+} wrect_t;
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002AEC90);
+typedef struct
+{
+    byte pad0[0x1C];
+    unsigned short width;       /* 0x1C */
+    unsigned short height;      /* 0x1E */
+} spritepic_t;
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002AECD0);
+typedef struct
+{
+    int unk0;
+    spritepic_t *pic;           /* 0x04 */
+} spriteframe_t;
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002AED58);
+#ifndef max
+#define max(a, b) ((a) > (b) ? (a) : (b))
+#endif
+#ifndef min
+#define min(a, b) ((a) < (b) ? (a) : (b))
+#endif
+
+void func_002AEC60(void)
+{
+    D_00333420 = 0;
+    D_00333428 = 0;
+    D_00333424 = 0;
+    D_0033342C = 0;
+    D_00333430 = 0;
+}
+
+qboolean func_002AEC90(wrect_t *prc)
+{
+    if (!prc)
+        return false;
+
+    if (prc->left >= prc->right || prc->top >= prc->bottom)
+        return false;
+
+    return true;
+}
+
+qboolean func_002AECD0(wrect_t *prc1, wrect_t *prc2, wrect_t *prc)
+{
+    wrect_t rc;
+
+    if (!prc)
+        prc = &rc;
+
+    prc->left = max(prc1->left, prc2->left);
+    prc->right = min(prc1->right, prc2->right);
+
+    if (prc->left < prc->right)
+    {
+        prc->top = max(prc1->top, prc2->top);
+        prc->bottom = min(prc1->bottom, prc2->bottom);
+
+        if (prc->top < prc->bottom)
+            return true;
+    }
+
+    return false;
+}
+
+void func_002AED58(spriteframe_t *pFrame, float *pfLeft, float *pfRight, float *pfTop, float *pfBottom, int *pw, int *ph, wrect_t *prcSubRect)
+{
+    wrect_t rc;
+    float f;
+    spritepic_t *pic;
+
+    if (!func_002AEC90(prcSubRect))
+        return;
+
+    rc.top = rc.left = 0;
+    rc.right = *pw;
+    rc.bottom = *ph;
+
+    if (!func_002AECD0(prcSubRect, &rc, &rc))
+        return;
+
+    *pw = rc.right - rc.left;
+    *ph = rc.bottom - rc.top;
+
+    pic = pFrame->pic;
+    f = 1.0f / (float)pic->width;
+    *pfLeft = ((float)rc.left + 0.5f) * f;
+    *pfRight = ((float)rc.right - 0.5f) * f;
+
+    f = 1.0f / (float)pic->height;
+    *pfTop = ((float)rc.top + 0.5f) * f;
+    *pfBottom = ((float)rc.bottom - 0.5f) * f;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002AEEC0);
 
