@@ -591,9 +591,62 @@ void func_002AE718(int x, int y, glqpic_t *pic, unsigned int *color, int alpha)
     func_0023C600(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, D_003333CC);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002AEA00);
+void func_002AEA00(int x, int y, int w, int h, glqpic_t *pic)
+{
+    glpic_t *gl;
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002AEB98);
+    if (!pic)
+        return;
+    h--;
+
+    gl = &pic->gl;
+    glEnable(GL_TEXTURE_2D);
+    glDisable(GL_BLEND);
+    glEnable(GL_ALPHA_TEST);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, 7681.0f);
+    func_0023C600(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, D_003333CC);
+    GL_Bind(gl->texnum);
+    glBegin(GL_QUADS);
+    D_00399570++;
+    D_00399558 += 4;
+    glTexCoord2f(gl->sl, gl->tl);
+    glVertex2f(x, y);
+    glTexCoord2f(gl->sh, gl->tl);
+    glVertex2f(x + w, y);
+    glTexCoord2f(gl->sh, gl->th);
+    glVertex2f(x + w, y + h);
+    glTexCoord2f(gl->sl, gl->th);
+    glVertex2f(x, y + h);
+    glEnd();
+}
+
+
+typedef struct
+{
+    byte pad0[0x1C];
+    int width;                  /* 0x1C */
+    int height;                 /* 0x20 */
+} draw_viddef_t;
+
+extern draw_viddef_t r_viddef;
+extern int D_00333420, D_00333424, D_00333428, D_0033342C; /* scissor_x, scissor_y, scissor_width, scissor_height */
+extern int D_00333430;                                       /* giScissorTest */
+
+#define clamp(val, min, max) (((val) > (max)) ? (max) : (((val) < (min)) ? (min) : (val)))
+
+void func_002AEB98(int x, int y, int width, int height)
+{
+    x = clamp(x, 0, r_viddef.width);
+    y = clamp(y, 0, r_viddef.height);
+    width = clamp(width, 0, r_viddef.width - x);
+    height = clamp(height, 0, r_viddef.height - y);
+
+    D_00333420 = x;
+    D_00333428 = width;
+    D_00333424 = r_viddef.height - y - height;
+    D_0033342C = height;
+    D_00333430 = 1;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002AEC60);
 
