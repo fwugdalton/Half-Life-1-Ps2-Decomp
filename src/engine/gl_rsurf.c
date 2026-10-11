@@ -82,7 +82,8 @@ extern decal_t gDecalPool[MAX_DECALS];
 extern int gDecalCount;
 extern decalcache_t gDecalCache[DECAL_CACHEENTRIES];
 extern int D_00333264, D_00413AD0;
-extern byte D_004F0DE8[0x8000];
+#define MAX_LIGHTMAPS 64
+extern int allocated[MAX_LIGHTMAPS][128];
 void R_DecalShoot_(int, int, int, int, int, int, int);
 void *Hunk_AllocName(int size, char *name);
 void func_00225860(void *dst, int c, int n);
@@ -514,7 +515,50 @@ void R_DrawWorld(int clientId)
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", R_MarkLeaves);
 
+#ifdef NON_MATCHING
+int AllocBlock(int w, int h, int *x, int *y)
+{
+    int i, j;
+    int best, best2;
+    int texnum;
+
+    for (texnum = 0; texnum < MAX_LIGHTMAPS; texnum++)
+    {
+        best = BLOCK_HEIGHT;
+
+        for (i = 0; i < BLOCK_WIDTH - w; i++)
+        {
+            best2 = 0;
+
+            for (j = 0; j < w; j++)
+            {
+                if (allocated[texnum][i + j] >= best)
+                    break;
+                if (allocated[texnum][i + j] > best2)
+                    best2 = allocated[texnum][i + j];
+            }
+            if (j == w)
+            {
+                *x = i;
+                *y = best = best2;
+            }
+        }
+
+        if (best + h > BLOCK_HEIGHT)
+            continue;
+
+        for (i = 0; i < w; i++)
+            allocated[texnum][*x + i] = best + h;
+
+        return texnum;
+    }
+
+    Sys_Error("AllocBlock: full");
+    return 0;
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", AllocBlock);
+#endif
 
 int func_002A3BC8(int a, int b)
 {
@@ -575,7 +619,7 @@ void func_002A40B8(int size)
 
 void func_002A40E8(void)
 {
-    memset(D_004F0DE8, 0, sizeof(D_004F0DE8));
+    memset(allocated, 0, sizeof(allocated));
 }
 
 void GL_CreateSurfaceLightmap(msurface_t *surf)
@@ -902,7 +946,47 @@ void Intersect(float *one, float *two, int edge, float *out)
     out[2] = one[2] + (two[2] - one[2]) * t;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A5EE8);
+int SHClip(float *vert, int vertCount, float *out, int edge)
+{
+    int j, outCount;
+    float *s, *p;
+
+    outCount = 0;
+    s = &vert[(vertCount - 1) * 7];
+    for (j = 0; j < vertCount; j++)
+    {
+        p = &vert[j * 7];
+        if (Inside(p, edge))
+        {
+            if (Inside(s, edge))
+            {
+                memcpy(out, p, sizeof(float) * 7);
+                outCount++;
+                out += 7;
+            }
+            else
+            {
+                Intersect(s, p, edge, out);
+                out += 7;
+                outCount++;
+                memcpy(out, p, sizeof(float) * 7);
+                outCount++;
+                out += 7;
+            }
+        }
+        else
+        {
+            if (Inside(s, edge))
+            {
+                Intersect(p, s, edge, out);
+                out += 7;
+                outCount++;
+            }
+        }
+        s = p;
+    }
+    return outCount;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", R_DecalVertsClip);
 

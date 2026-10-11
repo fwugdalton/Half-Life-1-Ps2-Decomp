@@ -1526,3 +1526,5 @@ R_RecursiveWorldNode = 0x002A3468; // type:func
 DrawTextureChains = 0x002A68E8; // type:func
 R_DrawWorld = 0x002A3738; // type:func
 Intersect = 0x002A5DE0; // type:func
+allocated = 0x004F0DE8; // size:0x8000
+SHClip = 0x002A5EE8; // type:func
