@@ -1,5 +1,7 @@
 #include "common.h"
 #include "engine/cmd.h"
+#include "engine/cvar.h"
+#include "engine/client.h"
 
 typedef struct
 {
@@ -25,11 +27,23 @@ extern int D_003995E8, D_003995DC;
 extern float D_003995E0; /* scr_con_current */
 extern float D_00399604; /* scr_conlines */
 extern int D_00399620, D_00399624;
-extern int D_003995D0;
+extern float D_003995D0[]; /* scr_centertime_off */
 extern int key_dest;
 extern int D_00399640; /* numgltextures */
 extern gltexture_t D_004F9DD8[];
 
+extern char D_004F95D8[][1024]; /* scr_centerstring */
+extern cvar_t D_00333300; /* scr_centertime */
+extern float D_00399608[]; /* scr_centertime_start */
+extern int D_003995F0[]; /* scr_center_lines */
+extern int D_00399610[]; /* scr_erase_lines */
+extern int scr_copytop;
+extern float host_frametime;
+extern cvar_t scr_viewsize, D_00333330, D_003332E8, D_00333348, D_00333318, D_003332B0, D_00333378, D_00333390, D_003333A8;
+extern int D_003995D8; /* scr_initialized */
+void SCR_DrawCenterString(int clientId);
+void SCR_SizeUp(void);
+void SCR_SizeDown(void);
 void SCR_SizeUp_f(void);
 void SCR_SizeDown_f(void);
 void SCR_UpdateScreen(void);
@@ -39,21 +53,48 @@ void Con_DrawNotify(void);
 void func_002AF7A8(void);
 void func_002ADFB0(int x, int y, qpic_t *pic, int a);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_screen", SCR_CenterPrint);
+void SCR_CenterPrint(char *str, int clientId)
+{
+    strncpy(D_004F95D8[clientId], str, sizeof(D_004F95D8[0]) - 1);
+    D_003995D0[clientId] = D_00333300.value;
+    D_00399608[clientId] = cl[clientId].time;
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_screen", func_002ABB20);
+    D_003995F0[clientId] = 1;
+    while (*str)
+    {
+        if (*str == '\n')
+            D_003995F0[clientId]++;
+        str++;
+    }
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_screen", func_002ABD20);
+INCLUDE_ASM("asm/nonmatchings/engine/gl_screen", SCR_DrawCenterString);
+
+void SCR_CheckDrawCenterString(int clientId)
+{
+    scr_copytop = 1;
+    if (D_003995F0[clientId] > D_00399610[clientId])
+        D_00399610[clientId] = D_003995F0[clientId];
+
+    D_003995D0[clientId] -= host_frametime;
+
+    if (D_003995D0[clientId] <= 0 && !cl[clientId].intermission)
+        return;
+    if (key_dest != 0)
+        return;
+
+    SCR_DrawCenterString(clientId);
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_screen", func_002ABDE0);
 
-void func_002AC038(void)
+void SCR_SizeUp(void)
 {
     SCR_SizeUp_f();
     D_0053D1D4 = 1;
 }
 
-void func_002AC060(void)
+void SCR_SizeDown(void)
 {
     SCR_SizeDown_f();
     D_0053D1D4 = 1;
@@ -95,7 +136,24 @@ INCLUDE_RODATA("asm/nonmatchings/engine/gl_screen", D_00394718);
 
 INCLUDE_RODATA("asm/nonmatchings/engine/gl_screen", D_00394728);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_screen", SCR_Init);
+void SCR_Init(void)
+{
+    Cvar_RegisterVariable(&scr_viewsize);
+    Cvar_RegisterVariable(&D_00333330);
+    Cvar_RegisterVariable(&D_003332E8);
+    Cvar_RegisterVariable(&D_00333300);
+    Cvar_RegisterVariable(&D_00333348);
+    Cvar_RegisterVariable(&D_00333318);
+    Cvar_RegisterVariable(&D_003332B0);
+    Cvar_RegisterVariable(&D_00333378);
+    Cvar_RegisterVariable(&D_00333390);
+    Cvar_RegisterVariable(&D_003333A8);
+
+    Cmd_AddCommand("sizeup", SCR_SizeUp);
+    Cmd_AddCommand("sizedown", SCR_SizeDown);
+
+    D_003995D8 = 1;
+}
 
 void func_002AC148(qpic_t *pic, int a)
 {
@@ -117,7 +175,7 @@ INCLUDE_ASM("asm/nonmatchings/engine/gl_screen", func_002AC1B0);
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_screen", func_002AC1D8);
 
-void func_002AC400(void)
+void SCR_DrawConsole(void)
 {
     if (D_003995E0)
     {
@@ -147,7 +205,7 @@ void func_002AC6C8(void)
 {
     int i;
 
-    D_003995D0 = 0;
+    D_003995D0[0] = 0;
     for (i = 0; i < 20 && D_00399604 != D_003995E0; i++)
         SCR_UpdateScreen();
 }
@@ -172,7 +230,7 @@ void func_002ACF08(void) {
 void func_002ACF10(void) {
 }
 
-void func_002ACF18(void)
+void GL_TextureStats_f(void)
 {
     int i;
     int world, other, free;
