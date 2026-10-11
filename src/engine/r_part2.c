@@ -291,9 +291,97 @@ void func_002B1F20(vec3_t pos, int size, int color, int clientId, float life)
             }
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B2128);
+#ifdef NON_MATCHING
+void func_002B2128(vec3_t org, int clientId)
+{
+    int i, j, k;
+    particle_t *p;
+    float vel;
+    vec3_t dir;
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B2330);
+    for (i = -16; i < 16; i++)
+        for (j = -16; j < 16; j++)
+            for (k = 0; k < 1; k++)
+            {
+                if (!D_0039966C)
+                    return;
+                p = D_0039966C;
+                D_0039966C = p->next;
+                p->next = D_00399660;
+                D_00399660 = p;
+
+                p->die = cl[clientId].time + RandomFloat(2, 2.62f);
+                p->color = RandomLong(224, 231);
+                p->packedColor = 0;
+                p->type = pt_slowgrav;
+
+                dir[0] = j * 8.0f + RandomFloat(0, 7);
+                dir[1] = i * 8.0f + RandomFloat(0, 7);
+                dir[2] = 256;
+
+                p->org[0] = org[0] + dir[0];
+                p->org[1] = org[1] + dir[1];
+                p->org[2] = org[2] + RandomFloat(0, 63);
+
+                VectorNormalize(dir);
+                vel = RandomFloat(50, 113);
+                VectorScale(dir, vel, p->vel);
+            }
+}
+#else
+INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B2128);
+#endif
+
+void func_002B2330(vec3_t org, int reverse, int clientId)
+{
+    int i, j;
+    particle_t *p;
+    float vel;
+    vec3_t dir, dest;
+    float flDist;
+
+    for (i = -256; i <= 256; i += 32)
+    {
+        for (j = -256; j <= 256; j += 32)
+        {
+            if (!D_0039966C)
+                return;
+            p = D_0039966C;
+            D_0039966C = p->next;
+            p->next = D_00399660;
+            D_00399660 = p;
+
+            if (reverse)
+            {
+                VectorCopy(org, p->org);
+                dest[0] = org[0] + i;
+                dest[1] = org[1] + j;
+                dest[2] = org[2] + RandomFloat(100, 800);
+                VectorSubtract(dest, p->org, dir);
+                vel = dest[2] / 8;
+            }
+            else
+            {
+                p->org[0] = org[0] + i;
+                p->org[1] = org[1] + j;
+                p->org[2] = org[2] + RandomFloat(100, 800);
+                VectorSubtract(org, p->org, dir);
+                vel = p->org[2] / 8;
+            }
+
+            p->color = 244;
+            p->packedColor = 0;
+            p->type = pt_static;
+
+            flDist = VectorNormalize(dir);
+            if (vel < 64)
+                vel = 64;
+            vel += RandomFloat(64, 128);
+            VectorScale(dir, vel, p->vel);
+            p->die = cl[clientId].time + (flDist / vel);
+        }
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B2598);
 
