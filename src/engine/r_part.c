@@ -1,14 +1,153 @@
 #include "common.h"
+#include "engine/cmd.h"
+#include "engine/cvar.h"
+#include "engine/client.h"
+#include "engine/render.h"
+#include "engine/model.h"
+#include "engine/glquake.h"
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part", func_002B0600);
+typedef enum
+{
+    pt_static,
+    pt_grav,
+    pt_slowgrav,
+    pt_fire,
+    pt_explode,
+    pt_explode2,
+    pt_blob,
+    pt_blob2,
+    pt_vox_slowgrav,
+    pt_vox_grav,
+    pt_clientcustom
+} ptype_t;
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part", func_002B0660);
+typedef struct particle_s
+{
+    vec3_t org;                 /* 0x00 */
+    short color;                /* 0x0C */
+    short packedColor;          /* 0x0E */
+    struct particle_s *next;    /* 0x10 */
+    vec3_t vel;                 /* 0x14 */
+    float ramp;                 /* 0x20 */
+    float die;                  /* 0x24 */
+    ptype_t type;               /* 0x28 */
+} particle_t; /* 0x2C */
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part", func_002B0708);
+/* BEAM do HL (0x7C), lista ligada por next */
+typedef struct beam_s
+{
+    struct beam_s *next;        /* 0x00 */
+    byte pad4[0x7C - 0x4];
+} BEAM; /* 0x7C */
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part", func_002B0758);
+#define MAX_BEAMS 128
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part", func_002B0810);
+extern BEAM *D_00414288[2];     /* cl_beams (por jogador) */
+extern BEAM *D_00414290[2];     /* gBeamHead */
+extern BEAM *D_00414298[2];     /* gpFreeBeams */
+
+extern int D_00399650;          /* r_numparticles */
+extern particle_t *D_00399664;  /* particles */
+extern particle_t *D_0039966C;  /* free_particles */
+extern particle_t *D_00399660;  /* active_particles */
+extern int D_003339AC;          /* r_drawparticles */
+
+int COM_CheckParm(char *parm);
+int Q_atoi(char *str);
+void *Hunk_AllocName(int size, char *name);
+float RandomFloat(float low, float high);
+int RandomLong(int low, int high);
+void func_002B3598(void);
+
+void func_002B0600(void)
+{
+    int i;
+
+    for (i = 0; i < 2; i++)
+        D_00414288[i] = Hunk_AllocName(MAX_BEAMS * sizeof(BEAM), "BeamList");
+}
+
+void func_002B0660(int clientId)
+{
+    int i;
+
+    D_00414298[clientId] = D_00414288[clientId];
+    D_00414290[clientId] = NULL;
+    memset(D_00414288[clientId], 0, MAX_BEAMS * sizeof(BEAM));
+    for (i = 0; i < MAX_BEAMS; i++)
+        D_00414288[clientId][i].next = &D_00414288[clientId][i + 1];
+    D_00414288[clientId][MAX_BEAMS - 1].next = NULL;
+}
+
+void func_002B0708(void)
+{
+    D_003339AC = !D_003339AC;
+    Con_Printf("drawparticles [%s]\n", !D_003339AC ? "OFF" : "ON");
+}
+
+void func_002B0758(void)
+{
+    int i;
+
+    i = COM_CheckParm("-particles");
+    if (i)
+    {
+        D_00399650 = Q_atoi(com_argv[i + 1]);
+        if (D_00399650 < 512)
+            D_00399650 = 512;
+    }
+    else
+    {
+        D_00399650 = 2048;
+    }
+    D_00399664 = Hunk_AllocName(D_00399650 * sizeof(particle_t), "particles");
+    func_002B0600();
+    func_002B3598();
+    Cmd_AddCommand("drawparticles", func_002B0708);
+}
+
+void func_002B0810(cl_entity_t *ent, int clientId)
+{
+    int i, j, k;
+    float fi, fj, fk;
+    particle_t *p;
+    float vel;
+    vec3_t dir;
+    vec3_t org;
+
+    VectorCopy(ent->origin, org);
+    for (i = -16; i < 16; i += 8)
+        for (j = -16; j < 16; j += 8)
+            for (k = 0; k < 32; k += 8)
+            {
+                if (!D_0039966C)
+                    return;
+                p = D_0039966C;
+                fk = k;
+                fj = j;
+                D_0039966C = p->next;
+                fi = i;
+                p->next = D_00399660;
+                D_00399660 = p;
+
+                p->die = cl[clientId].time + RandomFloat(0.2f, 0.34f);
+                p->color = RandomLong(150, 155);
+                p->packedColor = 0;
+                p->type = pt_slowgrav;
+
+                dir[0] = fj * 8;
+                dir[1] = fi * 8;
+                dir[2] = fk * 8;
+
+                p->org[0] = org[0] + fi + RandomLong(0, 3);
+                p->org[1] = org[1] + fj + RandomLong(0, 3);
+                p->org[2] = org[2] + fk + RandomLong(0, 3);
+
+                VectorNormalize(dir);
+                vel = RandomFloat(50, 113);
+                VectorScale(dir, vel, p->vel);
+            }
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_part", func_002B0A48);
 
