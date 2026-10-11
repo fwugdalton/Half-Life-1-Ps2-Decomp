@@ -91,7 +91,7 @@ typedef struct client_state_s
     qboolean onground;          /* 0x380 */
     qboolean inwater;           /* 0x384 */
     int waterlevel;             /* 0x388 */
-    byte pad38C[0x390 - 0x38C];
+    int light_level;            /* 0x38C */
     int intermission;           /* 0x390 */
     int completed_time;         /* 0x394 */
     float mtime[2];             /* 0x398 */

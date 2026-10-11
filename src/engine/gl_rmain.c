@@ -41,6 +41,8 @@ void glVertex2f(float x, float y);
 void glColor3f(float r, float g, float b);
 void glColor4f(float r, float g, float b, float a);
 float tanf(float x);
+void glTranslatef(float x, float y, float z);
+void glRotatef(float angle, float x, float y, float z);
 float atanf(float x);
 
 extern mplane_t frustum[4];
@@ -67,6 +69,14 @@ extern float D_00333474;
 extern float D_00331694;
 extern int D_00399588;
 int R_StudioDrawModel(int flags, int clientId, int unk);
+extern cvar_t D_003334F8;
+
+typedef struct
+{
+    unsigned int r, g, b, a;
+} colorVec;
+
+colorVec R_LightPoint(vec3_t p);
 
 void R_SetupFrame(int clientId);
 void R_SetFrustum(int clientId);
@@ -339,16 +349,100 @@ qboolean func_002A8C20(vec3_t mins, vec3_t maxs)
     return inside;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rmain", func_002A8CB0);
+void R_RotateForEntity(cl_entity_t *e)
+{
+    int i;
+    vec3_t angles;
+    vec3_t modelpos;
+
+    VectorCopy(e->origin, modelpos);
+    angles[2] = e->angles[2];
+    angles[0] = e->angles[0];
+    angles[1] = e->angles[1];
+
+    if (e->movetype != 0)
+    {
+        float f;
+        float d;
+
+        f = 0;
+        if (cl[0].time < e->animtime + 0.2f && e->animtime != e->prevanimtime)
+            f = (cl[0].time - e->animtime) / (e->animtime - e->prevanimtime);
+
+        for (i = 0; i < 3; i++)
+        {
+            modelpos[i] -= (e->prevorigin[i] - e->origin[i]) * f;
+        }
+
+        if (f > 0 && f < 1.5f)
+        {
+            for (i = 0; i < 3; i++)
+            {
+                d = e->prevangles[i] - e->angles[i];
+                if (d > 180)
+                    d -= 360;
+                else if (d < -180)
+                    d += 360;
+
+                angles[i] += d * (1 - f);
+            }
+        }
+    }
+
+    glTranslatef(modelpos[0], modelpos[1], modelpos[2]);
+    glRotatef(angles[1], 0, 0, 1);
+    glRotatef(angles[0], 0, 1, 0);
+    glRotatef(angles[2], 1, 0, 0);
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rmain", func_002A8EB0);
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rmain", func_002A9420);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rmain", func_002A9890);
+void R_DrawViewModel(int clientId)
+{
+    colorVec c;
+    float oldval;
+
+    D_00333290 = 1;
+    currententity = &cl[clientId].viewent;
+
+    if (!D_00333474 || cam_thirdperson || D_00331694 || D_00399588 || !r_drawentities.value
+        || cl[clientId].stats[STAT_HEALTH] <= 0 || !currententity->model
+        || cl[clientId].viewentity > cl[clientId].maxclients || cl[clientId].paused)
+    {
+        c = R_LightPoint(currententity->origin);
+        cl[clientId].light_level = (c.r + c.g + c.b) / 3;
+        D_00333290 = 0;
+        return;
+    }
+
+    if (currententity->model->type == mod_studio)
+    {
+        glDepthRange(gldepthmin, gldepthmin + 0.25f * (gldepthmax - gldepthmin));
+
+        if (!cl[clientId].weaponstarttime)
+            cl[clientId].weaponstarttime = cl[clientId].time;
+
+        currententity->sequence = cl[clientId].weaponsequence;
+        currententity->framerate = 1;
+        currententity->frame = 0;
+        currententity->animtime = cl[clientId].weaponstarttime;
+        currententity->colormap = (byte)cl[clientId].players[cl[clientId].playernum].topcolor;
+        currententity->colormap |= (byte)cl[clientId].players[cl[clientId].playernum].bottomcolor << 8;
+        cl[clientId].light_level = 128;
+
+        oldval = D_003334F8.value;
+        D_003334F8.value = 0;
+        R_StudioDrawModel(1, clientId, 0);
+        D_003334F8.value = oldval;
+        glDepthRange(gldepthmin, gldepthmax);
+    }
+    D_00333290 = 0;
+}
 
 #ifdef NON_MATCHING
-void R_DrawViewModel(int clientId)
+void R_PreDrawViewModel(int clientId)
 {
     currententity = &cl[clientId].viewent;
     D_00333290 = 1;
@@ -377,7 +471,7 @@ void R_DrawViewModel(int clientId)
     D_00333290 = 0;
 }
 #else
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rmain", R_DrawViewModel);
+INCLUDE_ASM("asm/nonmatchings/engine/gl_rmain", R_PreDrawViewModel);
 #endif
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rmain", func_002A9CA0);

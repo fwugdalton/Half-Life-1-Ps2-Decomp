@@ -723,7 +723,7 @@ void V_CalcRefdef(int clientId)
 
     view->model = cl[clientId].model_precache[cl[clientId].stats[STAT_WEAPON]];
     view->frame = 0;
-    view->unk_30 = 0;
+    view->colormap = 0;
     view->index = cl[clientId].playernum + 1;
 
     VectorAdd(r_refdef.viewangles, cl[clientId].punchangle, r_refdef.viewangles);
