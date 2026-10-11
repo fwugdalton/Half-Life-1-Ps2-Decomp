@@ -15,6 +15,18 @@ void Sys_Error(const char *fmt, ...);
 #define GL_LUMINANCE 0x1909
 #define GL_INTENSITY 0x8049
 #define GL_RGBA4 0x8056
+#define MAX_MODELS 512
+#define GL_TEXTURE_MIN_FILTER 0x2801
+#define GL_TEXTURE_MAG_FILTER 0x2800
+#define GL_LINEAR 9729.0f
+#define GL_UNSIGNED_BYTE 0x1401
+extern int texture_extension_number;
+extern void *r_pcurrentvertbase;
+extern model_t *currentmodel;
+int BuildSurfaceDisplayList(msurface_t *fa, int buffer);
+void func_002A4340(msurface_t *surf, int clientId);
+void glTexImage2D(int target, int level, int internalformat, int width, int height, int border, int format, int type, void *pixels);
+void func_0023C600(int target, int pname, float param);
 extern int D_00399504;
 int COM_CheckParm(char *parm);
 
@@ -1037,7 +1049,7 @@ void func_002A3CF8(byte *p)
     func_00225860(func_002A3C60(p), 0, size * 4);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A3D68);
+INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", BuildSurfaceDisplayList);
 
 void func_002A40B8(int size)
 {
@@ -1064,7 +1076,7 @@ void GL_CreateSurfaceLightmap(msurface_t *surf)
     surf->lightmaptexturenum = AllocBlock(smax, tmax, &surf->light_s, &surf->light_t);
 }
 
-/* as opções -lm_* também são usadas pelo func_002A43C0 (o ee-gcc não junta strings iguais) */
+/* as opções -lm_* também são usadas pelo GL_BuildLightmaps (o ee-gcc não junta strings iguais) */
 __asm__(".section .rodata\n"
         ".align 3\nD_00394438: .asciz \"-lm_1\"\n"
         ".align 3\nD_00394440: .asciz \"-lm_a\"\n"
@@ -1131,7 +1143,88 @@ void func_002A4340(msurface_t *surf, int clientId)
     R_BuildLightMap(surf, base, BLOCK_WIDTH * lightmap_bytes, clientId);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A43C0);
+void GL_BuildLightmaps(int clientId)
+{
+    int i, j;
+    model_t *m;
+    int n;
+
+    r_framecount = 1;
+
+    if (!lightmap_textures)
+    {
+        lightmap_textures = texture_extension_number;
+        texture_extension_number += MAX_LIGHTMAPS;
+    }
+
+    gl_lightmap_format = GL_RGBA;
+    if (COM_CheckParm(D_00394438))
+        gl_lightmap_format = GL_LUMINANCE;
+    if (COM_CheckParm(D_00394440))
+        gl_lightmap_format = GL_ALPHA;
+    if (COM_CheckParm(D_00394448))
+        gl_lightmap_format = GL_INTENSITY;
+    if (COM_CheckParm(D_00394450))
+        gl_lightmap_format = GL_RGBA4;
+    if (COM_CheckParm(D_00394458))
+        gl_lightmap_format = GL_RGBA;
+
+    switch (gl_lightmap_format)
+    {
+    case GL_RGBA:
+        lightmap_bytes = 4;
+        if (gl_monolights.value)
+            D_00399504 = 4;
+        else
+            D_00399504 = 3;
+        break;
+    case GL_RGBA4:
+        lightmap_bytes = 2;
+        D_00399504 = 2;
+        break;
+    case GL_LUMINANCE:
+    case GL_INTENSITY:
+    case GL_ALPHA:
+        lightmap_bytes = 1;
+        D_00399504 = 1;
+        break;
+    }
+
+    for (j = 1; j < MAX_MODELS; j++)
+    {
+        m = cl[clientId].model_precache[j];
+        if (!m)
+            break;
+        if (m->name[0] == '*')
+            continue;
+
+        r_pcurrentvertbase = m->vertexes;
+        currentmodel = m;
+        for (i = 0; i < m->numsurfaces; i++)
+        {
+            func_002A4340(m->surfaces + i, clientId);
+            if (m->surfaces[i].flags & 0x110)
+                continue;
+            n = BuildSurfaceDisplayList(m->surfaces + i, D_0040A740);
+            D_0040A740 += n;
+            D_0040A744 -= n;
+        }
+    }
+
+    for (i = 0; i < MAX_LIGHTMAPS; i++)
+    {
+        if (!allocated[i][0])
+            break;
+
+        lightmap_modified[i] = 0;
+        GL_Bind(lightmap_textures + i);
+        func_0023C600(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        func_0023C600(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        func_0023C600(GL_TEXTURE_2D, 0x2804, 1.0f);
+        glTexImage2D(GL_TEXTURE_2D, 0, D_00399504, BLOCK_WIDTH, BLOCK_HEIGHT, 0, gl_lightmap_format, GL_UNSIGNED_BYTE,
+                     lightmaps + i * BLOCK_WIDTH * BLOCK_HEIGHT * lightmap_bytes);
+    }
+}
 
 /* "OFF"/"ON" são compartilhadas pelas duas funções; o ee-gcc não junta strings iguais */
 __asm__(".section .rodata\n"
