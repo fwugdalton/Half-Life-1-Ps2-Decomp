@@ -164,7 +164,7 @@ extern int D_003992E8;     /* sb_lines */
 extern refdef_t r_refdef;
 
 #ifdef NON_MATCHING
-void func_002ABDE0(int clientId)
+void SCR_CalcRefdef(int clientId)
 {
     float size;
     int h;
@@ -217,7 +217,7 @@ void func_002ABDE0(int clientId)
     scr_vrect = r_refdef.vrect;
 }
 #else
-INCLUDE_ASM("asm/nonmatchings/engine/gl_screen", func_002ABDE0);
+INCLUDE_ASM("asm/nonmatchings/engine/gl_screen", SCR_CalcRefdef);
 #endif
 
 void SCR_SizeUp(void)
@@ -317,7 +317,7 @@ extern scr_viddef_t r_viddef;
 extern int clearnotify, con_notifylines, con_forcedup;
 void Con_CheckResize(void);
 
-void func_002AC1D8(int clientId)
+void SCR_SetUpToDrawConsole(int clientId)
 {
     Con_CheckResize();
     if (D_00399618)
@@ -452,7 +452,7 @@ void func_002C5130(void);
 void func_00236658(void);
 void func_002A8610(void);
 void func_002A8708(void);
-void func_002AC9A8(int clientId);
+void SCR_UpdateClientScreen(int clientId);
 extern int D_0033453C, D_00399704, D_003342F0;
 extern qboolean con_initialized;
 extern int D_003995C0, D_0039961C;
@@ -525,7 +525,7 @@ void SCR_UpdateScreen(void)
     D_00399558 = 0;
 
     for (i = 0; i < cl_numlocal; i++)
-        func_002AC9A8(i);
+        SCR_UpdateClientScreen(i);
 
     func_002A8610();
     if (sv.paused)
@@ -551,14 +551,14 @@ void func_002A8508(int nClient, int x, int y);
 void GL_Bind(int texnum);
 void func_002943F8();
 
-void func_002AC9A8(int clientId)
+void SCR_UpdateClientScreen(int clientId)
 {
     if (r_viddef.recalc_refdef)
-        func_002ABDE0(clientId);
+        SCR_CalcRefdef(clientId);
 
     if (key_dest != 4 || D_003332B0.value != 0)
     {
-        func_002AC1D8(clientId);
+        SCR_SetUpToDrawConsole(clientId);
         V_RenderView(clientId);
         func_002A8358(clientId);
 
