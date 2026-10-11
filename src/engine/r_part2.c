@@ -383,9 +383,78 @@ void func_002B2330(vec3_t org, int reverse, int clientId)
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B2598);
+#ifdef NON_MATCHING
+void func_002B2598(vec3_t org, int clientId)
+{
+    int i, j, k;
+    particle_t *p;
+    float vel;
+    vec3_t dir;
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B27B8);
+    for (i = -16; i < 16; i += 4)
+        for (j = -16; j < 16; j += 4)
+            for (k = -24; k < 32; k += 4)
+            {
+                if (!D_0039966C)
+                    return;
+                p = D_0039966C;
+                D_0039966C = p->next;
+                p->next = D_00399660;
+                D_00399660 = p;
+
+                p->die = cl[clientId].time + RandomFloat(0.2f, 0.34f);
+                p->color = RandomLong(7, 14);
+                p->packedColor = 0;
+                p->type = pt_slowgrav;
+
+                dir[0] = (float)j * 8;
+                dir[1] = (float)i * 8;
+                dir[2] = (float)k * 8;
+
+                p->org[0] = org[0] + i + RandomFloat(0, 3);
+                p->org[1] = org[1] + j + RandomFloat(0, 3);
+                p->org[2] = org[2] + k + RandomFloat(0, 3);
+
+                VectorNormalize(dir);
+                vel = RandomFloat(50, 113);
+                VectorScale(dir, vel, p->vel);
+            }
+}
+#else
+INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B2598);
+#endif
+
+
+void func_002B27B8(vec3_t start, vec3_t end, int clientId)
+{
+    vec3_t vec;
+    float len;
+    particle_t *p;
+
+    VectorSubtract(end, start, vec);
+    len = VectorNormalize(vec);
+    VectorScale(vec, 5, vec);
+
+    while (len > 0)
+    {
+        len -= 5;
+
+        if (!D_0039966C)
+            return;
+        p = D_0039966C;
+        D_0039966C = p->next;
+        p->next = D_00399660;
+        D_00399660 = p;
+
+        VectorCopy(vec3_origin, p->vel);
+        p->die = cl[clientId].time + 30;
+        p->color = 75;
+        p->packedColor = 0;
+        p->type = pt_static;
+        VectorCopy(start, p->org);
+        VectorAdd(start, vec, start);
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B2938);
 
