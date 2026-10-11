@@ -58,6 +58,17 @@ void *Hunk_AllocName(int size, char *name);
 float RandomFloat(float low, float high);
 int RandomLong(int low, int high);
 void func_002B3598(void);
+int func_00243370(void);        /* MSG_ReadChar */
+float MSG_ReadCoord(void);
+int MSG_ReadByte(void);
+void func_002B17F8(vec3_t org, vec3_t dir, int color, int count, int clientId);
+
+#define NUMVERTEXNORMALS 162
+
+extern vec3_t D_0050F390[NUMVERTEXNORMALS]; /* avelocities */
+extern vec3_t D_003339B0[NUMVERTEXNORMALS]; /* r_avertexnormals */
+extern float D_00334148;        /* beamlength */
+extern particle_t *D_00399668;
 
 void func_002B0600(void)
 {
@@ -149,16 +160,130 @@ void func_002B0810(cl_entity_t *ent, int clientId)
             }
 }
 
+#ifdef NON_MATCHING
+void func_002B0A48(cl_entity_t *ent, int clientId)
+{
+    int i;
+    particle_t *p;
+    float angle;
+    float sp, sy, cp, cy;
+    vec3_t forward;
+    float dist;
+
+    dist = 64;
+    if (!D_0050F390[0][0])
+    {
+        for (i = 0; i < NUMVERTEXNORMALS * 3; i++)
+            D_0050F390[0][i] = RandomFloat(0, 2.55f);
+    }
+
+    for (i = 0; i < NUMVERTEXNORMALS; i++)
+    {
+        angle = cl[clientId].time * D_0050F390[i][0];
+        sy = sinf(angle);
+        cy = cosf(angle);
+        angle = cl[clientId].time * D_0050F390[i][1];
+        sp = sinf(angle);
+        cp = cosf(angle);
+        angle = cl[clientId].time * D_0050F390[i][2];
+        sinf(angle);
+        cosf(angle);
+
+        forward[0] = cp * cy;
+        forward[1] = cp * sy;
+        forward[2] = -sp;
+
+        if (!D_0039966C)
+            return;
+        p = D_0039966C;
+        D_0039966C = p->next;
+        p->next = D_00399660;
+        D_00399660 = p;
+
+        p->die = cl[clientId].time + 0.01f;
+        p->color = 0x6F;
+        p->packedColor = 0;
+        p->type = pt_explode;
+
+        p->org[0] = ent->origin[0] + D_003339B0[i][0] * dist + forward[0] * D_00334148;
+        p->org[1] = ent->origin[1] + D_003339B0[i][1] * dist + forward[1] * D_00334148;
+        p->org[2] = ent->origin[2] + D_003339B0[i][2] * dist + forward[2] * D_00334148;
+    }
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/r_part", func_002B0A48);
+#endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part", func_002B0CD0);
+void func_002B0CD0(int clientId)
+{
+    int i;
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part", func_002B0D58);
+    D_0039966C = &D_00399664[0];
+    D_00399660 = NULL;
+    D_00399668 = NULL;
+
+    for (i = 0; i < D_00399650; i++)
+        D_00399664[i].next = &D_00399664[i + 1];
+    D_00399664[D_00399650 - 1].next = NULL;
+
+    func_002B0660(clientId);
+}
+
+void func_002B0D58(particle_t **ppparticles, int clientId)
+{
+    particle_t *p, *kill;
+
+    for (;;)
+    {
+        kill = *ppparticles;
+        if (kill && kill->die < cl[clientId].time)
+        {
+            *ppparticles = kill->next;
+            kill->next = D_0039966C;
+            D_0039966C = kill;
+            continue;
+        }
+        break;
+    }
+
+    for (p = *ppparticles; p; p = p->next)
+    {
+        for (;;)
+        {
+            kill = p->next;
+            if (kill && kill->die < cl[clientId].time)
+            {
+                p->next = kill->next;
+                kill->next = D_0039966C;
+                D_0039966C = kill;
+                continue;
+            }
+            break;
+        }
+    }
+}
 
 void func_002B0E20(void) {
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part", func_002B0E28);
+void func_002B0E28(int clientId)
+{
+    vec3_t org, dir;
+    int i, count, msgcount, color;
+
+    for (i = 0; i < 3; i++)
+        org[i] = MSG_ReadCoord();
+    for (i = 0; i < 3; i++)
+        dir[i] = func_00243370() * (1.0f / 16);
+    msgcount = MSG_ReadByte();
+    color = MSG_ReadByte();
+    if (msgcount == 255)
+        count = 1024;
+    else
+        count = msgcount;
+
+    func_002B17F8(org, dir, color, count, clientId);
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_part", func_002B0EF8);
 
