@@ -51,6 +51,7 @@ extern particle_t *D_00399664;  /* particles */
 extern particle_t *D_0039966C;  /* free_particles */
 extern particle_t *D_00399660;  /* active_particles */
 extern int D_003339AC;          /* r_drawparticles */
+extern vec3_t r_origin;
 
 int COM_CheckParm(char *parm);
 int Q_atoi(char *str);
@@ -62,6 +63,7 @@ int func_00243370(void);        /* MSG_ReadChar */
 float MSG_ReadCoord(void);
 int MSG_ReadByte(void);
 void func_002B17F8(vec3_t org, vec3_t dir, int color, int count, int clientId);
+void func_002B1C00(vec3_t pos, int count, int velocityMin, int velocityMax, int clientId);
 
 #define NUMVERTEXNORMALS 162
 
@@ -456,7 +458,45 @@ void func_002B14D8(vec3_t org, vec3_t vel, float life, int colorIndex, float len
 
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part", func_002B15D0);
+void func_002B15D0(vec3_t pos, int clientId)
+{
+    int i, count;
+    float dist;
+    vec3_t dir;
+    particle_t *p;
+
+    VectorSubtract(pos, r_origin, dir);
+    dist = Length(dir);
+    if (dist > 1000)
+        dist = 1000;
+    count = (1000 - dist) * 0.01f;
+    if (!count)
+        count = 1;
+
+    func_002B1C00(pos, 2, -200, 200, clientId);
+
+    count *= 4;
+    for (i = 0; i < count; i++)
+    {
+        if (!D_0039966C)
+            return;
+        p = D_0039966C;
+        D_0039966C = p->next;
+        p->next = D_00399660;
+        D_00399660 = p;
+
+        VectorCopy(pos, p->org);
+        dir[0] = RandomFloat(-1, 1);
+        dir[1] = RandomFloat(-1, 1);
+        dir[2] = RandomFloat(-1, 1);
+        VectorCopy(dir, p->vel);
+        VectorScale(p->vel, RandomFloat(50, 100), p->vel);
+        p->color = 0;
+        p->packedColor = 0;
+        p->type = pt_grav;
+        p->die = cl[clientId].time + 0.5f;
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_part", func_002B17F8);
 
