@@ -23,7 +23,7 @@ typedef struct
     int gl_texturenum;
 } mspriteframe_t;
 
-void func_0023C1F8(float r, float g, float b, float a); /* glColor4f */
+void glColor4f(float r, float g, float b, float a); /* glColor4f */
 void func_0023BE70(int mode);                            /* glShadeModel */
 void glEnable(int cap);
 void glDisable(int cap);
@@ -41,7 +41,7 @@ extern int D_004E77B0[3];
 
 void tri_Color4f(float r, float g, float b, float a)
 {
-    func_0023C1F8(r * a, g * a, b * a, 1.0f);
+    glColor4f(r * a, g * a, b * a, 1.0f);
     D_003994E0 = r;
     D_003994E8 = g;
     D_003994EC = b;
@@ -54,7 +54,7 @@ void tri_Color4ub(unsigned char r, unsigned char g, unsigned char b, unsigned ch
     D_003994E8 = g / 255.0f;
     D_003994EC = b / 255.0f;
     D_003994E4 = a / 255.0f;
-    func_0023C1F8(D_003994E0, D_003994E8, D_003994EC, 1.0f);
+    glColor4f(D_003994E0, D_003994E8, D_003994EC, 1.0f);
 }
 
 void tri_Brightness(float brightness)
@@ -64,7 +64,7 @@ void tri_Brightness(float brightness)
     r = D_003994E0 * brightness;
     g = D_003994E8 * brightness;
     b = D_003994EC * brightness;
-    func_0023C1F8(r * D_003994E4, g * D_003994E4, b * D_003994E4, 1.0f);
+    glColor4f(r * D_003994E4, g * D_003994E4, b * D_003994E4, 1.0f);
 }
 
 void tri_RenderMode(int mode)

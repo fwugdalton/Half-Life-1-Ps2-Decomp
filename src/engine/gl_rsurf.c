@@ -109,9 +109,23 @@ void glBegin(int mode);
 void glEnd(void);
 void glTexCoord2f(float s, float t);
 void glVertex3fv(float *v);
+void glColor4f(float r, float g, float b, float a);
+void glDepthMask(int flag);
+void glTexEnvf(int target, int pname, float param);
+void glBlendFunc(int sfactor, int dfactor);
+void R_BlendLightmaps(void);
+extern float r_blend;
+#define GL_BLEND 0xBE2
+#define GL_TEXTURE_ENV 0x2300
+#define GL_TEXTURE_ENV_MODE 0x2200
+#define GL_MODULATE 0x2100
+#define GL_REPLACE 0x1E01
+#define GL_ZERO 0
+#define GL_SRC_COLOR 0x300
+#define GL_DST_COLOR 0x306
 float ScrollOffset(msurface_t *psurface, cl_entity_t *pEntity);
 decal_t *R_DecalIntersect(msurface_t *psurf, int *pcount, float x, float y);
-extern int D_00413AD8[20][20];
+extern int rtable2[20][20];
 extern float D_00413630[74][4];
 void func_002EF8E0(int);
 
@@ -401,9 +415,45 @@ void GL_EnableMultitexture(void)
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A2908);
+void DrawGLSolidPoly(glpoly_t *p)
+{
+    int i;
+    float *v;
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A29F8);
+    v = func_002A3C60((byte *)p);
+    glColor4f(currententity->rendercolor.r / 256.0f, currententity->rendercolor.g / 256.0f,
+              currententity->rendercolor.b / 256.0f, r_blend);
+    glBegin(GL_POLYGON);
+    D_00399584++;
+    D_00399560 += p->numverts;
+    for (i = 0; i < p->numverts; i++, v += 3)
+        glVertex3fv(v);
+    glEnd();
+}
+
+void R_RenderLightmaps(void)
+{
+    if (r_fullbright.value)
+        return;
+
+    glDepthMask(0);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+    if (gl_overbright.value)
+    {
+        glBlendFunc(GL_DST_COLOR, GL_SRC_COLOR);
+        glColor4f(2.0f / 3.0f, 2.0f / 3.0f, 2.0f / 3.0f, 1.0f);
+    }
+    else
+    {
+        glBlendFunc(GL_ZERO, GL_SRC_COLOR);
+    }
+    glEnable(GL_BLEND);
+    R_BlendLightmaps();
+    glDisable(GL_BLEND);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+    glDepthMask(1);
+}
 
 /* tabela de floats alinhada em 8 no original (até virar C) */
 __asm__(".section .rodata\n.align 3\n.section .text");
@@ -844,7 +894,7 @@ void func_002A67E0(void)
     for (i = 0; i < 20; i++)
     {
         for (j = 0; j < 20; j++)
-            D_00413AD8[i][j] = RandomLong(0, 0x7FFF);
+            rtable2[i][j] = RandomLong(0, 0x7FFF);
     }
 
     D_00413620 = D_00413630[0];
@@ -869,7 +919,7 @@ void func_002A68C0(void)
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A68E8);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A6A88);
+INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", R_BlendLightmaps);
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A6BE0);
 
@@ -926,7 +976,29 @@ INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A7238);
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A72F0);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A7600);
+texture_t *R_TextureAnimation2(msurface_t *s, texture_t *base)
+{
+    int reletive;
+    int tx, ty;
+
+    if (base->name[0] == '-' && base->anim_total)
+    {
+        tx = s->texturemins[0] + (base->srcwidth << 16);
+        tx /= base->srcwidth;
+        ty = s->texturemins[1] + (base->srcheight << 16);
+        ty /= base->srcheight;
+        reletive = rtable2[tx % 20][ty % 20] % base->anim_total;
+    }
+    else
+    {
+        reletive = (int)(cl[0].time * 10) % base->anim_total;
+    }
+
+    while (base->anim_min > reletive || base->anim_max <= reletive)
+        base = base->anim_next;
+
+    return base;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A76F8);
 
