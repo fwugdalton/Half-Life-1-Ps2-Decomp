@@ -3,6 +3,7 @@
 #include "engine/cvar.h"
 #include "engine/client.h"
 #include "engine/render.h"
+#include "engine/server.h"
 
 typedef struct
 {
@@ -295,7 +296,7 @@ void func_002AC1A8(void) {
 }
 
 #ifdef NON_MATCHING
-void func_002AC1B0(void)
+void func_002AC1B0(int clientId)
 {
     if (D_00399618)
         func_002AF7A8();
@@ -310,6 +311,7 @@ typedef struct
     unsigned int height;        /* 0x20 */
     byte pad24[0x28 - 0x24];
     int numpages;               /* 0x28 */
+    int recalc_refdef;          /* 0x2C */
 } scr_viddef_t;
 extern scr_viddef_t r_viddef;
 extern int clearnotify, con_notifylines, con_forcedup;
@@ -442,9 +444,167 @@ void func_002AC6C8(void)
 void func_002AC748(void) {
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_screen", SCR_UpdateScreen);
+qboolean V_CheckGamma(void);
+void V_UpdatePalette(void);
+void func_002A68C0(void);
+void func_002C50C8(int *x, int *y, int *width, int *height);
+void func_002C5130(void);
+void func_00236658(void);
+void func_002A8610(void);
+void func_002A8708(void);
+void func_002AC9A8(int clientId);
+extern int D_0033453C, D_00399704, D_003342F0;
+extern qboolean con_initialized;
+extern int D_003995C0, D_0039961C;
+extern int D_0039956C, D_0039957C, D_00399548, D_0039955C, D_0039953C, D_00399578, D_003995A8, D_00399538, D_00399594;
+extern int D_0039958C, D_00399584, D_00399560, D_00399574, D_0039954C, D_00399568, D_00399534, D_00399598;
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_screen", func_002AC9A8);
+void SCR_UpdateScreen(void)
+{
+    int i;
+
+    if (key_dest == 4)
+        return;
+
+    V_CheckGamma();
+    func_002A68C0();
+
+    if (D_0033453C)
+        return;
+    if (D_00399704)
+        return;
+
+    if (D_003342F0)
+    {
+        D_003342F0 = 0;
+        return;
+    }
+
+    scr_copytop = 0;
+    D_00399620 = 0;
+
+    if (scr_disabled_for_loading)
+    {
+        if (realtime - D_00414158 > 60)
+        {
+            scr_disabled_for_loading = 0;
+            Con_Printf("load failed.\n");
+        }
+        else
+            return;
+    }
+
+    if (!cls[0].state)
+        return;
+    if (!D_003995D8)
+        return;
+    if (!con_initialized)
+        return;
+
+    V_UpdatePalette();
+    func_002C50C8(&D_003995C0, &D_0039961C, &D_003995E8, &D_003995DC);
+
+    D_0039956C = 0;
+    D_0039957C = 0;
+    D_00399548 = 0;
+    D_0039955C = 0;
+    D_0039953C = 0;
+    D_00399578 = 0;
+    D_003995A8 = 0;
+    D_00399538 = 0;
+    D_00399594 = 0;
+    D_0039958C = 0;
+    D_00399584 = 0;
+    D_00399560 = 0;
+    D_00399574 = 0;
+    D_0039954C = 0;
+    D_00399568 = 0;
+    D_00399534 = 0;
+    D_00399598 = 0;
+    D_00399570 = 0;
+    D_00399558 = 0;
+
+    for (i = 0; i < cl_numlocal; i++)
+        func_002AC9A8(i);
+
+    func_002A8610();
+    if (sv.paused)
+        func_00236658();
+    SCR_DrawConsole();
+    func_002A8708();
+    func_002C5130();
+}
+
+void SCR_DrawNotifyString(void);
+void SCR_DrawConnectMessage(void);
+void func_002ACF08(void);
+void func_002ACF10(void);
+extern int D_003995E4;
+void V_RenderView(int clientId);
+void func_002A8358(int clientId);
+void func_00266188(int clientId);
+void func_002AF6A0(void);
+void func_002A8610(void);
+void func_002470E0(int intermission, int nClient, int flags);
+void func_002A8708(void);
+void func_002A8508(int nClient, int x, int y);
+void GL_Bind(int texnum);
+void func_002943F8();
+
+void func_002AC9A8(int clientId)
+{
+    if (r_viddef.recalc_refdef)
+        func_002ABDE0(clientId);
+
+    if (key_dest != 4 || D_003332B0.value != 0)
+    {
+        func_002AC1D8(clientId);
+        V_RenderView(clientId);
+        func_002A8358(clientId);
+
+        if (D_003995E4)
+        {
+            func_00266188(clientId);
+            func_002AF6A0();
+            SCR_DrawNotifyString();
+            D_00399620 = 1;
+        }
+        else if (D_00399618)
+        {
+            func_002AC1B0(clientId);
+            func_00266188(clientId);
+        }
+        else if (cl[clientId].intermission == 1 && key_dest == 0)
+        {
+            if (clientId == 1)
+            {
+                func_002A8610();
+                func_002470E0(1, 1, 0x80);
+                func_002A8708();
+                func_002A8508(1, 0, 0);
+            }
+        }
+        else if (cl[clientId].intermission == 2 && key_dest == 0)
+        {
+            SCR_CheckDrawCenterString(clientId);
+        }
+        else
+        {
+            GL_Bind(0);
+            if (D_003995E0 < r_viddef.height)
+                func_00266188(clientId);
+            SCR_CheckDrawCenterString(clientId);
+        }
+
+        func_002ACF08();
+        SCR_DrawConnectMessage();
+        func_002ACF10();
+        func_002A8708();
+    }
+
+    if (key_dest == 4)
+        func_002943F8(D_003332B0.value != 0);
+}
 
 void FillRGBA(vrect_t *rc, byte *color)
 {
