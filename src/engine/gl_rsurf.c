@@ -111,6 +111,12 @@ void glBegin(int mode);
 void glEnd(void);
 void glTexCoord2f(float s, float t);
 void glVertex3fv(float *v);
+extern cvar_t r_dynamic;
+void func_0023C808(float s, float t);
+void func_002A6BE0(glpoly_t *p);
+void func_002A6CA0(glpoly_t *p);
+#define MAX_DECALSURFS 500
+#define kRenderTransColor 1
 extern float D_00333268, D_0032F26C;
 void func_002A72F0(msurface_t *surf, byte *dest, int stride, int clientId);
 void func_002A7AF8(msurface_t *surf);
@@ -529,7 +535,75 @@ INCLUDE_RODATA("asm/nonmatchings/engine/gl_rsurf", D_00393BE8);
 
 INCLUDE_RODATA("asm/nonmatchings/engine/gl_rsurf", D_00393FE8);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A2AF0);
+void R_RenderBrushPoly(msurface_t *fa, int clientId)
+{
+    texture_t *t;
+    byte *base;
+    int maps;
+
+    if (fa->flags & 0x400)
+    {
+        if (fa->unk_80)
+            func_002A7AF8(fa);
+        return;
+    }
+
+    if (fa->flags & 0x104)
+        return;
+
+    t = R_TextureAnimation(fa);
+    GL_Bind(t->gl_texturenum);
+    func_0023C808(fa->unk_3C, 1.0f);
+
+    if (currententity->rendermode == kRenderTransColor)
+    {
+        glDisable(GL_TEXTURE_2D);
+        DrawGLSolidPoly(fa->polys);
+        glEnable(GL_TEXTURE_2D);
+    }
+    else if (fa->flags & SURF_DRAWSCROLL)
+    {
+        DrawGLPolyScroll(fa, currententity);
+    }
+    else if (r_blend > 0.99f)
+    {
+        func_002A6BE0(fa->polys);
+    }
+    else
+    {
+        func_002A6CA0(fa->polys);
+    }
+    func_0023C808(0, 0);
+
+    fa->polys->chain = lightmap_polys[fa->lightmaptexturenum];
+    lightmap_polys[fa->lightmaptexturenum] = fa->polys;
+
+    if (fa->pdecals)
+    {
+        gDecalSurfs[gDecalSurfCount] = fa;
+        gDecalSurfCount++;
+        if (gDecalSurfCount > MAX_DECALSURFS)
+            Sys_Error("Too many decal surfaces!\n");
+    }
+
+    for (maps = 0; maps < MAXLIGHTMAPS && fa->styles[maps] != 255; maps++)
+    {
+        if (d_lightstylevalue[fa->styles[maps]] != fa->cached_light[maps])
+            goto dynamic;
+    }
+
+    if (fa->dlightframe == r_framecount || fa->cached_dlight)
+    {
+dynamic:
+        if (r_dynamic.value)
+        {
+            lightmap_modified[fa->lightmaptexturenum] = true;
+            base = lightmaps + fa->lightmaptexturenum * lightmap_bytes * BLOCK_WIDTH * BLOCK_HEIGHT;
+            base += fa->light_t * BLOCK_WIDTH * lightmap_bytes + fa->light_s * lightmap_bytes;
+            R_BuildLightMap(fa, base, BLOCK_WIDTH * lightmap_bytes, clientId);
+        }
+    }
+}
 
 void R_SetRenderMode(byte *pEntity)
 {

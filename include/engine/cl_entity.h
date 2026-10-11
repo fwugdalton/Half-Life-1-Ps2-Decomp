@@ -10,7 +10,9 @@ struct model_s;
 /* cl_entity_t do PS2, 0x1A0 bytes. Layout parcial (r_trans.c, pmove.c e pr_cmds.c ainda têm versões locais). */
 typedef struct cl_entity_s
 {
-    byte pad0[0x20];
+    byte pad0[0x10];
+    int rendermode;             /* 0x10 */
+    byte pad14[0x20 - 0x14];
     int unk_20;                 /* 0x20: body do viewmodel (svc_weaponanim) */
     byte pad24[0x2C - 0x24];
     int index;                  /* 0x2C */
