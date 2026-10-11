@@ -109,7 +109,9 @@ segments:
       - [0x1A0CB8, c, engine/tri]
       - [0x1A0F68, c, engine/gl_warp]
       - [0x1A1E10, c, engine/gl_rsurf]
-      - [0x1A8358, asm, cod/1A8358]
+      - [0x1A8358, c, engine/gl_rmain]
+      - [0x1AB0E8, c, engine/gl_rlight]
+      - [0x1ABA40, asm, cod/1ABA40]
       - [0x1F5980, textbin, cod/1F5980] # .vutext
       - [0x201B00, data, cod/201B00] # .data
       - [0x231C00, .data, engine/Cmd]
@@ -168,7 +170,8 @@ segments:
       - [0x293698, .rodata, engine/r_efrag]
       - [0x2936E0, .rodata, engine/gl_warp]
       - [0x293780, .rodata, engine/gl_rsurf]
-      - [0x2944F8, rodata, cod/2944F8]
+      - [0x2944F8, .rodata, engine/gl_rmain]
+      - [0x294650, rodata, cod/294650]
       - [0x298E80, gcc_except_table, cod/298E80] # .gcc_except_table
       - [0x298F80, sdata, cod/298F80] # .sdata
       - { type: sbss, vram: 0x00399000, name: cod/00399000 } # .sbss
