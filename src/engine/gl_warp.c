@@ -55,7 +55,7 @@ extern int D_00399558;
 extern vec3_t vec3_origin;
 void GL_DisableMultitexture(void);
 void glDepthMask(int flag);
-void func_0023C1D0(float r, float g, float b); /* glColor3f */
+void glColor3f(float r, float g, float b); /* glColor3f */
 void glBegin(int mode);                   /* glBegin */
 void glEnd(void);                       /* glEnd */
 void MakeSkyVec(float s, float t, int axis);
@@ -414,7 +414,7 @@ void R_DrawSkyBox(void)
             continue;
 
         GL_Bind(skytexturenum[skytexorder[i]]);
-        func_0023C1D0(1, 1, 1);
+        glColor3f(1, 1, 1);
         glBegin(GL_QUADS);
         D_00399570++;
         D_00399558 += 4;

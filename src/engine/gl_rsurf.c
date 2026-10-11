@@ -4,6 +4,7 @@
 #include "engine/cl_entity.h"
 #include "engine/client.h"
 #include "engine/cvar.h"
+#include "engine/render.h"
 
 double pow(double, double);
 void Sys_Error(const char *fmt, ...);
@@ -109,6 +110,17 @@ void glBegin(int mode);
 void glEnd(void);
 void glTexCoord2f(float s, float t);
 void glVertex3fv(float *v);
+void glColor3f(float r, float g, float b);
+void R_ClearSkyBox(void);
+void R_RecursiveWorldNode(mnode_t *node, int clientId);
+void DrawTextureChains(int clientId);
+void func_002CD9F8(int clientId);
+void func_002A65C0(void);
+extern vec3_t modelorg;
+extern int currenttexture;
+extern glpoly_t *lightmap_polys[64];
+extern int D_004E77B0[3];
+extern int D_00399510;
 void glColor4f(float r, float g, float b, float a);
 void glDepthMask(int flag);
 void glTexEnvf(int target, int pname, float param);
@@ -473,9 +485,32 @@ INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A2D80);
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", R_DrawBrushModel);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A3468);
+INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", R_RecursiveWorldNode);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A3738);
+void R_DrawWorld(int clientId)
+{
+    cl_entity_t ent;
+
+    r_blend = 1.0f;
+    memset(&ent, 0, sizeof(ent));
+    ent.model = cl[clientId].worldmodel;
+    VectorCopy(r_refdef.vieworg, modelorg);
+    currententity = &ent;
+    ent.rendercolor.r = D_004E77B0[0];
+    ent.rendercolor.g = D_004E77B0[1];
+    ent.rendercolor.b = D_004E77B0[2];
+    currenttexture = -1;
+    glColor3f(1.0f, 1.0f, 1.0f);
+    memset(lightmap_polys, 0, sizeof(lightmap_polys));
+    R_ClearSkyBox();
+    R_RecursiveWorldNode(cl[clientId].worldmodel->nodes, clientId);
+    D_00399510 = 0;
+    DrawTextureChains(clientId);
+    func_002CD9F8(clientId);
+    func_002A65C0();
+    R_RenderLightmaps();
+}
+
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", R_MarkLeaves);
 
@@ -830,7 +865,42 @@ int Inside(float *vert, int edge)
     return 0;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A5DE0);
+void Intersect(float *one, float *two, int edge, float *out)
+{
+    float t;
+
+    if (edge < 2)
+    {
+        if (edge == 0)
+        {
+            t = one[3] / (one[3] - two[3]);
+            out[3] = 0;
+        }
+        else
+        {
+            t = (one[3] - 1.0f) / (one[3] - two[3]);
+            out[3] = 1.0f;
+        }
+        out[4] = one[4] + (two[4] - one[4]) * t;
+    }
+    else
+    {
+        if (edge == 2)
+        {
+            t = one[4] / (one[4] - two[4]);
+            out[4] = 0;
+        }
+        else
+        {
+            t = (one[4] - 1.0f) / (one[4] - two[4]);
+            out[4] = 1.0f;
+        }
+        out[3] = one[3] + (two[3] - one[3]) * t;
+    }
+    out[0] = one[0] + (two[0] - one[0]) * t;
+    out[1] = one[1] + (two[1] - one[1]) * t;
+    out[2] = one[2] + (two[2] - one[2]) * t;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A5EE8);
 
@@ -917,7 +987,7 @@ void func_002A68C0(void)
         D_00413AD0++;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A68E8);
+INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", DrawTextureChains);
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", R_BlendLightmaps);
 
