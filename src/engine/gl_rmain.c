@@ -122,6 +122,17 @@ extern float D_004F9430[16];
 extern float D_003337A4;
 void glGetFloatv(int pname, float *params);
 void MYgluPerspective(float fovy, float aspect, float zNear, float zFar);
+#define GL_QUADS 7
+#define GL_ZERO 0
+#define GL_SRC_COLOR 0x300
+#define GL_SRC_ALPHA 0x302
+#define GL_ONE_MINUS_SRC_ALPHA 0x303
+extern int D_00399644;
+extern int D_00399558, D_00399570;
+int V_FadeAlpha(int clientId);
+void GL_Bind(int texnum);
+void glBlendFunc(int sfactor, int dfactor);
+void glColor4ubv(byte *v);
 
 void R_SetupFrame(int clientId);
 void R_SetFrustum(int clientId);
@@ -607,7 +618,105 @@ void R_PreDrawViewModel(int clientId)
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rmain", R_PreDrawViewModel);
 #endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rmain", func_002A9CA0);
+void R_ScreenFade(int clientId)
+{
+    int alpha;
+    byte color[4];
+
+    alpha = V_FadeAlpha(clientId);
+    if (!alpha)
+        return;
+
+    GL_DisableMultitexture();
+    glDisable(GL_ALPHA_TEST);
+    glEnable(GL_BLEND);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_TEXTURE_2D);
+    GL_Bind(D_00399644);
+
+    if (cl[clientId].sf.fadeFlags & FFADE_MODULATE)
+    {
+        glBlendFunc(GL_ZERO, GL_SRC_COLOR);
+        color[0] = (cl[clientId].sf.fader * alpha + 255 * (255 - alpha)) >> 8;
+        color[1] = (cl[clientId].sf.fadeg * alpha + 255 * (255 - alpha)) >> 8;
+        color[2] = (cl[clientId].sf.fadeb * alpha + 255 * (255 - alpha)) >> 8;
+        color[3] = 255;
+    }
+    else
+    {
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        color[0] = cl[clientId].sf.fader;
+        color[1] = cl[clientId].sf.fadeg;
+        color[2] = cl[clientId].sf.fadeb;
+        color[3] = alpha;
+    }
+
+    if (D_00399564)
+    {
+        if (cl_numlocal > 1)
+        {
+            switch (clientId)
+            {
+            case 0:
+                glViewport(D_0032EFF0, D_0032EFF4, D_0032EFF8, D_0032EFFC);
+                break;
+            case 1:
+                glViewport(D_0032F000, D_0032F004, D_0032F008, D_0032F00C);
+                break;
+            }
+        }
+        else
+        {
+            glViewport(D_0032EF7C, D_0032EF78, D_0032EF80, D_0032EF84);
+        }
+    }
+    else
+    {
+        if (cl_numlocal > 1)
+        {
+            switch (clientId)
+            {
+            case 0:
+                glViewport(D_0032EFB0, D_0032EFB4, D_0032EFB8, D_0032EFBC);
+                break;
+            case 1:
+                glViewport(D_0032EFC0, D_0032EFC4, D_0032EFC8, D_0032EFCC);
+                break;
+            }
+        }
+        else
+        {
+            glViewport(D_0032EF7C, D_0032EF78, D_0032EF80, D_0032EF84);
+        }
+    }
+
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    glOrtho(0, 1, 1, 0, -99999, 99999);
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+
+    glColor4ubv(color);
+    glBegin(GL_QUADS);
+    D_00399570++;
+    D_00399558 += 4;
+    glVertex2f(0, 0);
+    glVertex2f(0, 1);
+    glVertex2f(1, 1);
+    glVertex2f(1, 0);
+    glEnd();
+
+    glDisable(GL_BLEND);
+    glEnable(GL_TEXTURE_2D);
+    glEnable(GL_ALPHA_TEST);
+
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+}
 
 int SignbitsForPlane(mplane_t *out)
 {
