@@ -226,9 +226,70 @@ void func_002B1C00(vec3_t pos, int count, int velocityMin, int velocityMax, int 
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B1D78);
+void func_002B1D78(vec3_t pos, vec3_t dir, int color, int count, float speed, int velocityMin, int velocityMax, int clientId)
+{
+    int i, j;
+    particle_t *p;
+    vec3_t initialVelocity;
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B1F20);
+    VectorScale(dir, speed, initialVelocity);
+    for (i = 0; i < count; i++)
+    {
+        if (!D_0039966C)
+            return;
+        p = D_0039966C;
+        D_0039966C = p->next;
+        p->next = D_00399668;
+        D_00399668 = p;
+
+        p->die = cl[clientId].time + RandomFloat(0.1f, 0.5f);
+        p->color = color;
+        p->packedColor = 255;
+        p->type = pt_grav;
+        p->ramp = 1;
+
+        for (j = 0; j < 3; j++)
+        {
+            p->org[j] = pos[j];
+            p->vel[j] = initialVelocity[j] + RandomFloat(velocityMin, velocityMax);
+        }
+    }
+}
+
+void func_002B1F20(vec3_t pos, int size, int color, int clientId, float life)
+{
+    int i, j, k;
+    particle_t *p;
+    vec3_t dir, dest;
+    float dist;
+    int min = -size;
+
+    for (i = -16; i < 16; i++)
+        for (j = -16; j < 16; j++)
+            for (k = 0; k < 1; k++)
+            {
+                if (!D_0039966C)
+                    return;
+                p = D_0039966C;
+                D_0039966C = p->next;
+                p->next = D_00399660;
+                D_00399660 = p;
+
+                p->color = color + RandomLong(0, 10);
+                p->packedColor = 0;
+                p->type = pt_static;
+                VectorCopy(pos, p->org);
+
+                dest[0] = pos[0] + RandomFloat(min, size);
+                dest[1] = pos[1] + RandomFloat(min, size);
+                dest[2] = pos[2] + RandomFloat(min, size);
+
+                VectorSubtract(dest, p->org, dir);
+                dist = VectorNormalize(dir) / life;
+                p->die = cl[clientId].time + life + RandomFloat(-0.5f, 0.5f);
+                VectorScale(dir, dist, p->vel);
+            }
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B2128);
 
