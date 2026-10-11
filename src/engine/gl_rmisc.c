@@ -3,6 +3,7 @@
 #include "engine/cvar.h"
 #include "engine/client.h"
 #include "engine/render.h"
+#include "engine/model.h"
 #include "engine/glquake.h"
 
 INCLUDE_RODATA("asm/nonmatchings/engine/gl_rmisc", D_00394A08);
@@ -250,7 +251,74 @@ void R_Init(void)
 void func_002B0278(void) {
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rmisc", func_002B0280);
+extern int d_lightstylevalue[];
+extern cl_entity_t D_004F9238; /* r_worldentity */
+extern mleaf_t *r_viewleaf[2];
+extern int D_00399520;  /* skytexturenum */
+extern int D_00399550;  /* mirrortexturenum */
+extern float D_003338F8; /* valor salvo de r_decals */
+extern cl_entity_t *cl_entities[2];
+void func_002A67E0(void);
+void func_002C3038(void);
+void func_002B0CD0(int clientId);
+void R_ClearDecals(void);
+void V_ResetScreenEffects(int clientId);
+void GL_BuildLightmaps(int clientId);
+void R_LoadSkys(void);
+int func_00228C00(char *name, model_t *model);
+void GL_UnloadTextures(void);
+void *memset(void *s, int c, unsigned int n);
+
+void func_002B0280(int clientId)
+{
+    int i;
+
+    for (i = 0; i < 256; i++)
+        d_lightstylevalue[i] = 264;
+
+    func_002A67E0();
+    func_002C3038();
+
+    memset(&D_004F9238, 0, sizeof(D_004F9238));
+    D_004F9238.model = cl[clientId].worldmodel;
+
+    for (i = 0; i < cl[clientId].worldmodel->numleafs; i++)
+        cl[clientId].worldmodel->leafs[i].efrags = NULL;
+
+    r_viewleaf[clientId] = NULL;
+    func_002B0CD0(clientId);
+    R_ClearDecals();
+    V_ResetScreenEffects(clientId);
+
+    if (!clientId)
+        GL_BuildLightmaps(0);
+
+    D_00399520 = -1;
+    D_00399550 = -1;
+
+    for (i = 0; i < cl[clientId].worldmodel->numtextures; i++)
+    {
+        if (!Q_strncmp(cl[clientId].worldmodel->textures[i].name, "sky", 3))
+            D_00399520 = i;
+        if (!Q_strncmp(cl[clientId].worldmodel->textures[i].name, "window02_1", 10))
+            D_00399550 = i;
+        cl[clientId].worldmodel->textures[i].texturechain = NULL;
+    }
+
+    if (!clientId)
+        R_LoadSkys();
+
+    if (D_003338F8 < 0)
+        D_003338F8 = r_decals.value;
+
+    if (func_00228C00("maps/ht12fubar.bs2", cl[clientId].worldmodel) == 1)
+        r_decals.value = 20;
+    else
+        r_decals.value = D_003338F8;
+
+    cl_entities[clientId]->scale = gl_wateramp.value;
+    GL_UnloadTextures();
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rmisc", func_002B0530);
 
