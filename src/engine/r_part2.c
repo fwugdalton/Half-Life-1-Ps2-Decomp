@@ -73,6 +73,7 @@ void func_002B75F0(BEAM *pbeam, float frametime, int clientId);
 #define TE_BEAMFOLLOW 22
 #define TE_BEAMRING 24
 
+particle_t *func_002B1420(vec3_t org, vec3_t vel, float life, int clientId);
 int func_002B74D0(float *start, float *end, int pvsOnly, int clientId);
 
 extern cl_entity_t *cl_entities[2];
@@ -1512,11 +1513,59 @@ void func_002B5228(int deadEntity, int clientId)
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B5228);
 #endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B53A0);
+void func_002B53A0(int deadEntity, int clientId)
+{
+    BEAM *pbeam;
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B5458);
+    for (pbeam = D_00414290[clientId]; pbeam; pbeam = pbeam->next)
+    {
+        if ((pbeam->flags & FBEAM_STARTENTITY) && pbeam->startEntity == deadEntity)
+        {
+            pbeam->flags &= ~(FBEAM_STARTENTITY | FBEAM_FOREVER);
+            if (pbeam->type != TE_BEAMFOLLOW)
+                pbeam->die = cl[clientId].time;
+        }
+        if ((pbeam->flags & FBEAM_ENDENTITY) && pbeam->endEntity == deadEntity)
+        {
+            pbeam->flags &= ~(FBEAM_ENDENTITY | FBEAM_FOREVER);
+            pbeam->die = cl[clientId].time;
+        }
+    }
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B5590);
+void func_002B5458(float *org, int count, float size, float speed, int clientId)
+{
+    int i;
+    vec3_t end, dir, vel;
+    float scale;
+
+    scale = size * 0.01f;
+    for (i = 0; i < count; i++)
+    {
+        dir[0] = RandomFloat(-100, 100) * scale;
+        dir[1] = RandomFloat(-100, 100) * scale;
+        dir[2] = RandomFloat(0, 100) * scale;
+        VectorAdd(org, dir, end);
+        VectorScale(dir, -1.0f / speed, vel);
+        func_002B1420(end, vel, speed, clientId);
+    }
+}
+
+void func_002B5590(float *noise, int divs)
+{
+    int div2;
+
+    div2 = divs >> 1;
+    if (divs < 2)
+        return;
+
+    noise[div2] = (noise[0] + noise[divs]) * 0.5f + divs * RandomFloat(-0.125f, 0.125f);
+    if (div2 > 1)
+    {
+        func_002B5590(&noise[div2], div2);
+        func_002B5590(noise, div2);
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B5648);
 
