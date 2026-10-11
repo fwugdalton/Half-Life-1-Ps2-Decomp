@@ -72,6 +72,8 @@ extern vec3_t D_003339B0[NUMVERTEXNORMALS]; /* r_avertexnormals */
 extern float D_00334148;        /* beamlength */
 extern particle_t *D_00399668;
 extern int D_00333900[8];       /* ramp1 */
+extern int D_00333940[8];       /* ramp3 */
+extern int D_00414280;          /* tracercount */
 extern cvar_t D_00331B70;        /* tracerlength */
 
 
@@ -570,7 +572,134 @@ void func_002B2C70(vec3_t org, vec3_t dir, int pcolor, int speed, int clientId)
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B2C70);
 #endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B2F08);
+void func_002B2F08(vec3_t start, vec3_t end, int type, int clientId)
+{
+    vec3_t vec, right, up;
+    float len;
+    int j;
+    particle_t *p;
+    int dec;
+    float s, c, x, y;
+
+    VectorSubtract(end, start, vec);
+    len = VectorNormalize(vec);
+    if (type == 7)
+    {
+        dec = 1;
+        VectorMatrix(vec, right, up);
+    }
+    else if (type < 128)
+    {
+        dec = 3;
+    }
+    else
+    {
+        dec = 1;
+        type -= 128;
+    }
+
+    VectorScale(vec, dec, vec);
+
+    while (len > 0)
+    {
+        len -= dec;
+
+        if (!D_0039966C)
+            return;
+        p = D_0039966C;
+        D_0039966C = p->next;
+        p->next = D_00399660;
+        D_00399660 = p;
+
+        VectorCopy(vec3_origin, p->vel);
+        p->die = cl[clientId].time + 2;
+
+        switch (type)
+        {
+        case 0:
+            p->ramp = RandomLong(0, 3);
+            p->color = D_00333940[(int)p->ramp];
+            p->type = pt_fire;
+            for (j = 0; j < 3; j++)
+                p->org[j] = start[j] + RandomFloat(-3, 3);
+            break;
+
+        case 1:
+            p->ramp = RandomLong(2, 5);
+            p->color = D_00333940[(int)p->ramp];
+            p->type = pt_fire;
+            for (j = 0; j < 3; j++)
+                p->org[j] = start[j] + RandomFloat(-3, 3);
+            break;
+
+        case 2:
+            p->type = pt_grav;
+            p->color = RandomLong(67, 70);
+            for (j = 0; j < 3; j++)
+                p->org[j] = start[j] + RandomFloat(-3, 3);
+            break;
+
+        case 3:
+        case 5:
+            p->die = cl[clientId].time + 0.5f;
+            p->type = pt_static;
+            if (type == 3)
+                p->color = 52 + ((D_00414280 & 4) << 1);
+            else
+                p->color = 230 + ((D_00414280 & 4) << 1);
+
+            D_00414280++;
+
+            VectorCopy(start, p->org);
+            if (D_00414280 & 1)
+            {
+                p->vel[0] = 30 * vec[1];
+                p->vel[1] = 30 * -vec[0];
+            }
+            else
+            {
+                p->vel[0] = 30 * -vec[1];
+                p->vel[1] = 30 * vec[0];
+            }
+            break;
+
+        case 4:
+            p->type = pt_grav;
+            p->color = RandomLong(67, 70);
+            for (j = 0; j < 3; j++)
+                p->org[j] = start[j] + RandomFloat(-3, 3);
+            len -= 3;
+            break;
+
+        case 6:
+            p->ramp = RandomLong(0, 3);
+            p->color = D_00333940[(int)p->ramp];
+            p->type = pt_fire;
+            VectorCopy(start, p->org);
+            break;
+
+        case 7:
+            x = RandomLong(0, 0xFFFF);
+            y = RandomLong(8, 16);
+            s = sinf(x) * y;
+            c = cosf(x) * y;
+            p->org[0] = start[0] + s * right[0] + c * up[0];
+            p->org[1] = start[1] + s * right[1] + c * up[1];
+            p->org[2] = start[2] + s * right[2] + c * up[2];
+            VectorSubtract(start, p->org, p->vel);
+            VectorScale(p->vel, 2, p->vel);
+            VectorMA(p->vel, RandomFloat(96, 111), vec, p->vel);
+            p->die = cl[clientId].time + 2;
+            p->type = pt_explode2;
+            p->ramp = RandomLong(0, 3);
+            p->color = D_00333940[(int)p->ramp];
+            break;
+        }
+
+        p->packedColor = 0;
+        VectorAdd(start, vec, start);
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B3598);
 
