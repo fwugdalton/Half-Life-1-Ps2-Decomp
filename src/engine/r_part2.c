@@ -87,6 +87,35 @@ void glDisable(int cap);
 void glTexEnvf(int target, int pname, float param);
 void glBlendFunc(int sfactor, int dfactor);
 void func_0023AF68(void);
+
+enum
+{
+    kRenderNormal,
+    kRenderTransColor,
+    kRenderTransTexture,
+    kRenderGlow,
+    kRenderTransAlpha,
+    kRenderTransAdd
+};
+
+extern color24 D_00333988[];    /* gTracerColors */
+extern float D_00334178[];      /* tamanho do tracer por tipo */
+extern cvar_t D_00331B88;       /* tracerred */
+extern cvar_t D_00331BA0;       /* tracergreen */
+extern cvar_t D_00331BB8;       /* tracerblue */
+extern cvar_t D_00331BD0;       /* traceralpha */
+extern model_t *D_003991E4;     /* sprite do tracer */
+
+int tri_SpriteTexture(model_t *pSpriteModel, int frame);
+void tri_RenderMode(int mode);
+void tri_Color4ub(unsigned char r, unsigned char g, unsigned char b, unsigned char a);
+void tri_Brightness(float brightness);
+void func_002A0EE0(int);        /* tri_CullFace */
+int ScreenTransform(vec3_t point, vec3_t screen);
+void glBegin(int mode);
+void glEnd(void);
+void glTexCoord2f(float s, float t);
+void func_0023C218(float x, float y, float z); /* glVertex3f */
 void func_002B3EE8(int clientId);
 void func_002B7CA8(int clientId);
 void func_002B0D58(particle_t **ppparticles, int clientId);
@@ -1004,7 +1033,156 @@ void func_002B3A10(int clientId)
     glDisable(GL_ALPHA_TEST);
 }
 
+#ifdef NON_MATCHING
+void func_002B3EE8(int clientId)
+{
+    vec3_t up, right;
+    vec3_t start, end, screen, screenLast, tmp, normal;
+    particle_t *p;
+    float frametime, scale, dist, gravity;
+    float atten, dist1, dist2, delta, frac, size;
+    color24 *pColor;
+    int draw;
+
+    if (!D_00399668)
+        return;
+
+    D_00333988[4].r = D_00331B88.value * D_00331BD0.value * 255;
+    D_00333988[4].g = D_00331BA0.value * D_00331BD0.value * 255;
+    D_00333988[4].b = D_00331BB8.value * D_00331BD0.value * 255;
+
+    func_002B0D58(&D_00399668, clientId);
+
+    frametime = cl[clientId].time - cl[clientId].oldtime;
+    VectorScale(vup, 1.5f, up);
+    VectorScale(vright, 1.5f, right);
+
+    if (!tri_SpriteTexture(D_003991E4, 0))
+        return;
+
+    scale = 1.0f - frametime * 0.9f;
+    dist = DotProduct(r_origin, vpn);
+    gravity = (cl[clientId].time - cl[clientId].oldtime) * sv_gravity.value;
+    if (scale < 0)
+        scale = 0;
+
+    tri_RenderMode(kRenderTransAdd);
+    func_002A0EE0(1);
+
+    for (p = D_00399668; p; p = p->next)
+    {
+        pColor = &D_00333988[p->color];
+        draw = 1;
+
+        if (p->die - 0.1f > cl[clientId].time)
+            atten = p->ramp * 0.1f;
+        else
+            atten = (p->die - cl[clientId].time) * p->ramp;
+
+        end[0] = p->org[0] + p->vel[0] * atten;
+        end[1] = p->org[1] + p->vel[1] * atten;
+        end[2] = p->org[2] + p->vel[2] * atten;
+        VectorCopy(p->org, start);
+
+        if (ScreenTransform(start, screen) || ScreenTransform(end, screenLast))
+        {
+            dist1 = DotProduct(start, vpn) - dist;
+            dist2 = DotProduct(end, vpn) - dist;
+
+            if (dist1 <= 0 && dist2 <= 0)
+            {
+                draw = 0;
+            }
+            else
+            {
+                delta = dist2 - dist1;
+                if (delta < 0.01f)
+                {
+                    draw = 0;
+                }
+                else
+                {
+                    frac = dist1 / delta;
+                    if (dist1 <= 0)
+                    {
+                        start[0] = start[0] + frac * (end[0] - start[0]);
+                        start[1] = start[1] + frac * (end[1] - start[1]);
+                        start[2] = start[2] + frac * (end[2] - start[2]);
+                    }
+                    else
+                    {
+                        end[0] = start[0] + frac * (end[0] - start[0]);
+                        end[1] = start[1] + frac * (end[1] - start[1]);
+                        end[2] = start[2] + frac * (end[2] - start[2]);
+                    }
+                    ScreenTransform(start, screen);
+                    ScreenTransform(end, screenLast);
+                }
+            }
+        }
+
+        if (draw)
+        {
+            ScreenTransform(start, screen);
+            ScreenTransform(end, screenLast);
+
+            VectorSubtract(screenLast, screen, tmp);
+            tmp[2] = 0;
+            size = D_00334178[p->type];
+            VectorNormalize(tmp);
+
+            VectorScale(vup, tmp[0] * size, normal);
+            VectorMA(normal, -tmp[1] * size, vright, normal);
+
+            glBegin(6);
+            D_00399534++;
+            D_00399598 += 4;
+            tri_Color4ub(pColor->r, pColor->g, pColor->b, p->packedColor);
+
+            tri_Brightness(0);
+            glTexCoord2f(0, 0);
+            func_0023C218(start[0] + normal[0], start[1] + normal[1], start[2] + normal[2]);
+
+            tri_Brightness(1);
+            glTexCoord2f(0, 1);
+            func_0023C218(end[0] + normal[0], end[1] + normal[1], end[2] + normal[2]);
+
+            tri_Brightness(1);
+            glTexCoord2f(1, 1);
+            func_0023C218(end[0] - normal[0], end[1] - normal[1], end[2] - normal[2]);
+
+            tri_Brightness(0);
+            glTexCoord2f(1, 0);
+            func_0023C218(start[0] - normal[0], start[1] - normal[1], start[2] - normal[2]);
+
+            glEnd();
+        }
+
+        p->org[0] += p->vel[0] * frametime;
+        p->org[1] += p->vel[1] * frametime;
+        p->org[2] += p->vel[2] * frametime;
+
+        if (p->type == pt_grav)
+        {
+            p->vel[0] *= scale;
+            p->vel[1] *= scale;
+            p->vel[2] -= gravity;
+            p->packedColor = (p->die - cl[clientId].time) * 2 * 255;
+            if (p->packedColor > 255)
+                p->packedColor = 255;
+        }
+        else if (p->type == pt_slowgrav)
+        {
+            p->vel[2] = gravity * 0.05f;
+        }
+    }
+
+    func_002A0EE0(0);
+    tri_RenderMode(kRenderNormal);
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B3EE8);
+#endif
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B4638);
 
