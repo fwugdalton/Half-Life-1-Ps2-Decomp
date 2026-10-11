@@ -14,14 +14,16 @@ typedef struct cl_entity_s
     int rendermode;             /* 0x10 */
     byte pad14[0x1C - 0x14];
     int movetype;               /* 0x1C */
-    int unk_20;                 /* 0x20: body do viewmodel (svc_weaponanim) */
+    int body;                   /* 0x20: body do viewmodel (svc_weaponanim) */
     int sequence;               /* 0x24 */
     byte pad28[0x2C - 0x28];
     int index;                  /* 0x2C */
     int colormap;               /* 0x30 */
-    byte pad34[0x38 - 0x34];
+    int skin;                   /* 0x34 */
     int visframe;               /* 0x38 */
-    byte pad3C[0x50 - 0x3C];
+    byte pad3C[0x44 - 0x3C];
+    int aiment;                 /* 0x44 */
+    byte pad48[0x50 - 0x48];
     struct model_s *model;      /* 0x50 */
     struct efrag_s *efrag;      /* 0x54 */
     void *topnode;              /* 0x58 */

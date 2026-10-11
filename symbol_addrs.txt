@@ -1598,3 +1598,5 @@ glTranslatef = 0x0023B2A8; // type:func
 glRotatef = 0x0023B368; // type:func
 R_RotateForEntity = 0x002A8CB0; // type:func
 R_DrawViewModel = 0x002A9890; // type:func
+R_DrawEntitiesOnList = 0x002A9420; // type:func
+R_DrawSpriteModel = 0x002A8EB0; // type:func

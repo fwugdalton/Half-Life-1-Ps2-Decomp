@@ -1581,7 +1581,7 @@ void CL_ParseServerMessage(int clientId)
         case svc_weaponanim:
             cl[clientId].weaponstarttime = 0;
             cl[clientId].weaponsequence = MSG_ReadByte();
-            cl[clientId].viewent.unk_20 = MSG_ReadByte();
+            cl[clientId].viewent.body = MSG_ReadByte();
             break;
 
         case svc_decalname:

@@ -77,6 +77,17 @@ typedef struct
 } colorVec;
 
 colorVec R_LightPoint(vec3_t p);
+extern int cl_numvisedicts[];
+extern cl_entity_t *cl_visedicts[];
+extern int cl_updatemask[];
+extern float r_blend;
+extern vec3_t r_entorigin;
+void AddTEntity(cl_entity_t *e, int clientId);
+void R_DrawBrushModel(cl_entity_t *e, int clientId);
+void func_0023AFC8(int);
+int R_StudioDrawPlayer(int flags, player_state_t *pplayer, int clientId);
+float *R_GetAttachmentPoint(int entity, int attachment, int clientId);
+void R_DrawSpriteModel(cl_entity_t *e, int clientId);
 
 void R_SetupFrame(int clientId);
 void R_SetFrustum(int clientId);
@@ -84,7 +95,7 @@ void func_002AA620(int clientId);
 void R_MarkLeaves(int clientId);
 void R_DrawWorld(int clientId);
 void func_002CD9F8(int clientId);
-void func_002A9420(int clientId);
+void R_DrawEntitiesOnList(int clientId);
 void R_DrawTEntitiesOnList(int clientId);
 void R_DrawStudioTEntities(int clientId);
 void func_002AB188(void);
@@ -395,9 +406,97 @@ void R_RotateForEntity(cl_entity_t *e)
     glRotatef(angles[2], 1, 0, 0);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rmain", func_002A8EB0);
+INCLUDE_ASM("asm/nonmatchings/engine/gl_rmain", R_DrawSpriteModel);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rmain", func_002A9420);
+#ifdef NON_MATCHING
+void R_DrawEntitiesOnList(int clientId)
+{
+    int i, j;
+    float *pAttachment;
+
+    if (!r_drawentities.value)
+        return;
+
+    for (i = 0; i < cl_numvisedicts[clientId]; i++)
+    {
+        currententity = &cl_visedicts[clientId][i];
+
+        if (currententity->rendermode != 0)
+        {
+            AddTEntity(currententity, clientId);
+            continue;
+        }
+
+        if (currententity->model->type == mod_brush)
+            R_DrawBrushModel(currententity, clientId);
+    }
+
+    if (cl[clientId].waterlevel < 3)
+        func_0023AFC8(2);
+
+    for (i = 0; i < cl_numvisedicts[clientId]; i++)
+    {
+        currententity = &cl_visedicts[clientId][i];
+
+        if (currententity->rendermode != 0)
+            continue;
+
+        if (currententity->model->type != mod_studio)
+            continue;
+
+        if (currententity->index > 0 && currententity->index <= cl[clientId].maxclients)
+        {
+            R_StudioDrawPlayer(3, &cl[clientId].frames[cl[clientId].parsecount & cl_updatemask[clientId]].playerstate[currententity->index - 1], clientId);
+        }
+        else if (currententity->movetype == 12)
+        {
+            for (j = 0; j < cl_numvisedicts[clientId]; j++)
+            {
+                if (cl_visedicts[clientId][j].index == currententity->aiment)
+                {
+                    currententity = &cl_visedicts[clientId][j];
+                    if (currententity->index > 0 && currententity->index <= cl[clientId].maxclients)
+                        R_StudioDrawPlayer(0, &cl[clientId].frames[cl[clientId].parsecount & cl_updatemask[clientId]].playerstate[currententity->index - 1], clientId);
+                    else
+                        R_StudioDrawModel(0, clientId, 1);
+                    currententity = &cl_visedicts[clientId][i];
+                    R_StudioDrawModel(3, clientId, 1);
+                    break;
+                }
+            }
+        }
+        else
+        {
+            R_StudioDrawModel(3, clientId, 1);
+        }
+    }
+
+    r_blend = 1.0f;
+    for (i = 0; i < cl_numvisedicts[clientId]; i++)
+    {
+        currententity = &cl_visedicts[clientId][i];
+
+        if (currententity->rendermode != 0)
+            continue;
+
+        if (currententity->model->type == mod_sprite)
+        {
+            if (currententity->body)
+            {
+                pAttachment = R_GetAttachmentPoint(currententity->skin, currententity->body, clientId);
+                VectorCopy(pAttachment, r_entorigin);
+            }
+            else
+            {
+                VectorCopy(currententity->origin, r_entorigin);
+            }
+            R_DrawSpriteModel(currententity, clientId);
+        }
+    }
+}
+#else
+INCLUDE_ASM("asm/nonmatchings/engine/gl_rmain", R_DrawEntitiesOnList);
+#endif
 
 void R_DrawViewModel(int clientId)
 {
@@ -574,7 +673,7 @@ void R_RenderScene(int clientId)
     R_MarkLeaves(clientId);
     R_DrawWorld(clientId);
     func_002CD9F8(clientId);
-    func_002A9420(clientId);
+    R_DrawEntitiesOnList(clientId);
     R_DrawTEntitiesOnList(clientId);
     glDisable(GL_FOG);
     R_DrawStudioTEntities(clientId);

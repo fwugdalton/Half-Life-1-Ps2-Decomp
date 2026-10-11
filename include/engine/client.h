@@ -20,6 +20,12 @@ typedef struct screenfade_s
 #define FFADE_MODULATE 0x0002
 #define FFADE_STAYOUT 0x0004
 
+/* estado de jogador guardado no frame (layout ainda não mapeado) */
+typedef struct
+{
+    byte data[0xF8];
+} player_state_t; /* 0xF8 */
+
 /* frame_t do PS2 (0x330), cl.frames[cl_updatebackup] */
 typedef struct frame_s
 {
@@ -27,7 +33,9 @@ typedef struct frame_s
     float senttime;             /* 0x24 */
     byte pad28[0x2C - 0x28];
     float receivedtime;         /* 0x2C */
-    byte pad30[0x324 - 0x30];
+    byte pad30[0x34 - 0x30];
+    player_state_t playerstate[3]; /* 0x34 (MAX_CLIENTS) */
+    byte pad31C[0x324 - 0x31C];
     short unk_324;              /* 0x324 */
     short unk_326;              /* 0x326 */
     short unk_328;              /* 0x328 */
