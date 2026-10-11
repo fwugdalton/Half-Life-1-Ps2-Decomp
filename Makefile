@@ -59,6 +59,7 @@ $(BUILD_DIR)/src/engine/r_trans.o: CFLAGS += -ffast-math
 $(BUILD_DIR)/src/engine/sv_main.o: CFLAGS += -ffast-math
 $(BUILD_DIR)/src/engine/sv_move.o: CFLAGS += -ffast-math -fmove-all-movables
 $(BUILD_DIR)/src/engine/sv_phys.o: CFLAGS += -ffast-math
+$(BUILD_DIR)/src/engine/gl_screen.o: CFLAGS += -ffast-math
 $(BUILD_DIR)/src/engine/sv_upld.o: CFLAGS += -ffast-math
 $(BUILD_DIR)/src/engine/sv_user.o: CFLAGS += -ffast-math
 $(BUILD_DIR)/src/engine/tmessage.o: CFLAGS += -ffast-math

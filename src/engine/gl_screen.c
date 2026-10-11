@@ -158,7 +158,66 @@ void SCR_CheckDrawCenterString(int clientId)
     SCR_DrawCenterString(clientId);
 }
 
+extern float D_003332E0[]; /* scr_fov */
+extern int D_003992E8;     /* sb_lines */
+extern refdef_t r_refdef;
+
+#ifdef NON_MATCHING
+void func_002ABDE0(int clientId)
+{
+    float size;
+    int h;
+
+    D_003995C4 = 0;
+    D_0053D1D4 = 0;
+    scr_viewsize.value = 120;
+
+    if (D_003332E0[clientId] < 10)
+        D_003332E0[clientId] = 10;
+    if (D_003332E0[clientId] > 170)
+        D_003332E0[clientId] = 170;
+
+    if (cl[clientId].intermission)
+        size = 120;
+    else
+        size = scr_viewsize.value;
+
+    if (size >= 120)
+        D_003992E8 = 0;
+    else if (size >= 110)
+        D_003992E8 = 24;
+    else
+        D_003992E8 = 48;
+
+    size = scr_viewsize.value < 100 ? scr_viewsize.value : 100;
+    if (cl[clientId].intermission)
+    {
+        D_003992E8 = 0;
+        size = 100;
+    }
+    size *= 0.01f;
+
+    h = D_003995DC - D_003992E8;
+
+    r_refdef.vrect.width = D_003995E8 * size + 0.5f;
+    if (r_refdef.vrect.width < 96)
+    {
+        size = 96.0f / r_refdef.vrect.width;
+        r_refdef.vrect.width = 96;
+    }
+
+    r_refdef.vrect.height = D_003995DC * size + 0.5f;
+    if (r_refdef.vrect.height > D_003995DC - D_003992E8)
+        r_refdef.vrect.height = D_003995DC - D_003992E8;
+
+    r_refdef.vrect.x = (D_003995E8 - r_refdef.vrect.width) * 0.5f;
+    r_refdef.vrect.y = (h - r_refdef.vrect.height) * 0.5f;
+
+    scr_vrect = r_refdef.vrect;
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/gl_screen", func_002ABDE0);
+#endif
 
 void SCR_SizeUp(void)
 {
@@ -245,7 +304,55 @@ void func_002AC1B0(void)
 INCLUDE_ASM("asm/nonmatchings/engine/gl_screen", func_002AC1B0);
 #endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_screen", func_002AC1D8);
+typedef struct
+{
+    byte pad0[0x20];
+    unsigned int height;        /* 0x20 */
+    byte pad24[0x28 - 0x24];
+    int numpages;               /* 0x28 */
+} scr_viddef_t;
+extern scr_viddef_t r_viddef;
+extern int clearnotify, con_notifylines, con_forcedup;
+void Con_CheckResize(void);
+
+void func_002AC1D8(int clientId)
+{
+    Con_CheckResize();
+    if (D_00399618)
+        return;
+
+    con_forcedup = !cl[clientId].worldmodel || cls[clientId].signon != 3;
+
+    if (con_forcedup)
+    {
+        D_00399604 = r_viddef.height;
+        D_003995E0 = D_00399604;
+    }
+    else if (key_dest == 1)
+        D_00399604 = r_viddef.height / 2;
+    else
+        D_00399604 = 0;
+
+    if (D_00399604 < D_003995E0)
+    {
+        D_003995E0 -= D_003332E8.value * host_frametime;
+        if (D_00399604 > D_003995E0)
+            D_003995E0 = D_00399604;
+    }
+    else if (D_00399604 > D_003995E0)
+    {
+        D_003995E0 += D_003332E8.value * host_frametime;
+        if (D_00399604 < D_003995E0)
+            D_003995E0 = D_00399604;
+    }
+
+    if (D_00399624++ < r_viddef.numpages)
+        ;
+    else if (clearnotify++ < r_viddef.numpages)
+        ;
+    else
+        con_notifylines = 0;
+}
 
 void SCR_DrawConsole(void)
 {
