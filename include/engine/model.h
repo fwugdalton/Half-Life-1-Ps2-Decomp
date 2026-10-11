@@ -25,14 +25,19 @@ typedef struct texture_s
 {
     byte *pixels;               /* 0x00 */
     byte *palette;              /* 0x04 */
-    byte unk_08[0x0C - 0x08];
+    unsigned short srcwidth;    /* 0x08 */
+    unsigned short srcheight;   /* 0x0A */
     unsigned short width;       /* 0x0C */
     unsigned short height;      /* 0x0E */
     char name[16];              /* 0x10 */
     byte unk_20[0x23 - 0x20];
     byte nummips;               /* 0x23 */
     int gl_texturenum;          /* 0x24 */
-    byte unk_28[0x40 - 0x28];
+    int unk_28;
+    int anim_total;             /* 0x2C */
+    int anim_min, anim_max;     /* 0x30 */
+    struct texture_s *anim_next; /* 0x38 */
+    struct texture_s *alternate_anims; /* 0x3C */
 } texture_t; /* 0x40 */
 
 typedef struct glpoly_s

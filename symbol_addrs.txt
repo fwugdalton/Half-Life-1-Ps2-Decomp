@@ -1470,3 +1470,5 @@ R_BuildLightMap = 0x002A2160; // type:func
 dpmul = 0x002DF4F8; // type:func
 dptoli = 0x002DFB28; // type:func
 pow = 0x002D79C0; // type:func
+R_TextureAnimation = 0x002A25E8; // type:func
+rtable = 0x0040A100; // size:0x640

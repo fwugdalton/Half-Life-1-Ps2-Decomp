@@ -41,6 +41,8 @@ extern int d_lightstylevalue[];
 extern int lightgammatable[1024];
 extern int D_003995AC;
 extern int r_framecount;
+extern int rtable[20][20];
+int RandomLong(int lLow, int lHigh);
 
 #ifdef NON_MATCHING
 void R_AddDynamicLights(msurface_t *surf)
@@ -229,7 +231,69 @@ store:
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A25E8);
+texture_t *R_TextureAnimation(msurface_t *s)
+{
+    texture_t *base;
+    int count, reletive;
+    int tx, ty;
+
+    base = s->texture;
+
+    if (!rtable[0][0])
+    {
+        for (tx = 0; tx < 20; tx++)
+        {
+            for (ty = 0; ty < 20; ty++)
+                rtable[tx][ty] = RandomLong(0, 0x7FFF);
+        }
+    }
+
+    if (currententity->frame)
+    {
+        if (base->alternate_anims)
+            base = base->alternate_anims;
+    }
+
+    if (!base->anim_total)
+        return base;
+
+    if (base->name[0] == '-')
+    {
+        texture_t *tex;
+
+        tx = s->texturemins[0] + (base->srcwidth << 16);
+        tx /= base->srcwidth;
+        ty = s->texturemins[1] + (base->srcheight << 16);
+        ty /= base->srcheight;
+        count = 0;
+        reletive = rtable[tx % 20][ty % 20] % base->anim_total;
+        tex = base;
+        while (tex->anim_min > reletive || tex->anim_max <= reletive)
+        {
+            tex = tex->anim_next;
+            if (!tex)
+                Sys_Error("R_TextureAnimation: broken cycle");
+            if (++count > 100)
+                Sys_Error("R_TextureAnimation: infinite cycle");
+        }
+        base = tex;
+    }
+    else
+    {
+        reletive = (int)(cl[0].time * 10) % base->anim_total;
+        count = 0;
+        while (base->anim_min > reletive || base->anim_max <= reletive)
+        {
+            base = base->anim_next;
+            if (!base)
+                Sys_Error("R_TextureAnimation: broken cycle");
+            if (++count > 100)
+                Sys_Error("R_TextureAnimation: infinite cycle");
+        }
+    }
+
+    return base;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A2880);
 
@@ -239,6 +303,8 @@ INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A2908);
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A29F8);
 
+/* tabela de floats alinhada em 8 no original (até virar C) */
+__asm__(".section .rodata\n.align 3\n.section .text");
 INCLUDE_RODATA("asm/nonmatchings/engine/gl_rsurf", D_003937E8);
 
 INCLUDE_RODATA("asm/nonmatchings/engine/gl_rsurf", D_00393830);
