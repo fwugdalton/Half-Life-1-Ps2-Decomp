@@ -73,6 +73,9 @@ void func_002B75F0(BEAM *pbeam, float frametime, int clientId);
 #define TE_BEAMFOLLOW 22
 #define TE_BEAMRING 24
 
+float sinf(float);
+extern float D_004F9430[4][4]; /* worldToScreen */
+
 particle_t *func_002B1420(vec3_t org, vec3_t vel, float life, int clientId);
 int func_002B74D0(float *start, float *end, int pvsOnly, int clientId);
 
@@ -1567,9 +1570,38 @@ void func_002B5590(float *noise, int divs)
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B5648);
+void func_002B5648(float *noise, int divs)
+{
+    int i;
+    float freq;
+    float step;
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part2", ScreenTransform);
+    freq = 0;
+    step = M_PI / (float)divs;
+    for (i = 0; i < divs; i++)
+    {
+        noise[i] = sinf(freq);
+        freq += step;
+    }
+}
+
+int ScreenTransform(vec3_t point, vec3_t screen)
+{
+    float w;
+
+    screen[0] = D_004F9430[0][0] * point[0] + D_004F9430[1][0] * point[1] + D_004F9430[2][0] * point[2] + D_004F9430[3][0];
+    screen[1] = D_004F9430[0][1] * point[0] + D_004F9430[1][1] * point[1] + D_004F9430[2][1] * point[2] + D_004F9430[3][1];
+    w = D_004F9430[0][3] * point[0] + D_004F9430[1][3] * point[1] + D_004F9430[2][3] * point[2] + D_004F9430[3][3];
+
+    if (w != 0.0f)
+    {
+        w = 1.0f / w;
+        screen[0] *= w;
+        screen[1] *= w;
+    }
+
+    return w <= 0.0f;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B57C8);
 
