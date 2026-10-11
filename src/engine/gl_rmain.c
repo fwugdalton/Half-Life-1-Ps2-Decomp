@@ -49,6 +49,15 @@ extern vec3_t D_00551760[], D_00553DB0[], D_00551788[], D_00551718[];
 
 #define GL_FOG 0xB60
 #define STAT_HEALTH 0
+#define PLANE_ANYZ 5
+#define DEG2RAD(a) ((a) * (3.141593f / 180.0f))
+
+void *memcpy(void *, const void *, unsigned int);
+void *memset(void *, int, unsigned int);
+extern float D_003332E0[]; /* fov por jogador */
+float CalcFov(float fov_x, float width, float height);
+int SignbitsForPlane(mplane_t *out);
+void RotatePointAroundVector(vec3_t dst, vec3_t dir, vec3_t point, float degrees);
 
 extern cl_entity_t *currententity;
 extern qboolean cam_thirdperson;
@@ -60,7 +69,7 @@ extern int D_00399588;
 int R_StudioDrawModel(int flags, int clientId, int unk);
 
 void R_SetupFrame(int clientId);
-void func_002AA078(int clientId);
+void R_SetFrustum(int clientId);
 void func_002AA620(int clientId);
 void R_MarkLeaves(int clientId);
 void R_DrawWorld(int clientId);
@@ -247,7 +256,60 @@ void PerpendicularVector(vec3_t dst, vec3_t src)
     VectorNormalize(dst);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rmain", func_002A8990);
+void RotatePointAroundVector(vec3_t dst, vec3_t dir, vec3_t point, float degrees)
+{
+    float m[3][3];
+    float im[3][3];
+    float zrot[3][3];
+    float tmpmat[3][3];
+    float rot[3][3];
+    int i;
+    vec3_t vr, vup, vf;
+
+    vf[0] = dir[0];
+    vf[1] = dir[1];
+    vf[2] = dir[2];
+
+    PerpendicularVector(vr, dir);
+    CrossProduct(vr, vf, vup);
+
+    m[0][0] = vr[0];
+    m[1][0] = vr[1];
+    m[2][0] = vr[2];
+
+    m[0][1] = vup[0];
+    m[1][1] = vup[1];
+    m[2][1] = vup[2];
+
+    m[0][2] = vf[0];
+    m[1][2] = vf[1];
+    m[2][2] = vf[2];
+
+    memcpy(im, m, sizeof(im));
+
+    im[0][1] = m[1][0];
+    im[0][2] = m[2][0];
+    im[1][0] = m[0][1];
+    im[1][2] = m[2][1];
+    im[2][0] = m[0][2];
+    im[2][1] = m[1][2];
+
+    memset(zrot, 0, sizeof(zrot));
+    zrot[0][0] = zrot[1][1] = zrot[2][2] = 1.0f;
+
+    zrot[0][0] = cosf(DEG2RAD(degrees));
+    zrot[0][1] = sinf(DEG2RAD(degrees));
+    zrot[1][0] = -sinf(DEG2RAD(degrees));
+    zrot[1][1] = cosf(DEG2RAD(degrees));
+
+    R_ConcatRotations(m, zrot, tmpmat);
+    R_ConcatRotations(tmpmat, im, rot);
+
+    for (i = 0; i < 3; i++)
+    {
+        dst[i] = rot[i][0] * point[0] + rot[i][1] * point[1] + rot[i][2] * point[2];
+    }
+}
 
 qboolean R_CullBox(vec3_t mins, vec3_t maxs)
 {
@@ -333,7 +395,42 @@ int SignbitsForPlane(mplane_t *out)
     return bits;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rmain", func_002AA078);
+void R_SetFrustum(int clientId)
+{
+    int i;
+    float fov_x, fov_y;
+
+    fov_x = D_003332E0[clientId];
+
+    if (D_00399564)
+    {
+        if (cl_numlocal > 1)
+            fov_y = CalcFov(fov_x, 8, 9);
+        else
+            fov_y = CalcFov(fov_x, 16, 9);
+    }
+    else
+    {
+        if (cl_numlocal > 1)
+            fov_y = CalcFov(fov_x, 4, 1.5f);
+        else
+            fov_y = CalcFov(fov_x, 4, 3);
+    }
+
+    fov_x /= 2;
+    fov_y /= 2;
+    RotatePointAroundVector(frustum[0].normal, vup, vpn, -(90 - fov_x));
+    RotatePointAroundVector(frustum[1].normal, vup, vpn, 90 - fov_x);
+    RotatePointAroundVector(frustum[2].normal, vright, vpn, 90 - fov_y);
+    RotatePointAroundVector(frustum[3].normal, vright, vpn, -(90 - fov_y));
+
+    for (i = 0; i < 4; i++)
+    {
+        frustum[i].type = PLANE_ANYZ;
+        frustum[i].dist = DotProduct(r_origin, frustum[i].normal);
+        frustum[i].signbits = SignbitsForPlane(&frustum[i]);
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rmain", R_SetupFrame);
 
@@ -378,7 +475,7 @@ void R_RenderScene(int clientId)
     VectorCopy(vright, D_00551788[clientId]);
     VectorCopy(vup, D_00551718[clientId]);
 
-    func_002AA078(clientId);
+    R_SetFrustum(clientId);
     func_002AA620(clientId);
     R_MarkLeaves(clientId);
     R_DrawWorld(clientId);

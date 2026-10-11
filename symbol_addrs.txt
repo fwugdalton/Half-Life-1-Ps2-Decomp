@@ -1592,3 +1592,5 @@ CalcFov = 0x002AA588; // type:func
 R_RenderScene = 0x002AABD8; // type:func
 R_DrawViewModel = 0x002A9B28; // type:func
 R_SetupFrame = 0x002AA288; // type:func
+RotatePointAroundVector = 0x002A8990; // type:func
+R_SetFrustum = 0x002AA078; // type:func
