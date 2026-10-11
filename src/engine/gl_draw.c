@@ -403,7 +403,46 @@ int func_002ADB98(int x, int y, int num, float sx, float sy)
 INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002ADB98);
 #endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002ADE10);
+typedef struct
+{
+    int texnum;                 /* 0x00 */
+    float sl, tl, sh, th;       /* 0x04 */
+} glpic_t;
+
+typedef struct
+{
+    int width, height;          /* 0x00 */
+    glpic_t gl;                 /* 0x08 */
+} glqpic_t;
+
+void func_002ADE10(int x, int y, glqpic_t *pic)
+{
+    glpic_t *gl;
+
+    if (!pic)
+        return;
+
+    gl = &pic->gl;
+    glEnable(GL_TEXTURE_2D);
+    glDisable(GL_BLEND);
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_ALPHA_TEST);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, 7681.0f);
+    glColor4f(1, 1, 1, 1);
+    GL_Bind(gl->texnum);
+    glBegin(GL_QUADS);
+    D_00399570++;
+    D_00399558 += 4;
+    glTexCoord2f(gl->sl, gl->tl);
+    glVertex2f(x, y);
+    glTexCoord2f(gl->sh, gl->tl);
+    glVertex2f(x + pic->width, y);
+    glTexCoord2f(gl->sh, gl->th);
+    glVertex2f(x + pic->width, y + pic->height);
+    glTexCoord2f(gl->sl, gl->th);
+    glVertex2f(x, y + pic->height);
+    glEnd();
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002ADFB0);
 
