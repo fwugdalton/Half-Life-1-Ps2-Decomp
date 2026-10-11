@@ -264,7 +264,7 @@ extern char D_00333078[];
 void EntityPatchWrite(SAVERESTOREDATA *pSaveData, char *level);
 void CL_Save(char *name);
 
-/* entrada da lista de decals montada por func_002A50B8 */
+/* entrada da lista de decals montada por DecalListCreate */
 typedef struct
 {
     char *name;                 /* 0x00 */
@@ -274,7 +274,7 @@ typedef struct
     vec3_t position;            /* 0x08 */
 } savedecal_t; /* 0x14 */
 
-int func_002A50B8(savedecal_t *pList, int a1);
+int DecalListCreate(savedecal_t *pList, int a1);
 void Mem_PushTag(void);
 void Mem_SetTag(int tag);
 void Mem_PopTag(void);
@@ -1792,7 +1792,7 @@ void CL_Save(char *name)
     int i;
     int pFile;
 
-    number = func_002A50B8(decalList, 0);
+    number = DecalListCreate(decalList, 0);
 
     Mem_PushTag();
     Mem_SetTag(2);

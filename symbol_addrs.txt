@@ -1544,3 +1544,4 @@ gDecalSurfs = 0x004E77D8;
 gDecalSurfCount = 0x00399510; // size:0x4
 R_DrawDecals = 0x002A65C0; // type:func
 R_RenderBrushPolyChain = 0x002A6E78; // type:func
+DecalListCreate = 0x002A50B8; // type:func

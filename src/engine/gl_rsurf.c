@@ -181,10 +181,16 @@ void func_002EF8E0(int);
 
 typedef struct
 {
-    int index;                  /* 0x00 */
-    short entity;               /* 0x04 */
+    char *name;                 /* 0x00 */
+    short entityIndex;          /* 0x04 */
+    byte depth;                 /* 0x06 */
+    byte flags;                 /* 0x07 */
     vec3_t position;            /* 0x08 */
 } decalentry_t; /* 0x14 */
+
+#define FDECAL_DONTSAVE 0x04
+short func_002A5230(decal_t *pdecal, vec3_t position);
+void qsort(void *base, int num, int width, int (*compare)(const void *, const void *));
 
 #define BLOCK_WIDTH 128
 #define BLOCK_HEIGHT 128
@@ -1013,7 +1019,7 @@ int func_002A4FB0(decalentry_t *list, int count)
 
     for (i = 0; i < count; i++)
     {
-        if (pnew->index == list[i].index && pnew->entity == list[i].entity)
+        if (pnew->name == list[i].name && pnew->entityIndex == list[i].entityIndex)
         {
             VectorSubtract(pnew->position, list[i].position, tmp);
             if (Length(tmp) < 2.0f)
@@ -1030,7 +1036,38 @@ int func_002A5090(byte *a, byte *b)
     return a[6] < b[6];
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A50B8);
+int DecalListCreate(decalentry_t *pList, int clientId)
+{
+    int total = 0;
+    int i, depth;
+    decal_t *pdecals;
+
+    if (cl[clientId].worldmodel)
+    {
+        for (i = 0; i < MAX_DECALS; i++)
+        {
+            if (!gDecalPool[i].psurface || (gDecalPool[i].flags & FDECAL_DONTSAVE))
+                continue;
+
+            depth = 0;
+            pdecals = gDecalPool[i].psurface->pdecals;
+            while (pdecals && pdecals != &gDecalPool[i])
+            {
+                depth++;
+                pdecals = pdecals->pnext;
+            }
+
+            pList[total].depth = depth;
+            pList[total].flags = gDecalPool[i].flags;
+            pList[total].entityIndex = func_002A5230(&gDecalPool[i], pList[total].position);
+            pList[total].name = ((texture_t *)Draw_DecalTexture(gDecalPool[i].texture))->name;
+            total = func_002A4FB0(pList, total);
+        }
+    }
+
+    qsort(pList, total, sizeof(decalentry_t), (int (*)(const void *, const void *))func_002A5090);
+    return total;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A5230);
 
