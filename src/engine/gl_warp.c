@@ -32,28 +32,37 @@ typedef struct
 } psiheader_t;
 
 extern cvar_t cl_skyname;
-extern char *D_00333118[6]; /* suf */
-#define suf D_00333118
-extern int D_004E77C0[6];   /* skytexturenum */
-extern int D_003994F8;      /* c_sky */
-extern float D_004E7738[2][6]; /* skymins */
-extern float D_004E7780[2][6]; /* skymaxs */
+extern char *suf[6];
+extern int skytexturenum[6];
+extern int c_sky;
+extern float skymins[2][6];
+extern float skymaxs[2][6];
 extern vec3_t r_origin;
-extern int D_003331C0[6][3]; /* vec_to_st */
-#define vec_to_st D_003331C0
-extern vec3_t D_00333130[6]; /* skyclip */
-#define skyclip D_00333130
-extern int D_00333178[6][3]; /* st_to_vec */
-#define st_to_vec D_00333178
+extern int vec_to_st[6][3];
+extern vec3_t skyclip[6];
+extern int st_to_vec[6][3];
 extern float D_004A8B58;
 #define sky_min (1.0f / 512.0f)
 #define sky_max (511.0f / 512.0f)
 void func_0023C048(float s, float t); /* glTexCoord2f */
 void func_0023C298(float *v);         /* glVertex3fv */
+#define GL_QUADS 7
+extern int D_00333220[6]; /* eixo de cada face do céu */
+extern int skytexorder[6];
+extern vec3_t vpn;
+extern int D_00399570;
+extern int D_00399558;
+extern vec3_t vec3_origin;
+void func_002A2880(void);
+void glDepthMask(int flag);
+void func_0023C1D0(float r, float g, float b); /* glColor3f */
+void func_0023BF60(int mode);                   /* glBegin */
+void func_0023C400(void);                       /* glEnd */
+void MakeSkyVec(float s, float t, int axis);
 
 float *func_002A3C60(glpoly_t *p);
-void func_002A13D0(int nump, vec3_t vecs, int stage);
-void func_002A1B60(void);
+void ClipSkyPolygon(int nump, vec3_t vecs, int stage);
+void R_DrawSkyBox(void);
 
 int sprintf(char *, const char *, ...);
 int func_002D04E8(char *name);
@@ -76,7 +85,7 @@ INCLUDE_RODATA("asm/nonmatchings/engine/gl_warp", D_00393700);
 INCLUDE_RODATA("asm/nonmatchings/engine/gl_warp", D_00393708);
 
 #ifdef NON_MATCHING
-void func_002A0F68(void)
+void R_LoadSkys(void)
 {
     int i;
     int texnum;
@@ -108,17 +117,17 @@ void func_002A0F68(void)
                 break;
             }
 
-            D_004E77C0[i] = texnum;
+            skytexturenum[i] = texnum;
             func_0023C600(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
             func_0023C600(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         }
     }
 }
 #else
-INCLUDE_ASM("asm/nonmatchings/engine/gl_warp", func_002A0F68);
+INCLUDE_ASM("asm/nonmatchings/engine/gl_warp", R_LoadSkys);
 #endif
 
-void func_002A1150(int nump, vec3_t vecs)
+void DrawSkyPolygon(int nump, vec3_t vecs)
 {
     int i, j;
     vec3_t v, av;
@@ -126,7 +135,7 @@ void func_002A1150(int nump, vec3_t vecs)
     int axis;
     float *vp;
 
-    D_003994F8++;
+    c_sky++;
 
     VectorCopy(vec3_origin, v);
     for (i = 0, vp = vecs; i < nump; i++, vp += 3)
@@ -178,18 +187,18 @@ void func_002A1150(int nump, vec3_t vecs)
         else
             t = vecs[j - 1] / dv;
 
-        if (s < D_004E7738[0][axis])
-            D_004E7738[0][axis] = s;
-        if (t < D_004E7738[1][axis])
-            D_004E7738[1][axis] = t;
-        if (s > D_004E7780[0][axis])
-            D_004E7780[0][axis] = s;
-        if (t > D_004E7780[1][axis])
-            D_004E7780[1][axis] = t;
+        if (s < skymins[0][axis])
+            skymins[0][axis] = s;
+        if (t < skymins[1][axis])
+            skymins[1][axis] = t;
+        if (s > skymaxs[0][axis])
+            skymaxs[0][axis] = s;
+        if (t > skymaxs[1][axis])
+            skymaxs[1][axis] = t;
     }
 }
 
-void func_002A13D0(int nump, vec3_t vecs, int stage)
+void ClipSkyPolygon(int nump, vec3_t vecs, int stage)
 {
     float *norm;
     float *v;
@@ -206,7 +215,7 @@ void func_002A13D0(int nump, vec3_t vecs, int stage)
 
     if (stage == 6)
     {
-        func_002A1150(nump, vecs);
+        DrawSkyPolygon(nump, vecs);
         return;
     }
 
@@ -232,7 +241,7 @@ void func_002A13D0(int nump, vec3_t vecs, int stage)
 
     if (!front || !back)
     {
-        func_002A13D0(nump, vecs, stage + 1);
+        ClipSkyPolygon(nump, vecs, stage + 1);
         return;
     }
 
@@ -275,11 +284,11 @@ void func_002A13D0(int nump, vec3_t vecs, int stage)
         newc[1]++;
     }
 
-    func_002A13D0(newc[0], newv[0][0], stage + 1);
-    func_002A13D0(newc[1], newv[1][0], stage + 1);
+    ClipSkyPolygon(newc[0], newv[0][0], stage + 1);
+    ClipSkyPolygon(newc[1], newv[1][0], stage + 1);
 }
 
-void func_002A1828(msurface_t *s)
+void R_DrawSkyChain(msurface_t *s)
 {
     msurface_t *fa;
     glpoly_t *p;
@@ -287,7 +296,7 @@ void func_002A1828(msurface_t *s)
     int i;
     vec3_t vecs[MAX_CLIP_VERTS];
 
-    D_003994F8 = 0;
+    c_sky = 0;
 
     for (fa = s; fa; fa = fa->texturechain)
     {
@@ -297,25 +306,25 @@ void func_002A1828(msurface_t *s)
             for (i = 0; i < p->numverts; i++, verts += 3)
                 VectorSubtract(verts, r_origin, vecs[i]);
 
-            func_002A13D0(p->numverts, vecs[0], 0);
+            ClipSkyPolygon(p->numverts, vecs[0], 0);
         }
     }
 
-    func_002A1B60();
+    R_DrawSkyBox();
 }
 
-void func_002A1918(void)
+void R_ClearSkyBox(void)
 {
     int i;
 
     for (i = 0; i < 6; i++)
     {
-        D_004E7738[0][i] = D_004E7738[1][i] = 9999;
-        D_004E7780[0][i] = D_004E7780[1][i] = -9999;
+        skymins[0][i] = skymins[1][i] = 9999;
+        skymaxs[0][i] = skymaxs[1][i] = -9999;
     }
 }
 
-void func_002A1970(float s, float t, int axis)
+void MakeSkyVec(float s, float t, int axis)
 {
     vec3_t v, b;
     int j, k;
@@ -365,4 +374,56 @@ void func_002A1970(float s, float t, int axis)
     func_0023C298(v);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_warp", func_002A1B60);
+void R_DrawSkyBox(void)
+{
+    int i;
+    vec3_t v;
+
+    func_002A2880();
+    glDepthMask(0);
+
+    for (i = 0; i < 6; i++)
+    {
+        if (skymins[0][i] >= skymaxs[0][i] || skymins[1][i] >= skymaxs[1][i])
+            continue;
+
+        VectorCopy(vec3_origin, v);
+        switch (D_00333220[i])
+        {
+        case 1:
+            v[0] = 1;
+            break;
+        case -1:
+            v[0] = -1;
+            break;
+        case 2:
+            v[1] = 1;
+            break;
+        case -2:
+            v[1] = -1;
+            break;
+        case 3:
+            v[2] = 1;
+            break;
+        case -3:
+            v[2] = -1;
+            break;
+        }
+
+        if (DotProduct(vpn, v) < -0.29289322f)
+            continue;
+
+        GL_Bind(skytexturenum[skytexorder[i]]);
+        func_0023C1D0(1, 1, 1);
+        func_0023BF60(GL_QUADS);
+        D_00399570++;
+        D_00399558 += 4;
+        MakeSkyVec(skymins[0][i], skymins[1][i], i);
+        MakeSkyVec(skymins[0][i], skymaxs[1][i], i);
+        MakeSkyVec(skymaxs[0][i], skymaxs[1][i], i);
+        MakeSkyVec(skymaxs[0][i], skymins[1][i], i);
+        func_0023C400();
+    }
+
+    glDepthMask(1);
+}
