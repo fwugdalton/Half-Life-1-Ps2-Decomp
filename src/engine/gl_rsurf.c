@@ -145,6 +145,9 @@ extern msurface_t *gDecalSurfs[];
 #define FDECAL_FLIPS 0x08
 #define FDECAL_FLIPT 0x10
 #define FDECAL_CLIPTEST 0x20
+#define FDECAL_CUSTOM 0x04
+#define DECAL_DISTANCE 4.0f
+void R_DecalCreate(msurface_t *psurface, int textureIndex, float scale, float x, float y);
 extern float g_DecalClipVerts[32][7];
 extern float g_DecalClipVerts2[32][7];
 qboolean R_CullBox(float *mins, float *maxs);
@@ -1227,7 +1230,102 @@ void R_DecalRemoveAll(int textureIndex)
     }
 }
 
+#ifdef NON_MATCHING
+void R_DecalNode(mnode_t *node)
+{
+    mplane_t *splitplane;
+    float dist;
+    int w, h;
+    float s, t, scale;
+    msurface_t *surf;
+    int i;
+    vec3_t normal, cross;
+    float face;
+
+    if (!node)
+        return;
+    if (node->contents < 0)
+        return;
+
+    splitplane = node->plane;
+    dist = DotProduct(gDecalPos, splitplane->normal) - splitplane->dist;
+
+    if (dist > gDecalSize)
+    {
+        R_DecalNode(node->children[0]);
+    }
+    else if (dist < -gDecalSize)
+    {
+        R_DecalNode(node->children[1]);
+    }
+    else
+    {
+        if (dist < DECAL_DISTANCE && dist > -DECAL_DISTANCE)
+        {
+            surf = gDecalModel->surfaces + node->firstsurface;
+            for (i = 0; i < node->numsurfaces; i++, surf++)
+            {
+                if (surf->flags & 0x130)
+                    continue;
+
+                scale = Length(surf->vecs[0]);
+                if (scale == 0.0f)
+                    continue;
+
+                s = DotProduct(gDecalPos, surf->vecs[0]) + surf->vecs[0][3] - surf->texturemins[0];
+                t = DotProduct(gDecalPos, surf->vecs[1]) + surf->vecs[1][3] - surf->texturemins[1];
+
+                w = gDecalTexture->srcwidth * scale;
+                h = gDecalTexture->srcheight * scale;
+
+                s -= w * 0.5f;
+                t -= h * 0.5f;
+
+                if (s <= -w || t <= -h)
+                    continue;
+
+                if (s > surf->extents[0] + w || t > surf->extents[1] + h)
+                    continue;
+
+                scale = 1.0f / scale;
+                s = (s + surf->texturemins[0]) / (float)surf->texture->srcwidth;
+                t = (t + surf->texturemins[1]) / (float)surf->texture->srcheight;
+
+                if (gDecalFlags & FDECAL_CUSTOM)
+                {
+                    if (surf->flags & SURF_PLANEBACK)
+                        VectorScale(surf->plane->normal, -1.0f, normal);
+                    else
+                        VectorCopy(surf->plane->normal, normal);
+
+                    CrossProduct(surf->vecs[0], normal, cross);
+                    face = DotProduct(cross, surf->vecs[1]);
+                    if (face < 0.0f)
+                        gDecalFlags |= FDECAL_FLIPS;
+                    else
+                        gDecalFlags &= ~FDECAL_FLIPS;
+
+                    CrossProduct(surf->vecs[1], normal, cross);
+                    face = DotProduct(cross, surf->vecs[0]);
+                    if (gDecalFlags & FDECAL_FLIPS)
+                        face = -face;
+                    if (face > 0.0f)
+                        gDecalFlags |= FDECAL_FLIPT;
+                    else
+                        gDecalFlags &= ~FDECAL_FLIPT;
+                }
+
+                R_DecalCreate(surf, gDecalIndex, scale, s, t);
+            }
+        }
+
+        R_DecalNode(node->children[0]);
+        R_DecalNode(node->children[1]);
+    }
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", R_DecalNode);
+#endif
 
 int func_002A4FB0(decalentry_t *list, int count)
 {
