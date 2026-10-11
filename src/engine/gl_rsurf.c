@@ -137,6 +137,11 @@ extern msurface_t *gDecalSurfs[];
 #define GL_POLYGON_OFFSET_FILL 0x8037
 #define SURF_DRAWTURB 0x10
 #define FDECAL_NOCLIP 0x40
+#define FDECAL_FLIPS 0x08
+#define FDECAL_FLIPT 0x10
+#define FDECAL_CLIPTEST 0x20
+extern float g_DecalClipVerts[32][7];
+extern float g_DecalClipVerts2[32][7];
 qboolean R_CullBox(float *mins, float *maxs);
 void R_StoreEfrags(efrag_t **ppefrag, int clientId);
 #define SURF_PLANEBACK 2
@@ -1494,7 +1499,74 @@ int SHClip(float *vert, int vertCount, float *out, int edge)
     return outCount;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", R_DecalVertsClip);
+float *R_DecalVertsClip(float *pOutVerts, decal_t *pdecal, msurface_t *psurf, texture_t *ptexture, int *pVertCount)
+{
+    float *v;
+    float *st;
+    int j, outCount;
+    float texScaleS, texScaleT;
+    int clipped;
+    float *pv;
+
+    v = func_002A3C60((byte *)psurf->polys);
+    st = (float *)func_002A3C68((byte *)psurf->polys);
+
+    texScaleS = pdecal->scale * psurf->texture->srcwidth / ptexture->srcwidth;
+    texScaleT = pdecal->scale * psurf->texture->srcheight / ptexture->srcheight;
+
+    if (!pOutVerts)
+        pOutVerts = &g_DecalClipVerts[0][0];
+
+    for (j = 0; j < psurf->polys->numverts; j++)
+    {
+        g_DecalClipVerts[j][0] = v[0];
+        g_DecalClipVerts[j][1] = v[1];
+        g_DecalClipVerts[j][2] = v[2];
+        v += 3;
+        g_DecalClipVerts[j][3] = (st[0] - pdecal->dx) * texScaleS;
+        g_DecalClipVerts[j][4] = (st[1] - pdecal->dy) * texScaleT;
+        st += 2;
+
+        if (pdecal->flags & FDECAL_FLIPS)
+            g_DecalClipVerts[j][3] = 1.0f - g_DecalClipVerts[j][3];
+        if (pdecal->flags & FDECAL_FLIPT)
+            g_DecalClipVerts[j][4] = 1.0f - g_DecalClipVerts[j][4];
+    }
+
+    outCount = SHClip(&g_DecalClipVerts[0][0], psurf->polys->numverts, &g_DecalClipVerts2[0][0], 0);
+    outCount = SHClip(&g_DecalClipVerts2[0][0], outCount, &g_DecalClipVerts[0][0], 1);
+    outCount = SHClip(&g_DecalClipVerts[0][0], outCount, &g_DecalClipVerts2[0][0], 2);
+    outCount = SHClip(&g_DecalClipVerts2[0][0], outCount, pOutVerts, 3);
+
+    if (outCount)
+    {
+        if (pdecal->flags & FDECAL_CLIPTEST)
+        {
+            pdecal->flags &= ~FDECAL_CLIPTEST;
+            if (outCount == 4)
+            {
+                clipped = 0;
+                pv = &g_DecalClipVerts[0][0];
+                for (j = 0; j < outCount; j++, pv += 7)
+                {
+                    float s, t;
+                    s = pv[3];
+                    t = pv[4];
+                    if ((s != 0.0f && s != 1.0f) || (t != 0.0f && t != 1.0f))
+                    {
+                        clipped = 1;
+                        break;
+                    }
+                }
+                if (!clipped)
+                    pdecal->flags |= FDECAL_NOCLIP;
+            }
+        }
+    }
+
+    *pVertCount = outCount;
+    return pOutVerts;
+}
 
 float *R_DecalCacheVerts(decal_t *pdecal, msurface_t *psurf, texture_t *ptexture)
 {
