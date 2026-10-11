@@ -56,13 +56,18 @@ typedef struct decal_s
 {
     struct decal_s *pnext;      /* 0x00 */
     msurface_t *psurface;       /* 0x04 */
-    byte pad08[0x14 - 0x08];
+    float dx, dy;               /* 0x08 */
+    float scale;                /* 0x10 */
     short texture;              /* 0x14 */
     unsigned short flags;       /* 0x16 */
-    byte pad18[0x1C - 0x18];
+    short entityIndex;          /* 0x18 */
+    byte pad1A[0x1C - 0x1A];
 } decal_t;
 
 #define FDECAL_PERMANENT 0x01
+#define MAX_OVERLAP_DECALS 4
+extern unsigned short gDecalFlags;
+extern short gDecalEntity;
 
 typedef struct
 {
@@ -93,9 +98,29 @@ extern float *D_00333258, *D_0033325C;
 void func_002A63C8(int count);
 float fmodf(float x, float y);
 void func_0023D618(int);
-extern int D_00399560, D_00399584, D_00413620;
-extern int D_0033102C, D_00331034, D_0033103C, D_00331044;
+extern int D_00399560, D_00399584;
+extern float *D_00413620;
+extern int D_0033102C, D_0033103C, D_00331044;
+extern void *D_00331034;
 extern void *D_00331030, *D_00331038;
+
+#define GL_POLYGON 9
+void glBegin(int mode);
+void glEnd(void);
+void glTexCoord2f(float s, float t);
+void glVertex3fv(float *v);
+float ScrollOffset(msurface_t *psurface, cl_entity_t *pEntity);
+decal_t *R_DecalIntersect(msurface_t *psurf, int *pcount, float x, float y);
+extern int D_00413AD8[20][20];
+extern float D_00413630[74][4];
+void func_002EF8E0(int);
+
+typedef struct
+{
+    int index;                  /* 0x00 */
+    short entity;               /* 0x04 */
+    vec3_t position;            /* 0x08 */
+} decalentry_t; /* 0x14 */
 
 #define BLOCK_WIDTH 128
 #define BLOCK_HEIGHT 128
@@ -653,7 +678,23 @@ void R_DecalRemoveAll(int textureIndex)
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A4AC0);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A4FB0);
+int func_002A4FB0(decalentry_t *list, int count)
+{
+    int i;
+    vec3_t tmp;
+    decalentry_t *pnew = &list[count];
+
+    for (i = 0; i < count; i++)
+    {
+        if (pnew->index == list[i].index && pnew->entity == list[i].entity)
+        {
+            VectorSubtract(pnew->position, list[i].position, tmp);
+            if (Length(tmp) < 2.0f)
+                return count;
+        }
+    }
+    return count + 1;
+}
 
 int func_002A5090(byte *a, byte *b)
 {
@@ -678,9 +719,42 @@ void func_002A5948(int a0, int a1, int a2, int a3, int t0, int t1, int t2)
     R_DecalShoot_(a0, ~a1, a2, a3, t0, t1, t2);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A5968);
+INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", R_DecalIntersect);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A5C50);
+void R_DecalCreate(msurface_t *psurface, int textureIndex, float scale, float x, float y)
+{
+    decal_t *pdecal, *pold;
+    int count;
+
+    pold = R_DecalIntersect(psurface, &count, x, y);
+    if (count < MAX_OVERLAP_DECALS)
+        pold = NULL;
+
+    pdecal = R_DecalAlloc(pold);
+    pdecal->flags = gDecalFlags;
+    pdecal->dx = x;
+    pdecal->dy = y;
+    pdecal->texture = textureIndex;
+    pdecal->pnext = NULL;
+
+    pold = psurface->pdecals;
+    if (!pold)
+    {
+        psurface->pdecals = pdecal;
+    }
+    else
+    {
+        while (pold->pnext)
+            pold = pold->pnext;
+        pold->pnext = pdecal;
+    }
+
+    pdecal->psurface = psurface;
+    pdecal->scale = scale;
+    pdecal->entityIndex = gDecalEntity;
+}
+
+
 
 int Inside(float *vert, int edge)
 {
@@ -763,7 +837,29 @@ void func_002A6518(float *v, int count)
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A65C0);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A67E0);
+void func_002A67E0(void)
+{
+    int i, j, k;
+
+    for (i = 0; i < 20; i++)
+    {
+        for (j = 0; j < 20; j++)
+            D_00413AD8[i][j] = RandomLong(0, 0x7FFF);
+    }
+
+    D_00413620 = D_00413630[0];
+    for (k = 0; k < 74; k++)
+    {
+        D_00413630[k][0] = 1.0f;
+        D_00413630[k][1] = 1.0f;
+        D_00413630[k][2] = 1.0f;
+        D_00413630[k][3] = 1.0f;
+    }
+
+    func_002EF8E0(0);
+    D_00413AD0 = 0;
+    D_00333264 = 1;
+}
 
 void func_002A68C0(void)
 {
@@ -779,7 +875,30 @@ INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A6BE0);
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A6CA0);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A6DA0);
+void DrawGLPolyScroll(msurface_t *psurface, cl_entity_t *pEntity)
+{
+    glpoly_t *p;
+    float *v, *st;
+    int i;
+    float sOffset;
+
+    sOffset = ScrollOffset(psurface, pEntity);
+    p = psurface->polys;
+    if (!p)
+        return;
+
+    v = func_002A3C60((byte *)p);
+    st = (float *)func_002A3C68((byte *)p);
+    glBegin(GL_POLYGON);
+    D_00399584++;
+    D_00399560 += p->numverts;
+    for (i = 0; i < p->numverts; i++, v += 3, st += 2)
+    {
+        glTexCoord2f(st[0] + sOffset, st[1]);
+        glVertex3fv(v);
+    }
+    glEnd();
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A6E78);
 

@@ -44,8 +44,8 @@ extern int st_to_vec[6][3];
 extern float D_004A8B58;
 #define sky_min (1.0f / 512.0f)
 #define sky_max (511.0f / 512.0f)
-void func_0023C048(float s, float t); /* glTexCoord2f */
-void func_0023C298(float *v);         /* glVertex3fv */
+void glTexCoord2f(float s, float t); /* glTexCoord2f */
+void glVertex3fv(float *v);         /* glVertex3fv */
 #define GL_QUADS 7
 extern int D_00333220[6]; /* eixo de cada face do céu */
 extern int skytexorder[6];
@@ -56,8 +56,8 @@ extern vec3_t vec3_origin;
 void GL_DisableMultitexture(void);
 void glDepthMask(int flag);
 void func_0023C1D0(float r, float g, float b); /* glColor3f */
-void func_0023BF60(int mode);                   /* glBegin */
-void func_0023C400(void);                       /* glEnd */
+void glBegin(int mode);                   /* glBegin */
+void glEnd(void);                       /* glEnd */
 void MakeSkyVec(float s, float t, int axis);
 
 float *func_002A3C60(glpoly_t *p);
@@ -370,8 +370,8 @@ void MakeSkyVec(float s, float t, int axis)
         t = sky_max;
 
     t = 1.0f - t;
-    func_0023C048(s, t);
-    func_0023C298(v);
+    glTexCoord2f(s, t);
+    glVertex3fv(v);
 }
 
 void R_DrawSkyBox(void)
@@ -415,14 +415,14 @@ void R_DrawSkyBox(void)
 
         GL_Bind(skytexturenum[skytexorder[i]]);
         func_0023C1D0(1, 1, 1);
-        func_0023BF60(GL_QUADS);
+        glBegin(GL_QUADS);
         D_00399570++;
         D_00399558 += 4;
         MakeSkyVec(skymins[0][i], skymins[1][i], i);
         MakeSkyVec(skymins[0][i], skymaxs[1][i], i);
         MakeSkyVec(skymaxs[0][i], skymaxs[1][i], i);
         MakeSkyVec(skymaxs[0][i], skymins[1][i], i);
-        func_0023C400();
+        glEnd();
     }
 
     glDepthMask(1);
