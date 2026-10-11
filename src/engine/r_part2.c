@@ -169,9 +169,62 @@ void func_002B17F8(vec3_t org, vec3_t dir, int color, int count, int clientId)
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B1AB8);
+void func_002B1AB8(vec3_t org, int clientId)
+{
+    int i, j;
+    particle_t *p;
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B1C00);
+    for (i = 0; i < 15; i++)
+    {
+        if (!D_0039966C)
+            return;
+        p = D_0039966C;
+        D_0039966C = p->next;
+        p->next = D_00399660;
+        D_00399660 = p;
+
+        for (j = 0; j < 3; j++)
+        {
+            p->org[j] = org[j];
+            p->vel[j] = RandomFloat(-32, 32);
+        }
+        p->vel[2] = RandomFloat(80, 143);
+        p->die = cl[clientId].time + 2;
+        p->type = pt_blob2;
+        p->color = 254;
+        p->packedColor = 0;
+        p->ramp = 0;
+    }
+}
+
+
+void func_002B1C00(vec3_t pos, int count, int velocityMin, int velocityMax, int clientId)
+{
+    int i, j;
+    particle_t *p;
+
+    for (i = 0; i < count; i++)
+    {
+        if (!D_0039966C)
+            return;
+        p = D_0039966C;
+        D_0039966C = p->next;
+        p->next = D_00399668;
+        D_00399668 = p;
+
+        p->die = cl[clientId].time + RandomFloat(0.1f, 0.5f);
+        p->ramp = 0.5f;
+        p->color = 5;
+        p->packedColor = 255;
+        p->type = pt_grav;
+
+        for (j = 0; j < 3; j++)
+        {
+            p->org[j] = pos[j];
+            p->vel[j] = RandomFloat(velocityMin, velocityMax);
+        }
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B1D78);
 
