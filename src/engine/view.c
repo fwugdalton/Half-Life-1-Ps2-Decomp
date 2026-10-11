@@ -18,7 +18,7 @@ int Draw_ColoredCharacter(int a0, int a1, int a2, int a3, int a4, int a5);
 double atof(const char *);
 float powf(float, float);
 #define max(a, b) ((a) > (b) ? (a) : (b))
-void func_002B05F8(void);
+void D_FlushCaches(void);
 
 #include "engine/render.h"
 
@@ -456,7 +456,7 @@ qboolean V_CheckGamma(void)
     oldlightgamma = v_lightgamma.value;
     oldtexgamma = v_texgamma.value;
     oldbrightness = v_brightness.value;
-    func_002B05F8();
+    D_FlushCaches();
     D_0053D1D4 = 1;
     return true;
 }

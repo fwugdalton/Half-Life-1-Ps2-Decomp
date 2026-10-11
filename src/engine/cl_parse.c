@@ -176,7 +176,7 @@ char *va(const char *format, ...);
 float Sys_FloatTime(void);
 void Hunk_Check(void);
 void MSG_WriteString(sizebuf_t *sb, const char *s);
-void func_002B0280(int clientId);
+void R_NewMap(int clientId);
 void CL_RemoveFromResourceList(resource_t *pResource);
 int MSG_ReadShort(void);
 void S_BeginPrecaching(void);
@@ -737,7 +737,7 @@ void CL_RegisterResources(int clientId)
 
     Con_DPrintf("Setting up renderer...\n");
     Sys_FloatTime();
-    func_002B0280(clientId);
+    R_NewMap(clientId);
     Sys_FloatTime();
     Hunk_Check();
     Sys_FloatTime();

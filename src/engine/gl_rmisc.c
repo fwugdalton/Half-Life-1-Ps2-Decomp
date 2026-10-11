@@ -144,7 +144,7 @@ void glTexEnvf(int target, int pname, float param);
 void func_0023C600(int target, int pname, float param); /* glTexParameterf */
 void glTexImage2D(int target, int level, int internalformat, int width, int height, int border, int format, int type, void *pixels);
 
-void func_002AFE50(void)
+void GL_Info_f(void)
 {
     if (D_00399710)
         Con_Printf("GL Vendor: %s\n", D_00399710);
@@ -156,7 +156,7 @@ void func_002AFE50(void)
         Con_Printf("GL Extensions: %s\n", D_003996F0);
 }
 
-void func_002AFED0(void)
+void R_InitParticleTexture(void)
 {
     int x, y;
 
@@ -189,15 +189,18 @@ extern cvar_t D_003337C8, D_003337E0, D_003337F8, D_00333810, D_00333828, D_0033
 extern cvar_t D_00333870, D_00333888, D_003338A0;
 extern char D_00394A80[]; /* "r_decals" */
 void Cvar_SetValue(char *var_name, float value);
-void func_002B0530(void);
+void R_TimeRefresh_f(void);
+float Sys_FloatTime(void);
+void R_RenderView(int clientId);
+void func_002C5130(void);
 void func_002B0E20(void);
 void func_002B0758(void);
 
 void R_Init(void)
 {
-    Cmd_AddCommand("timerefresh", func_002B0530);
+    Cmd_AddCommand("timerefresh", R_TimeRefresh_f);
     Cmd_AddCommand("pointfile", func_002B0E20);
-    Cmd_AddCommand("gl_dump", func_002AFE50);
+    Cmd_AddCommand("gl_dump", GL_Info_f);
     Cvar_RegisterVariable(&D_00333438);
     Cvar_RegisterVariable(&r_fullbright);
     Cvar_RegisterVariable(&r_decals);
@@ -245,7 +248,7 @@ void R_Init(void)
     Cvar_RegisterVariable(&D_00333888);
     Cvar_RegisterVariable(&D_003338A0);
     func_002B0758();
-    func_002AFED0();
+    R_InitParticleTexture();
 }
 
 void func_002B0278(void) {
@@ -269,7 +272,7 @@ int func_00228C00(char *name, model_t *model);
 void GL_UnloadTextures(void);
 void *memset(void *s, int c, unsigned int n);
 
-void func_002B0280(int clientId)
+void R_NewMap(int clientId)
 {
     int i;
 
@@ -320,7 +323,21 @@ void func_002B0280(int clientId)
     GL_UnloadTextures();
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rmisc", func_002B0530);
+void R_TimeRefresh_f(void)
+{
+    int i;
+    float start, time;
 
-void func_002B05F8(void) {
+    start = Sys_FloatTime();
+    for (i = 0; i < 128; i++)
+    {
+        r_refdef.viewangles[1] = i * 2.8125f;
+        R_RenderView(0);
+    }
+    time = Sys_FloatTime() - start;
+    Con_Printf("%f seconds (%f fps)\n", time, 128 / time);
+    func_002C5130();
+}
+
+void D_FlushCaches(void) {
 }
