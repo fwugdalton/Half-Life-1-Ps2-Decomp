@@ -69,6 +69,7 @@ extern vec3_t D_0050F390[NUMVERTEXNORMALS]; /* avelocities */
 extern vec3_t D_003339B0[NUMVERTEXNORMALS]; /* r_avertexnormals */
 extern float D_00334148;        /* beamlength */
 extern particle_t *D_00399668;
+extern int D_00333900[8];       /* ramp1 */
 
 void func_002B0600(void)
 {
@@ -285,9 +286,68 @@ void func_002B0E28(int clientId)
     func_002B17F8(org, dir, color, count, clientId);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part", func_002B0EF8);
+void func_002B0EF8(vec3_t org, int clientId)
+{
+    int i, j;
+    particle_t *p;
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part", func_002B10C8);
+    for (i = 0; i < 1024; i++)
+    {
+        if (!D_0039966C)
+            return;
+        p = D_0039966C;
+        D_0039966C = p->next;
+        p->next = D_00399660;
+        D_00399660 = p;
+
+        p->die = cl[clientId].time + 5;
+        p->color = D_00333900[0];
+        p->packedColor = 0;
+        p->ramp = RandomLong(0, 3);
+        if (i & 1)
+            p->type = pt_explode;
+        else
+            p->type = pt_explode2;
+
+        do
+        {
+            for (j = 0; j < 3; j++)
+                p->vel[j] = RandomFloat(-512, 512);
+        } while (DotProduct(p->vel, p->vel) > 512 * 512);
+
+        for (j = 0; j < 3; j++)
+            p->org[j] = org[j] + p->vel[j] / 4;
+    }
+}
+
+void func_002B10C8(vec3_t org, int colorStart, int colorLength, int clientId)
+{
+    int i, j;
+    particle_t *p;
+    int colorMod = 0;
+
+    for (i = 0; i < 512; i++)
+    {
+        if (!D_0039966C)
+            return;
+        p = D_0039966C;
+        D_0039966C = p->next;
+        p->next = D_00399660;
+        D_00399660 = p;
+
+        p->die = cl[clientId].time + 0.3f;
+        p->color = colorStart + (colorMod % colorLength);
+        p->packedColor = 0;
+        colorMod++;
+        p->type = pt_blob;
+
+        for (j = 0; j < 3; j++)
+        {
+            p->org[j] = org[j] + RandomFloat(-16, 16);
+            p->vel[j] = RandomFloat(-256, 256);
+        }
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_part", func_002B1238);
 
