@@ -2,6 +2,15 @@
 #include "engine/model.h"
 #include "engine/mathlib.h"
 #include "engine/cl_entity.h"
+#include "engine/client.h"
+#include "engine/cvar.h"
+
+double pow(double, double);
+void Sys_Error(const char *fmt, ...);
+
+#define GL_RGBA 0x1908
+#define GL_LUMINANCE 0x1909
+#define GL_INTENSITY 0x8049
 
 #define MAX_DLIGHTS 32
 #define fabs(x) ((x) < 0 ? -(x) : (x))
@@ -24,13 +33,17 @@ typedef struct
 } dlight_t;
 
 extern cl_entity_t *currententity;
-extern dlight_t D_00473C68[MAX_DLIGHTS]; /* cl_dlights */
-#define cl_dlights D_00473C68
-extern colorVec D_004EF8A8[]; /* blocklights */
-#define blocklights D_004EF8A8
+extern dlight_t cl_dlights[MAX_DLIGHTS];
+extern colorVec blocklights[];
+extern cvar_t gl_overbright, r_fullbright, gl_monolights, v_lightgamma;
+extern int gl_lightmap_format;
+extern int d_lightstylevalue[];
+extern int lightgammatable[1024];
+extern int D_003995AC;
+extern int r_framecount;
 
 #ifdef NON_MATCHING
-void func_002A1E10(msurface_t *surf)
+void R_AddDynamicLights(msurface_t *surf)
 {
     int lnum;
     int sd, td;
@@ -93,10 +106,128 @@ void func_002A1E10(msurface_t *surf)
     }
 }
 #else
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A1E10);
+INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", R_AddDynamicLights);
 #endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A2160);
+void R_BuildLightMap(msurface_t *surf, byte *dest, int stride, int clientId)
+{
+    int smax, tmax;
+    int t;
+    int i, j, size;
+    color24 *lightmap;
+    unsigned int scale;
+    int maps;
+    colorVec *bl;
+    int shift;
+    int k;
+    int lum;
+
+    if (gl_overbright.value != 0.0f)
+        shift = 256;
+    else
+        shift = (int)(pow(2.0, 1.0f / v_lightgamma.value) * 256.0 + 0.5);
+
+    surf->dlightbits = surf->cached_dlight = surf->dlightbits & D_003995AC;
+
+    smax = (surf->extents[0] >> 4) + 1;
+    tmax = (surf->extents[1] >> 4) + 1;
+    size = smax * tmax;
+    lightmap = surf->samples;
+
+    if (r_fullbright.value != 0.0f || !cl[clientId].worldmodel->lightdata)
+    {
+        for (i = 0; i < size; i++)
+        {
+            blocklights[i].r = 255 * 256;
+            blocklights[i].g = 255 * 256;
+            blocklights[i].b = 255 * 256;
+        }
+        goto store;
+    }
+
+    for (i = 0; i < size; i++)
+    {
+        blocklights[i].r = 0;
+        blocklights[i].g = 0;
+        blocklights[i].b = 0;
+    }
+
+    if (lightmap)
+    {
+        for (maps = 0; maps < 4 && surf->styles[maps] != 255; maps++)
+        {
+            scale = d_lightstylevalue[surf->styles[maps]];
+            surf->cached_light[maps] = scale;
+            for (i = 0; i < size; i++)
+            {
+                blocklights[i].r += lightmap[i].r * scale;
+                blocklights[i].g += lightmap[i].g * scale;
+                blocklights[i].b += lightmap[i].b * scale;
+            }
+            lightmap += size;
+        }
+    }
+
+    if (surf->dlightframe == r_framecount)
+        R_AddDynamicLights(surf);
+
+store:
+    switch (gl_lightmap_format)
+    {
+    case GL_RGBA:
+        stride -= smax << 2;
+        bl = blocklights;
+        for (i = 0; i < tmax; i++, dest += stride)
+        {
+            for (j = 0; j < smax; j++)
+            {
+                for (k = 0; k < 3; k++)
+                {
+                    t = ((unsigned int *)bl)[k];
+                    t = (unsigned int)(t * shift) >> 14;
+                    if (t > 1023)
+                        t = 1023;
+                    dest[k] = lightgammatable[t] >> 2;
+                }
+                if (gl_monolights.value != 0.0f)
+                {
+                    lum = dest[0] * 76 + dest[1] * 149 + dest[2] * 29;
+                    dest[0] = 255;
+                    dest[2] = 255;
+                    dest[1] = 255;
+                    dest[3] = 255 - (lum >> 8);
+                }
+                else
+                {
+                    dest[3] = 255;
+                }
+                bl++;
+                dest += 4;
+            }
+        }
+        break;
+
+    case GL_LUMINANCE:
+    case GL_INTENSITY:
+        bl = blocklights;
+        for (i = 0; i < tmax; i++, dest += stride)
+        {
+            for (j = 0; j < smax; j++)
+            {
+                t = bl->r;
+                t = t >> 8;
+                if (t > 255)
+                    t = 255;
+                dest[j] = 255 - t;
+                bl++;
+            }
+        }
+        break;
+
+    default:
+        Sys_Error("Bad lightmap format");
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A25E8);
 

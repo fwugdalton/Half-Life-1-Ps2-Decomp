@@ -97,6 +97,24 @@ for line in lines:
     m = re.match(r'^(\s+)break\s+(\d+)\s*$', line)
     if m:
         line = '%sbreak\t0,%s' % m.groups()
+    md = re.match(r'^(\s+)li\.d\s+(\$\d+),\s*(\S+)\s*$', line)
+    if md:
+        # li.d num registrador inteiro: o ee-as carrega o double como dli (ori + dsll32)
+        import struct
+        ind, rd, val = md.groups()
+        v = struct.unpack('<Q', struct.pack('<d', float(val)))[0]
+        for sh in range(49):
+            if v & ~(0xFFFF << sh) == 0:
+                break
+        else:
+            raise SystemExit('li.d sem expansao: ' + line)
+        out.append('%sori\t%s,$0,0x%X' % (ind, rd, v >> sh))
+        if sh >= 32:
+            line = '%sdsll32\t%s,%s,%d' % (ind, rd, rd, sh - 32)
+        elif sh:
+            line = '%sdsll\t%s,%s,%d' % (ind, rd, rd, sh)
+        else:
+            line = out.pop()
     m = re.match(r'^(\s+)cvt\.w\.s\s+\$f(\d+),\s*\$f(\d+)\s*$', line)
     m2 = re.match(r'^(\s+)sqrt\.s\s+\$f(\d+),\s*\$f(\d+)\s*$', line)
     if m2:

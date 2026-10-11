@@ -428,7 +428,7 @@ void V_Brightness_f(void)
             msurface_t *surf = sv_worldmodel->surfaces;
 
             for (i = 0; i < n; i++, surf++)
-                surf->cached_light = -1;
+                surf->cached_dlight = -1;
         }
     }
 
@@ -450,7 +450,7 @@ void V_Gamma_f(void)
             msurface_t *surf = sv_worldmodel->surfaces;
 
             for (i = 0; i < n; i++, surf++)
-                surf->cached_light = -1;
+                surf->cached_dlight = -1;
         }
     }
 
