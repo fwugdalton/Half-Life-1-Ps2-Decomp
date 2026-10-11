@@ -37,8 +37,31 @@ typedef struct particle_s
 typedef struct beam_s
 {
     struct beam_s *next;        /* 0x00 */
-    byte pad4[0x7C - 0x4];
+    int type;                   /* 0x04 */
+    int flags;                  /* 0x08 */
+    vec3_t source;              /* 0x0C */
+    vec3_t target;              /* 0x18 */
+    vec3_t delta;               /* 0x24 */
+    float t;                    /* 0x30 */
+    float freq;                 /* 0x34 */
+    float die;                  /* 0x38 */
+    float width;                /* 0x3C */
+    float amplitude;            /* 0x40 */
+    float r, g, b;              /* 0x44 */
+    float brightness;           /* 0x50 */
+    float speed;                /* 0x54 */
+    float frameRate;            /* 0x58 */
+    float frame;                /* 0x5C */
+    int segments;               /* 0x60 */
+    int startEntity;            /* 0x64 */
+    int endEntity;              /* 0x68 */
+    int modelIndex;             /* 0x6C */
+    int frameCount;             /* 0x70 */
+    struct model_s *pFollowModel; /* 0x74 */
+    struct particle_s *particles; /* 0x78 */
 } BEAM; /* 0x7C */
+
+int ModelFrameCount(struct model_s *model);
 
 #define MAX_BEAMS 128
 
@@ -1184,11 +1207,64 @@ void func_002B3EE8(int clientId)
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B3EE8);
 #endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B4638);
+BEAM *func_002B4638(int clientId)
+{
+    BEAM *pBeam;
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B4680);
+    pBeam = D_00414298[clientId];
+    if (!pBeam)
+        return NULL;
+    D_00414298[clientId] = pBeam->next;
+    pBeam->next = D_00414290[clientId];
+    D_00414290[clientId] = pBeam;
+    return pBeam;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B4770);
+void func_002B4770(BEAM *pbeam, float *start, float *end, int modelIndex, float life, float width, float amplitude, float brightness, float speed, int clientId);
+
+BEAM *func_002B4680(float *start, float *end, int modelIndex, float life, float width, float amplitude, float brightness, float speed, int clientId)
+{
+    BEAM *pBeam;
+
+    pBeam = func_002B4638(clientId);
+    if (!pBeam)
+        return NULL;
+    pBeam->die = cl[clientId].time;
+    if (modelIndex < 0)
+        return NULL;
+    func_002B4770(pBeam, start, end, modelIndex, life, width, amplitude, brightness, speed, clientId);
+    return pBeam;
+}
+
+void func_002B4770(BEAM *pbeam, float *start, float *end, int modelIndex, float life, float width, float amplitude, float brightness, float speed, int clientId)
+{
+    struct model_s *sprite = cl[clientId].model_precache[modelIndex];
+
+    if (!sprite)
+        return;
+
+    pbeam->type = 0;
+    pbeam->frame = 0;
+    pbeam->frameRate = 0;
+    pbeam->modelIndex = modelIndex;
+    pbeam->frameCount = ModelFrameCount(sprite);
+    VectorCopy(start, pbeam->source);
+    VectorCopy(end, pbeam->target);
+    VectorSubtract(end, start, pbeam->delta);
+    pbeam->freq = cl[clientId].time * speed;
+    pbeam->die = cl[clientId].time + life;
+    pbeam->width = width;
+    pbeam->brightness = brightness;
+    pbeam->speed = speed;
+    pbeam->amplitude = amplitude;
+
+    if (amplitude >= 0.50f)
+        pbeam->segments = Length(pbeam->delta) * 0.25f + 3;
+    else
+        pbeam->segments = Length(pbeam->delta) * 0.075f + 3;
+    pbeam->flags = 0;
+    pbeam->pFollowModel = NULL;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B4920);
 
