@@ -1129,6 +1129,55 @@ retry:
 INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", GL_LoadDecalTexture);
 #endif
 
+typedef struct
+{
+    char name[16];              /* 0x00 */
+    byte pad10[3];
+    byte nummips;               /* 0x13 */
+    byte pad14[4];
+    unsigned short width;       /* 0x18 */
+    unsigned short height;      /* 0x1A */
+    unsigned short width2;      /* 0x1C */
+    unsigned short height2;     /* 0x1E */
+    byte palette[0x400];        /* 0x20 */
+    byte data[1];               /* 0x420 */
+} psiheader_t;
+
+typedef struct
+{
+    psiheader_t *header;        /* 0x00 */
+    int pad4;
+    short width2;               /* 0x08 */
+    short height2;              /* 0x0A */
+    short width;                /* 0x0C */
+    short height;               /* 0x0E */
+    char name[16];              /* 0x10 */
+    int pad20;
+    int texnum;                 /* 0x24 */
+    byte pad28[0x40 - 0x28];
+    psiheader_t hdr;            /* 0x40 */
+} psidecal_t;
+
+void *memcpy(void *dst, const void *src, unsigned int n);
+
+#ifdef NON_MATCHING
+void GL_BuildDecal(psidecal_t *d)
+{
+    psiheader_t *hdr;
+
+    memset(d, 0, 0x40);
+    memcpy(d->name, d->hdr.name, 16);
+    hdr = &d->hdr;
+    d->name[15] = 0;
+    d->header = hdr;
+    d->width = hdr->width;
+    d->height = hdr->height;
+    d->width2 = hdr->width2;
+    d->height2 = hdr->height2;
+    d->texnum = GL_LoadDecalTexture(hdr->name, 1, hdr->width, hdr->height, hdr->data, hdr->palette, hdr->nummips);
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", GL_BuildDecal);
+#endif
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002AFE28);
