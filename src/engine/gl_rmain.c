@@ -106,10 +106,26 @@ mleaf_t *Mod_PointInLeaf(vec3_t p, model_t *model);
 void func_0023C3D8(int r, int g, int b);
 void func_0023C3A0(int pname, float param);
 void func_0028CA58(void);
+#define GL_MODELVIEW_MATRIX 0xBA6
+#define GL_PROJECTION_MATRIX 0xBA7
+extern float D_00333298[], D_003332A0[];
+extern cvar_t D_00556058[], D_0055A378[];
+extern float D_003338AC, D_0033384C, D_00333834, D_00331384;
+extern int D_0032EFB0, D_0032EFB4, D_0032EFB8, D_0032EFBC;
+extern int D_0032EFC0, D_0032EFC4, D_0032EFC8, D_0032EFCC;
+extern int D_0032EFF0, D_0032EFF4, D_0032EFF8, D_0032EFFC;
+extern int D_0032F000, D_0032F004, D_0032F008, D_0032F00C;
+extern float D_004A8B58;
+extern float D_00414118[16]; /* r_projection_matrix */
+extern float D_004F93D8[16]; /* r_world_matrix */
+extern float D_004F9430[16];
+extern float D_003337A4;
+void glGetFloatv(int pname, float *params);
+void MYgluPerspective(float fovy, float aspect, float zNear, float zFar);
 
 void R_SetupFrame(int clientId);
 void R_SetFrustum(int clientId);
-void func_002AA620(int clientId);
+void R_SetupGL(int clientId);
 void R_MarkLeaves(int clientId);
 void R_DrawWorld(int clientId);
 void func_002CD9F8(int clientId);
@@ -724,7 +740,120 @@ float CalcFov(float fov_x, float width, float height)
     return a;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rmain", func_002AA620);
+void R_SetupGL(int clientId)
+{
+    float screenaspect;
+    float fov_y;
+    int i, j, k;
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+
+    if (D_003332E0[clientId] < 85)
+    {
+        D_00333298[clientId] = D_00556058[clientId].value * D_003338AC;
+        D_00331384 = D_0033384C;
+        D_003332A0[clientId] = D_0055A378[clientId].value * D_003338AC;
+    }
+    else
+    {
+        D_00331384 = D_00333834;
+        D_00333298[clientId] = D_00556058[clientId].value;
+        D_003332A0[clientId] = D_0055A378[clientId].value;
+    }
+
+    if (D_00399564)
+    {
+        if (cl_numlocal > 1)
+        {
+            switch (clientId)
+            {
+            case 0:
+                glViewport(D_0032EFF0, D_0032EFF4, D_0032EFF8, D_0032EFFC);
+                break;
+            case 1:
+                glViewport(D_0032F000, D_0032F004, D_0032F008, D_0032F00C);
+                break;
+            }
+            screenaspect = 8.0f / 9.0f;
+            fov_y = CalcFov(D_003332E0[clientId], 8, 9);
+        }
+        else
+        {
+            glViewport(D_0032EF7C, D_0032EF78, D_0032EF80, D_0032EF84);
+            screenaspect = 16.0f / 9.0f;
+            fov_y = CalcFov(D_003332E0[clientId], 16, 9);
+        }
+    }
+    else
+    {
+        if (cl_numlocal > 1)
+        {
+            switch (clientId)
+            {
+            case 0:
+                glViewport(D_0032EFB0, D_0032EFB4, D_0032EFB8, D_0032EFBC);
+                break;
+            case 1:
+                glViewport(D_0032EFC0, D_0032EFC4, D_0032EFC8, D_0032EFCC);
+                break;
+            }
+            screenaspect = 8.0f / 3.0f;
+            fov_y = CalcFov(D_003332E0[clientId], 4, 1.5f);
+        }
+        else
+        {
+            glViewport(D_0032EF7C, D_0032EF78, D_0032EF80, D_0032EF84);
+            screenaspect = 4.0f / 3.0f;
+            fov_y = CalcFov(D_003332E0[clientId], 4, 3);
+        }
+    }
+
+    MYgluPerspective(fov_y, screenaspect, 4, D_004A8B58);
+
+    glGetFloatv(GL_PROJECTION_MATRIX, D_00414118);
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+
+    glRotatef(-90, 1, 0, 0);
+    glRotatef(90, 0, 0, 1);
+    glRotatef(-r_refdef.viewangles[2], 1, 0, 0);
+    glRotatef(-r_refdef.viewangles[0], 0, 1, 0);
+    glRotatef(-r_refdef.viewangles[1], 0, 0, 1);
+    glTranslatef(-r_refdef.vieworg[0], -r_refdef.vieworg[1], -r_refdef.vieworg[2]);
+
+    glGetFloatv(GL_MODELVIEW_MATRIX, D_004F93D8);
+
+    glDisable(GL_BLEND);
+    glDisable(GL_ALPHA_TEST);
+    glEnable(GL_DEPTH_TEST);
+
+    if (D_003337A4)
+    {
+        for (i = 0; i < 4; i++)
+        {
+            for (j = 0; j < 4; j++)
+            {
+                D_004F9430[i * 4 + j] = 0;
+                for (k = 0; k < 4; k++)
+                    D_004F9430[i * 4 + j] += D_004F93D8[k * 4 + i] * D_00414118[j * 4 + k];
+            }
+        }
+    }
+    else
+    {
+        for (i = 0; i < 4; i++)
+        {
+            for (j = 0; j < 4; j++)
+            {
+                D_004F9430[i * 4 + j] = 0;
+                for (k = 0; k < 4; k++)
+                    D_004F9430[i * 4 + j] += D_004F93D8[i * 4 + k] * D_00414118[k * 4 + j];
+            }
+        }
+    }
+}
 
 void R_RenderScene(int clientId)
 {
@@ -736,7 +865,7 @@ void R_RenderScene(int clientId)
     VectorCopy(vup, D_00551718[clientId]);
 
     R_SetFrustum(clientId);
-    func_002AA620(clientId);
+    R_SetupGL(clientId);
     R_MarkLeaves(clientId);
     R_DrawWorld(clientId);
     func_002CD9F8(clientId);

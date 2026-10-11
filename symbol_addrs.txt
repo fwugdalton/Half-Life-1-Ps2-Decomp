@@ -1600,3 +1600,5 @@ R_RotateForEntity = 0x002A8CB0; // type:func
 R_DrawViewModel = 0x002A9890; // type:func
 R_DrawEntitiesOnList = 0x002A9420; // type:func
 R_DrawSpriteModel = 0x002A8EB0; // type:func
+glGetFloatv = 0x0023B138; // type:func
+R_SetupGL = 0x002AA620; // type:func
