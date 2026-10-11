@@ -111,6 +111,18 @@ void glBegin(int mode);
 void glEnd(void);
 void glTexCoord2f(float s, float t);
 void glVertex3fv(float *v);
+extern cl_entity_t *cl_entities[2];
+extern int D_00399520, D_00399590;
+extern cvar_t r_wateralpha, gl_polyoffset;
+void glPolygonOffset(float factor, float units);
+void func_0023AFC8(int);
+void R_DrawSkyChain(msurface_t *s);
+void R_RenderBrushPolyChain(msurface_t *s, int clientId);
+extern msurface_t *gDecalSurfs[];
+#define GL_FOG 0xB60
+#define GL_POLYGON_OFFSET_FILL 0x8037
+#define SURF_DRAWTURB 0x10
+#define FDECAL_NOCLIP 0x40
 qboolean R_CullBox(float *mins, float *maxs);
 void R_StoreEfrags(efrag_t **ppefrag, int clientId);
 #define SURF_PLANEBACK 2
@@ -141,12 +153,12 @@ void R_ClearSkyBox(void);
 void R_RecursiveWorldNode(mnode_t *node, int clientId);
 void DrawTextureChains(int clientId);
 void func_002CD9F8(int clientId);
-void func_002A65C0(void);
+void R_DrawDecals(void);
 extern vec3_t modelorg;
 extern int currenttexture;
 extern glpoly_t *lightmap_polys[64];
 extern int D_004E77B0[3];
-extern int D_00399510;
+extern int gDecalSurfCount;
 void glColor4f(float r, float g, float b, float a);
 void glDepthMask(int flag);
 void glTexEnvf(int target, int pname, float param);
@@ -652,10 +664,10 @@ void R_DrawWorld(int clientId)
     memset(lightmap_polys, 0, sizeof(lightmap_polys));
     R_ClearSkyBox();
     R_RecursiveWorldNode(cl[clientId].worldmodel->nodes, clientId);
-    D_00399510 = 0;
+    gDecalSurfCount = 0;
     DrawTextureChains(clientId);
     func_002CD9F8(clientId);
-    func_002A65C0();
+    R_DrawDecals();
     R_RenderLightmaps();
 }
 
@@ -1225,7 +1237,77 @@ void func_002A6518(float *v, int count)
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A65C0);
+void R_DrawDecals(void)
+{
+    decal_t *plist;
+    int i, outCount;
+    texture_t *ptexture;
+    msurface_t *psurf;
+    int lasttex;
+    float *v;
+
+    lasttex = -1;
+    if (!r_drawdecals)
+        return;
+    if (!gDecalSurfCount)
+        return;
+
+    glEnable(GL_BLEND);
+    glEnable(GL_ALPHA_TEST);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+    glDepthMask(0);
+    glEnable(GL_POLYGON_OFFSET_FILL);
+    glPolygonOffset(1.0f, gl_polyoffset.value);
+
+    psurf = gDecalSurfs[0];
+    plist = psurf->pdecals;
+    Draw_DecalTexture(plist->texture);
+
+    D_00331044 = 5;
+    D_0033102C = 1;
+    for (i = 0; i < gDecalSurfCount; i++)
+    {
+        psurf = gDecalSurfs[i];
+        plist = psurf->pdecals;
+        while (plist)
+        {
+            ptexture = Draw_DecalTexture(plist->texture);
+            if (!ptexture)
+            {
+                plist = plist->pnext;
+                continue;
+            }
+            if (!(plist->flags & FDECAL_NOCLIP))
+                v = R_DecalVertsClip(NULL, plist, psurf, ptexture, &outCount);
+            if (plist->flags & FDECAL_NOCLIP)
+            {
+                v = R_DecalCacheVerts(plist, psurf, ptexture);
+                outCount = 4;
+            }
+            if (outCount)
+            {
+                if (lasttex != ptexture->gl_texturenum)
+                {
+                    func_002A6380();
+                    lasttex = ptexture->gl_texturenum;
+                    GL_Bind(lasttex);
+                    func_0023AF68();
+                }
+                func_002A6518(v, outCount);
+            }
+            plist = plist->pnext;
+        }
+    }
+
+    func_002A6380();
+    D_0033102C = 0;
+    glDisable(GL_POLYGON_OFFSET_FILL);
+    glDisable(GL_ALPHA_TEST);
+    glDisable(GL_BLEND);
+    glDepthMask(1);
+    gDecalSurfCount = 0;
+}
 
 void func_002A67E0(void)
 {
@@ -1257,7 +1339,52 @@ void func_002A68C0(void)
         D_00413AD0++;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", DrawTextureChains);
+void DrawTextureChains(int clientId)
+{
+    int i;
+    msurface_t *s;
+    texture_t *t;
+    int count = 100;
+
+    currententity = cl_entities[clientId];
+    for (i = 0; i < cl[clientId].worldmodel->numtextures; i++)
+    {
+        t = &cl[clientId].worldmodel->textures[i];
+        if (!t)
+            continue;
+        s = t->texturechain;
+        if (!s)
+            continue;
+
+        if (i == D_00399520)
+        {
+            if (D_00399590)
+            {
+                glDisable(GL_FOG);
+                func_0023AFC8(1);
+            }
+            R_DrawSkyChain(s);
+            if (D_00399590)
+            {
+                glEnable(GL_FOG);
+                func_0023AFC8(3);
+            }
+        }
+        else
+        {
+            if ((s->flags & SURF_DRAWTURB) && r_wateralpha.value != 1.0f)
+                continue;
+            R_RenderBrushPolyChain(s, clientId);
+        }
+        t->texturechain = NULL;
+
+        if (--count == 0)
+        {
+            func_002CD9F8(clientId);
+            count = 100;
+        }
+    }
+}
 
 #ifdef NON_MATCHING
 void R_BlendLightmaps(void)
@@ -1327,7 +1454,7 @@ void DrawGLPolyScroll(msurface_t *psurface, cl_entity_t *pEntity)
     glEnd();
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A6E78);
+INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", R_RenderBrushPolyChain);
 
 #ifdef NON_MATCHING
 void func_002A7238(byte *p)
