@@ -19,7 +19,8 @@ typedef struct
 {
     short texnum;               /* 0x00 */
     short servercount;          /* 0x02 */
-    byte pad4[0x8 - 0x4];
+    short width;                /* 0x04 */
+    short height;               /* 0x06 */
     char mipmap;                /* 0x08 */
     char identifier[63];        /* 0x09 */
 } gltexture_t; /* 0x48 */

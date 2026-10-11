@@ -214,7 +214,7 @@ void func_002ACFA0(void);
 void GL_TextureStats_f(void);
 void func_002AD388(void);
 int func_00235EA0(char *name, void *out, int *size);
-int GL_LoadDecalTexture(char *name, int type, int width, int height, byte *pixels, byte *palette, int nummips);
+int GL_LoadDecalTexture(char *name, int type, int width, int height, byte *pixels, byte *palette, byte nummips);
 
 void Draw_Init(void)
 {
@@ -1024,7 +1024,110 @@ void func_002AFA30(byte *palette)
         qglColorTableEXT(GL_TEXTURE_2D, 0x1908, 256, 0x8801, 0x1401, palette);
 }
 
+extern int texture_extension_number;
+void glTexImage2D(int target, int level, int internalformat, int width, int height, int border, int format, int type, void *pixels);
+char *strcpy(char *dst, const char *src);
+
+#ifdef NON_MATCHING
+int GL_LoadDecalTexture(char *identifier, int textureType, int width, int height, byte *data, byte *palette, byte nummips)
+{
+    int i;
+    gltexture_t *glt;
+    gltexture_t *slot;
+    byte mipcount;
+    byte *pdata;
+    int w, h;
+
+    slot = NULL;
+
+retry:
+    mipcount = nummips + 1;
+    if (identifier[0])
+    {
+        for (i = 0, glt = D_004F9DD8; i < D_00399640; i++, glt++)
+        {
+            if (glt->servercount < 0)
+            {
+                if (!slot)
+                    slot = glt;
+                continue;
+            }
+
+            if (!strcmp(identifier, glt->identifier))
+            {
+                if (width != glt->width || height != glt->height)
+                {
+                    identifier[3]++;
+                    goto retry;
+                }
+
+                if (glt->servercount > 0)
+                    glt->servercount = D_00332F2C;
+                slot = glt;
+                break;
+            }
+        }
+    }
+    else
+    {
+        Con_DPrintf("NULL Texture\n");
+    }
+
+    glt = slot;
+    if (!glt)
+    {
+        glt = &D_004F9DD8[D_00399640++];
+        if (D_00399640 >= MAX_GLTEXTURES)
+        {
+            func_002ACFA0();
+            Sys_Error("Texture Overflow: MAX_GLTEXTURES");
+        }
+        glt->texnum = texture_extension_number++;
+    }
+
+    strcpy(glt->identifier, identifier);
+    glt->mipmap = nummips;
+    glt->width = width;
+    glt->height = height;
+
+    if (textureType == 4)
+        glt->servercount = D_00332F2C;
+    else
+        glt->servercount = 0;
+
+    GL_Bind(glt->texnum);
+    func_002AFA30(palette);
+
+    if (identifier[0] == '@')
+        func_0023C600(GL_TEXTURE_2D, 0x2805, 1.0f);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, 1, width, height, 0, 0x1900, 0x1401, data);
+
+    pdata = data + width * height;
+    for (i = 1; i < mipcount; i++)
+    {
+        w = width >> i;
+        h = height >> i;
+        glTexImage2D(GL_TEXTURE_2D, i, 1, w, h, 0, 0x1900, 0x1401, pdata);
+        pdata += w * h;
+    }
+
+    if (mipcount)
+    {
+        func_0023C600(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, D_003333C8);
+        func_0023C600(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, D_003333CC);
+    }
+    else
+    {
+        func_0023C600(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, D_003333CC);
+        func_0023C600(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, D_003333CC);
+    }
+
+    return glt->texnum;
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", GL_LoadDecalTexture);
+#endif
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", GL_BuildDecal);
 
