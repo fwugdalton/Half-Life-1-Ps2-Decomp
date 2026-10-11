@@ -21,7 +21,7 @@ typedef struct
     short servercount;          /* 0x02 */
     byte pad4[0x8 - 0x4];
     char mipmap;                /* 0x08 */
-    byte pad9[0x48 - 0x9];
+    char identifier[63];        /* 0x09 */
 } gltexture_t; /* 0x48 */
 
 #define MAX_GLTEXTURES 1200

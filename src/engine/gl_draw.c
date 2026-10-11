@@ -960,13 +960,69 @@ void func_002AF7E0(gltexture_t *glt)
 __asm__(".section .rodata\n.align 3\n.section .text");
 INCLUDE_RODATA("asm/nonmatchings/engine/gl_draw", D_00394938);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002AF838);
+extern int D_00332F2C; /* servercount */
+extern void (*qglColorTableEXT)(int target, int internalformat, int width, int format, int type, void *table);
+int strcmp(const char *s1, const char *s2);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", GL_FreeDecalTexture);
+void func_002AF838(void)
+{
+    int i;
+    int count = 0;
+    gltexture_t *glt;
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002AF9A0);
+    GL_Bind(D_00399644);
+    for (i = 0, glt = D_004F9DD8; i < D_00399640; i++, glt++)
+    {
+        if (glt->servercount > 0 && glt->servercount != D_00332F2C)
+        {
+            func_002AF7E0(glt);
+            count++;
+        }
+    }
+    Con_DPrintf("GL_UnloadTextures: Unloaded %d textures\n", count);
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002AFA30);
+void GL_FreeDecalTexture(char *identifier)
+{
+    int i;
+    gltexture_t *glt;
+
+    GL_Bind(D_00399644);
+    for (i = 0, glt = D_004F9DD8; i < D_00399640; i++, glt++)
+    {
+        if (!strcmp(identifier, glt->identifier))
+        {
+            if (glt->servercount >= 0)
+                func_002AF7E0(glt);
+            return;
+        }
+    }
+    Con_Printf("WARNING: Texture not found [%s]\n", identifier);
+}
+
+void func_002AF9A0(int texnum)
+{
+    int i;
+    gltexture_t *glt;
+
+    GL_Bind(D_00399644);
+    for (i = 0, glt = D_004F9DD8; i < D_00399640; i++, glt++)
+    {
+        if (glt->texnum == texnum)
+        {
+            if (glt->servercount >= 0)
+                func_002AF7E0(glt);
+            return;
+        }
+    }
+    Con_Printf("WARNING: Texture not found [%d]\n", texnum);
+}
+
+void func_002AFA30(byte *palette)
+{
+    if (qglColorTableEXT)
+        qglColorTableEXT(GL_TEXTURE_2D, 0x1908, 256, 0x8801, 0x1401, palette);
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", GL_LoadDecalTexture);
 
