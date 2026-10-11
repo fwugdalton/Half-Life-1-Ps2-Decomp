@@ -626,6 +626,8 @@ typedef struct
     byte pad0[0x1C];
     int width;                  /* 0x1C */
     int height;                 /* 0x20 */
+    byte pad24[0x38 - 0x24];
+    int conwidth;               /* 0x38 */
 } draw_viddef_t;
 
 extern draw_viddef_t r_viddef;
@@ -811,7 +813,77 @@ void func_002AF170(spriteframe_t *pFrame, void *pPalette, int x, int y, wrect_t 
     glDisable(GL_BLEND);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", Draw_ConsoleBackground);
+extern int D_003995E8, D_003995DC;
+typedef struct
+{
+    int width;
+    int height;
+} viddef_t;
+
+extern viddef_t vid;
+extern int D_0032EF68, D_0032EF6C, D_0032EF74;
+extern int D_0032EF78, D_0032EF7C, D_0032EF80, D_0032EF84;
+extern int D_00331C18;
+extern int D_00399798;
+extern char D_00394938[];
+void glMatrixMode(int mode);
+void glPushMatrix(void);
+void glPopMatrix(void);
+void glLoadIdentity(void);
+void glOrtho(float left, float right, float bottom, float top, float zNear, float zFar);
+void glViewport(int x, int y, int width, int height);
+void func_002AF7A8(int a);
+int sprintf(char *buf, const char *fmt, ...);
+
+void Draw_ConsoleBackground(int lines)
+{
+    char ver[100];
+    int y;
+    int x;
+    int h, w, x0;
+
+    x0 = 0;
+    y = lines - D_003995DC;
+    w = D_003995E8;
+    h = D_003995DC + 1;
+    glViewport(D_0032EF7C, D_0032EF78, D_0032EF80, D_0032EF84);
+    glMatrixMode(0x1701);
+    glPushMatrix();
+    glLoadIdentity();
+    glOrtho(D_0032EF68, D_0032EF68 + vid.width, D_0032EF6C + D_0032EF74, D_0032EF6C, -99999, 99999);
+    glMatrixMode(0x1700);
+    glPushMatrix();
+    glLoadIdentity();
+    glDisable(GL_ALPHA_TEST);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_TEXTURE_2D);
+    glEnable(GL_BLEND);
+    GL_Bind(D_00399644);
+    glBlendFunc(GL_SRC_ALPHA, 0x303);
+    glColor4f(0, 0, 0, 1);
+    glBegin(9);
+    glVertex2f(x0, y);
+    glVertex2f(x0 + w, y);
+    glVertex2f(x0 + w, y + h);
+    glVertex2f(x0, y + h);
+    glEnd();
+    glDisable(GL_BLEND);
+    glEnable(GL_TEXTURE_2D);
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_ALPHA_TEST);
+    glMatrixMode(0x1701);
+    glPopMatrix();
+    glMatrixMode(0x1700);
+    glPopMatrix();
+
+    if (D_00331C18 && lines == r_viddef.height)
+        func_002AF7A8(0);
+
+    sprintf(ver, D_00394938);
+    x = r_viddef.conwidth - func_002AD060(ver);
+    if (!D_00331C18 && !(D_00399798 & 4))
+        Draw_String(x, 24, ver);
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002AF498);
 
