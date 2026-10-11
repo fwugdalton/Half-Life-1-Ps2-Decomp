@@ -137,6 +137,12 @@ extern float D_00411E80[][74][4];
 extern float D_00412800[][74][4];
 extern int D_00399560, D_00399584;
 extern float *D_00413620;
+typedef struct
+{
+    float v[4];
+} __attribute__((aligned(16))) qvec_t;
+extern qvec_t sprite_color;
+extern float D_00413180[];
 extern int D_0033102C, D_0033103C, D_00331044;
 extern void *D_00331034;
 extern void *D_00331030, *D_00331038;
@@ -148,8 +154,8 @@ void glTexCoord2f(float s, float t);
 void glVertex3fv(float *v);
 extern cvar_t r_dynamic;
 void func_0023C808(float s, float t);
-void func_002A6BE0(glpoly_t *p);
-void func_002A6CA0(glpoly_t *p);
+void func_002A6BE0(byte *p);
+void func_002A6CA0(byte *p);
 #define MAX_DECALSURFS 500
 #define kRenderTransColor 1
 extern float D_00333268, D_0032F26C;
@@ -613,11 +619,11 @@ void R_RenderBrushPoly(msurface_t *fa, int clientId)
     }
     else if (r_blend > 0.99f)
     {
-        func_002A6BE0(fa->polys);
+        func_002A6BE0((byte *)fa->polys);
     }
     else
     {
-        func_002A6CA0(fa->polys);
+        func_002A6CA0((byte *)fa->polys);
     }
     func_0023C808(0, 0);
 
@@ -2301,9 +2307,59 @@ void R_BlendLightmaps(void)
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", R_BlendLightmaps);
 #endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A6BE0);
+#ifdef NON_MATCHING
+void func_002A6BE0(byte *p)
+{
+    int *active = &D_0033102C;
+    void **a = &D_00331030;
+    void **b = &D_00331038;
 
+    func_0023AF68();
+    D_00399560 += *(int *)(p + 8);
+    D_00399584++;
+    *a = func_002A3C60(p);
+    D_00331034 = D_00413620;
+    *b = func_002A3C68(p);
+    D_00331044 = 5;
+    *active = 1;
+    D_0033103C = *(int *)(p + 8);
+    func_0023D430(1);
+    *active = 0;
+}
+#else
+INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A6BE0);
+#endif
+
+#ifdef NON_MATCHING
+void func_002A6CA0(byte *p)
+{
+    int *active = &D_0033102C;
+    void **a = &D_00331030;
+    void **b = &D_00331038;
+    qvec_t *dst;
+    int i;
+
+    func_0023AF68();
+    D_00399584++;
+    D_00399560 += *(int *)(p + 8);
+    *a = func_002A3C60(p);
+    D_00331034 = D_00413180;
+    *b = func_002A3C68(p);
+    dst = (qvec_t *)((int)D_00413180 | 0x30000000);
+    i = 0;
+    do
+    {
+        *dst++ = sprite_color;
+    } while (++i < *(int *)(p + 8));
+    D_00331044 = 5;
+    *active = 1;
+    D_0033103C = *(int *)(p + 8);
+    func_0023D430(2);
+    *active = 0;
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A6CA0);
+#endif
 
 void DrawGLPolyScroll(msurface_t *psurface, cl_entity_t *pEntity)
 {
