@@ -2576,7 +2576,6 @@ void PF_WriteString_I(const char *sz);
 void PF_MessageEnd_I(void);
 extern cvar_t hostname;
 
-#ifdef NON_MATCHING
 void Host_FullInfo_f(void)
 {
     char key[512];
@@ -2627,9 +2626,6 @@ void Host_FullInfo_f(void)
         host_client->sendinfo = true;
     }
 }
-#else
-INCLUDE_ASM("asm/nonmatchings/engine/Host_cmd", Host_FullInfo_f);
-#endif
 
 void Host_SetInfo_f(void)
 {

@@ -1034,6 +1034,14 @@ __asm__(".section .rodata\n"
         ".section .text\n");
 #endif
 
+#ifdef NON_MATCHING
+#define STR_ADR_PORT "%s:%i"
+#else
+/* emitida junto com Master_SetMaster_f (INCLUDE_ASM) */
+extern char D_0038C550[];
+#define STR_ADR_PORT D_0038C550
+#endif
+
 void Master_ResetHeartbeats(void)
 {
     master_t *p;
@@ -1052,10 +1060,10 @@ void Master_UseDefault(void)
         Master_AddServer(&adr);
 }
 
-#ifdef NON_MATCHING
+qboolean bInitialized = false;
+
 void Master_Init(void)
 {
-    static qboolean bInitialized = false;
     char szDefault[256];
     char szFile[256];
     char szPort[16];
@@ -1152,7 +1160,7 @@ void Master_Init(void)
             if (!nPort)
                 nPort = nDefaultPort;
 
-            sprintf(szAdr, "%s:%i", szValue, nPort);
+            sprintf(szAdr, STR_ADR_PORT, szValue, nPort);
 
             if (!NET_StringToAdr(szAdr, &adr))
                 bIgnore = true;
@@ -1174,12 +1182,6 @@ void Master_Init(void)
 
     Mem_Free(pData);
 }
-#else
-qboolean bInitialized = false;
-__asm__(".section .rodata\n.align 3\n.globl D_0038C618\nD_0038C618: .asciz \"%s\"\n.section .text\n");
-INCLUDE_ASM("asm/nonmatchings/engine/Host", Master_Init);
-#endif
-
 void Host_SetRollingFPS(float fps)
 {
     rolling_fps = fps;
@@ -1411,13 +1413,7 @@ void Host_PrintServerCvars(void)
     }
 }
 
-#ifdef NON_MATCHING
 #define STR_S "%s"
-#else
-/* emitida junto com Master_Init (INCLUDE_ASM); usar o literal geraria uma cópia nova */
-extern char D_0038C618[];
-#define STR_S D_0038C618
-#endif
 
 void Log_Printf(char *fmt, ...)
 {

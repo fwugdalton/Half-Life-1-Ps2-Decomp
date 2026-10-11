@@ -57,7 +57,7 @@ $(BUILD_DIR)/src/engine/pmovetst.o: CFLAGS += -ffast-math
 $(BUILD_DIR)/src/engine/pr_cmds.o: CFLAGS += -ffast-math
 $(BUILD_DIR)/src/engine/r_trans.o: CFLAGS += -ffast-math
 $(BUILD_DIR)/src/engine/sv_main.o: CFLAGS += -ffast-math
-$(BUILD_DIR)/src/engine/sv_move.o: CFLAGS += -ffast-math
+$(BUILD_DIR)/src/engine/sv_move.o: CFLAGS += -ffast-math -fmove-all-movables
 $(BUILD_DIR)/src/engine/sv_phys.o: CFLAGS += -ffast-math
 $(BUILD_DIR)/src/engine/sv_upld.o: CFLAGS += -ffast-math
 $(BUILD_DIR)/src/engine/sv_user.o: CFLAGS += -ffast-math
@@ -65,14 +65,16 @@ $(BUILD_DIR)/src/engine/tmessage.o: CFLAGS += -ffast-math
 $(BUILD_DIR)/src/engine/view.o: CFLAGS += -ffast-math
 $(BUILD_DIR)/src/engine/wad.o: CFLAGS += -ffast-math
 $(BUILD_DIR)/src/engine/world.o: CFLAGS += -ffast-math
-$(BUILD_DIR)/src/engine/zone.o: CFLAGS += -ffast-math
+$(BUILD_DIR)/src/engine/zone.o: CFLAGS += -ffast-math -fmove-all-movables
 $(BUILD_DIR)/src/engine/cl_parse.o: CFLAGS += -ffast-math
-$(BUILD_DIR)/src/engine/Host_cmd.o: CFLAGS += -ffast-math
-$(BUILD_DIR)/src/engine/Gl_model.o: CFLAGS += -ffast-math
+$(BUILD_DIR)/src/engine/Host.o: CFLAGS += -fmove-all-movables
+$(BUILD_DIR)/src/engine/cmodel.o: CFLAGS += -fmove-all-movables
+$(BUILD_DIR)/src/engine/Host_cmd.o: CFLAGS += -ffast-math -fmove-all-movables
+$(BUILD_DIR)/src/engine/Gl_model.o: CFLAGS += -ffast-math -fmove-all-movables
 $(BUILD_DIR)/src/engine/qgl.o: CFLAGS += -ffast-math
 $(BUILD_DIR)/src/engine/r_efrag.o: CFLAGS += -ffast-math
 $(BUILD_DIR)/src/engine/tri.o: CFLAGS += -ffast-math
-$(BUILD_DIR)/src/engine/gl_warp.o: CFLAGS += -ffast-math
+$(BUILD_DIR)/src/engine/gl_warp.o: CFLAGS += -ffast-math -fmove-all-movables
 # a .rodata do gl_warp começa alinhada em 16 no original
 $(BUILD_DIR)/src/engine/gl_warp.o: SECTALIGN_C := --set-section-alignment .text=8 --set-section-alignment .data=4 --set-section-alignment .rodata=16
 

@@ -140,7 +140,6 @@ qboolean SV_movetest(edict_t *ent, vec_t *move, qboolean relink)
         SV_LinkEdict(ent, true);
     return true;
 }
-#ifdef NON_MATCHING
 qboolean SV_movestep(edict_t *ent, vec_t *move, qboolean relink)
 {
     float dz;
@@ -239,9 +238,6 @@ qboolean SV_movestep(edict_t *ent, vec_t *move, qboolean relink)
         SV_LinkEdict(ent, true);
     return true;
 }
-#else
-INCLUDE_ASM("asm/nonmatchings/engine/sv_move", SV_movestep);
-#endif
 float cosf(float x);
 float sinf(float x);
 

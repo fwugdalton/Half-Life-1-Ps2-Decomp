@@ -130,7 +130,7 @@ segments:
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
       - [0x28B158, .rodata, engine/Cmd]
-      - [0x28B538, rodata, cod/28B538]
+      - [0x28B538, .rodata, engine/cmodel]
       - [0x28B598, .rodata, engine/Console]
       - [0x28B748, rodata, cod/28B748]
       - [0x28B750, .rodata, engine/crc]

@@ -1,10 +1,12 @@
-"""Troca um bloco '#ifdef NON_MATCHING <func> #else INCLUDE_ASM(...) #endif' pela função dada (ou pela própria do bloco).
+"""Remove o #ifdef NON_MATCHING / #else INCLUDE_ASM / #endif em volta de uma função que passou a casar.
 
-Uso: unwrap.py src/arquivo.c Funcao [variante.c]
+Uso: unwrap.py arquivo.c Func [Func...]
 """
-import sys, re
-src, fn = sys.argv[1], sys.argv[2]
-s = open(src).read()
-m = re.search(r'#ifdef NON_MATCHING\n((?:(?!#ifdef NON_MATCHING\n).)*?)#else\nINCLUDE_ASM\("[^"]*", %s\);\n#endif\n' % re.escape(fn), s, re.S)
-body = open(sys.argv[3]).read() if len(sys.argv) > 3 else m.group(1)
-open(src, 'w').write(s[:m.start()] + body + s[m.end():])
+import re, sys
+path = sys.argv[1]
+src = open(path).read()
+for name in sys.argv[2:]:
+    pat = re.compile(r'#ifdef NON_MATCHING\n((?:(?!#ifdef NON_MATCHING).)*?)#else\nINCLUDE_ASM\("[^"]*", ' + re.escape(name) + r'\);\n#endif\n', re.S)
+    src, n = pat.subn(lambda m: m.group(1), src)
+    print(name, 'ok' if n == 1 else 'NÃO ENCONTRADO (%d)' % n)
+open(path, 'w').write(src)

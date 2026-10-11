@@ -285,7 +285,6 @@ void Hunk_Check(void)
     }
 }
 
-#ifdef NON_MATCHING
 void Hunk_Print(qboolean all)
 {
     hunk_t *h, *next, *endlow, *starthigh, *endhigh;
@@ -355,9 +354,6 @@ void Hunk_Print(qboolean all)
     func_00222500(file, D_00390B00, totalblocks);
     FS_Close(file);
 }
-#else
-INCLUDE_ASM("asm/nonmatchings/engine/zone", Hunk_Print);
-#endif
 
 INCLUDE_RODATA("asm/nonmatchings/engine/zone", D_00390A40);
 

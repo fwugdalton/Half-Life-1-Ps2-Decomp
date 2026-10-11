@@ -4,6 +4,10 @@
 #include "engine/mathlib.h"
 
 #define MAX_CLIP_VERTS 64
+#define ON_EPSILON 0.1f
+#define SIDE_FRONT 0
+#define SIDE_BACK 1
+#define SIDE_ON 2
 #define fabs(x) ((x) < 0 ? -(x) : (x))
 
 #define SKY_TEXNUM 1001
@@ -37,6 +41,8 @@ extern float D_004E7780[2][6]; /* skymaxs */
 extern vec3_t r_origin;
 extern int D_003331C0[6][3]; /* vec_to_st */
 #define vec_to_st D_003331C0
+extern vec3_t D_00333130[6]; /* skyclip */
+#define skyclip D_00333130
 
 float *func_002A3C60(glpoly_t *p);
 void func_002A13D0(int nump, vec3_t vecs, int stage);
@@ -176,7 +182,95 @@ void func_002A1150(int nump, vec3_t vecs)
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_warp", func_002A13D0);
+void func_002A13D0(int nump, vec3_t vecs, int stage)
+{
+    float *norm;
+    float *v;
+    qboolean front, back;
+    float d, e;
+    float dists[MAX_CLIP_VERTS];
+    int sides[MAX_CLIP_VERTS];
+    vec3_t newv[2][MAX_CLIP_VERTS];
+    int newc[2];
+    int i, j;
+
+    if (nump > MAX_CLIP_VERTS - 2)
+        Sys_Error("ClipSkyPolygon: MAX_CLIP_VERTS");
+
+    if (stage == 6)
+    {
+        func_002A1150(nump, vecs);
+        return;
+    }
+
+    front = back = false;
+    norm = skyclip[stage];
+    for (i = 0, v = vecs; i < nump; i++, v += 3)
+    {
+        d = DotProduct(v, norm);
+        if (d > ON_EPSILON)
+        {
+            front = true;
+            sides[i] = SIDE_FRONT;
+        }
+        else if (d < ON_EPSILON)
+        {
+            back = true;
+            sides[i] = SIDE_BACK;
+        }
+        else
+            sides[i] = SIDE_ON;
+        dists[i] = d;
+    }
+
+    if (!front || !back)
+    {
+        func_002A13D0(nump, vecs, stage + 1);
+        return;
+    }
+
+    sides[i] = sides[0];
+    dists[i] = dists[0];
+    VectorCopy(vecs, (vecs + (i * 3)));
+    newc[0] = newc[1] = 0;
+
+    for (i = 0, v = vecs; i < nump; i++, v += 3)
+    {
+        switch (sides[i])
+        {
+        case SIDE_FRONT:
+            VectorCopy(v, newv[0][newc[0]]);
+            newc[0]++;
+            break;
+        case SIDE_BACK:
+            VectorCopy(v, newv[1][newc[1]]);
+            newc[1]++;
+            break;
+        case SIDE_ON:
+            VectorCopy(v, newv[0][newc[0]]);
+            newc[0]++;
+            VectorCopy(v, newv[1][newc[1]]);
+            newc[1]++;
+            break;
+        }
+
+        if (sides[i] == SIDE_ON || sides[i + 1] == SIDE_ON || sides[i + 1] == sides[i])
+            continue;
+
+        d = dists[i] / (dists[i] - dists[i + 1]);
+        for (j = 0; j < 3; j++)
+        {
+            e = v[j] + d * (v[j + 3] - v[j]);
+            newv[0][newc[0]][j] = e;
+            newv[1][newc[1]][j] = e;
+        }
+        newc[0]++;
+        newc[1]++;
+    }
+
+    func_002A13D0(newc[0], newv[0][0], stage + 1);
+    func_002A13D0(newc[1], newv[1][0], stage + 1);
+}
 
 void func_002A1828(msurface_t *s)
 {

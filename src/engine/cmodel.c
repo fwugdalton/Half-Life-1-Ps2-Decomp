@@ -104,7 +104,6 @@ void CM_FreePAS(void)
 }
 
 /* só difere na alocação de registradores temporários (t4-t7) */
-#ifdef NON_MATCHING
 void CM_CalcPAS(model_t *pModel)
 {
     int rows, rowwords;
@@ -186,9 +185,6 @@ void CM_CalcPAS(model_t *pModel)
 
     Con_DPrintf("Average leaves visible / audible / total: %i / %i / %i\n", vcount / count, acount / count, count);
 }
-#else
-INCLUDE_ASM("asm/nonmatchings/engine/cmodel", CM_CalcPAS);
-#endif
 
 qboolean CM_HeadnodeVisible(mnode_t *node, byte *visbits)
 {
