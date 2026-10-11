@@ -714,9 +714,9 @@ void R_SetRenderMode(byte *pEntity)
 
 extern float D_00333654;
 void R_MarkLights(dlight_t *light, int bit, mnode_t *node);
-void func_0023B1C8(void);
+void glPushMatrix(void);
 void func_002A8CB0(cl_entity_t *e);
-void func_0023B258(void);
+void glPopMatrix(void);
 
 void R_DrawBrushModel(cl_entity_t *e, int clientId)
 {
@@ -783,7 +783,7 @@ void R_DrawBrushModel(cl_entity_t *e, int clientId)
         }
     }
 
-    func_0023B1C8();
+    glPushMatrix();
     func_002A8CB0(e);
     R_SetRenderMode((byte *)e);
 
@@ -831,7 +831,7 @@ void R_DrawBrushModel(cl_entity_t *e, int clientId)
         R_RenderLightmaps();
     }
 
-    func_0023B258();
+    glPopMatrix();
     glDepthMask(1);
     glDisable(GL_BLEND);
     glDisable(GL_ALPHA_TEST);
