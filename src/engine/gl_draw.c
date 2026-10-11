@@ -744,13 +744,72 @@ void func_002AED58(spriteframe_t *pFrame, float *pfLeft, float *pfRight, float *
     *pfBottom = ((float)rc.bottom - 0.5f) * f;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002AEEC0);
+extern cvar_t D_003336D8; /* gl_spriteblend */
+void glDepthMask(int flag);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002AF0A8);
+void func_002AEEC0(spriteframe_t *pFrame, int ix, int iy, wrect_t *prcSubRect)
+{
+    float fLeft = 0;
+    float fRight = 1;
+    float fTop = 0;
+    float fBottom = 1;
+    int iWidth = pFrame->pic->width;
+    int iHeight = pFrame->pic->height;
+    float x, y;
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002AF0D0);
+    if (D_00333430)
+        Con_Printf("ERROR: Scissoring Enabled\n");
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002AF170);
+    if (prcSubRect)
+        func_002AED58(pFrame, &fLeft, &fRight, &fTop, &fBottom, &iWidth, &iHeight, prcSubRect);
+
+    x = ix;
+    y = iy;
+
+    glDepthMask(0);
+    GL_Bind(pFrame->unk0);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+    glBegin(GL_QUADS);
+    D_00399570++;
+    D_00399558 += 4;
+    glTexCoord2f(fLeft, fTop);
+    glVertex2f(x, y);
+    glTexCoord2f(fRight, fTop);
+    glVertex2f(ix + iWidth, y);
+    glTexCoord2f(fRight, fBottom);
+    glVertex2f(ix + iWidth, iy + iHeight);
+    glTexCoord2f(fLeft, fBottom);
+    glVertex2f(x, iy + iHeight);
+    glEnd();
+    glDepthMask(1);
+    glDisable(0xC11);
+}
+
+void func_002AF0A8(spriteframe_t *pFrame, void *pPalette, int x, int y, wrect_t *prcSubRect)
+{
+    func_002AEEC0(pFrame, x, y, prcSubRect);
+}
+
+void func_002AF0D0(spriteframe_t *pFrame, void *pPalette, int x, int y, wrect_t *prcSubRect)
+{
+    glEnable(GL_ALPHA_TEST);
+    if (D_003336D8.value)
+    {
+        glBlendFunc(GL_SRC_ALPHA, 0x303);
+        glEnable(GL_BLEND);
+    }
+    func_002AEEC0(pFrame, x, y, prcSubRect);
+    glDisable(GL_ALPHA_TEST);
+    glDisable(GL_BLEND);
+}
+
+void func_002AF170(spriteframe_t *pFrame, void *pPalette, int x, int y, wrect_t *prcSubRect)
+{
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_ONE, GL_ONE);
+    func_002AEEC0(pFrame, x, y, prcSubRect);
+    glDisable(GL_BLEND);
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", Draw_ConsoleBackground);
 
@@ -767,6 +826,8 @@ void func_002AF7D8(void) {
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002AF7E0);
 
+/* D_00394938 é alinhado em 8 no original */
+__asm__(".section .rodata\n.align 3\n.section .text");
 INCLUDE_RODATA("asm/nonmatchings/engine/gl_draw", D_00394938);
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002AF838);
