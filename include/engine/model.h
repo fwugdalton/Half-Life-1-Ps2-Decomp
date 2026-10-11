@@ -63,7 +63,8 @@ typedef struct msurface_s
     short extents[2];           /* 0x44 */
     glpoly_t *polys;            /* 0x48 */
     struct msurface_s *texturechain; /* 0x4C */
-    byte unk_50[0x5C - 0x50];
+    int lightmaptexturenum;     /* 0x50 */
+    int light_s, light_t;       /* 0x54 */
     int dlightframe;            /* 0x5C */
     int dlightbits;             /* 0x60 */
     byte styles[4];             /* 0x64 */

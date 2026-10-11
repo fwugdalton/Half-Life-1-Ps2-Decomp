@@ -59,15 +59,27 @@ typedef struct decal_s
 
 typedef struct
 {
-    byte pad[0x74];
+    int decalIndex;
+    byte pad[0x74 - 4];
 } decalcache_t;
 
+#define MAX_DECALS 1024
 #define DECAL_CACHEENTRIES 256
-extern decal_t gDecalPool[];
+extern decal_t gDecalPool[MAX_DECALS];
+extern int gDecalCount;
 extern decalcache_t gDecalCache[DECAL_CACHEENTRIES];
 extern int D_00333264, D_00413AD0;
 extern byte D_004F0DE8[0x8000];
 void R_DecalShoot_(int, int, int, int, int, int, int, int);
+void *Hunk_AllocName(int size, char *name);
+void func_00225860(void *dst, int c, int n);
+void func_0023D520(void);
+int AllocBlock(int w, int h, int *x, int *y);
+extern int D_0040A740, D_0040A744;
+extern int D_00333254, D_00333260;
+
+/* no PS2 os flags do texinfo são um int em 0x20 (a metade de cima é surf->flags) */
+#define TEXINFO_FLAGS(s) (*(int *)&(s)->unk_20)
 
 #ifdef NON_MATCHING
 void R_AddDynamicLights(msurface_t *surf)
@@ -368,7 +380,7 @@ INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A3738);
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", R_MarkLeaves);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A3A40);
+INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", AllocBlock);
 
 int func_002A3BC8(int a, int b)
 {
@@ -379,7 +391,15 @@ int func_002A3BC8(int a, int b)
     return size;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A3C00);
+int func_002A3C00(int w)
+{
+    int size;
+
+    size = func_002A3BC8(w, 3);
+    size += func_002A3BC8(w, 2);
+    size += func_002A3BC8(w, 2);
+    return size * 4 + 0x10;
+}
 
 void *func_002A3C60(byte *p)
 {
@@ -393,20 +413,50 @@ int *func_002A3C68(byte *p)
     return (int *)p + func_002A3BC8(w, 3);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A3CA0);
+int *func_002A3CA0(byte *p)
+{
+    byte *q = p + 0x10;
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A3CF8);
+    q += func_002A3BC8(*(int *)(p + 8), 3) * 4;
+    return (int *)q + func_002A3BC8(*(int *)(p + 8), 2);
+}
+
+void func_002A3CF8(byte *p)
+{
+    int size;
+
+    size = func_002A3BC8(*(int *)(p + 8), 3);
+    size += func_002A3BC8(*(int *)(p + 8), 2);
+    size += func_002A3BC8(*(int *)(p + 8), 2);
+    func_00225860(func_002A3C60(p), 0, size * 4);
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A3D68);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A40B8);
+void func_002A40B8(int size)
+{
+    D_0040A744 = size;
+    D_0040A740 = (int)Hunk_AllocName(size, "SurfaceDisplayList");
+}
 
 void func_002A40E8(void)
 {
     memset(D_004F0DE8, 0, sizeof(D_004F0DE8));
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A4110);
+void GL_CreateSurfaceLightmap(msurface_t *surf)
+{
+    int smax, tmax;
+
+    if (surf->flags & 0x114)
+        return;
+    if ((TEXINFO_FLAGS(surf) & 0x2200000) == 0x2200000)
+        return;
+
+    smax = (surf->extents[0] >> 4) + 1;
+    tmax = (surf->extents[1] >> 4) + 1;
+    surf->lightmaptexturenum = AllocBlock(smax, tmax, &surf->light_s, &surf->light_t);
+}
 
 INCLUDE_RODATA("asm/nonmatchings/engine/gl_rsurf", D_00394438);
 
@@ -432,7 +482,15 @@ INCLUDE_RODATA("asm/nonmatchings/engine/gl_rsurf", D_00394490);
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", R_DrawVLs_f);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A47F0);
+void R_ClearDecals(void)
+{
+    int i;
+
+    memset(gDecalPool, 0, sizeof(gDecalPool));
+    gDecalCount = 0;
+    for (i = DECAL_CACHEENTRIES - 1; i >= 0; i--)
+        gDecalCache[i].decalIndex = -1;
+}
 
 int R_DecalIndex(decal_t *pdecal)
 {
@@ -452,7 +510,16 @@ decalcache_t *R_DecalCacheSlot(int decalIndex)
     return &gDecalCache[cacheIndex];
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A48A0);
+void R_DecalCacheClear(decal_t *pdecal)
+{
+    int index;
+    decalcache_t *pCache;
+
+    index = R_DecalIndex(pdecal);
+    pCache = R_DecalCacheSlot(index);
+    if (pCache->decalIndex == index)
+        pCache->decalIndex = -1;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A48E8);
 
@@ -506,7 +573,15 @@ INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A6050);
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A62F8);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A6380);
+void func_002A6380(void)
+{
+    if (D_00333260 > 0)
+    {
+        func_0023D520();
+        D_00333260 = 0;
+        D_00333254 = !D_00333254;
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A63C8);
 

@@ -4325,13 +4325,13 @@ void Host_ClearMemory(qboolean bQuiet);
 int func_00245408(int maxclients);
 void *Hunk_AllocName(int size, char *name);
 model_t *Mod_ForName(char *name, qboolean crash);
-void func_002A47F0(void);
+void R_ClearDecals(void);
 void CRC32_Init(unsigned int *pulCRC);
 qboolean CRC_MapFile(unsigned int *crcvalue, char *pszFileName);
 qboolean CRC_File(unsigned int *crcvalue, char *pszFileName);
 void SV_ClearWorld(void);
 void func_002A40E8(void);
-void func_002A4110(msurface_t *surf);
+void GL_CreateSurfaceLightmap(msurface_t *surf);
 int func_002A3C00(void *p);
 void func_002A4180(void);
 void func_002A40B8(int total);
@@ -4468,7 +4468,7 @@ int SV_SpawnServer(int unused, char *server, char *startspot)
     strcpy(sv.name, server);
     sprintf(sv.modelname, "maps/%s.bs2", server);
     sv.worldmodel = Mod_ForName(sv.modelname, false);
-    func_002A47F0();
+    R_ClearDecals();
 
     if (!sv.worldmodel)
     {
@@ -4523,7 +4523,7 @@ int SV_SpawnServer(int unused, char *server, char *startspot)
             continue;
         for (j = 0; j < mod->numsurfaces; j++)
         {
-            func_002A4110(&mod->surfaces[j]);
+            GL_CreateSurfaceLightmap(&mod->surfaces[j]);
             if (!(mod->surfaces[j].flags & 0x110))
                 total += func_002A3C00(mod->surfaces[j].unk_38);
         }
