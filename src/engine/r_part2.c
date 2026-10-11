@@ -1907,7 +1907,77 @@ void func_002B61D8(vec3_t source, vec3_t delta, int segments, float width, float
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B61D8);
 #endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B6460);
+void func_002B6460(vec3_t source, vec3_t delta, int segments, float width, float scale, float freq, float speed)
+{
+    int i;
+    float div, length, fraction, vLast, vStep;
+    vec3_t point, point2;
+    unsigned int count;
+
+    if (segments < 2)
+        return;
+    if (segments > NOISE_DIVISIONS)
+        segments = NOISE_DIVISIONS;
+
+    length = Length(delta) * 0.01f;
+    if (length < 0.5f)
+        length = 0.5f;
+    div = 1.0f / (segments - 1);
+
+    vStep = length * div;
+    vLast = fmodf(freq * speed, 1);
+    scale = scale * length;
+
+    count = 2;
+    glBegin(5);
+    D_00399534++;
+
+    for (i = 0; i < segments; i++)
+    {
+        D_00399598 += 2;
+        fraction = i * div * 2 * M_PI;
+
+        point[0] = sinf(fraction) * freq * delta[2] + source[0];
+        point[1] = cosf(fraction) * freq * delta[2] + source[1];
+        point[2] = source[2] + width;
+
+        point2[0] = sinf(fraction) * freq * (delta[2] + width) + source[0];
+        point2[1] = cosf(fraction) * freq * (delta[2] + width) + source[1];
+        point2[2] = source[2] - width;
+
+        tri_Brightness(0);
+        glTexCoord2f(1, vLast);
+        glVertex3fv(point);
+        tri_Brightness(1);
+        glTexCoord2f(0, vLast);
+        glVertex3fv(point2);
+
+        if (count >= 72)
+        {
+            glEnd();
+            count = 2;
+            glBegin(5);
+            D_00399534++;
+            D_00399598 += 2;
+            vLast = fmodf(vLast, 1);
+            tri_Brightness(0);
+            glTexCoord2f(1, vLast);
+            glVertex3fv(point);
+            tri_Brightness(1);
+            glTexCoord2f(0, vLast);
+            glVertex3fv(point2);
+        }
+        else
+        {
+            count += 2;
+            D_00399598 += 2;
+        }
+
+        vLast += vStep;
+    }
+
+    glEnd();
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B6770);
 
