@@ -106,7 +106,7 @@ int func_002AD110(int x, int y, int ch, int r, int g, int b)
     code = D_00399634->chars[c].x;
 
     s = ((code & 0xFF) + 0.5f) * D_0050EF58[0];
-    t = ((code >> 8) + 0.5f) * D_0050EF58[2];
+    t = (((short)code >> 8) + 0.5f) * D_0050EF58[2];
     t2 = t + (height - 1) * D_0050EF58[2];
     s2 = s + (width - 1) * D_0050EF58[0];
 
@@ -274,7 +274,7 @@ int Draw_Character(int x, int y, int num)
     code = font->chars[c].x;
 
     s = (code & 0xFF) * D_0050EF58[0];
-    t = (code >> 8) * D_0050EF58[1];
+    t = ((short)code >> 8) * D_0050EF58[1];
     s2 = s + width * D_0050EF58[0];
     t2 = t + height * D_0050EF58[1];
 
@@ -317,9 +317,34 @@ int Draw_String(int x, int y, char *str)
     return x;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002ADA70);
+void func_002ADA70(void)
+{
+    GL_Bind(D_00399638);
+}
 
+#ifdef NON_MATCHING
+void func_002ADA98(int ch, int *width, int *height, float *s, float *t, float *s2, float *t2)
+{
+    int c;
+    int code;
+    float fs, ft, fs2, ft2;
+
+    c = func_002AFE28(ch & 0xFF);
+    *width = D_0039964C->chars[c].width;
+    code = D_0039964C->chars[c].x;
+    *height = D_0039964C->height;
+    fs = (code & 0xFF) * D_0050EF58[0];
+    ft = ((short)code >> 8) * D_0050EF58[1];
+    fs2 = fs + *width * D_0050EF58[0];
+    ft2 = ft + D_0039964C->height * D_0050EF58[1];
+    *s = fs;
+    *t = ft;
+    *s2 = fs2;
+    *t2 = ft2;
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002ADA98);
+#endif
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002ADB98);
 
