@@ -23,7 +23,7 @@ extern uievent_t *ui_queue;
 void *memset(void *, int, unsigned int);
 void *Mem_DbgMalloc(int size, const char *file, int line);
 void Mem_Free(void *p);
-void func_002ACC08(uirect_t *rect, int color);
+void FillRGBA(uirect_t *rect, int color);
 
 void UI_DrawRect(uirect_t *rect, int color)
 {
@@ -33,19 +33,19 @@ void UI_DrawRect(uirect_t *rect, int color)
     r.y = rect->y;
     r.width = rect->width;
     r.height = 1;
-    func_002ACC08(&r, color);
+    FillRGBA(&r, color);
 
     r.y = rect->y + rect->height;
-    func_002ACC08(&r, color);
+    FillRGBA(&r, color);
 
     r.x = rect->x;
     r.y = rect->y;
     r.width = 1;
     r.height = rect->height;
-    func_002ACC08(&r, color);
+    FillRGBA(&r, color);
 
     r.x = rect->x + rect->width;
-    func_002ACC08(&r, color);
+    FillRGBA(&r, color);
 }
 
 void UI_QueueEvent(uievent_t *ev)

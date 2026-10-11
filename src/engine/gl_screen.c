@@ -52,7 +52,26 @@ extern vrect_t scr_vrect;
 void func_002CD340(int a, int clientId);
 int Draw_Character(int x, int y, int num);
 int Draw_String(int x, int y, char *str);
-void func_002ACC08(vrect_t *rc, byte *color);
+void FillRGBA(vrect_t *rc, byte *color);
+#define GL_TEXTURE_2D 0xDE1
+#define GL_DEPTH_TEST 0xB71
+#define GL_BLEND 0xBE2
+#define GL_QUADS 7
+#define GL_ONE 1
+#define GL_SRC_ALPHA 0x302
+#define GL_MODULATE 8448.0f
+#define GL_TEXTURE_ENV_MODE 0x2200
+#define GL_TEXTURE_ENV 0x2300
+extern int D_00399570, D_00399558;
+void glEnable(int cap);
+void glDisable(int cap);
+void glTexEnvf(int target, int pname, float param);
+void glBlendFunc(int sfactor, int dfactor);
+void glColor4f(float r, float g, float b, float a);
+void glColor3f(float r, float g, float b);
+void glBegin(int mode);
+void glEnd(void);
+void glVertex2f(float x, float y);
 void SCR_SizeUp_f(void);
 void SCR_SizeDown_f(void);
 void SCR_UpdateScreen(void);
@@ -276,7 +295,29 @@ INCLUDE_ASM("asm/nonmatchings/engine/gl_screen", SCR_UpdateScreen);
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_screen", func_002AC9A8);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_screen", func_002ACC08);
+void FillRGBA(vrect_t *rc, byte *color)
+{
+    glDisable(GL_TEXTURE_2D);
+    glEnable(GL_BLEND);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+    glColor4f(color[0] * (1.0f / 255.0f), color[1] * (1.0f / 255.0f), color[2] * (1.0f / 255.0f), 1.0f);
+    glDisable(GL_DEPTH_TEST);
+
+    glBegin(GL_QUADS);
+    D_00399570++;
+    D_00399558 += 4;
+    glVertex2f(rc->x, rc->y);
+    glVertex2f(rc->x + rc->width, rc->y);
+    glVertex2f(rc->x + rc->width, rc->y + rc->height);
+    glVertex2f(rc->x, rc->y + rc->height);
+    glEnd();
+
+    glEnable(GL_DEPTH_TEST);
+    glColor3f(1, 1, 1);
+    glEnable(GL_TEXTURE_2D);
+    glDisable(GL_BLEND);
+}
 
 #ifdef NON_MATCHING
 void SCR_DrawConnectMessage(void)
@@ -306,7 +347,7 @@ void SCR_DrawConnectMessage(void)
     rcFill.height = 4 * nHeight;
 
     color[0] = color[1] = color[2] = 0;
-    func_002ACC08(&rcFill, color);
+    FillRGBA(&rcFill, color);
 
     Draw_String(xpos + 1, ypos, D_00333378.string);
 

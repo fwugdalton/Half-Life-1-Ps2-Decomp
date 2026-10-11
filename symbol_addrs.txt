@@ -1615,3 +1615,4 @@ GL_TextureStats_f = 0x002ACF18; // type:func
 SCR_BeginLoadingPlaque = 0x002AC478; // type:func
 SCR_DrawNotifyString = 0x002AC570; // type:func
 SCR_DrawConnectMessage = 0x002ACDC0; // type:func
+FillRGBA = 0x002ACC08; // type:func
