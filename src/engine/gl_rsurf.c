@@ -154,6 +154,7 @@ void func_002A6CA0(glpoly_t *p);
 #define kRenderTransColor 1
 extern float D_00333268, D_0032F26C;
 void func_002A72F0(msurface_t *surf, byte *dest, int stride, int clientId);
+void func_002A76F8(msurface_t *surf);
 void func_002A7AF8(msurface_t *surf);
 void func_002A7238(byte *p);
 #define SURF_DRAWSCROLL 0x20
@@ -2488,7 +2489,94 @@ void func_002A7238(byte *p)
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A7238);
 #endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A72F0);
+void func_002A72F0(msurface_t *surf, byte *dest, int stride, int clientId)
+{
+    int smax, tmax;
+    int t;
+    int i, j, size;
+    color24 *lightmap;
+    unsigned int scale;
+    int maps;
+    colorVec *bl;
+    int shift;
+    int k;
+
+    shift = 256;
+
+    surf->dlightbits = surf->cached_dlight = surf->dlightbits & D_003995AC;
+
+    smax = (surf->extents[0] >> 4) + 1;
+    tmax = (surf->extents[1] >> 4) + 1;
+    size = smax * tmax;
+    lightmap = surf->samples;
+
+    if (r_fullbright.value != 0.0f || !cl[clientId].worldmodel->lightdata)
+    {
+        for (i = 0; i < size; i++)
+        {
+            blocklights[i].r = 255 * 256;
+            blocklights[i].g = 255 * 256;
+            blocklights[i].b = 255 * 256;
+        }
+        goto store;
+    }
+
+    for (i = 0; i < size; i++)
+    {
+        blocklights[i].r = 0;
+        blocklights[i].g = 0;
+        blocklights[i].b = 0;
+    }
+
+    if (lightmap)
+    {
+        for (maps = 0; maps < 4 && surf->styles[maps] != 255; maps++)
+        {
+            scale = d_lightstylevalue[surf->styles[maps]];
+            surf->cached_light[maps] = scale;
+            for (i = 0; i < size; i++)
+            {
+                blocklights[i].r += lightmap[i].r * scale;
+                blocklights[i].g += lightmap[i].g * scale;
+                blocklights[i].b += lightmap[i].b * scale;
+            }
+            lightmap += size;
+        }
+    }
+
+    if (surf->dlightframe == r_framecount)
+        func_002A76F8(surf);
+
+store:
+    switch (gl_lightmap_format)
+    {
+    case GL_RGBA:
+        stride -= smax << 2;
+        bl = blocklights;
+        for (i = 0; i < tmax; i++, dest += stride)
+        {
+            for (j = 0; j < smax; j++)
+            {
+                for (k = 0; k < 3; k++)
+                {
+                    t = ((unsigned int *)bl)[k];
+                    t = (unsigned int)(t * shift) >> 14;
+                    if (t > 1023)
+                        t = 1023;
+                    dest[k] = lightgammatable[t] >> 2;
+                }
+                dest[3] = 255;
+                bl++;
+                dest += 4;
+            }
+        }
+        break;
+
+    case GL_LUMINANCE:
+    case GL_INTENSITY:
+        break;
+    }
+}
 
 texture_t *R_TextureAnimation2(msurface_t *s, texture_t *base)
 {
@@ -2514,7 +2602,75 @@ texture_t *R_TextureAnimation2(msurface_t *s, texture_t *base)
     return base;
 }
 
+#ifdef NON_MATCHING
+void func_002A76F8(msurface_t *surf)
+{
+    int lnum;
+    int sd, td;
+    float dist, rad, minlight;
+    float local[2];
+    vec3_t impact;
+    int s, t;
+    int smax, tmax;
+    int brightness;
+    int idist;
+    colorVec *bl;
+    cl_entity_t *ent;
+
+    ent = currententity;
+    smax = (surf->extents[0] >> 4) + 1;
+    tmax = (surf->extents[1] >> 4) + 1;
+
+    for (lnum = 0; lnum < MAX_DLIGHTS; lnum++)
+    {
+        if (!(surf->dlightbits & (1 << lnum)))
+            continue;
+
+        rad = cl_dlights[lnum].radius;
+        minlight = cl_dlights[lnum].minlight;
+        VectorSubtract(cl_dlights[lnum].origin, ent->origin, impact);
+        dist = DotProduct(impact, surf->plane->normal) - surf->plane->dist;
+        rad -= __builtin_fabsf(dist);
+        if (rad < minlight)
+            continue;
+        minlight = rad - minlight;
+
+        local[0] = DotProduct(impact, surf->vecs[0]) + surf->vecs[0][3] - surf->texturemins[0];
+        local[1] = DotProduct(impact, surf->vecs[1]) + surf->vecs[1][3] - surf->texturemins[1];
+
+        for (t = 0; t < tmax; t++)
+        {
+            td = local[1] - t * 16;
+            if (td < 0)
+                td = -td;
+
+            bl = &blocklights[t * smax];
+            for (s = 0; s < smax; s++, bl++)
+            {
+                sd = local[0] - s * 16;
+                if (sd < 0)
+                    sd = -sd;
+
+                if (sd > td)
+                    idist = sd + (td >> 1);
+                else
+                    idist = td + (sd >> 1);
+
+                dist = idist;
+                if (dist < minlight)
+                {
+                    brightness = (rad - dist) * 256;
+                    bl->r += (brightness * cl_dlights[lnum].color.r) >> 8;
+                    bl->g += (brightness * cl_dlights[lnum].color.g) >> 8;
+                    bl->b += (brightness * cl_dlights[lnum].color.b) >> 8;
+                }
+            }
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A76F8);
+#endif
 
 float ScrollOffset(msurface_t *psurface, cl_entity_t *pEntity)
 {
