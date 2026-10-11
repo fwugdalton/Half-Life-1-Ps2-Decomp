@@ -162,6 +162,19 @@ extern float D_00333268, D_0032F26C;
 void func_002A72F0(msurface_t *surf, byte *dest, int stride, int clientId);
 void func_002A76F8(msurface_t *surf);
 void func_002A7AF8(msurface_t *surf);
+typedef struct
+{
+    vec3_t position;            /* 0x00 */
+    float s, t;                 /* 0x0C */
+    int light;                  /* 0x14: (t << 8) | s da amostra */
+} vlvert_t; /* 0x18 */
+#define UNCACHED(p) ((float *)((int)(p) | 0x30000000))
+extern int D_00331048;
+extern float *D_00331020, *D_00331024, *D_00331028;
+extern float D_00330180[], D_00330680[], D_00330B80[], D_0032F280[], D_0032F780[], D_0032FC80[];
+extern float D_003937E8[], D_00393BE8[], D_00393FE8[];
+void func_0023BE70(int);
+void func_002A0F18(int a, int b, int c, int d);
 void func_002A7238(byte *p);
 #define SURF_DRAWSCROLL 0x20
 #define MAXLIGHTMAPS 4
@@ -2744,4 +2757,207 @@ float ScrollOffset(msurface_t *psurface, cl_entity_t *pEntity)
     return sOffset;
 }
 
+#ifdef NON_MATCHING
+void func_002A7AF8(msurface_t *surf)
+{
+    float alpha;
+    int smax, tmax, size;
+    color24 *lm[4];
+    texture_t *t;
+    byte *pal;
+    vlvert_t *verts;
+    int numstrips;
+    unsigned short *p;
+    int i, j;
+    int count;
+    vlvert_t *v;
+    int ofs;
+    unsigned int r, g, b;
+    int scale;
+    int a, c, d, e;
+    float *pv;
+
+    if (!r_drawvls)
+        return;
+
+    switch (currententity->rendermode)
+    {
+    case 1:
+    case 2:
+    case 4:
+        alpha = r_blend;
+        break;
+    case 0:
+    case 3:
+    case 5:
+    default:
+        alpha = 1.0f;
+        break;
+    }
+
+    smax = (surf->extents[0] >> 4) + 1;
+    tmax = (surf->extents[1] >> 4) + 1;
+    size = smax * tmax;
+    lm[0] = surf->samples;
+    lm[1] = lm[0] + size;
+    lm[2] = lm[1] + size;
+    lm[3] = lm[2] + size;
+
+    t = R_TextureAnimation(surf);
+    GL_Bind(t->gl_texturenum);
+    GL_DisableMultitexture();
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+    func_0023BE70(0x1D01);
+    func_0023C808(surf->unk_3C, 1.0f);
+    func_0023AF68();
+
+    verts = (vlvert_t *)((int *)surf->unk_80 + 2);
+    numstrips = *(int *)&verts[((int *)surf->unk_80)[1]];
+    p = (unsigned short *)((int *)&verts[((int *)surf->unk_80)[1]] + 1);
+
+    if (surf->flags & SURF_DRAWTURB)
+    {
+        pal = surf->texture->palette;
+        func_002A0F18(pal[0xC], pal[0xD], pal[0xE], pal[0x10]);
+    }
+
+    for (i = 0; i < numstrips; i++)
+    {
+        func_0023AF68();
+        if (D_00331048)
+        {
+            D_00331020 = UNCACHED(D_00330180);
+            D_00331024 = UNCACHED(D_00330680);
+            D_00331028 = UNCACHED(D_00330B80);
+        }
+        else
+        {
+            D_00331020 = UNCACHED(D_0032F280);
+            D_00331024 = UNCACHED(D_0032F780);
+            D_00331028 = UNCACHED(D_0032FC80);
+        }
+        D_00331044 = 4;
+        D_0033103C = 0;
+
+        count = *p++;
+        for (j = 0; j < count; j++, p++)
+        {
+            if (D_0033103C == 72)
+            {
+                func_0023D430(0);
+                func_0023AF68();
+                if (D_00331048)
+                {
+                    D_00331020 = UNCACHED(D_00330180);
+                    D_00331028 = UNCACHED(D_00330B80);
+                    D_00331024 = UNCACHED(D_00330680);
+                }
+                else
+                {
+                    D_00331024 = UNCACHED(D_0032F780);
+                    D_00331028 = UNCACHED(D_0032FC80);
+                    D_00331020 = UNCACHED(D_0032F280);
+                }
+                D_00331044 = 4;
+                j -= 2;
+                D_0033103C = 0;
+                p -= 2;
+            }
+
+            v = &verts[*p];
+            ofs = ((v->light & 0xFF00) >> 8) * smax + (v->light & 0xFF);
+            r = lm[0][ofs].r * 264;
+            g = lm[0][ofs].g * 264;
+            b = lm[0][ofs].b * 264;
+            if (surf->styles[1] != 255)
+            {
+                scale = d_lightstylevalue[surf->styles[1]];
+                r += lm[1][ofs].r * scale;
+                g += lm[1][ofs].g * scale;
+                b += lm[1][ofs].b * scale;
+            }
+            if (surf->styles[2] != 255)
+            {
+                scale = d_lightstylevalue[surf->styles[2]];
+                r += lm[2][ofs].r * scale;
+                g += lm[2][ofs].g * scale;
+                b += lm[2][ofs].b * scale;
+            }
+            if (surf->styles[3] != 255)
+            {
+                scale = d_lightstylevalue[surf->styles[3]];
+                r += lm[3][ofs].r * scale;
+                g += lm[3][ofs].g * scale;
+                b += lm[3][ofs].b * scale;
+            }
+
+            r >>= 6;
+            g >>= 6;
+            b >>= 6;
+            if (r > 1023)
+                r = 1023;
+            if (g > 1023)
+                g = 1023;
+            if (b > 1023)
+                b = 1023;
+            r = lightgammatable[r];
+            g = lightgammatable[g];
+            b = lightgammatable[b];
+
+            D_00331020[0] = r * (0.75f / 1023.0f);
+            D_00331020[1] = g * (0.75f / 1023.0f);
+            D_00331020[2] = b * (0.75f / 1023.0f);
+            D_00331020[3] = alpha;
+            D_00331020 += 4;
+
+            if (surf->flags & SURF_DRAWTURB)
+            {
+                a = (int)(cl[0].time * 160.0f + v->position[0] + v->position[1]) & 0xFF;
+                c = (int)(cl[0].time * 171.0f + v->position[0] * 5.0f - v->position[1]) & 0xFF;
+                d = (int)(v->position[0] + cl[0].time * 40.743664f) & 0xFF;
+                e = (int)(v->position[1] + cl[0].time * 52.998592f) & 0xFF;
+
+                pv = D_00331024;
+                pv[0] = v->s + D_00393FE8[d];
+                pv[2] = 1.0f;
+                pv[3] = 0;
+                pv[1] = v->t + D_00393FE8[e];
+                D_00331024 = pv + 4;
+
+                pv = D_00331028;
+                pv[0] = v->position[0];
+                pv[1] = v->position[1];
+                pv[3] = 1.0f;
+                pv[2] = v->position[2] + (D_003937E8[a] + D_00393BE8[c]) * currententity->scale;
+                D_00331028 = pv + 4;
+            }
+            else
+            {
+                pv = D_00331024;
+                pv[0] = v->s;
+                pv[2] = 1.0f;
+                pv[1] = v->t;
+                pv[3] = 0;
+                D_00331024 = pv + 4;
+
+                pv = D_00331028;
+                pv[0] = v->position[0];
+                pv[1] = v->position[1];
+                pv[3] = 1.0f;
+                pv[2] = v->position[2];
+                D_00331028 = pv + 4;
+            }
+            D_0033103C++;
+        }
+
+        if (!(count & 1))
+            p++;
+        func_0023D430(0);
+    }
+
+    func_0023C808(0, 0);
+    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A7AF8);
+#endif
