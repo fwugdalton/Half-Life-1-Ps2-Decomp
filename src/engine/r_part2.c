@@ -66,6 +66,12 @@ int ModelFrameCount(struct model_s *model);
 int CL_FxBlend(cl_entity_t *ent);
 void func_002B75F0(BEAM *pbeam, float frametime, int clientId);
 
+#define BEAMENT_ENTITY(x) ((x) & 0xFFF)
+#define FBEAM_STARTENTITY 0x00000001
+#define FBEAM_ENDENTITY 0x00000002
+#define FBEAM_FOREVER 0x80000000
+
+extern cl_entity_t *cl_entities[2];
 extern int D_00399658[2];               /* cl_numbeamentities */
 extern cl_entity_t *D_0050EF88[2][64];  /* cl_beamentities */
 
@@ -1331,9 +1337,54 @@ void func_002B4948(int clientId, float frametime)
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B4BB0);
+BEAM *func_002B4BB0(int startEnt, int endEnt, int modelIndex, float life, float width, float amplitude, float brightness, float speed, int startFrame, float framerate, float r, float g, float b, int clientId)
+{
+    BEAM *pbeam;
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B4CE8);
+    if (life != 0)
+    {
+        if (!cl_entities[clientId][BEAMENT_ENTITY(startEnt)].model)
+            return NULL;
+        if (!cl_entities[clientId][BEAMENT_ENTITY(endEnt)].model)
+            return NULL;
+    }
+
+    pbeam = func_002B4680(vec3_origin, vec3_origin, modelIndex, life, width, amplitude, brightness, speed, clientId);
+    if (!pbeam)
+        return NULL;
+
+    pbeam->type = 0;
+    pbeam->flags = FBEAM_STARTENTITY | FBEAM_ENDENTITY;
+    if (life == 0)
+        pbeam->flags |= FBEAM_FOREVER;
+    pbeam->startEntity = startEnt;
+    pbeam->endEntity = endEnt;
+
+    func_002B4920(pbeam, r, g, b, framerate, startFrame);
+    return pbeam;
+}
+
+BEAM *func_002B4CE8(int startEnt, float *end, int modelIndex, float life, float width, float amplitude, float brightness, float speed, int startFrame, float framerate, float r, float g, float b, int clientId)
+{
+    BEAM *pbeam;
+
+    if (life != 0 && !cl_entities[clientId][BEAMENT_ENTITY(startEnt)].model)
+        return NULL;
+
+    pbeam = func_002B4680(vec3_origin, end, modelIndex, life, width, amplitude, brightness, speed, clientId);
+    if (!pbeam)
+        return NULL;
+
+    pbeam->type = 0;
+    pbeam->flags = FBEAM_STARTENTITY;
+    if (life == 0)
+        pbeam->flags |= FBEAM_FOREVER;
+    pbeam->startEntity = startEnt;
+    pbeam->endEntity = 0;
+
+    func_002B4920(pbeam, r, g, b, framerate, startFrame);
+    return pbeam;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B4E08);
 
