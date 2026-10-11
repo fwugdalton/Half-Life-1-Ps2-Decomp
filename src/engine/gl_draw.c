@@ -908,16 +908,53 @@ void func_002AF498(int x, int y, int width, int height, int r, int g, int b, int
     glDisable(GL_BLEND);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002AF668);
+extern unsigned short *host_basepal;
+void func_002AC148(qpic_t *pic, int a);
+void func_0023C7C8(int n, int *textures); /* glDeleteTextures */
+void *memset(void *s, int c, unsigned int n);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002AF6A0);
+void func_002AF668(int x, int y, int w, int h, int c)
+{
+    func_002AF498(x, y, w, h, host_basepal[c * 4], host_basepal[c * 4 + 1], host_basepal[c * 4 + 2], 255);
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002AF7A8);
+void func_002AF6A0(void)
+{
+    glEnable(GL_BLEND);
+    glDisable(GL_TEXTURE_2D);
+    glColor4f(0, 0, 0, 0.8f);
+    glBegin(GL_QUADS);
+    D_00399570++;
+    D_00399558 += 4;
+    glVertex2f(0, 0);
+    glVertex2f(D_003995E8, 0);
+    glVertex2f(D_003995E8, D_003995DC);
+    glVertex2f(0, D_003995DC);
+    glEnd();
+    glColor4f(1, 1, 1, 1);
+    glEnable(GL_TEXTURE_2D);
+    glDisable(GL_BLEND);
+}
+
+void func_002AF7A8(int a)
+{
+    if (D_003333C0)
+        func_002AC148(D_003333C0, a);
+}
 
 void func_002AF7D8(void) {
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002AF7E0);
+void func_002AF7E0(gltexture_t *glt)
+{
+    int texnum;
+
+    texnum = glt->texnum;
+    func_0023C7C8(1, &texnum);
+    memset(glt, 0, sizeof(gltexture_t));
+    glt->servercount = -1;
+    glt->texnum = texnum;
+}
 
 /* D_00394938 é alinhado em 8 no original */
 __asm__(".section .rodata\n.align 3\n.section .text");
