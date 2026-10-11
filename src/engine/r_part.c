@@ -70,6 +70,7 @@ extern vec3_t D_003339B0[NUMVERTEXNORMALS]; /* r_avertexnormals */
 extern float D_00334148;        /* beamlength */
 extern particle_t *D_00399668;
 extern int D_00333900[8];       /* ramp1 */
+extern cvar_t D_00331B70;        /* tracerlength */
 
 void func_002B0600(void)
 {
@@ -349,11 +350,111 @@ void func_002B10C8(vec3_t org, int colorStart, int colorLength, int clientId)
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part", func_002B1238);
+void func_002B1238(vec3_t org, int clientId)
+{
+    int i, j;
+    particle_t *p;
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part", func_002B1420);
+    for (i = 0; i < 1024; i++)
+    {
+        if (!D_0039966C)
+            return;
+        p = D_0039966C;
+        D_0039966C = p->next;
+        p->next = D_00399660;
+        D_00399660 = p;
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part", func_002B14D8);
+        p->die = cl[clientId].time + RandomFloat(1, 1.4f);
+
+        if (i & 1)
+        {
+            p->type = pt_blob;
+            p->color = RandomLong(66, 71);
+            p->packedColor = 0;
+            for (j = 0; j < 3; j++)
+            {
+                p->org[j] = org[j] + RandomFloat(-16, 16);
+                p->vel[j] = RandomFloat(-256, 256);
+            }
+        }
+        else
+        {
+            p->type = pt_blob2;
+            p->color = RandomLong(150, 155);
+            p->packedColor = 0;
+            for (j = 0; j < 3; j++)
+            {
+                p->org[j] = org[j] + RandomFloat(-16, 16);
+                p->vel[j] = RandomFloat(-256, 256);
+            }
+        }
+    }
+}
+
+particle_t *func_002B1420(vec3_t org, vec3_t vel, float life, int clientId)
+{
+    particle_t *p;
+    int j;
+
+    if (!D_0039966C)
+        return NULL;
+    p = D_0039966C;
+    D_0039966C = p->next;
+    p->next = D_00399668;
+    D_00399668 = p;
+
+    p->die = cl[clientId].time + life;
+    p->color = 4;
+    p->packedColor = 255;
+    p->type = pt_static;
+    p->ramp = D_00331B70.value;
+    for (j = 0; j < 3; j++)
+    {
+        p->org[j] = org[j];
+        p->vel[j] = vel[j];
+    }
+
+    return p;
+}
+
+
+
+
+
+void func_002B14D8(vec3_t org, vec3_t vel, float life, int colorIndex, float length, int clientId)
+{
+    particle_t *p;
+    int j;
+
+    if (colorIndex < 0)
+    {
+        Con_Printf("UserTracer with color < 0\n");
+        return;
+    }
+    if ((unsigned)colorIndex > 12)
+    {
+        Con_Printf("UserTracer with color > %d\n", 12);
+        return;
+    }
+    if (!D_0039966C)
+        return;
+    p = D_0039966C;
+    D_0039966C = p->next;
+    p->next = D_00399668;
+    D_00399668 = p;
+
+    p->die = cl[clientId].time + life;
+    p->packedColor = 255;
+    p->color = colorIndex;
+    p->ramp = length;
+    p->type = pt_static;
+    for (j = 0; j < 3; j++)
+    {
+        p->org[j] = org[j];
+        p->vel[j] = vel[j];
+    }
+
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_part", func_002B15D0);
 
@@ -379,6 +480,7 @@ INCLUDE_ASM("asm/nonmatchings/engine/r_part", func_002B2938);
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_part", func_002B2C70);
 
+__asm__(".section .rodata\n.align 4\n.section .text");
 INCLUDE_ASM("asm/nonmatchings/engine/r_part", func_002B2F08);
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_part", func_002B3598);
