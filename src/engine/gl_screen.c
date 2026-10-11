@@ -2,6 +2,7 @@
 #include "engine/cmd.h"
 #include "engine/cvar.h"
 #include "engine/client.h"
+#include "engine/render.h"
 
 typedef struct
 {
@@ -44,6 +45,14 @@ extern int D_003995D8; /* scr_initialized */
 void SCR_DrawCenterString(int clientId);
 void SCR_SizeUp(void);
 void SCR_SizeDown(void);
+extern char *D_003995C8; /* scr_notifystring */
+extern float realtime;
+extern float D_00414158; /* scr_disabled_time */
+extern vrect_t scr_vrect;
+void func_002CD340(int a, int clientId);
+int Draw_Character(int x, int y, int num);
+int Draw_String(int x, int y, char *str);
+void func_002ACC08(vrect_t *rc, byte *color);
 void SCR_SizeUp_f(void);
 void SCR_SizeDown_f(void);
 void SCR_UpdateScreen(void);
@@ -189,7 +198,28 @@ void SCR_DrawConsole(void)
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_screen", func_002AC478);
+void SCR_BeginLoadingPlaque(int clientId)
+{
+    func_002CD340(1, clientId);
+
+    if (cls[clientId].state < ca_connected || cls[clientId].state > ca_active)
+        return;
+    if (cls[clientId].signon != 3)
+        return;
+
+    Con_ClearNotify();
+    D_003995D0[clientId] = 0;
+    D_003995E0 = 0;
+
+    D_00399618 = 1;
+    D_003995C4 = 0;
+    SCR_UpdateScreen();
+    SCR_UpdateScreen();
+
+    scr_disabled_for_loading = true;
+    D_00414158 = realtime;
+    D_003995C4 = 0;
+}
 
 void SCR_EndLoadingPlaque(void)
 {
@@ -199,7 +229,36 @@ void SCR_EndLoadingPlaque(void)
     Con_ClearNotify();
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_screen", func_002AC570);
+void SCR_DrawNotifyString(void)
+{
+    char *start;
+    int l;
+    int j;
+    int x, y;
+
+    start = D_003995C8;
+
+    y = D_003995DC * 0.35f;
+
+    do
+    {
+        for (l = 0; l < 40; l++)
+            if (start[l] == '\n' || !start[l])
+                break;
+        x = (D_003995E8 - l * 8) / 2;
+        for (j = 0; j < l; j++, x += 8)
+            Draw_Character(x, y, start[j]);
+
+        y += 8;
+
+        while (*start && *start != '\n')
+            start++;
+
+        if (!*start)
+            break;
+        start++;
+    } while (1);
+}
 
 void func_002AC6C8(void)
 {
@@ -219,7 +278,52 @@ INCLUDE_ASM("asm/nonmatchings/engine/gl_screen", func_002AC9A8);
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_screen", func_002ACC08);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_screen", func_002ACDC0);
+#ifdef NON_MATCHING
+void SCR_DrawConnectMessage(void)
+{
+    vrect_t rcFill;
+    int pad[4];
+    byte color[3];
+    int nWidth, nHeight;
+    int xpos, ypos;
+
+    if (D_00333378.string[0] == '0')
+        return;
+
+    nWidth = 250;
+    if (scr_vrect.width <= nWidth)
+        nWidth = scr_vrect.width - 2;
+    nHeight = 10;
+    if (scr_vrect.height <= nHeight)
+        nHeight = scr_vrect.height - 2;
+
+    xpos = scr_vrect.x + (scr_vrect.width - nWidth) / 2;
+    ypos = scr_vrect.height - 5 * nHeight - nHeight / 2;
+
+    rcFill.x = xpos - 4;
+    rcFill.y = ypos - nHeight / 2;
+    rcFill.width = nWidth + 10;
+    rcFill.height = 4 * nHeight;
+
+    color[0] = color[1] = color[2] = 0;
+    func_002ACC08(&rcFill, color);
+
+    Draw_String(xpos + 1, ypos, D_00333378.string);
+
+    if (D_00333390.string[0] != '0')
+    {
+        ypos += nHeight;
+        Draw_String(xpos + 1, ypos, D_00333390.string);
+    }
+
+    if (D_003333A8.string[0] != '0')
+    {
+        Draw_String(xpos + 1, ypos + nHeight, D_003333A8.string);
+    }
+}
+#else
+INCLUDE_ASM("asm/nonmatchings/engine/gl_screen", SCR_DrawConnectMessage);
+#endif
 
 void func_002ACF00(void) {
 }

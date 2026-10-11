@@ -73,7 +73,7 @@ extern UserMsg *sv_gpUserMsgs;
 extern UserMsg *sv_gpNewUserMsgs;
 void func_0021C340(void);
 void Host_ShutdownServer(qboolean crash);
-void func_002AC478(int a0);
+void SCR_BeginLoadingPlaque(int a0);
 void Host_ClearGameState(void);
 int SV_SpawnServer(qboolean bIsDemo, char *server, char *startspot);
 int LoadGamestate(char *level, int a1);
@@ -831,7 +831,7 @@ void Host_Map(qboolean bIsDemo, char *mapstring, char *mapName, qboolean loadGam
 
     Host_ShutdownServer(false);
     key_dest = 0;
-    func_002AC478(0);
+    SCR_BeginLoadingPlaque(0);
 
     if (!loadGame)
     {
@@ -989,7 +989,7 @@ void Host_Changelevel_f(void)
         return;
     }
 
-    func_002AC478(0);
+    SCR_BeginLoadingPlaque(0);
     func_002CD340(1, 0);
 
     strcpy(level, Cmd_Argv(1));
@@ -1110,7 +1110,7 @@ void Host_Reconnect_f(void)
     if (cls[0].state < ca_connected)
         return;
 
-    func_002AC478(0);
+    SCR_BeginLoadingPlaque(0);
     cls[0].state = ca_connected;
     cls[0].signon = 0;
     MSG_WriteChar(&cls[0].netchan.message, clc_stringcmd);
@@ -1609,7 +1609,7 @@ int Host_Load(char *pName)
     {
 
         SV_InactivateClients();
-        func_002AC478(0);
+        SCR_BeginLoadingPlaque(0);
         DirectoryExtract(pFile, gameHeader.mapCount);
         func_0022B238(pFile);
         func_0022B248(D_003927A8);
@@ -2509,7 +2509,7 @@ void Host_Changelevel2_f(void)
         return;
     }
 
-    func_002AC478(0);
+    SCR_BeginLoadingPlaque(0);
     func_002CD340(1, 0);
     func_0021C340();
 
