@@ -713,7 +713,7 @@ void R_SetRenderMode(byte *pEntity)
 }
 
 extern float D_00333654;
-void func_002AB190(dlight_t *light, int bit, mnode_t *node);
+void R_MarkLights(dlight_t *light, int bit, mnode_t *node);
 void func_0023B1C8(void);
 void func_002A8CB0(cl_entity_t *e);
 void func_0023B258(void);
@@ -778,7 +778,7 @@ void R_DrawBrushModel(cl_entity_t *e, int clientId)
 
             VectorCopy(cl_dlights[k].origin, temp);
             VectorSubtract(cl_dlights[k].origin, currententity->origin, cl_dlights[k].origin);
-            func_002AB190(&cl_dlights[k], 1 << k, clmodel->nodes + clmodel->hulls[0].firstclipnode);
+            R_MarkLights(&cl_dlights[k], 1 << k, clmodel->nodes + clmodel->hulls[0].firstclipnode);
             VectorCopy(temp, cl_dlights[k].origin);
         }
     }

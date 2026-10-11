@@ -2,6 +2,7 @@
 #define ENGINE_RENDER_H
 
 #include "engine/mathlib.h"
+#include "engine/entity_state.h"
 
 typedef struct
 {
@@ -14,7 +15,8 @@ typedef struct
     byte pad10[0x70 - 0x10];
     vec3_t vieworg;             /* 0x70 */
     vec3_t viewangles;          /* 0x7C */
-    byte pad88[0x8C - 0x88];
+    color24 ambientlight;       /* 0x88 */
+    byte pad8B;
 } refdef_t; /* 0x8C */
 
 extern refdef_t r_refdef;
