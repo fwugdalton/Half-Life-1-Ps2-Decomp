@@ -1979,7 +1979,150 @@ void func_002B6460(vec3_t source, vec3_t delta, int segments, float width, float
     glEnd();
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B6770);
+void func_002B6770(BEAM *pbeam, int clientId)
+{
+    particle_t *particles, *pnew;
+    float div, fraction;
+    vec3_t delta, last1, last2, screen, screenLast, tmp, normal;
+    int count;
+
+    func_002B0D58(&pbeam->particles, clientId);
+
+    pnew = NULL;
+    div = 0;
+    particles = pbeam->particles;
+    if (pbeam->flags & FBEAM_STARTENTITY)
+    {
+        if (particles)
+        {
+            VectorSubtract(particles->org, pbeam->source, delta);
+            div = Length(delta);
+
+            if (div >= 32 && D_0039966C)
+            {
+                pnew = D_0039966C;
+                D_0039966C = pnew->next;
+            }
+        }
+        else if (D_0039966C)
+        {
+            pnew = D_0039966C;
+            D_0039966C = pnew->next;
+        }
+    }
+
+    if (pnew)
+    {
+        VectorCopy(pbeam->source, pnew->org);
+        pnew->die = cl[clientId].time + pbeam->amplitude;
+        VectorCopy(vec3_origin, pnew->vel);
+
+        pbeam->die = cl[clientId].time + pbeam->amplitude;
+        pnew->next = particles;
+        pbeam->particles = pnew;
+        particles = pnew;
+    }
+
+    if (!particles)
+        return;
+
+    if (!pnew && div != 0)
+    {
+        VectorCopy(pbeam->source, delta);
+        ScreenTransform(pbeam->source, screenLast);
+        ScreenTransform(particles->org, screen);
+    }
+    else if (particles && particles->next)
+    {
+        VectorCopy(particles->org, delta);
+        ScreenTransform(particles->org, screenLast);
+        ScreenTransform(particles->next->org, screen);
+        particles = particles->next;
+    }
+    else
+    {
+        return;
+    }
+
+    VectorSubtract(screen, screenLast, tmp);
+    tmp[2] = 0;
+    VectorNormalize(tmp);
+
+    VectorScale(vup, tmp[0], normal);
+    count = 2;
+    VectorMA(normal, -tmp[1], vright, normal);
+
+    VectorMA(delta, pbeam->width, normal, last1);
+    VectorMA(delta, -pbeam->width, normal, last2);
+
+    div = 1.0f / pbeam->amplitude;
+    fraction = (pbeam->die - cl[clientId].time) * div;
+
+    glBegin(5);
+    D_00399534++;
+    D_00399598 += 2;
+    tri_Brightness(fraction);
+    glTexCoord2f(0, 0);
+    glVertex3fv(last1);
+    glTexCoord2f(1, 0);
+    glVertex3fv(last2);
+
+    while (particles)
+    {
+        ScreenTransform(particles->org, screen);
+
+        VectorSubtract(screen, screenLast, tmp);
+        tmp[2] = 0;
+        VectorNormalize(tmp);
+        VectorScale(vup, tmp[0], normal);
+        VectorMA(normal, -tmp[1], vright, normal);
+
+        VectorMA(particles->org, pbeam->width, normal, last1);
+        VectorMA(particles->org, -pbeam->width, normal, last2);
+
+        if (particles->next)
+            fraction = (particles->die - cl[clientId].time) * div;
+        else
+            fraction = 0;
+
+        tri_Brightness(fraction);
+        glTexCoord2f(0, 1);
+        glVertex3fv(last1);
+        glTexCoord2f(1, 1);
+        glVertex3fv(last2);
+
+        if (count >= 72)
+        {
+            glEnd();
+            count = 2;
+            glBegin(5);
+            D_00399534++;
+            D_00399598 += 2;
+            glTexCoord2f(0, 1);
+            glVertex3fv(last1);
+            glTexCoord2f(1, 1);
+            glVertex3fv(last2);
+        }
+        else
+        {
+            D_00399598 += 2;
+            count += 2;
+        }
+
+        VectorCopy(screen, screenLast);
+        particles = particles->next;
+    }
+
+    glEnd();
+
+    fraction = cl[clientId].time - cl[clientId].oldtime;
+    particles = pbeam->particles;
+    while (particles)
+    {
+        VectorMA(particles->org, fraction, particles->vel, particles->org);
+        particles = particles->next;
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B6CF0);
 
