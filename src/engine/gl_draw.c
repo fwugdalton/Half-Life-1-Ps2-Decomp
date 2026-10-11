@@ -555,7 +555,41 @@ void func_002AE468(int x, int y, glqpic_t *pic, unsigned int *color, int alpha)
     glDisable(GL_BLEND);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002AE718);
+void func_002AE718(int x, int y, glqpic_t *pic, unsigned int *color, int alpha)
+{
+    glpic_t *gl;
+
+    if (!pic)
+        return;
+
+    gl = &pic->gl;
+    glEnable(GL_TEXTURE_2D);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+    glEnable(GL_BLEND);
+    glEnable(GL_ALPHA_TEST);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+    if (color)
+        glColor4f(color[0] * (1.0f / 255.0f), color[1] * (1.0f / 255.0f), color[2] * (1.0f / 255.0f), alpha * (1.0f / 255.0f));
+    else
+        glColor4f(1.0f, 1.0f, 1.0f, alpha * (1.0f / 255.0f));
+
+    GL_Bind(gl->texnum);
+    glBegin(GL_QUADS);
+    D_00399570++;
+    D_00399558 += 4;
+    glTexCoord2f(gl->sl, gl->tl);
+    glVertex2f(x, y);
+    glTexCoord2f(gl->sh, gl->tl);
+    glVertex2f(x + pic->width, y);
+    glTexCoord2f(gl->sh, gl->th);
+    glVertex2f(x + pic->width, y + pic->height);
+    glTexCoord2f(gl->sl, gl->th);
+    glVertex2f(x, y + pic->height);
+    glEnd();
+
+    func_0023C600(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, D_003333CC);
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002AEA00);
 
