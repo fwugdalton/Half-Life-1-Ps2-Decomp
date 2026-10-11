@@ -131,6 +131,10 @@ extern float *D_00333258, *D_0033325C;
 void func_002A63C8(int count);
 float fmodf(float x, float y);
 void func_0023D618(int);
+int func_0023D5F0(void);
+void func_002A6380(void);
+extern float D_00411E80[][74][4];
+extern float D_00412800[][74][4];
 extern int D_00399560, D_00399584;
 extern float *D_00413620;
 extern int D_0033102C, D_0033103C, D_00331044;
@@ -2049,7 +2053,42 @@ void func_002A6380(void)
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A63C8);
+void func_002A63C8(int count)
+{
+    int ok = 0;
+    int total;
+
+    if (D_00333260 > 0)
+    {
+        total = D_00333260 + count;
+        if (total < 74)
+        {
+            D_00331030 = D_00411E80[D_00333254][D_00333260];
+            D_00331038 = D_00412800[D_00333254][D_00333260];
+            D_00333258 = (float *)((int)D_00411E80[D_00333254][D_00333260] | 0x30000000);
+            D_0033325C = (float *)((int)D_00412800[D_00333254][D_00333260] | 0x30000000);
+            D_0033103C = count;
+            D_00333260 = total;
+            if (func_0023D5F0() == 1)
+            {
+                ok = 1;
+                func_0023D618(3);
+            }
+        }
+    }
+
+    if (!ok)
+    {
+        func_002A6380();
+        D_00331030 = D_00411E80[D_00333254];
+        D_00331038 = D_00412800[D_00333254];
+        D_00333258 = (float *)((int)D_00411E80[D_00333254] | 0x30000000);
+        D_0033325C = (float *)((int)D_00412800[D_00333254] | 0x30000000);
+        D_0033103C = count;
+        D_00333260 = count;
+        func_0023D618(3);
+    }
+}
 
 void func_002A6518(float *v, int count)
 {
