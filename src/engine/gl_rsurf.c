@@ -647,7 +647,131 @@ void R_SetRenderMode(byte *pEntity)
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", R_DrawBrushModel);
+extern float D_00333654;
+void func_002AB190(dlight_t *light, int bit, mnode_t *node);
+void func_0023B1C8(void);
+void func_002A8CB0(cl_entity_t *e);
+void func_0023B258(void);
+
+void R_DrawBrushModel(cl_entity_t *e, int clientId)
+{
+    int i;
+    int k;
+    vec3_t mins, maxs;
+    msurface_t *psurf;
+    float dot;
+    mplane_t *pplane;
+    model_t *clmodel;
+    qboolean rotated;
+    vec3_t temp;
+    vec3_t forward, right, up;
+
+    currenttexture = -1;
+    currententity = e;
+    clmodel = e->model;
+
+    if (e->angles[0] || e->angles[1] || e->angles[2])
+    {
+        rotated = 1;
+        for (i = 0; i < 3; i++)
+        {
+            mins[i] = e->origin[i] - clmodel->radius;
+            maxs[i] = e->origin[i] + clmodel->radius;
+        }
+    }
+    else
+    {
+        rotated = 0;
+        VectorAdd(e->origin, clmodel->mins, mins);
+        VectorAdd(e->origin, clmodel->maxs, maxs);
+    }
+
+    if (R_CullBox(mins, maxs))
+        return;
+
+    glColor3f(1.0f, 1.0f, 1.0f);
+    memset(lightmap_polys, 0, sizeof(lightmap_polys));
+
+    VectorSubtract(r_refdef.vieworg, e->origin, modelorg);
+    if (rotated)
+    {
+        VectorCopy(modelorg, temp);
+        AngleVectors(e->angles, forward, right, up);
+        modelorg[0] = DotProduct(temp, forward);
+        modelorg[1] = -DotProduct(temp, right);
+        modelorg[2] = DotProduct(temp, up);
+    }
+
+    psurf = &clmodel->surfaces[clmodel->firstmodelsurface];
+
+    if (clmodel->firstmodelsurface != 0 && !D_00333654)
+    {
+        for (k = 0; k < MAX_DLIGHTS; k++)
+        {
+            if (cl_dlights[k].die < cl[clientId].time || !cl_dlights[k].radius)
+                continue;
+
+            VectorCopy(cl_dlights[k].origin, temp);
+            VectorSubtract(cl_dlights[k].origin, currententity->origin, cl_dlights[k].origin);
+            func_002AB190(&cl_dlights[k], 1 << k, clmodel->nodes + clmodel->hulls[0].firstclipnode);
+            VectorCopy(temp, cl_dlights[k].origin);
+        }
+    }
+
+    func_0023B1C8();
+    func_002A8CB0(e);
+    R_SetRenderMode((byte *)e);
+
+    for (i = 0; i < clmodel->nummodelsurfaces; i++, psurf++)
+    {
+        pplane = psurf->plane;
+
+        if (psurf->flags & SURF_DRAWTURB)
+        {
+            if (pplane->type != 2)
+                continue;
+            if (psurf->flags & SURF_PLANEBACK)
+                continue;
+            if (mins[2] + 1.0f >= pplane->dist)
+                continue;
+            R_RenderBrushPoly(psurf, clientId);
+            continue;
+        }
+
+        dot = DotProduct(modelorg, pplane->normal) - pplane->dist;
+
+        if (((psurf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON)) ||
+            (!(psurf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON)))
+        {
+            R_RenderBrushPoly(psurf, clientId);
+        }
+    }
+
+    if (currententity->rendermode != 0)
+    {
+        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+        glDisable(GL_BLEND);
+    }
+
+    if (currententity->rendermode != 4)
+        R_DrawDecals();
+
+    if (currententity->rendermode == 0)
+    {
+        R_RenderLightmaps();
+    }
+    else if (currententity->rendermode == 4)
+    {
+        glDisable(GL_ALPHA_TEST);
+        R_RenderLightmaps();
+    }
+
+    func_0023B258();
+    glDepthMask(1);
+    glDisable(GL_BLEND);
+    glDisable(GL_ALPHA_TEST);
+    glAlphaFunc(0x205, 0);
+}
 
 void R_RecursiveWorldNode(mnode_t *node, int clientId)
 {
