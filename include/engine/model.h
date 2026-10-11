@@ -45,6 +45,7 @@ typedef struct glpoly_s
     struct glpoly_s *next;      /* 0x00 */
     struct glpoly_s *chain;     /* 0x04 */
     int numverts;               /* 0x08 */
+    int flags;                  /* 0x0C */
 } glpoly_t;
 
 /* no PS2 o mtexinfo_t vem embutido no começo da superfície */
@@ -57,8 +58,8 @@ typedef struct msurface_s
     struct color24_s *samples;  /* 0x28 */
     struct mplane_s *plane;     /* 0x2C */
     int visframe;               /* 0x30 */
-    byte unk_34[0x38 - 0x34];
-    void *unk_38;               /* 0x38 */
+    int firstedge;              /* 0x34 */
+    int numedges;               /* 0x38 */
     float unk_3C;               /* 0x3C */
     short texturemins[2];       /* 0x40 */
     short extents[2];           /* 0x44 */

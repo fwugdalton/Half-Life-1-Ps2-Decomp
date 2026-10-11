@@ -21,9 +21,18 @@ void Sys_Error(const char *fmt, ...);
 #define GL_LINEAR 9729.0f
 #define GL_UNSIGNED_BYTE 0x1401
 extern int texture_extension_number;
-extern void *r_pcurrentvertbase;
+typedef struct
+{
+    vec3_t position;
+    int pad;
+} mvertex_t; /* 0x10 no PS2 */
+typedef struct
+{
+    unsigned short v[2];
+} medge_t;
+extern mvertex_t *r_pcurrentvertbase;
 extern model_t *currentmodel;
-int BuildSurfaceDisplayList(msurface_t *fa, int buffer);
+int BuildSurfaceDisplayList(msurface_t *fa, glpoly_t *poly);
 void func_002A4340(msurface_t *surf, int clientId);
 void glTexImage2D(int target, int level, int internalformat, int width, int height, int border, int format, int type, void *pixels);
 void func_0023C600(int target, int pname, float param);
@@ -1049,7 +1058,81 @@ void func_002A3CF8(byte *p)
     func_00225860(func_002A3C60(p), 0, size * 4);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", BuildSurfaceDisplayList);
+int BuildSurfaceDisplayList(msurface_t *fa, glpoly_t *poly)
+{
+    int i, lindex, lnumverts;
+    medge_t *pedges, *r_pedge;
+    float *vec;
+    float s, t;
+    int size;
+    float *v, *st, *lst;
+    float olds, oldt;
+
+    lnumverts = fa->numedges;
+    pedges = currentmodel->edges;
+    size = func_002A3C00(lnumverts);
+
+    poly->next = fa->polys;
+    poly->flags = (short)fa->flags;
+    fa->polys = poly;
+    poly->numverts = lnumverts;
+
+    v = func_002A3C60((byte *)poly);
+    st = (float *)func_002A3C68((byte *)poly);
+    lst = (float *)func_002A3CA0((byte *)poly);
+    func_002A3CF8((byte *)poly);
+
+    olds = fa->texturemins[0];
+    fa->texturemins[0] = fa->texturemins[0] % fa->texture->srcwidth;
+    oldt = fa->texturemins[1];
+    fa->vecs[0][3] -= olds - fa->texturemins[0];
+    fa->texturemins[1] = fa->texturemins[1] % fa->texture->srcheight;
+    fa->vecs[1][3] -= oldt - fa->texturemins[1];
+
+    for (i = 0; i < lnumverts; i++)
+    {
+        lindex = currentmodel->surfedges[fa->firstedge + i];
+        if (lindex > 0)
+        {
+            r_pedge = &pedges[lindex];
+            vec = r_pcurrentvertbase[r_pedge->v[0]].position;
+        }
+        else
+        {
+            r_pedge = &pedges[-lindex];
+            vec = r_pcurrentvertbase[r_pedge->v[1]].position;
+        }
+
+        s = DotProduct(vec, fa->vecs[0]) + fa->vecs[0][3];
+        s /= fa->texture->srcwidth;
+        t = DotProduct(vec, fa->vecs[1]) + fa->vecs[1][3];
+        t /= fa->texture->srcheight;
+
+        VectorCopy(vec, v);
+        v += 3;
+        st[0] = s;
+        st[1] = t;
+        st += 2;
+
+        s = DotProduct(vec, fa->vecs[0]) + fa->vecs[0][3];
+        s -= fa->texturemins[0];
+        s += fa->light_s * 16;
+        s += 8;
+        s /= BLOCK_WIDTH * 16;
+
+        t = DotProduct(vec, fa->vecs[1]) + fa->vecs[1][3];
+        t -= fa->texturemins[1];
+        t += fa->light_t * 16;
+        t += 8;
+        t /= BLOCK_HEIGHT * 16;
+
+        lst[0] = s;
+        lst[1] = t;
+        lst += 2;
+    }
+
+    return size;
+}
 
 void func_002A40B8(int size)
 {
@@ -1205,7 +1288,7 @@ void GL_BuildLightmaps(int clientId)
             func_002A4340(m->surfaces + i, clientId);
             if (m->surfaces[i].flags & 0x110)
                 continue;
-            n = BuildSurfaceDisplayList(m->surfaces + i, D_0040A740);
+            n = BuildSurfaceDisplayList(m->surfaces + i, (glpoly_t *)D_0040A740);
             D_0040A740 += n;
             D_0040A744 -= n;
         }
