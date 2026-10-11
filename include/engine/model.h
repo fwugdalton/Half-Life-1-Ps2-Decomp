@@ -49,14 +49,18 @@ typedef struct msurface_s
     short unk_20;               /* 0x20 */
     unsigned short flags;       /* 0x22 */
     texture_t *texture;         /* 0x24 */
-    byte unk_28[0x38 - 0x28];
+    int unk_28;
+    struct mplane_s *plane;     /* 0x2C */
+    byte unk_30[0x38 - 0x30];
     void *unk_38;               /* 0x38 */
     byte unk_3C[0x40 - 0x3C];
     short texturemins[2];       /* 0x40 */
     short extents[2];           /* 0x44 */
     glpoly_t *polys;            /* 0x48 */
     struct msurface_s *texturechain; /* 0x4C */
-    byte unk_50[0x78 - 0x50];
+    byte unk_50[0x60 - 0x50];
+    int dlightbits;             /* 0x60 */
+    byte unk_64[0x78 - 0x64];
     int cached_light;           /* 0x78: -1 força refazer o lightmap */
     byte unk_7C[0x90 - 0x7C];
 } msurface_t; /* 0x90 */

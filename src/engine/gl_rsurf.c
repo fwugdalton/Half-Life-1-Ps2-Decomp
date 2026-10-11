@@ -1,6 +1,100 @@
 #include "common.h"
+#include "engine/model.h"
+#include "engine/mathlib.h"
+#include "engine/cl_entity.h"
 
+#define MAX_DLIGHTS 32
+#define fabs(x) ((x) < 0 ? -(x) : (x))
+
+typedef struct
+{
+    unsigned int r, g, b, a;
+} colorVec;
+
+typedef struct
+{
+    vec3_t origin;      /* 0x00 */
+    float radius;       /* 0x0C */
+    color24 color;      /* 0x10 */
+    float die;          /* 0x14 */
+    float decay;        /* 0x18 */
+    float minlight;     /* 0x1C */
+    int key;            /* 0x20 */
+    qboolean dark;      /* 0x24 */
+} dlight_t;
+
+extern cl_entity_t *currententity;
+extern dlight_t D_00473C68[MAX_DLIGHTS]; /* cl_dlights */
+#define cl_dlights D_00473C68
+extern colorVec D_004EF8A8[]; /* blocklights */
+#define blocklights D_004EF8A8
+
+#ifdef NON_MATCHING
+void func_002A1E10(msurface_t *surf)
+{
+    int lnum;
+    int sd, td;
+    float dist, rad, minlight;
+    vec3_t local, impact;
+    int s, t;
+    int smax, tmax;
+    int brightness;
+    colorVec *bl;
+
+    smax = (surf->extents[0] >> 4) + 1;
+    tmax = (surf->extents[1] >> 4) + 1;
+
+    for (lnum = 0; lnum < MAX_DLIGHTS; lnum++)
+    {
+        if (!(surf->dlightbits & (1 << lnum)))
+            continue;
+
+        rad = cl_dlights[lnum].radius;
+        VectorSubtract(cl_dlights[lnum].origin, currententity->origin, impact);
+        dist = DotProduct(impact, surf->plane->normal) - surf->plane->dist;
+        rad -= fabs(dist);
+        minlight = cl_dlights[lnum].minlight;
+        if (rad < minlight)
+            continue;
+        minlight = rad - minlight;
+
+        local[0] = DotProduct(impact, surf->vecs[0]) + surf->vecs[0][3];
+        local[1] = DotProduct(impact, surf->vecs[1]) + surf->vecs[1][3];
+        local[0] -= surf->texturemins[0];
+        local[1] -= surf->texturemins[1];
+
+        for (t = 0; t < tmax; t++)
+        {
+            td = local[1] - t * 16;
+            if (td < 0)
+                td = -td;
+
+            bl = &blocklights[t * smax];
+            for (s = 0; s < smax; s++, bl++)
+            {
+                sd = local[0] - s * 16;
+                if (sd < 0)
+                    sd = -sd;
+
+                if (sd > td)
+                    dist = sd + (td >> 1);
+                else
+                    dist = td + (sd >> 1);
+
+                if (dist < minlight)
+                {
+                    brightness = (rad - dist) * 256;
+                    bl->r += (brightness * cl_dlights[lnum].color.r) >> 8;
+                    bl->g += (brightness * cl_dlights[lnum].color.g) >> 8;
+                    bl->b += (brightness * cl_dlights[lnum].color.b) >> 8;
+                }
+            }
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A1E10);
+#endif
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A2160);
 
