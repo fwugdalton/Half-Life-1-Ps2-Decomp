@@ -88,6 +88,24 @@ void func_0023AFC8(int);
 int R_StudioDrawPlayer(int flags, player_state_t *pplayer, int clientId);
 float *R_GetAttachmentPoint(int entity, int attachment, int clientId);
 void R_DrawSpriteModel(cl_entity_t *e, int clientId);
+#define GL_FOG_START 0xB63
+#define GL_FOG_END 0xB64
+extern float D_003337D4;
+extern float D_00334E6C;
+extern cvar_t r_fullbright;
+extern int r_framecount;
+extern mleaf_t *r_viewleaf[], *r_oldviewleaf[];
+extern int D_00332D18[4];
+extern float D_0033387C;
+extern cvar_t D_00333888;
+extern int D_00399590;
+extern int D_00399554;
+void Cvar_Set(char *var_name, char *value);
+void R_AnimateLight(void);
+mleaf_t *Mod_PointInLeaf(vec3_t p, model_t *model);
+void func_0023C3D8(int r, int g, int b);
+void func_0023C3A0(int pname, float param);
+void func_0028CA58(void);
 
 void R_SetupFrame(int clientId);
 void R_SetFrustum(int clientId);
@@ -625,7 +643,56 @@ void R_SetFrustum(int clientId)
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rmain", R_SetupFrame);
+void R_SetupFrame(int clientId)
+{
+    if (D_003337D4)
+        D_00399564 = 1;
+    else
+        D_00399564 = 0;
+
+    if (cl[clientId].maxclients > 1)
+    {
+        if (r_fullbright.value)
+            Cvar_Set("r_fullbright", "1");
+        if (D_00334E6C)
+            Cvar_Set("snd_show", "0");
+        if (D_00331694)
+            Cvar_Set("chase_active", "0");
+    }
+
+    R_AnimateLight();
+
+    r_framecount++;
+
+    VectorCopy(r_refdef.vieworg, r_origin);
+
+    AngleVectors(r_refdef.viewangles, vpn, vright, vup);
+
+    r_oldviewleaf[clientId] = r_viewleaf[clientId];
+    r_viewleaf[clientId] = Mod_PointInLeaf(r_origin, cl[clientId].worldmodel);
+
+    if (cl[clientId].waterlevel > 2)
+    {
+        unsigned int density;
+
+        density = D_00332D18[3] * 4;
+        func_0023C3D8((byte)D_00332D18[0], (byte)D_00332D18[1], (byte)D_00332D18[2]);
+        func_0023C3A0(GL_FOG_START, D_0033387C);
+        func_0023C3A0(GL_FOG_END, D_00333888.value - density);
+        glEnable(GL_FOG);
+        D_00399590 = 1;
+        func_0023AFC8(3);
+    }
+    else
+    {
+        D_00399590 = 0;
+        func_0023AFC8(1);
+        glDisable(GL_FOG);
+    }
+
+    func_0028CA58();
+    D_00399554 = 0;
+}
 
 void MYgluPerspective(float fovy, float aspect, float zNear, float zFar)
 {
