@@ -53,7 +53,7 @@ extern vec3_t vpn;
 extern int D_00399570;
 extern int D_00399558;
 extern vec3_t vec3_origin;
-void func_002A2880(void);
+void GL_DisableMultitexture(void);
 void glDepthMask(int flag);
 void func_0023C1D0(float r, float g, float b); /* glColor3f */
 void func_0023BF60(int mode);                   /* glBegin */
@@ -379,7 +379,7 @@ void R_DrawSkyBox(void)
     int i;
     vec3_t v;
 
-    func_002A2880();
+    GL_DisableMultitexture();
     glDepthMask(0);
 
     for (i = 0; i < 6; i++)
