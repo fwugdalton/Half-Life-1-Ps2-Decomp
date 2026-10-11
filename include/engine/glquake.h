@@ -5,9 +5,14 @@
 
 typedef struct
 {
-    byte pad0[0x18];
+    byte pad0[0x12];
+    short texnum;               /* 0x12 */
+    byte pad14[0x18 - 0x14];
     unsigned short width;       /* 0x18 */
     unsigned short height;      /* 0x1A */
+    byte pad1C[0x20 - 0x1C];
+    byte palette[0x400];        /* 0x20 */
+    byte data[1];               /* 0x420 */
 } qpic_t;
 
 typedef struct

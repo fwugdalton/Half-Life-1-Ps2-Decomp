@@ -10,7 +10,6 @@ extern int TEXTURE0_SGIS;
 extern void (*D_003994C4)(int target); /* qglSelectTextureSGIS */
 extern int D_003333D0;                 /* oldtarget */
 extern int D_00333278[];               /* cnttextures */
-extern void *font;
 void func_0023C430(int target, int texture);
 int func_00234F58(void *font, char *str);
 int func_002AFE28(int c);
@@ -23,12 +22,16 @@ typedef struct
 
 typedef struct
 {
-    byte pad0[0xC];
+    byte pad0[0x4];
+    int rows;                   /* 0x04: altura da textura */
+    byte pad8[0xC - 0x8];
     int height;                 /* 0x0C */
     fontchar_t chars[256];      /* 0x10 */
+    byte data[1];               /* 0x410 */
 } font_t;
 
 extern font_t *D_00399634;
+extern font_t *font;
 
 void GL_Bind(int texnum)
 {
@@ -202,7 +205,51 @@ void func_002AD388(void)
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", Draw_Init);
+extern int D_00331C58;
+extern byte texgammatable[256];
+extern qpic_t *D_003333C0;   /* draw_disc */
+extern int D_00399644, D_00399638;
+extern font_t *D_0039964C;
+void func_002ACFA0(void);
+void GL_TextureStats_f(void);
+void func_002AD388(void);
+int func_00235EA0(char *name, void *out, int *size);
+int GL_LoadDecalTexture(char *name, int type, int width, int height, byte *pixels, byte *palette, int nummips);
+
+void Draw_Init(void)
+{
+    int i;
+    font_t *f;
+
+    D_00331C58 = 1;
+    Cmd_AddCommand("gl_texturemode", func_002AD388);
+    Cmd_AddCommand("texture_usage", GL_TextureStats_f);
+    Cmd_AddCommand("texture_dump", func_002ACFA0);
+
+    for (i = 0; i < 256; i++)
+        texgammatable[i] = i;
+
+    func_00235EA0("images/loading.psi", &D_003333C0, &i);
+    D_003333C0->texnum = GL_LoadDecalTexture("sys_loading", 0, D_003333C0->width, D_003333C0->height, D_003333C0->data, D_003333C0->palette, 0);
+
+    func_00235EA0("fonts/creditsfont.psf", &D_00399634, &i);
+    f = D_00399634;
+    D_00399648 = GL_LoadDecalTexture("creditsfont", 0, 256, f->rows, f->data, &f->data[f->rows * 256], 0);
+    func_0023C600(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, 9729.0f);
+    func_0023C600(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, 9729.0f);
+    D_00399644 = D_00399648;
+    font = D_00399634;
+
+    func_00235EA0("fonts/alphafont.psf", &D_0039964C, &i);
+    f = D_0039964C;
+    D_00399638 = GL_LoadDecalTexture("alphafont", 0, 256, f->rows, f->data, &f->data[f->rows * 256], 0);
+    func_0023C600(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, 9729.0f);
+    func_0023C600(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, 9729.0f);
+
+    D_0050EF58[0] = 1.0f / 256;
+    D_0050EF58[1] = 1.0f / font->rows;
+    D_0050EF58[2] = 1.0f / D_00399634->rows;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", Draw_Character);
 
