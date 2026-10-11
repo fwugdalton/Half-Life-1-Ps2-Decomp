@@ -1547,3 +1547,4 @@ R_RenderBrushPolyChain = 0x002A6E78; // type:func
 DecalListCreate = 0x002A50B8; // type:func
 r_dynamic = 0x00333540; // size:0x18
 R_RenderBrushPoly = 0x002A2AF0; // type:func
+R_DecalUnProject = 0x002A5230; // type:func

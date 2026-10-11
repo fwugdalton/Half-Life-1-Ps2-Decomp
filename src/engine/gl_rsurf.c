@@ -5,6 +5,8 @@
 #include "engine/client.h"
 #include "engine/cvar.h"
 #include "engine/render.h"
+#include "engine/server.h"
+#include "engine/progdefs.h"
 
 double pow(double, double);
 void Sys_Error(const char *fmt, ...);
@@ -201,7 +203,7 @@ typedef struct
 } decalentry_t; /* 0x14 */
 
 #define FDECAL_DONTSAVE 0x04
-short func_002A5230(decal_t *pdecal, vec3_t position);
+int R_DecalUnProject(decal_t *pdecal, vec_t *position);
 void qsort(void *base, int num, int width, int (*compare)(const void *, const void *));
 
 #define BLOCK_WIDTH 128
@@ -235,7 +237,7 @@ void R_AddDynamicLights(msurface_t *surf)
         rad = cl_dlights[lnum].radius;
         VectorSubtract(cl_dlights[lnum].origin, currententity->origin, impact);
         dist = DotProduct(impact, surf->plane->normal) - surf->plane->dist;
-        rad -= fabs(dist);
+        rad -= __builtin_fabsf(dist);
         minlight = cl_dlights[lnum].minlight;
         if (rad < minlight)
             continue;
@@ -1263,7 +1265,7 @@ int DecalListCreate(decalentry_t *pList, int clientId)
 
             pList[total].depth = depth;
             pList[total].flags = gDecalPool[i].flags;
-            pList[total].entityIndex = func_002A5230(&gDecalPool[i], pList[total].position);
+            pList[total].entityIndex = R_DecalUnProject(&gDecalPool[i], pList[total].position);
             pList[total].name = ((texture_t *)Draw_DecalTexture(gDecalPool[i].texture))->name;
             total = func_002A4FB0(pList, total);
         }
@@ -1273,7 +1275,72 @@ int DecalListCreate(decalentry_t *pList, int clientId)
     return total;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A5230);
+int R_DecalUnProject(decal_t *pdecal, vec_t *position)
+{
+    texture_t *ptexture;
+    texture_t *pdtex;
+    float scale, inverseScale;
+    float x, y;
+    edict_t *pEdict;
+    model_t *pModel;
+    int entityIndex;
+    vec3_t temp;
+    vec3_t forward, right, up;
+    hull_t *phull;
+
+    if (!pdecal || !pdecal->psurface)
+        return -1;
+
+    ptexture = pdecal->psurface->texture;
+    x = pdecal->dx;
+    y = pdecal->dy;
+    x = x * ptexture->srcwidth - pdecal->psurface->texturemins[0];
+    y = y * ptexture->srcheight - pdecal->psurface->texturemins[1];
+
+    scale = Length(pdecal->psurface->vecs[0]) * 0.5f;
+    pdtex = Draw_DecalTexture(pdecal->texture);
+    x = x + pdtex->srcwidth * scale + pdecal->psurface->texturemins[0] - pdecal->psurface->vecs[0][3];
+    y = y + pdtex->srcheight * scale + pdecal->psurface->texturemins[1] - pdecal->psurface->vecs[1][3];
+
+    inverseScale = 0.0f;
+    scale = __builtin_fabsf(Length(pdecal->psurface->vecs[0]));
+    if (scale != 0.0f)
+    {
+        inverseScale = 1.0f / scale;
+        inverseScale *= inverseScale;
+    }
+
+    VectorScale(pdecal->psurface->vecs[0], inverseScale * x, position);
+    VectorMA(position, inverseScale * y, pdecal->psurface->vecs[1], position);
+    VectorMA(position, pdecal->psurface->plane->dist, pdecal->psurface->plane->normal, position);
+
+    entityIndex = pdecal->entityIndex;
+    if (entityIndex)
+    {
+        pEdict = &sv.edicts[entityIndex];
+        pModel = pEdict->v.modelindex ? sv.models[pEdict->v.modelindex] : NULL;
+        if (!pModel || pModel->type != mod_brush)
+            return 0;
+        phull = &pModel->hulls[0];
+
+        if (pEdict->v.angles[0] || pEdict->v.angles[1] || pEdict->v.angles[2])
+        {
+            AngleVectorsTranspose(pEdict->v.angles, forward, right, up);
+            VectorCopy(position, temp);
+            position[0] = DotProduct(temp, forward);
+            position[1] = DotProduct(temp, right);
+            position[2] = DotProduct(temp, up);
+        }
+
+        if (pModel->firstmodelsurface)
+        {
+            VectorAdd(position, phull->clip_mins, position);
+            VectorAdd(position, pEdict->v.origin, position);
+        }
+    }
+
+    return entityIndex;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", R_DecalShoot_);
 
