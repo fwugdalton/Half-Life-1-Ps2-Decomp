@@ -230,7 +230,7 @@ int func_0022BE50(void *buf, int size, int count, void *f);
 void func_0022B238(void *f);
 int Draw_DecalIndexFromName(char *name);
 int Draw_DecalIndex(int id);
-void func_002A58C8(int textureIndex, int entity, int modelIndex, vec3_t position, int flags, int unk);
+void R_DecalShoot(int textureIndex, int entity, int modelIndex, vec3_t position, int flags, int unk);
 float func_002437A8(void);
 int atoi(const char *);
 void Host_Error(const char *error, ...);
@@ -1354,7 +1354,7 @@ void CL_LoadDecals(char *filename)
                 if (r_decals.value != 0)
                 {
                     id = Draw_DecalIndexFromName(decal.name);
-                    func_002A58C8(Draw_DecalIndex(id), decal.entityIndex, 0, decal.position, decal.flags, 0);
+                    R_DecalShoot(Draw_DecalIndex(id), decal.entityIndex, 0, decal.position, decal.flags, 0);
                 }
             }
         }

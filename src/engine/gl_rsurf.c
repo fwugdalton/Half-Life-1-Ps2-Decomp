@@ -54,13 +54,17 @@ extern int TEXTURE0_SGIS, TEXTURE1_SGIS;
 
 typedef struct decal_s
 {
-    byte pad[0x1C];
+    struct decal_s *pnext;      /* 0x00 */
+    msurface_t *psurface;       /* 0x04 */
+    byte pad08[0x14 - 0x08];
+    short texture;              /* 0x14 */
+    byte pad16[0x1C - 0x16];
 } decal_t;
 
 typedef struct
 {
     int decalIndex;
-    byte pad[0x74 - 4];
+    float decalVert[(0x74 - 4) / 4];
 } decalcache_t;
 
 #define MAX_DECALS 1024
@@ -70,11 +74,19 @@ extern int gDecalCount;
 extern decalcache_t gDecalCache[DECAL_CACHEENTRIES];
 extern int D_00333264, D_00413AD0;
 extern byte D_004F0DE8[0x8000];
-void R_DecalShoot_(int, int, int, int, int, int, int, int);
+void R_DecalShoot_(int, int, int, int, int, int, int);
 void *Hunk_AllocName(int size, char *name);
 void func_00225860(void *dst, int c, int n);
 void func_0023D520(void);
 int AllocBlock(int w, int h, int *x, int *y);
+void *Draw_DecalTexture(int index);
+float *R_DecalVertsClip(float *pOutVerts, decal_t *pdecal, msurface_t *psurf, texture_t *ptexture, int *pVertCount);
+extern qboolean r_drawdecals, r_drawvls;
+extern int lightmap_bytes;
+extern byte *lightmaps;
+
+#define BLOCK_WIDTH 128
+#define BLOCK_HEIGHT 128
 extern int D_0040A740, D_0040A744;
 extern int D_00333254, D_00333260;
 
@@ -470,17 +482,41 @@ INCLUDE_RODATA("asm/nonmatchings/engine/gl_rsurf", D_00394458);
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A4180);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A4340);
+void func_002A4340(msurface_t *surf, int clientId)
+{
+    byte *base;
+
+    if (surf->flags & 0x114)
+        return;
+    if ((TEXINFO_FLAGS(surf) & 0x2200000) == 0x2200000)
+        return;
+
+    base = lightmaps + surf->lightmaptexturenum * lightmap_bytes * BLOCK_WIDTH * BLOCK_HEIGHT;
+    base += (surf->light_t * BLOCK_WIDTH + surf->light_s) * lightmap_bytes;
+    R_BuildLightMap(surf, base, BLOCK_WIDTH * lightmap_bytes, clientId);
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A43C0);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", R_DrawDecals_f);
+/* "OFF"/"ON" são compartilhadas pelas duas funções; o ee-gcc não junta strings iguais */
+__asm__(".section .rodata\n"
+        ".align 3\nD_00394470: .asciz \"drawdecals [%s]\\n\"\n"
+        ".align 3\nD_00394488: .asciz \"OFF\"\n"
+        ".align 3\nD_00394490: .asciz \"ON\"\n"
+        ".section .text");
+extern char D_00394470[], D_00394488[], D_00394490[];
 
-INCLUDE_RODATA("asm/nonmatchings/engine/gl_rsurf", D_00394488);
+void R_DrawDecals_f(void)
+{
+    r_drawdecals = !r_drawdecals;
+    Con_Printf(D_00394470, !r_drawdecals ? D_00394488 : D_00394490);
+}
 
-INCLUDE_RODATA("asm/nonmatchings/engine/gl_rsurf", D_00394490);
-
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", R_DrawVLs_f);
+void R_DrawVLs_f(void)
+{
+    r_drawvls = !r_drawvls;
+    Con_Printf("drawvls [%s]\n", !r_drawvls ? D_00394488 : D_00394490);
+}
 
 void R_ClearDecals(void)
 {
@@ -521,7 +557,35 @@ void R_DecalCacheClear(decal_t *pdecal)
         pCache->decalIndex = -1;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A48E8);
+void R_DecalUnlink(decal_t *pdecal)
+{
+    decal_t *tmp;
+
+    R_DecalCacheClear(pdecal);
+    if (pdecal->psurface)
+    {
+        if (pdecal->psurface->pdecals == pdecal)
+        {
+            pdecal->psurface->pdecals = pdecal->pnext;
+        }
+        else
+        {
+            tmp = pdecal->psurface->pdecals;
+            if (!tmp)
+                Sys_Error("Bad decal list");
+            while (tmp->pnext)
+            {
+                if (tmp->pnext == pdecal)
+                {
+                    tmp->pnext = pdecal->pnext;
+                    break;
+                }
+                tmp = tmp->pnext;
+            }
+        }
+    }
+    pdecal->psurface = NULL;
+}
 
 void func_002A4978(void)
 {
@@ -533,7 +597,21 @@ void func_002A4978(void)
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A4990);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A4A50);
+void R_DecalRemoveAll(int textureIndex)
+{
+    int i;
+    decal_t *pDecal;
+
+    for (i = 0; i < MAX_DECALS; i++)
+    {
+        pDecal = &gDecalPool[i];
+        if (pDecal->texture == textureIndex)
+        {
+            R_DecalUnlink(pDecal);
+            memset(pDecal, 0, sizeof(decal_t));
+        }
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A4AC0);
 
@@ -552,11 +630,14 @@ INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A5230);
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", R_DecalShoot_);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A58C8);
-
-void func_002A5948(int a0, int a1, int a2, int a3, int t0, int t1, int t2, int t3)
+void R_DecalShoot(int textureIndex, int entity, int modelIndex, int position, int flags, int unk)
 {
-    R_DecalShoot_(a0, ~a1, a2, a3, t0, t1, t2, t3);
+    R_DecalShoot_((int)Draw_DecalTexture(textureIndex), textureIndex, entity, modelIndex, position, flags, unk);
+}
+
+void func_002A5948(int a0, int a1, int a2, int a3, int t0, int t1, int t2)
+{
+    R_DecalShoot_(a0, ~a1, a2, a3, t0, t1, t2);
 }
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A5968);
@@ -569,9 +650,22 @@ INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A5DE0);
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A5EE8);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A6050);
+INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", R_DecalVertsClip);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A62F8);
+float *R_DecalCacheVerts(decal_t *pdecal, msurface_t *psurf, texture_t *ptexture)
+{
+    int decalIndex;
+    int outCount;
+    decalcache_t *pCache;
+
+    decalIndex = R_DecalIndex(pdecal);
+    pCache = R_DecalCacheSlot(decalIndex);
+    if (pCache->decalIndex == decalIndex)
+        return pCache->decalVert;
+
+    pCache->decalIndex = decalIndex;
+    return R_DecalVertsClip(pCache->decalVert, pdecal, psurf, ptexture, &outCount);
+}
 
 void func_002A6380(void)
 {

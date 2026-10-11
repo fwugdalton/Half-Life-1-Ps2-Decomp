@@ -70,7 +70,8 @@ typedef struct msurface_s
     byte styles[4];             /* 0x64 */
     int cached_light[4];        /* 0x68 */
     int cached_dlight;          /* 0x78: -1 força refazer o lightmap */
-    byte unk_7C[0x90 - 0x7C];
+    struct decal_s *pdecals;    /* 0x7C */
+    byte unk_80[0x90 - 0x80];
 } msurface_t; /* 0x90 */
 
 typedef struct efrag_s
