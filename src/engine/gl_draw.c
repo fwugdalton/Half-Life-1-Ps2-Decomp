@@ -72,7 +72,68 @@ int func_002AD088(short *widths)
     return 0;
 }
 
+extern int D_00399558, D_00399570;
+extern int D_00399648;      /* char_texture */
+extern float D_0050EF58[];  /* escala s/t da textura da fonte */
+void glEnable(int cap);
+void glDisable(int cap);
+void glTexEnvf(int target, int pname, float param);
+void glBlendFunc(int sfactor, int dfactor);
+void glColor4ub(byte r, byte g, byte b, byte a);
+void glBegin(int mode);
+void glEnd(void);
+void glTexCoord2f(float s, float t);
+void glVertex2f(float x, float y);
+void GL_DisableMultitexture(void);
+
+#ifdef NON_MATCHING
+int func_002AD110(int x, int y, int ch, int r, int g, int b)
+{
+    int c;
+    int width, height;
+    int code;
+    float s, t, s2, t2;
+
+    if (y <= -D_00399634->height)
+        return 0;
+
+    c = func_002AFE28(ch & 0xFF);
+    height = D_00399634->height;
+    width = D_00399634->chars[c].width;
+    code = D_00399634->chars[c].x;
+
+    s = ((code & 0xFF) + 0.5f) * D_0050EF58[0];
+    t = ((code >> 8) + 0.5f) * D_0050EF58[2];
+    t2 = t + (height - 1) * D_0050EF58[2];
+    s2 = s + (width - 1) * D_0050EF58[0];
+
+    glTexEnvf(0x2300, 0x2200, 0x2100);
+    glEnable(0xBC0);
+    glEnable(0xBE2);
+    glBlendFunc(1, 1);
+    glColor4ub(r, g, b, 0xFF);
+    GL_DisableMultitexture();
+    GL_Bind(D_00399648);
+
+    glBegin(7);
+    D_00399570++;
+    D_00399558 += 4;
+    glTexCoord2f(s, t);
+    glVertex2f(x, y);
+    glTexCoord2f(s2, t);
+    glVertex2f(x + width, y);
+    glTexCoord2f(s2, t2);
+    glVertex2f(x + width, y + height);
+    glTexCoord2f(s, t2);
+    glVertex2f(x, y + height);
+    glEnd();
+
+    glDisable(0xBE2);
+    return width;
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002AD110);
+#endif
 
 INCLUDE_RODATA("asm/nonmatchings/engine/gl_draw", D_00394798);
 
