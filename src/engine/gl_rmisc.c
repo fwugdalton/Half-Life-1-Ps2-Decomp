@@ -179,7 +179,73 @@ void func_002AFED0(void)
     func_0023C600(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, 9729.0f);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rmisc", R_Init);
+extern cvar_t D_00333438, r_fullbright, r_decals, mp_decals, r_drawentities, D_00333468, D_00333510;
+extern cvar_t r_wateralpha, r_dynamic, r_novis, D_00333498, D_00333480, D_003335D0, D_003335A0;
+extern cvar_t D_003334F8, D_00333570, r_traceglow, D_003335B8, D_003335E8, D_00333600, D_00333618;
+extern cvar_t D_00333630, D_00333660, D_00333678, D_003336D8, gl_polyoffset, D_00333708, D_00333690;
+extern cvar_t D_003336A8, gl_wateramp, gl_overbright, gl_zmax, gl_alphamin, D_00333798, gl_monolights;
+extern cvar_t D_003337C8, D_003337E0, D_003337F8, D_00333810, D_00333828, D_00333840, D_00333858;
+extern cvar_t D_00333870, D_00333888, D_003338A0;
+extern char D_00394A80[]; /* "r_decals" */
+void Cvar_SetValue(char *var_name, float value);
+void func_002B0530(void);
+void func_002B0E20(void);
+void func_002B0758(void);
+
+void R_Init(void)
+{
+    Cmd_AddCommand("timerefresh", func_002B0530);
+    Cmd_AddCommand("pointfile", func_002B0E20);
+    Cmd_AddCommand("gl_dump", func_002AFE50);
+    Cvar_RegisterVariable(&D_00333438);
+    Cvar_RegisterVariable(&r_fullbright);
+    Cvar_RegisterVariable(&r_decals);
+    Cvar_RegisterVariable(&mp_decals);
+    Cvar_SetValue(D_00394A80, 1024);
+    Cvar_RegisterVariable(&r_drawentities);
+    Cvar_RegisterVariable(&D_00333468);
+    Cvar_RegisterVariable(&D_00333510);
+    Cvar_RegisterVariable(&r_wateralpha);
+    Cvar_RegisterVariable(&r_dynamic);
+    Cvar_RegisterVariable(&r_novis);
+    Cvar_RegisterVariable(&D_00333498);
+    Cvar_RegisterVariable(&D_00333480);
+    Cvar_RegisterVariable(&D_003335D0);
+    Cvar_RegisterVariable(&D_003335A0);
+    Cvar_RegisterVariable(&D_003334F8);
+    Cvar_RegisterVariable(&D_00333570);
+    Cvar_RegisterVariable(&r_traceglow);
+    Cvar_RegisterVariable(&D_003335B8);
+    Cvar_RegisterVariable(&D_003335E8);
+    Cvar_RegisterVariable(&D_00333600);
+    Cvar_RegisterVariable(&D_00333618);
+    Cvar_RegisterVariable(&D_00333630);
+    Cvar_RegisterVariable(&D_00333660);
+    Cvar_RegisterVariable(&D_00333678);
+    Cvar_RegisterVariable(&D_003336D8);
+    Cvar_RegisterVariable(&gl_polyoffset);
+    Cvar_RegisterVariable(&D_00333708);
+    Cvar_RegisterVariable(&D_00333690);
+    Cvar_RegisterVariable(&D_003336A8);
+    Cvar_RegisterVariable(&gl_wateramp);
+    Cvar_RegisterVariable(&gl_overbright);
+    Cvar_RegisterVariable(&gl_zmax);
+    Cvar_RegisterVariable(&gl_alphamin);
+    Cvar_RegisterVariable(&D_00333798);
+    Cvar_RegisterVariable(&gl_monolights);
+    Cvar_RegisterVariable(&D_003337C8);
+    Cvar_RegisterVariable(&D_003337E0);
+    Cvar_RegisterVariable(&D_003337F8);
+    Cvar_RegisterVariable(&D_00333810);
+    Cvar_RegisterVariable(&D_00333828);
+    Cvar_RegisterVariable(&D_00333840);
+    Cvar_RegisterVariable(&D_00333858);
+    Cvar_RegisterVariable(&D_00333870);
+    Cvar_RegisterVariable(&D_00333888);
+    Cvar_RegisterVariable(&D_003338A0);
+    func_002B0758();
+    func_002AFED0();
+}
 
 void func_002B0278(void) {
 }
