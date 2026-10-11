@@ -3,8 +3,8 @@
 #include "engine/cvar.h"
 #include "engine/client.h"
 #include "engine/render.h"
+#include "engine/glquake.h"
 
-extern int currenttexture;
 extern qboolean gl_mtexable;
 extern int TEXTURE0_SGIS;
 extern void (*D_003994C4)(int target); /* qglSelectTextureSGIS */
@@ -147,7 +147,60 @@ INCLUDE_RODATA("asm/nonmatchings/engine/gl_draw", D_00394810);
 
 INCLUDE_RODATA("asm/nonmatchings/engine/gl_draw", D_00394820);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", func_002AD388);
+typedef struct
+{
+    char *name;
+    int minimize, maximize;
+} glmode_t;
+
+extern glmode_t D_003333D8[]; /* modes */
+extern int D_003333C8;        /* gl_filter_min */
+extern int D_003333CC;        /* gl_filter_max */
+void func_0023C600(int target, int pname, float param); /* glTexParameterf */
+
+void func_002AD388(void)
+{
+    int i;
+    gltexture_t *glt;
+
+    if (Cmd_Argc() == 1)
+    {
+        for (i = 0; i < 6; i++)
+        {
+            if (D_003333C8 == D_003333D8[i].minimize)
+            {
+                Con_Printf("%s\n", D_003333D8[i].name);
+                return;
+            }
+        }
+        Con_Printf("current filter is unknown???\n");
+        return;
+    }
+
+    for (i = 0; i < 6; i++)
+    {
+        if (!Q_strcasecmp(D_003333D8[i].name, Cmd_Argv(1)))
+            break;
+    }
+    if (i == 6)
+    {
+        Con_Printf("bad filter name\n");
+        return;
+    }
+
+    D_003333C8 = D_003333D8[i].minimize;
+    D_003333CC = D_003333D8[i].maximize;
+
+    for (i = 0, glt = D_004F9DD8; i < D_00399640; i++, glt++)
+    {
+        if (glt->mipmap)
+        {
+            GL_Bind(glt->texnum);
+            func_0023C600(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, D_003333C8);
+            func_0023C600(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, D_003333CC);
+        }
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", Draw_Init);
 

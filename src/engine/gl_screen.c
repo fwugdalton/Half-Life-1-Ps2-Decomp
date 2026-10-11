@@ -5,21 +5,7 @@
 #include "engine/render.h"
 #include "engine/server.h"
 
-typedef struct
-{
-    byte pad0[0x18];
-    unsigned short width;       /* 0x18 */
-    unsigned short height;      /* 0x1A */
-} qpic_t;
-
-typedef struct
-{
-    short texnum;               /* 0x00 */
-    short servercount;          /* 0x02 */
-    byte pad4[0x48 - 0x4];
-} gltexture_t; /* 0x48 */
-
-#define MAX_GLTEXTURES 1200
+#include "engine/glquake.h"
 
 extern int D_0053D1D4;
 extern int D_00399618;
@@ -31,8 +17,6 @@ extern float D_00399604; /* scr_conlines */
 extern int D_00399620, D_00399624;
 extern float D_003995D0[]; /* scr_centertime_off */
 extern int key_dest;
-extern int D_00399640; /* numgltextures */
-extern gltexture_t D_004F9DD8[];
 
 extern char D_004F95D8[][1024]; /* scr_centerstring */
 extern cvar_t D_00333300; /* scr_centertime */
@@ -54,15 +38,6 @@ void func_002CD340(int a, int clientId);
 int Draw_Character(int x, int y, int num);
 int Draw_String(int x, int y, char *str);
 void FillRGBA(vrect_t *rc, byte *color);
-#define GL_TEXTURE_2D 0xDE1
-#define GL_DEPTH_TEST 0xB71
-#define GL_BLEND 0xBE2
-#define GL_QUADS 7
-#define GL_ONE 1
-#define GL_SRC_ALPHA 0x302
-#define GL_MODULATE 8448.0f
-#define GL_TEXTURE_ENV_MODE 0x2200
-#define GL_TEXTURE_ENV 0x2300
 extern int D_00399570, D_00399558;
 void glEnable(int cap);
 void glDisable(int cap);
