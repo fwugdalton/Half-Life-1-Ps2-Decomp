@@ -1550,3 +1550,4 @@ R_RenderBrushPoly = 0x002A2AF0; // type:func
 R_DecalUnProject = 0x002A5230; // type:func
 g_DecalClipVerts = 0x00411778; // size:0x380
 g_DecalClipVerts2 = 0x00411AF8; // size:0x380
+gDecalTexture = 0x00411760; // size:0x4

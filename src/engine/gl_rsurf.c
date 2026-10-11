@@ -194,6 +194,8 @@ extern float r_blend;
 #define GL_DST_COLOR 0x306
 float ScrollOffset(msurface_t *psurface, cl_entity_t *pEntity);
 decal_t *R_DecalIntersect(msurface_t *psurf, int *pcount, float x, float y);
+extern texture_t *gDecalTexture;
+extern int D_00333250;
 extern int rtable2[20][20];
 extern float D_00413630[74][4];
 void func_002EF8E0(int);
@@ -1359,7 +1361,70 @@ void func_002A5948(int a0, int a1, int a2, int a3, int t0, int t1, int t2)
     R_DecalShoot_(a0, ~a1, a2, a3, t0, t1, t2);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", R_DecalIntersect);
+decal_t *R_DecalIntersect(msurface_t *psurf, int *pcount, float x, float y)
+{
+    decal_t *pDecal;
+    decal_t *plast;
+    texture_t *ptexture;
+    int lastArea;
+    int count;
+    float texWidth, texHeight;
+    float maxWidth;
+    int dx, dy, dist;
+
+    if (r_decals.value < D_00333250)
+        D_00333250 = r_decals.value;
+
+    *pcount = 0;
+    count = 0;
+    plast = NULL;
+    lastArea = 0xFFFF;
+
+    texWidth = psurf->texture->srcwidth;
+    texHeight = psurf->texture->srcheight;
+    x = x * texWidth + (gDecalTexture->srcwidth >> 1);
+    y = y * texHeight + (gDecalTexture->srcheight >> 1);
+    maxWidth = gDecalTexture->srcwidth * 1.5f;
+
+    pDecal = psurf->pdecals;
+    while (pDecal)
+    {
+        ptexture = Draw_DecalTexture(pDecal->texture);
+        if (ptexture && !(pDecal->flags & FDECAL_PERMANENT) && ptexture->srcwidth <= maxWidth)
+        {
+            dx = x - (pDecal->dx * texWidth + (ptexture->srcwidth >> 1));
+            dy = y - (pDecal->dy * texHeight + (ptexture->srcheight >> 1));
+            if (dx < 0)
+                dx = -dx;
+            if (dy < 0)
+                dy = -dy;
+
+            if (dx < dy)
+                dist = dy + dx * 0.5f;
+            else
+                dist = dx + dy * 0.5f;
+
+            if (dist * pDecal->scale < 8.0f)
+            {
+                (*pcount)++;
+                if (!plast || dist <= lastArea)
+                {
+                    lastArea = dist;
+                    plast = pDecal;
+                }
+            }
+        }
+
+        count++;
+        if (count > D_00333250)
+            break;
+        if (pDecal == pDecal->pnext)
+            break;
+        pDecal = pDecal->pnext;
+    }
+
+    return plast;
+}
 
 void R_DecalCreate(msurface_t *psurface, int textureIndex, float scale, float x, float y)
 {
