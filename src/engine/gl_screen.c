@@ -72,6 +72,7 @@ void glColor3f(float r, float g, float b);
 void glBegin(int mode);
 void glEnd(void);
 void glVertex2f(float x, float y);
+extern int D_00399628[]; /* scr_erase_center */
 void SCR_SizeUp_f(void);
 void SCR_SizeDown_f(void);
 void SCR_UpdateScreen(void);
@@ -96,7 +97,50 @@ void SCR_CenterPrint(char *str, int clientId)
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_screen", SCR_DrawCenterString);
+void SCR_DrawCenterString(int clientId)
+{
+    char *start;
+    int l;
+    int j;
+    int x, y;
+    int remaining;
+
+    if (cl[clientId].intermission)
+        remaining = D_00333348.value * (cl[clientId].time - D_00399608[clientId]);
+    else
+        remaining = 9999;
+
+    D_00399628[clientId] = 0;
+    start = D_004F95D8[clientId];
+
+    if (D_003995F0[clientId] <= 4)
+        y = D_003995DC * 0.35f;
+    else
+        y = 48;
+
+    do
+    {
+        for (l = 0; l < 40; l++)
+            if (start[l] == '\n' || !start[l])
+                break;
+        x = (D_003995E8 - l * 8) / 2;
+        for (j = 0; j < l; j++)
+        {
+            x += Draw_Character(x, y, start[j]);
+            if (!remaining--)
+                return;
+        }
+
+        y += 12;
+
+        while (*start && *start != '\n')
+            start++;
+
+        if (!*start)
+            break;
+        start++;
+    } while (1);
+}
 
 void SCR_CheckDrawCenterString(int clientId)
 {
