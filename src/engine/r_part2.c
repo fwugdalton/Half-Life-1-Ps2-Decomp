@@ -85,6 +85,7 @@ void glVertex3fv(float *v);
 #define FBEAM_SHADEOUT 0x80
 
 extern float D_0050F188[NOISE_DIVISIONS]; /* rgNoise */
+double func_002D78A0(double x, double y); /* fmod */
 
 particle_t *func_002B1420(vec3_t org, vec3_t vel, float life, int clientId);
 int func_002B74D0(float *start, float *end, int pvsOnly, int clientId);
@@ -1752,7 +1753,90 @@ void func_002B57C8(vec3_t source, vec3_t delta, int segments, int flags, float w
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B57C8);
 #endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B5DC8);
+void func_002B5DC8(vec3_t source, vec3_t delta, int segments, float width, float scale, float freq, float speed)
+{
+    int i, noiseIndex, noiseStep;
+    float div, length, fraction, factor, vLast, vStep;
+    vec3_t last1, last2, point, screen, screenLast, tmp, normal;
+    int count;
+
+    if (segments < 2)
+        return;
+    if (segments > NOISE_DIVISIONS)
+        segments = NOISE_DIVISIONS;
+
+    length = Length(delta) * 0.01f;
+    if (length < 0.5f)
+        length = 0.5f;
+    div = 1.0f / (segments - 1);
+
+    noiseIndex = 0;
+    count = 2;
+    vLast = fmodf(freq * speed, 1);
+    scale = scale * length;
+    noiseStep = (int)(div * (NOISE_DIVISIONS * 65536.0f));
+    vStep = length * div;
+
+    glBegin(5);
+    D_00399534++;
+
+    for (i = 0; i <= segments; i++)
+    {
+        fraction = i * div;
+
+        point[0] = sinf(fraction * 2 * M_PI) * freq * delta[2] + source[0];
+        point[1] = cosf(fraction * 2 * M_PI) * freq * delta[2] + source[1];
+        point[2] = source[2];
+
+        factor = D_0050F188[noiseIndex >> 16] * scale;
+        VectorMA(point, factor, vup, point);
+        factor = D_0050F188[noiseIndex >> 16] * scale * cosf(fraction * (M_PI * 3) + freq);
+        VectorMA(point, factor, vright, point);
+
+        ScreenTransform(point, screen);
+
+        if (i != 0)
+        {
+            vLast += vStep;
+
+            VectorSubtract(screen, screenLast, tmp);
+            tmp[2] = 0;
+            VectorNormalize(tmp);
+            VectorScale(vup, tmp[0], normal);
+            VectorMA(normal, -tmp[1], vright, normal);
+
+            VectorMA(point, width, normal, last1);
+            VectorMA(point, -width, normal, last2);
+
+            D_00399598 += 2;
+            glTexCoord2f(1, vLast);
+            glVertex3fv(last2);
+            glTexCoord2f(0, vLast);
+            glVertex3fv(last1);
+        }
+
+        if (count >= 72)
+        {
+            glEnd();
+            count = 2;
+            glBegin(5);
+            D_00399534++;
+            D_00399598 += 2;
+            glTexCoord2f(1, vLast);
+            glVertex3fv(last2);
+            glTexCoord2f(0, vLast);
+            glVertex3fv(last1);
+        }
+        else
+            count += 2;
+
+        noiseIndex += noiseStep;
+        VectorCopy(screen, screenLast);
+        vLast = func_002D78A0(vLast, 1.0);
+    }
+
+    glEnd();
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B61D8);
 
