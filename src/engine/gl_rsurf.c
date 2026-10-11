@@ -111,6 +111,11 @@ void glBegin(int mode);
 void glEnd(void);
 void glTexCoord2f(float s, float t);
 void glVertex3fv(float *v);
+byte *Mod_LeafPVS(mleaf_t *leaf, model_t *model);
+extern mleaf_t *r_viewleaf[2], *r_oldviewleaf[2];
+extern cvar_t r_novis;
+extern short r_visframecount[2];
+extern int D_00399580;
 void glAlphaFunc(int func, float ref);
 void glTexSubImage2D(int target, int level, int xoffset, int yoffset, int width, int height, int format, int type, void *pixels);
 void GL_Bind(int texnum);
@@ -568,7 +573,46 @@ void R_DrawWorld(int clientId)
 }
 
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", R_MarkLeaves);
+void R_MarkLeaves(int clientId)
+{
+    byte *vis;
+    mnode_t *node;
+    int i;
+    byte solid[4096];
+
+    if (r_oldviewleaf[clientId] == r_viewleaf[clientId] && !r_novis.value)
+        return;
+    if (D_00399580)
+        return;
+
+    r_visframecount[clientId]++;
+    r_oldviewleaf[clientId] = r_viewleaf[clientId];
+
+    if (r_novis.value)
+    {
+        vis = solid;
+        memset(solid, 0xFF, (cl[clientId].worldmodel->numleafs + 7) >> 3);
+    }
+    else
+    {
+        vis = Mod_LeafPVS(r_viewleaf[clientId], cl[clientId].worldmodel);
+    }
+
+    for (i = 0; i < cl[clientId].worldmodel->numleafs; i++)
+    {
+        if ((vis[i >> 3] >> (i & 7)) & 1)
+        {
+            node = (mnode_t *)&cl[clientId].worldmodel->leafs[i + 1];
+            do
+            {
+                if (node->visframe[clientId] == r_visframecount[clientId])
+                    break;
+                node->visframe[clientId] = r_visframecount[clientId];
+                node = node->parent;
+            } while (node);
+        }
+    }
+}
 
 #ifdef NON_MATCHING
 int AllocBlock(int w, int h, int *x, int *y)
