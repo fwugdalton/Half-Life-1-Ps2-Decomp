@@ -47,6 +47,61 @@ typedef struct
     int len[16];   /* 0x44 */
 } bs2lumps_t;
 
+/* estruturas do .bs2 como vêm do disco: ponteiros guardados como deslocamentos (-1 = nulo) */
+#define FIXPTR(f) if ((f) != 0xFFFFFFFF) (f) = (int)header + (f); else (f) = 0
+
+typedef struct
+{
+    int contents;
+    int parent;             /* 0x04 */
+    int unk_08;
+    int efrags;             /* 0x0C */
+    byte pad10[0x20];
+    int compressed_vis;     /* 0x30 */
+    int firstmarksurface;   /* 0x34 */
+    byte pad38[8];
+} bs2leaf_t;
+
+typedef struct
+{
+    int contents;
+    int parent;             /* 0x04 */
+    int unk_08;
+    int plane;              /* 0x0C */
+    byte pad10[0x20];
+    int children[2];        /* 0x30 */
+    byte pad38[8];
+} bs2node_t;
+
+typedef struct
+{
+    byte pad0[0x24];
+    int texture;            /* 0x24 */
+    int unk_28;
+    int unk_2C;
+    byte pad30[0x18];
+    int polys;              /* 0x48 */
+    int texturechain;       /* 0x4C */
+    byte pad50[0x2C];
+    int unk_7C;
+    int unk_80;
+    byte pad84[0xC];
+} bs2surface_t;
+
+typedef struct
+{
+    int pixels;
+    int palette;            /* 0x04 */
+    byte pad08[0x20];
+    int unk_28;
+    byte pad2C[0xC];
+    int unk_38;
+    int unk_3C;
+} bs2texture_t;
+
+int func_002CFF88(char *name, int *a, int *b, int *c);
+void *func_00238418(int a, int b, int c, int d, int *loaded, int e);
+
 typedef struct
 {
     byte pad0[0x13];
@@ -731,4 +786,85 @@ qboolean Mod_CheckLumpPointer(void *pheader, void *pdata, int lump)
     return ret;
 }
 
+#ifdef NON_MATCHING
+bs2header_t *func_002A0450(model_t *mod)
+{
+    int lba, size, unk;
+    int loaded;
+    bs2header_t *header;
+    unsigned int i;
+    int *ms;
+    bs2leaf_t *leaf;
+    bs2node_t *node;
+    bs2surface_t *surf;
+    bs2texture_t *tx;
+
+    func_002CFF88(mod->name, &lba, &size, &unk);
+    header = func_00238418(size, unk, 1, lba, &loaded, 0);
+    if (!loaded || !header)
+        Sys_Error("Could not load file %s to memory", mod);
+
+    for (i = 0; i < header->numsubmodels; i++)
+        ;
+    for (i = 0; i < header->numplanes; i++)
+        ;
+
+    ms = (int *)((byte *)header + header->marksurfaces);
+    for (i = 0; i < header->nummarksurfaces; i++, ms++)
+        *ms = (int)((byte *)header + header->surfaces) + *ms * sizeof(bs2surface_t);
+
+    leaf = (bs2leaf_t *)((byte *)header + header->leafs);
+    for (i = 0; i < header->numleafs; i++, leaf++)
+    {
+        FIXPTR(leaf->compressed_vis);
+        FIXPTR(leaf->parent);
+        leaf->efrags = 0;
+        leaf->firstmarksurface = (int)((byte *)header + header->marksurfaces) + leaf->firstmarksurface * 4;
+    }
+
+    for (i = 0; i < header->numvertexes; i++)
+        ;
+    for (i = 0; i < header->numedges; i++)
+        ;
+
+    node = (bs2node_t *)((byte *)header + header->nodes);
+    for (i = 0; i < header->numnodes; i++, node++)
+    {
+        FIXPTR(node->parent);
+        FIXPTR(node->children[0]);
+        FIXPTR(node->children[1]);
+        node->plane = (int)header + node->plane;
+    }
+
+    surf = (bs2surface_t *)((byte *)header + header->surfaces);
+    for (i = 0; i < header->numsurfaces; i++, surf++)
+    {
+        surf->texture = (int)header + surf->texture;
+        FIXPTR(surf->unk_28);
+        surf->unk_2C = (int)header + surf->unk_2C;
+        FIXPTR(surf->unk_80);
+        surf->polys = 0;
+        surf->texturechain = 0;
+        surf->unk_7C = 0;
+    }
+
+    for (i = 0; i < header->numsurfedges; i++)
+        ;
+    for (i = 0; i < header->numclipnodes; i++)
+        ;
+
+    tx = (bs2texture_t *)((byte *)header + header->textures);
+    for (i = 0; i < header->numtextures; i++, tx++)
+    {
+        tx->pixels = (int)header + tx->pixels;
+        tx->palette = (int)header + tx->palette;
+        tx->unk_28 = 0;
+        FIXPTR(tx->unk_38);
+        FIXPTR(tx->unk_3C);
+    }
+
+    return header;
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", func_002A0450);
+#endif
