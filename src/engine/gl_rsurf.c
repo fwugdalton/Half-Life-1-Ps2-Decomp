@@ -111,6 +111,21 @@ void glBegin(int mode);
 void glEnd(void);
 void glTexCoord2f(float s, float t);
 void glVertex3fv(float *v);
+void glAlphaFunc(int func, float ref);
+void glTexSubImage2D(int target, int level, int xoffset, int yoffset, int width, int height, int format, int type, void *pixels);
+void GL_Bind(int texnum);
+void func_0023AF68(void);
+void func_0023D430(int);
+extern cvar_t gl_alphamin;
+extern int lightmap_textures;
+extern qboolean lightmap_modified[64];
+#define GL_ALPHA_TEST 0xBC0
+#define GL_GREATER 0x204
+#define GL_ONE 1
+#define GL_SRC_ALPHA 0x302
+#define GL_ONE_MINUS_SRC_ALPHA 0x303
+#define GL_ALPHA 0x1906
+#define GL_UNSIGNED_BYTE 0x1401
 void glColor3f(float r, float g, float b);
 void R_ClearSkyBox(void);
 void R_RecursiveWorldNode(mnode_t *node, int clientId);
@@ -482,7 +497,47 @@ INCLUDE_RODATA("asm/nonmatchings/engine/gl_rsurf", D_00393FE8);
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A2AF0);
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A2D80);
+void R_SetRenderMode(byte *pEntity)
+{
+    int mode = *(int *)(pEntity + 0x10);
+
+    if (mode != 0)
+    {
+        if (mode == 1)
+        {
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_ALPHA);
+        }
+        else if (mode == 5)
+        {
+            glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+            glBlendFunc(GL_ONE, GL_ONE);
+            glColor4f(r_blend, r_blend, r_blend, 1.0f);
+            glDepthMask(0);
+        }
+        else if (mode == 4)
+        {
+            glEnable(GL_ALPHA_TEST);
+            glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+            glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+            glDisable(GL_BLEND);
+            glAlphaFunc(GL_GREATER, gl_alphamin.value);
+            return;
+        }
+        else
+        {
+            glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            glColor4f(1.0f, 1.0f, 1.0f, r_blend);
+            glDepthMask(0);
+        }
+        glEnable(GL_BLEND);
+    }
+    else
+    {
+        glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", R_DrawBrushModel);
 
@@ -1073,7 +1128,44 @@ void func_002A68C0(void)
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", DrawTextureChains);
 
+#ifdef NON_MATCHING
+void R_BlendLightmaps(void)
+{
+    int i;
+    glpoly_t *p;
+    qboolean *pmod;
+    byte *base;
+
+    D_00331044 = 5;
+    D_0033102C = 1;
+    for (i = 0; i < MAX_LIGHTMAPS; i++)
+    {
+        p = lightmap_polys[i];
+        if (!p)
+            continue;
+
+        pmod = &lightmap_modified[i];
+        base = lightmaps + i * BLOCK_WIDTH * BLOCK_HEIGHT * 4;
+        GL_Bind(lightmap_textures + i);
+        if (*pmod)
+        {
+            *pmod = false;
+            glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, BLOCK_WIDTH, BLOCK_HEIGHT, gl_lightmap_format, GL_UNSIGNED_BYTE, base);
+        }
+        func_0023AF68();
+        for (; p; p = p->chain)
+        {
+            D_00331030 = func_002A3C60((byte *)p);
+            D_00331038 = func_002A3CA0((byte *)p);
+            D_0033103C = p->numverts;
+            func_0023D430(1);
+        }
+    }
+    D_0033102C = 0;
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", R_BlendLightmaps);
+#endif
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", func_002A6BE0);
 
