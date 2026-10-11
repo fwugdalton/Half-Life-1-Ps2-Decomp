@@ -86,6 +86,9 @@ void glVertex3fv(float *v);
 
 extern float D_0050F188[NOISE_DIVISIONS]; /* rgNoise */
 double func_002D78A0(double x, double y); /* fmod */
+struct mnode_s *PVSNode(struct mnode_s *node, vec_t *emins, vec_t *emaxs, int clientId);
+qboolean R_CullBox(vec3_t mins, vec3_t maxs);
+void func_002B5590(float *noise, int divs);
 
 particle_t *func_002B1420(vec3_t org, vec3_t vel, float life, int clientId);
 int func_002B74D0(float *start, float *end, int pvsOnly, int clientId);
@@ -2124,7 +2127,138 @@ void func_002B6770(BEAM *pbeam, int clientId)
     }
 }
 
+#ifdef NON_MATCHING
+void func_002B6CF0(vec3_t source, vec3_t delta, int segments, int clientId, float width, float amplitude, float freq, float speed)
+{
+    int i, j, noiseIndex, noiseStep;
+    float div, length, fraction, factor, vLast, vStep;
+    vec3_t last1, last2, point, screen, screenLast, tmp, normal;
+    vec3_t center, xaxis, yaxis, zaxis;
+    float radius, x, y, scale;
+    unsigned int count;
+
+    if (segments < 2)
+        return;
+
+    segments = segments * M_PI;
+    if (segments > NOISE_DIVISIONS * 8)
+        segments = NOISE_DIVISIONS * 8;
+
+    length = Length(delta) * (0.01f * M_PI);
+    if (length < 0.5f)
+        length = 0.5f;
+    div = 1.0f / (segments - 1);
+
+    vStep = length * div * 0.125f;
+    noiseIndex = 0;
+    vLast = fmodf(freq * speed, 1);
+    scale = amplitude * length * 0.125f;
+
+    noiseStep = (int)(div * (NOISE_DIVISIONS * 65536.0f)) * 8;
+
+    VectorScale(delta, 0.5f, delta);
+    VectorAdd(source, delta, center);
+
+    zaxis[0] = 0;
+    zaxis[1] = 0;
+    zaxis[2] = 1;
+
+    VectorCopy(delta, xaxis);
+    radius = Length(xaxis);
+
+    last1[0] = radius;
+    last1[1] = radius;
+    last1[2] = scale;
+    VectorAdd(center, last1, tmp);
+    VectorSubtract(center, last1, screen);
+
+    if (!cl[clientId].worldmodel)
+        return;
+
+    if (!PVSNode(cl[clientId].worldmodel->nodes, screen, tmp, clientId))
+        return;
+    if (R_CullBox(screen, tmp))
+        return;
+
+    yaxis[0] = xaxis[1];
+    yaxis[1] = -xaxis[0];
+    yaxis[2] = 0;
+    VectorNormalize(yaxis);
+    VectorScale(yaxis, radius, yaxis);
+
+    count = 2;
+    j = segments / 8;
+
+    glBegin(5);
+    D_00399534++;
+
+    for (i = 0; i <= segments; i++)
+    {
+        D_00399598 += 2;
+        fraction = i * div;
+        x = sinf(fraction * 2 * M_PI);
+        y = cosf(fraction * 2 * M_PI);
+
+        point[0] = xaxis[0] * x + yaxis[0] * y + center[0];
+        point[1] = xaxis[1] * x + yaxis[1] * y + center[1];
+        point[2] = xaxis[2] * x + yaxis[2] * y + center[2];
+
+        factor = D_0050F188[(noiseIndex >> 16) & 0x7F] * scale;
+        VectorMA(point, factor, vup, point);
+        factor = D_0050F188[(noiseIndex >> 16) & 0x7F] * scale * cosf(fraction * (M_PI * 3 * 8) + freq);
+        VectorMA(point, factor, vright, point);
+
+        ScreenTransform(point, screen);
+
+        if (i != 0)
+        {
+            vLast += vStep;
+
+            VectorSubtract(screen, screenLast, tmp);
+            tmp[2] = 0;
+            VectorNormalize(tmp);
+            VectorScale(vup, tmp[0], normal);
+            VectorMA(normal, -tmp[1], vright, normal);
+
+            VectorMA(point, width, normal, last1);
+            VectorMA(point, -width, normal, last2);
+
+            glTexCoord2f(1, vLast);
+            glVertex3fv(last2);
+            glTexCoord2f(0, vLast);
+            glVertex3fv(last1);
+        }
+
+        if (count >= 72)
+        {
+            glEnd();
+            count = 2;
+            glBegin(5);
+            D_00399534++;
+            D_00399598 += 2;
+            vLast = fmodf(vLast, 1);
+            glTexCoord2f(1, vLast);
+            glVertex3fv(last2);
+            glTexCoord2f(0, vLast);
+            glVertex3fv(last1);
+        }
+        else
+            count += 2;
+
+        noiseIndex += noiseStep;
+        VectorCopy(screen, screenLast);
+
+        j--;
+        if (j == 0 && amplitude != 0)
+        {
+            j = segments / 8;
+            func_002B5590(D_0050F188, NOISE_DIVISIONS);
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B6CF0);
+#endif
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B72D8);
 
