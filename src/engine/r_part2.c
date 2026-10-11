@@ -2260,11 +2260,67 @@ void func_002B6CF0(vec3_t source, vec3_t delta, int segments, int clientId, floa
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B6CF0);
 #endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B72D8);
+void func_002B72D8(float x1, float y1, float z1, float x2, float y2, float z2, int clientId)
+{
+    vec3_t start, end;
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B7318);
+    start[0] = x1;
+    start[1] = y1;
+    start[2] = z1;
+    end[0] = x2;
+    end[1] = y2;
+    end[2] = z2;
+    func_002B27B8(start, end, clientId);
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B74D0);
+void func_002B7318(vec3_t mins, vec3_t maxs, int clientId)
+{
+    func_002B72D8(mins[0], mins[1], mins[2], mins[0], maxs[1], mins[2], clientId);
+    func_002B72D8(maxs[0], mins[1], mins[2], maxs[0], maxs[1], mins[2], clientId);
+    func_002B72D8(mins[0], mins[1], mins[2], maxs[0], mins[1], mins[2], clientId);
+    func_002B72D8(mins[0], maxs[1], mins[2], maxs[0], maxs[1], mins[2], clientId);
+    func_002B72D8(mins[0], mins[1], maxs[2], mins[0], maxs[1], maxs[2], clientId);
+    func_002B72D8(maxs[0], mins[1], maxs[2], maxs[0], maxs[1], maxs[2], clientId);
+    func_002B72D8(mins[0], mins[1], maxs[2], maxs[0], mins[1], maxs[2], clientId);
+    func_002B72D8(mins[0], maxs[1], maxs[2], maxs[0], maxs[1], maxs[2], clientId);
+    func_002B72D8(mins[0], mins[1], mins[2], mins[0], mins[1], maxs[2], clientId);
+    func_002B72D8(mins[0], maxs[1], mins[2], mins[0], maxs[1], maxs[2], clientId);
+    func_002B72D8(maxs[0], maxs[1], mins[2], maxs[0], maxs[1], maxs[2], clientId);
+    func_002B72D8(maxs[0], mins[1], mins[2], maxs[0], mins[1], maxs[2], clientId);
+}
+
+int func_002B74D0(float *start, float *end, int pvsOnly, int clientId)
+{
+    vec3_t mins, maxs;
+    int i;
+
+    if (!cl[clientId].worldmodel)
+        return 0;
+
+    for (i = 0; i < 3; i++)
+    {
+        if (start[i] < end[i])
+        {
+            mins[i] = start[i];
+            maxs[i] = end[i];
+        }
+        else
+        {
+            mins[i] = end[i];
+            maxs[i] = start[i];
+        }
+
+        if (mins[i] == maxs[i])
+            maxs[i] += 1;
+    }
+
+    if (PVSNode(cl[clientId].worldmodel->nodes, mins, maxs, clientId))
+    {
+        if (pvsOnly || !R_CullBox(mins, maxs))
+            return 1;
+    }
+    return 0;
+}
 
 /* jump tables do gcc são alinhadas em 16 */
 __asm__(".section .rodata\n.align 4\n.section .text");
