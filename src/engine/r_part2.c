@@ -456,7 +456,73 @@ void func_002B27B8(vec3_t start, vec3_t end, int clientId)
     }
 }
 
+#ifdef NON_MATCHING
+void func_002B2938(vec3_t org, vec3_t dir, int pcolor, int speed, int clientId)
+{
+    particle_t *p;
+    int i, j;
+    float arc;
+    int accel;
+    float num;
+    vec3_t vel;
+
+    VectorNormalize(dir);
+
+    for (arc = 0.075f, i = 0; i < speed / 5; i++)
+    {
+        if (!D_0039966C)
+            return;
+        p = D_0039966C;
+        D_0039966C = p->next;
+        p->next = D_00399660;
+        D_00399660 = p;
+
+        p->die = cl[clientId].time + 3;
+        p->color = pcolor + RandomLong(0, 9);
+        p->packedColor = 0;
+        p->type = pt_vox_slowgrav;
+
+        VectorCopy(org, p->org);
+        VectorCopy(dir, vel);
+        vel[2] -= arc;
+        arc -= 0.005f;
+
+        num = RandomFloat(0, 1);
+        accel = speed * num;
+        num *= 1.7f;
+
+        VectorScale(vel, num, vel);
+        VectorScale(vel, accel, p->vel);
+
+        for (j = 0; j < 2; j++)
+        {
+            if (!D_0039966C)
+                return;
+            p = D_0039966C;
+            D_0039966C = p->next;
+            p->next = D_00399660;
+            D_00399660 = p;
+
+            p->die = cl[clientId].time + 3;
+            p->color = pcolor + RandomLong(0, 9);
+            p->packedColor = 0;
+            p->type = pt_vox_slowgrav;
+
+            p->org[0] = org[0] + RandomFloat(-1, 1);
+            p->org[1] = org[1] + RandomFloat(-1, 1);
+            p->org[2] = org[2] + RandomFloat(-1, 1);
+
+            VectorCopy(dir, vel);
+            vel[2] -= arc;
+
+            VectorScale(vel, num, vel);
+            VectorScale(vel, accel, p->vel);
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B2938);
+#endif
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B2C70);
 
