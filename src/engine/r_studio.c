@@ -142,6 +142,9 @@ hull_t *R_StudioHull(model_t *pModel, float frame, int sequence, vec3_t angles, 
                      byte *pcontroller, byte *pblending, int *pNumHulls);
 hull_t *SV_HullForEntity(edict_t *ent, vec3_t mins, vec3_t maxs, vec3_t offset);
 extern int boxpnt[6][4];
+extern float hullcolor[8][3];
+extern int D_00399570, D_00399558;
+void glTexCoord2f(float s, float t);
 extern struct model_s *D_003991CC;
 extern int D_00399574, D_0039954C;
 void tri_RenderMode(int mode);
@@ -1298,7 +1301,55 @@ void R_StudioMergeBones(model_t *m_pSubModel, int clientId)
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", R_StudioMergeBones);
 #endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BD828);
+#ifdef NON_MATCHING
+void R_StudioDrawHulls(void)
+{
+    vec3_t tmp;
+    vec3_t p[8];
+    float lv;
+    int i, j;
+    mstudiobbox_t *pbboxes;
+
+    pbboxes = (mstudiobbox_t *)((byte *)pstudiohdr + pstudiohdr->hitboxindex);
+    tri_SpriteTexture(D_003991CC, 0);
+
+    for (i = 0; i < pstudiohdr->numhitboxes; i++)
+    {
+        for (j = 0; j < 8; j++)
+        {
+            tmp[0] = (j & 1) ? pbboxes[i].bbmin[0] : pbboxes[i].bbmax[0];
+            tmp[1] = (j & 2) ? pbboxes[i].bbmin[1] : pbboxes[i].bbmax[1];
+            tmp[2] = (j & 4) ? pbboxes[i].bbmin[2] : pbboxes[i].bbmax[2];
+
+            VectorTransform(tmp, lighttransform[pbboxes[i].bone], p[j]);
+        }
+
+        j = pbboxes[i].group % 8;
+        tri_Color4f(hullcolor[j][0], hullcolor[j][1], hullcolor[j][2], 1.0f);
+        glTexCoord2f(0, 0);
+
+        for (j = 0; j < 6; j++)
+        {
+            tmp[0] = tmp[1] = tmp[2] = 0;
+            tmp[j % 3] = (j < 3) ? 1.0f : -1.0f;
+            R_StudioLighting(&lv, pbboxes[i].bone, 0, tmp);
+            tri_Brightness(lv);
+
+            glBegin(6);
+            D_00399570++;
+            D_00399558 += 4;
+            glVertex3fv(p[boxpnt[j][0]]);
+            glVertex3fv(p[boxpnt[j][1]]);
+            glVertex3fv(p[boxpnt[j][2]]);
+            glVertex3fv(p[boxpnt[j][3]]);
+            glEnd();
+        }
+        glEnd();
+    }
+}
+#else
+INCLUDE_ASM("asm/nonmatchings/engine/r_studio", R_StudioDrawHulls);
+#endif
 
 #ifdef NON_MATCHING
 void R_StudioDrawAbsBBox(void)

@@ -1745,3 +1745,5 @@ r_glowshellfreq = 0x003335B8; // size:0x14
 g_NormalIndex = 0x0052D778; // size:0x2000
 R_StudioSetupGlowShell = 0x2BC240; // type:func
 R_StudioSetUpTransform = 0x2BC520; // type:func
+hullcolor = 0x00334238; // size:0x60
+R_StudioDrawHulls = 0x2BD828; // type:func
