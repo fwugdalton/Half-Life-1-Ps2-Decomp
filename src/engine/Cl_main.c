@@ -102,10 +102,22 @@ void CL_PrintResource(int index, resource_t *pResource);
 void func_0024F6E8(int clientId);
 qboolean func_0024FB28(int clientId);
 void Netchan_Transmit(netchan_t *chan, int length, byte *data, int unk);
+void MSG_WriteShort(sizebuf_t *sb, int c);
+void *Q_memcpy(void *dest, const void *src, int count);
 void func_002CD340(int a0, int a1); /* S_StopAllSounds */
 void CL_DeallocateDynamicData(int clientId);
 void func_00254838(int clientId);
-void func_0024FF90(qboolean bQuiet, int clientId);       /* "" */
+void func_0024FF90(qboolean bQuiet, int clientId);
+extern int cl_updatemask[2];
+extern int D_00399160[2];       /* in_impulse */
+extern float D_0033192C;        /* cl_nodelta.value */
+void func_0024DDF0(usercmd_t *cmd, int clientId); /* CL_BaseMove */
+void func_002C5980(usercmd_t *cmd, int clientId); /* IN_Move */
+int func_0024E2E0(int bResetState, int clientId); /* CL_ButtonBits */
+void func_00253E80(usercmd_t *cmd, int clientId); /* Cam_Track */
+void func_002543B0(usercmd_t *cmd, int clientId); /* Cam_FinishMove */
+void func_00242800(sizebuf_t *buf, usercmd_t *to, usercmd_t *from); /* MSG_WriteDeltaUsercmd */
+byte COM_BlockSequenceCRCByte(byte *base, int length, int sequence);       /* "" */
 extern char D_003AC9C8[256];    /* szHashedKeyBuffer */
 
 qboolean NET_GetPacket(int sock);
@@ -1032,9 +1044,130 @@ float func_00251518(int clientId)
     return frac;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Cl_main", func_00251710);
+#ifdef NON_MATCHING
+void func_00251710(int clientId)
+{
+    sizebuf_t buf;
+    byte data[128];
+    int i;
+    int j;
+    usercmd_t *cmd;
+    usercmd_t *oldcmd;
+    int checksumIndex;
+    usercmd_t nullcmd;
+    int ms;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Cl_main", func_00251BB0);
+    if (cls[clientId].state < ca_connected)
+        return;
+    if (!cl[clientId].frames)
+        return;
+
+    i = cls[clientId].netchan.outgoing_sequence & cl_updatemask[clientId];
+    cmd = &cl[clientId].frames[i].cmd;
+    cl[clientId].frames[i].senttime = realtime;
+    cl[clientId].frames[i].receivedtime = -1;
+    memset(cmd, 0, sizeof(*cmd));
+
+    if (cls[clientId].signon == 3)
+    {
+        func_0024DDF0(cmd, clientId);
+        func_002C5980(cmd, clientId);
+    }
+
+    buf.maxsize = 128;
+    buf.cursize = 0;
+    buf.data = data;
+
+    MSG_WriteByte(&buf, 3); /* clc_move */
+    checksumIndex = buf.cursize;
+    MSG_WriteByte(&buf, 0);
+
+    for (i = 0; i < 3; i++)
+        cmd->viewangles[i] = cl[clientId].viewangles[i];
+
+    ms = host_frametime * 1000;
+    if (ms > 250)
+        ms = 100;
+    cmd->msec = ms;
+
+    cmd->buttons = func_0024E2E0(1, clientId);
+    cmd->impulse = D_00399160[clientId];
+
+    if (cl[clientId].spectator)
+    {
+        func_00253E80(cmd, clientId);
+        func_002543B0(cmd, clientId);
+    }
+
+    memset(&nullcmd, 0, sizeof(nullcmd));
+
+    i = (cls[clientId].netchan.outgoing_sequence - 2) & cl_updatemask[clientId];
+    func_00242800(&buf, &cl[clientId].frames[i].cmd, &nullcmd);
+
+    j = i;
+    i = (cls[clientId].netchan.outgoing_sequence - 1) & cl_updatemask[clientId];
+    func_00242800(&buf, &cl[clientId].frames[i].cmd, &cl[clientId].frames[j].cmd);
+
+    func_00242800(&buf, cmd, &cl[clientId].frames[i].cmd);
+
+    buf.data[checksumIndex] = COM_BlockSequenceCRCByte(buf.data + checksumIndex + 1, buf.cursize - checksumIndex - 1,
+                                                       cls[clientId].netchan.outgoing_sequence);
+
+    cl[clientId].cmd = *cmd;
+
+    D_00399160[clientId] = 0;
+
+    if (cls[clientId].netchan.outgoing_sequence - cl[clientId].validsequence >= cl_updatebackup[clientId] - 1)
+        cl[clientId].validsequence = 0;
+
+    if (cl[clientId].validsequence && !D_0033192C && cls[clientId].state == ca_active)
+    {
+        cl[clientId].frames[cls[clientId].netchan.outgoing_sequence & cl_updatemask[clientId]].delta_sequence = cl[clientId].validsequence;
+        MSG_WriteByte(&buf, 5); /* clc_delta */
+        MSG_WriteByte(&buf, cl[clientId].validsequence & 255);
+    }
+    else
+    {
+        cl[clientId].frames[cls[clientId].netchan.outgoing_sequence & cl_updatemask[clientId]].delta_sequence = -1;
+    }
+
+    Netchan_Transmit(&cls[clientId].netchan, buf.cursize, buf.data, 2);
+}
+#else
+INCLUDE_ASM("asm/nonmatchings/engine/Cl_main", func_00251710);
+#endif
+
+void func_00251BB0(void)
+{
+    int nStartPos;
+    short nSize;
+
+    if (cls[0].state == ca_dedicated || cls[0].state == ca_disconnected)
+    {
+        Con_Printf("custom resource list not valid -- not connected\n");
+        return;
+    }
+
+    if (MSG_ReadLong() != cl[0].servercount)
+    {
+        Con_Printf("CL_SendResourceListBlock_f from different level\n");
+        return;
+    }
+
+    if (MSG_ReadLong() != 0)
+    {
+        Con_Printf("custom resource list request out of range\n");
+        return;
+    }
+
+    MSG_WriteByte(&cls[0].netchan.message, 8);
+    MSG_WriteShort(&cls[0].netchan.message, 0);
+    MSG_WriteShort(&cls[0].netchan.message, 0);
+    nStartPos = cls[0].netchan.message.cursize;
+    MSG_WriteShort(&cls[0].netchan.message, 0);
+    nSize = 0;
+    Q_memcpy(cls[0].netchan.message.data + nStartPos, &nSize, sizeof(nSize));
+}
 
 int func_00251CA0(void)
 {

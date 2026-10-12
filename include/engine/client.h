@@ -3,6 +3,7 @@
 
 #include "engine/mathlib.h"
 #include "engine/cl_entity.h"
+#include "engine/pmove.h"
 
 /* client_state_t do PS2: um por jogador local (tela dividida), cl[clientId], 0x212C bytes.
    Layout parcial: só os campos já identificados (outros arquivos ainda têm versões locais). */
@@ -48,9 +49,9 @@ typedef struct
 /* frame_t do PS2 (0x330), cl.frames[cl_updatebackup] */
 typedef struct frame_s
 {
-    byte pad0[0x24];
+    usercmd_t cmd;              /* 0x00 */
     float senttime;             /* 0x24 */
-    byte pad28[0x2C - 0x28];
+    int delta_sequence;         /* 0x28 */
     float receivedtime;         /* 0x2C */
     byte pad30[0x34 - 0x30];
     player_state_t playerstate[3]; /* 0x34 (MAX_CLIENTS) */
@@ -95,9 +96,7 @@ typedef struct client_state_s
     int servercount;            /* 0x208 */
     int validsequence;          /* 0x20C */
     int parsecount;             /* 0x210 */
-    byte pad214[0x224 - 0x214];
-    float forwardmove;          /* 0x224: cmd.forwardmove */
-    byte pad228[0x238 - 0x228];
+    usercmd_t cmd;              /* 0x214: último comando enviado */
     int stats[MAX_CL_STATS];    /* 0x238 */
     int items;                  /* 0x2B8 */
     byte pad2BC[0x2DC - 0x2BC];

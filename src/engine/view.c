@@ -208,7 +208,7 @@ void V_DriftPitch(int clientId)
 
     if (cl[clientId].nodrift)
     {
-        if (fabs(cl[clientId].forwardmove) < cl_forwardspeed.value)
+        if (fabs(cl[clientId].cmd.forwardmove) < cl_forwardspeed.value)
             cl[clientId].driftmove = 0;
         else
             cl[clientId].driftmove += host_frametime;
