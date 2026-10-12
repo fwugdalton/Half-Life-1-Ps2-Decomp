@@ -201,6 +201,14 @@ typedef struct dlight_s
 #define MAX_ELIGHTS 64
 extern dlight_t cl_elights[MAX_ELIGHTS];
 extern struct dlight_s *locallight[];
+dlight_t *func_00251250(int key); /* CL_AllocElight */
+void func_00258410(float *pos, int type, int clientId); /* R_MuzzleFlash */
+void func_00257438(float *pos, int count, int velocityMin, int velocityMax, int clientId); /* R_SparkEffect */
+void S_StartDynamicSound(int entnum, int entchannel, struct sfx_s *sfx, vec3_t origin, float fvol, float attenuation,
+                         int flags, int pitch, int clientId);
+int atoi(const char *s);
+extern float D_0041EC40[]; /* hora do último evento por jogador */
+extern float D_0041EC48[]; /* hora anterior por jogador */
 extern vec3_t lightbonepos[MAXSTUDIOBONES][STUDIO_MAXLIGHTS];
 void QuaternionSlerp(float p[4], float q[4], float t, float qt[4]);
 float func_002D7F00(float x);
@@ -2137,7 +2145,86 @@ void R_StudioCalcAttachments(void)
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002C1A68);
+void R_StudioClientEvents(int clientId)
+{
+    mstudioseqdesc_t *pseqdesc;
+    mstudioevent_t *pevent;
+    float flEnd, flStart;
+    int i;
+    struct sfx_s *sfx;
+
+    pseqdesc = (mstudioseqdesc_t *)((byte *)pstudiohdr + pstudiohdr->seqindex) + currententity->sequence;
+
+    if (cl[clientId].time == cl[clientId].oldtime)
+        return;
+
+    if (D_0041EC40[clientId] != cl[clientId].time)
+    {
+        D_0041EC48[clientId] = D_0041EC40[clientId];
+        D_0041EC40[clientId] = cl[clientId].time;
+    }
+
+    if (currententity->unk194 & 2)
+    {
+        dlight_t *dl = func_00251250(0);
+
+        VectorCopy(currententity->attachment[0], dl->origin);
+        dl->radius = 16;
+        dl->decay = 320;
+        dl->die = cl[clientId].time + 0.05f;
+        dl->color.r = 255;
+        dl->color.g = 192;
+        dl->color.b = 64;
+        currententity->unk194 &= ~2;
+    }
+
+    if (pseqdesc->numevents == 0)
+        return;
+
+    pevent = (mstudioevent_t *)((byte *)pstudiohdr + pseqdesc->eventindex);
+    flEnd = R_StudioEstimateFrame(pseqdesc, clientId);
+    flStart = flEnd - (D_0041EC40[clientId] - D_0041EC48[clientId]) * currententity->framerate * pseqdesc->fps;
+
+    if (currententity->unk7C == currententity->animtime)
+    {
+        if (!(pseqdesc->flags & STUDIO_LOOPING))
+            flStart = -0.01f;
+    }
+
+    for (i = 0; i < pseqdesc->numevents; i++)
+    {
+        if (pevent[i].event < 5000)
+            continue;
+
+        if ((float)pevent[i].frame > flStart && pevent[i].frame <= flEnd)
+        {
+            switch (pevent[i].event)
+            {
+            case 5001:
+                func_00258410(currententity->attachment[0], atoi(pevent[i].options), clientId);
+                break;
+            case 5011:
+                func_00258410(currententity->attachment[1], atoi(pevent[i].options), clientId);
+                break;
+            case 5021:
+                func_00258410(currententity->attachment[2], atoi(pevent[i].options), clientId);
+                break;
+            case 5031:
+                func_00258410(currententity->attachment[3], atoi(pevent[i].options), clientId);
+                break;
+            case 5002:
+                func_00257438(currententity->attachment[0], atoi(pevent[i].options), -100, 100, clientId);
+                break;
+            case 5004:
+                sfx = func_002C1800(pevent[i].options, clientId);
+                if (sfx)
+                    S_StartDynamicSound(cl[clientId].viewentity, 0, sfx, currententity->attachment[0], 1.0f, 1.0f, 0,
+                                        100, clientId);
+                break;
+            }
+        }
+    }
+}
 
 void R_StudioRenderModel(void)
 {

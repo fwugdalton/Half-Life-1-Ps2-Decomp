@@ -41,7 +41,9 @@ typedef struct cl_entity_s
     float scale;                /* 0x6C */
     byte pad70[0x74 - 0x70];
     float prevanimtime;         /* 0x74 */
-    byte pad78[0x84 - 0x78];
+    byte pad78[0x7C - 0x78];
+    float unk7C;                /* 0x7C: comparado com animtime nos eventos */
+    byte pad80[0x84 - 0x80];
     vec3_t origin;              /* 0x84 */
     vec3_t angles;              /* 0x90 */
     vec3_t prevorigin;          /* 0x9C */
