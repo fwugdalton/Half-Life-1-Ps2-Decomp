@@ -1,6 +1,7 @@
 #include "common.h"
 #include <stdarg.h>
 #include "engine/pmove.h"
+#include "engine/cvar.h"
 #include "engine/cmd.h"
 #include "engine/server.h"
 
@@ -18,6 +19,24 @@ extern char D_0053D718[256];     /* gszDisconnectReason */
 extern qboolean D_0033451C;     /* gfExtendedError */
 extern char D_00388B40[];       /* "%s" */
 extern char D_00388B48[];       /* "" */
+extern int D_00331440;          /* com_ignorecolons */
+extern char D_0046DFB8[256];    /* com_cmdline */
+extern char *D_003AC328[57];    /* largv */
+extern char *D_003313F0[7];     /* safeargvs */
+extern char *D_003313EC;        /* argvdummy */
+extern byte D_00331448[2];      /* swaptest */
+extern qboolean D_003990E8;     /* bigendien */
+extern short (*D_003990DC)(short l); /* BigShort */
+extern short (*LittleShort)(short l);
+extern int (*D_003990F0)(int l); /* BigLong */
+extern float (*D_003990E0)(float l); /* BigFloat */
+extern float (*D_003990F4)(float l); /* LittleFloat */
+extern cvar_t D_00331410;       /* registered */
+extern cvar_t D_00331428;       /* cmdline */
+void func_002CF500(void);       /* COM_Path_f */
+void func_002CF8B0(void);       /* COM_InitFilesystem */
+void Cvar_RegisterVariable(cvar_t *variable);
+void Cmd_AddCommand(char *cmd_name, xcommand_t function);
 extern int (*LittleLong)(int l);
 void *func_00243DC8(sizebuf_t *buf, int length); /* SZ_GetSpace */
 void MSG_WriteShort(sizebuf_t *sb, int c);
@@ -1505,16 +1524,161 @@ void func_00244138(char *path, char *extension)
     strcat(path, extension);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", COM_Parse);
+char *COM_Parse(char *data)
+{
+    int c;
+    int len;
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", COM_CheckParm);
+    len = 0;
+    com_token[0] = 0;
+
+    if (!data)
+        return NULL;
+
+skipwhite:
+    while ((c = *data) <= ' ')
+    {
+        if (c == 0)
+            return NULL;
+        data++;
+    }
+
+    if (c == '/' && data[1] == '/')
+    {
+        while (*data && *data != '\n')
+            data++;
+        goto skipwhite;
+    }
+
+    if (c == '\"')
+    {
+        data++;
+        while (1)
+        {
+            c = *data++;
+            if (c == '\"' || !c)
+            {
+                com_token[len] = 0;
+                return data;
+            }
+            com_token[len] = c;
+            len++;
+        }
+    }
+
+    if (c == '{' || c == '}' || c == ')' || c == '(' || c == '\'' || (!D_00331440 && c == ':'))
+    {
+        com_token[len] = c;
+        len++;
+        com_token[len] = 0;
+        return data + 1;
+    }
+
+    do
+    {
+        com_token[len] = c;
+        data++;
+        len++;
+        c = *data;
+        if (c == '{' || c == '}' || c == ')' || c == '(' || c == '\'' || (!D_00331440 && c == ':'))
+            break;
+    } while (c > 32);
+
+    com_token[len] = 0;
+    return data;
+}
+
+int COM_CheckParm(char *parm)
+{
+    int i;
+
+    for (i = 1; i < com_argc; i++)
+    {
+        if (!com_argv[i])
+            continue;
+        if (!Q_strcmp(parm, com_argv[i]))
+            return i;
+    }
+
+    return 0;
+}
 
 void func_00244418(void) {
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_00244420);
+/* COM_InitArgv */
+void func_00244420(int argc, char **argv)
+{
+    qboolean safe;
+    int i, j, n;
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", COM_Init);
+    n = 0;
+    for (j = 0; (j < 50) && (j < argc); j++)
+    {
+        i = 0;
+        while ((n < (256 - 1)) && argv[j][i])
+        {
+            D_0046DFB8[n++] = argv[j][i++];
+        }
+        if (n < (256 - 1))
+            D_0046DFB8[n++] = ' ';
+        else
+            break;
+    }
+    D_0046DFB8[n] = 0;
+
+    safe = 0;
+
+    for (com_argc = 0; (com_argc < 50) && (com_argc < argc); com_argc++)
+    {
+        D_003AC328[com_argc] = argv[com_argc];
+        if (!Q_strcmp("-safe", argv[com_argc]))
+            safe = 1;
+    }
+
+    if (safe)
+    {
+        for (i = 0; i < 7; i++)
+        {
+            D_003AC328[com_argc] = D_003313F0[i];
+            com_argc++;
+        }
+    }
+
+    D_003AC328[com_argc] = D_003313EC;
+    com_argv = D_003AC328;
+}
+
+void COM_Init(char *basedir)
+{
+    if (*(short *)D_00331448 == 1)
+    {
+        D_003990E8 = 0;
+        D_003990DC = func_00241DE0;
+        LittleShort = func_00241E00;
+        D_003990F0 = func_00241E10;
+        LittleLong = func_00241E40;
+        D_003990E0 = func_00241E48;
+        D_003990F4 = func_00241EB8;
+    }
+    else
+    {
+        D_003990E8 = 1;
+        D_003990DC = func_00241E00;
+        LittleShort = func_00241DE0;
+        D_003990F0 = func_00241E40;
+        LittleLong = func_00241E10;
+        D_003990E0 = func_00241EB8;
+        D_003990F4 = func_00241E48;
+    }
+
+    Cvar_RegisterVariable(&D_00331410);
+    Cvar_RegisterVariable(&D_00331428);
+    Cmd_AddCommand("path", func_002CF500);
+    func_00242840();
+    func_002CF8B0();
+    func_00244418();
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/common", va);
 
