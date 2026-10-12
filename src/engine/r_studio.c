@@ -301,7 +301,7 @@ void glDisable(int cap);
 void glBlendFunc(int sfactor, int dfactor);
 void glColor4f(float r, float g, float b, float a);
 void glDepthMask(int flag);
-void func_002BDDC0(void);
+void R_StudioDrawBones(void);
 void R_StudioDrawHulls(void);
 void R_StudioSetupModel(int bodypart);
 void func_002C3070(void);
@@ -1578,7 +1578,126 @@ void R_StudioDrawAbsBBox(void)
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", R_StudioDrawAbsBBox);
 #endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BDDC0);
+void R_StudioDrawBones(void)
+{
+    int i, j, k;
+    vec3_t tmp;
+    vec3_t p[8];
+    vec3_t up, right, forward;
+    vec3_t a1;
+    float lv;
+    mstudiobone_t *pbones;
+
+    pbones = (mstudiobone_t *)((byte *)pstudiohdr + pstudiohdr->boneindex);
+    tri_SpriteTexture(D_003991CC, 0);
+
+    for (i = 0; i < pstudiohdr->numbones; i++)
+    {
+        if (pbones[i].parent == -1)
+            continue;
+
+        k = pbones[i].parent;
+
+        a1[0] = a1[1] = a1[2] = 1.0f;
+        up[0] = lighttransform[i][0][3] - lighttransform[k][0][3];
+        up[1] = lighttransform[i][1][3] - lighttransform[k][1][3];
+        up[2] = lighttransform[i][2][3] - lighttransform[k][2][3];
+        if (up[0] > up[1])
+        {
+            if (up[0] > up[2])
+                a1[0] = 0;
+            else
+                a1[2] = 0;
+        }
+        else
+        {
+            if (up[1] > up[2])
+                a1[1] = 0;
+            else
+                a1[2] = 0;
+        }
+        CrossProduct(up, a1, right);
+        VectorNormalize(right);
+        CrossProduct(up, right, forward);
+        VectorNormalize(forward);
+        VectorScale(right, 2.0f, right);
+        VectorScale(forward, 2.0f, forward);
+
+        for (j = 0; j < 8; j++)
+        {
+            p[j][0] = lighttransform[k][0][3];
+            p[j][1] = lighttransform[k][1][3];
+            p[j][2] = lighttransform[k][2][3];
+
+            if (j & 1)
+            {
+                VectorSubtract(p[j], right, p[j]);
+            }
+            else
+            {
+                VectorAdd(p[j], right, p[j]);
+            }
+
+            if (j & 2)
+            {
+                VectorSubtract(p[j], forward, p[j]);
+            }
+            else
+            {
+                VectorAdd(p[j], forward, p[j]);
+            }
+
+            if (!(j & 4))
+            {
+                VectorAdd(p[j], up, p[j]);
+            }
+        }
+
+        VectorNormalize(up);
+        VectorNormalize(right);
+        VectorNormalize(forward);
+
+        tri_Color4f(1.0f, 1.0f, 1.0f, 1.0f);
+
+        for (j = 0; j < 6; j++)
+        {
+            switch (j)
+            {
+            case 0:
+                VectorCopy(right, tmp);
+                break;
+            case 1:
+                VectorCopy(forward, tmp);
+                break;
+            case 2:
+                VectorCopy(up, tmp);
+                break;
+            case 3:
+                VectorScale(right, -1, tmp);
+                break;
+            case 4:
+                VectorScale(forward, -1, tmp);
+                break;
+            case 5:
+                VectorScale(up, -1, tmp);
+                break;
+            }
+
+            R_StudioLighting(&lv, -1, 0, tmp);
+            tri_Brightness(lv);
+
+            glBegin(6);
+            glTexCoord2f(0, 0);
+            D_00399574++;
+            D_0039954C += 4;
+            glVertex3fv(p[boxpnt[j][0]]);
+            glVertex3fv(p[boxpnt[j][1]]);
+            glVertex3fv(p[boxpnt[j][2]]);
+            glVertex3fv(p[boxpnt[j][3]]);
+            glEnd();
+        }
+    }
+}
 
 void func_002BE2D0(float *out, int bone, vec3_t in)
 {
@@ -2410,7 +2529,7 @@ draw:
 
     if (r_drawentities.value == 2)
     {
-        func_002BDDC0();
+        R_StudioDrawBones();
     }
     else if (r_drawentities.value == 3)
     {

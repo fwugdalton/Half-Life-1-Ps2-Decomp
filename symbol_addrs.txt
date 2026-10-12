@@ -1763,3 +1763,4 @@ glHint = 0x0023B1A0; // type:func
 gl_smoothmodels = 0x00333618; // size:0x14
 gl_affinemodels = 0x00333630; // size:0x14
 R_StudioClientEvents = 0x2C1A68; // type:func
+R_StudioDrawBones = 0x2BDDC0; // type:func
