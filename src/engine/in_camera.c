@@ -384,6 +384,8 @@ void func_00246460(void)
     cam_snapto.value = !cam_snapto.value;
 }
 
+INCLUDE_RODATA("asm/nonmatchings/engine/in_camera", D_00388E50);
+
 INCLUDE_RODATA("asm/nonmatchings/engine/in_camera", D_00388E58);
 
 INCLUDE_RODATA("asm/nonmatchings/engine/in_camera", D_00388E68);

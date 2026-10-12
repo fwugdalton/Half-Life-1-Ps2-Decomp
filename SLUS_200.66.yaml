@@ -70,6 +70,8 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x141578, c, engine/common]
+      - [0x1455D8, c, engine/build]
       - [0x1456F8, c, engine/in_camera]
       - [0x1468C0, c, engine/cdll_int]
       - [0x147660, c, engine/chase]
@@ -158,7 +160,9 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
-      - [0x288E58, .rodata, engine/in_camera]
+      - [0x288AA8, .rodata, engine/common]
+      - [0x288DE0, .rodata, engine/build]
+      - [0x288E50, .rodata, engine/in_camera]
       - [0x289060, .rodata, engine/cdll_int]
       - [0x2891C0, .rodata, engine/chase]
       - [0x289218, .rodata, engine/cl_draw]
