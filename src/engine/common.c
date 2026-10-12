@@ -41,6 +41,21 @@ extern char D_003AB210[1024];   /* va: string */
 extern char D_003AB610[1024];   /* vstr: string */
 extern char com_gamedir[];
 char *strcpy(char *, const char *);
+int strcmp(const char *, const char *);
+char *strstr(const char *, const char *);
+int strcasecmp(const char *, const char *);
+char *func_00244D88(char *s, int maxsize);
+extern char D_00388C40[];       /* "\\" */
+extern char D_003AC218[256];   /* Info_FindLargestKey: largestKey */
+extern char D_00388C68[];       /* "name" */
+extern int (*D_003997CC)(char *, int *); /* WON: obter ticket */
+extern int (*D_003997B0)(void);          /* WON: autenticar */
+extern int D_0033473C;
+extern int D_00334540;
+extern char D_003AC318[9];      /* func_00245420: nome */
+float Sys_FloatTime(void);
+extern int D_003AC210;          /* Info_ValueForKey: valueindex */
+extern char D_003ABA10[4][512]; /* Info_ValueForKey: value */
 void *FS_Open(char *name, char *mode);
 void FS_Close(void *f);
 int func_00222500(void *f, char *fmt, ...); /* FS_FPrintf */
@@ -97,6 +112,7 @@ int MSG_ReadSBits(int numbits);
 int func_00242EB0(void);          /* MSG_ReadOneBit */
 int func_00243120(int numbits);   /* MSG_ReadBitsUInt? */
 #define isupper(c) (D_00397D81[(int)(c)] & 1)
+#define isalpha(c) (D_00397D81[(int)(c)] & 3)
 #define tolower(c) (isupper(c) ? (c) + 32 : (c))
 
 char *Info_Serverinfo(void)
@@ -1770,30 +1786,422 @@ void func_00244950(char *szGameDir)
         strcpy(szGameDir, com_gamedir);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", Info_ValueForKey);
+/* Info_ValueForKey */
+char *Info_ValueForKey(char *s, char *key)
+{
+    char pkey[512];
+    char *o;
+
+    D_003AC210 = (D_003AC210 + 1) % 4;
+    if (*s == '\\')
+        s++;
+    while (1)
+    {
+        o = pkey;
+        while (*s != '\\')
+        {
+            if (!*s)
+                return D_00388B48;
+            *o++ = *s++;
+        }
+        *o = 0;
+        s++;
+
+        o = D_003ABA10[D_003AC210];
+        while (*s != '\\' && *s)
+        {
+            if (!*s)
+                return D_00388B48;
+            *o++ = *s++;
+        }
+        *o = 0;
+
+        if (!strcmp(key, pkey))
+            return D_003ABA10[D_003AC210];
+
+        if (!*s)
+            return D_00388B48;
+        s++;
+    }
+}
 
 INCLUDE_RODATA("asm/nonmatchings/engine/common", D_00388C40);
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_00244AC8);
+/* func_00244AC8 */
+void func_00244AC8(char *s, char *key)
+{
+    char *start;
+    char pkey[512];
+    char value[512];
+    char *o;
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", Info_RemovePrefixedKeys);
+    if (strstr(key, D_00388C40))
+    {
+        Con_Printf("Can't use a key with a \\\n");
+        return;
+    }
+
+    while (1)
+    {
+        start = s;
+        if (*s == '\\')
+            s++;
+        o = pkey;
+        while (*s != '\\')
+        {
+            if (!*s)
+                return;
+            *o++ = *s++;
+        }
+        *o = 0;
+        s++;
+
+        o = value;
+        while (*s != '\\' && *s)
+        {
+            if (!*s)
+                return;
+            *o++ = *s++;
+        }
+        *o = 0;
+
+        if (!strcmp(key, pkey))
+        {
+            strcpy(start, s);
+            return;
+        }
+
+        if (!*s)
+            return;
+    }
+}
+
+/* Info_RemovePrefixedKeys */
+void Info_RemovePrefixedKeys(char *start, char prefix)
+{
+    char *s;
+    char pkey[512];
+    char value[512];
+    char *o;
+
+    s = start;
+
+    while (1)
+    {
+        if (*s == '\\')
+            s++;
+        o = pkey;
+        while (*s != '\\')
+        {
+            if (!*s)
+                return;
+            *o++ = *s++;
+        }
+        *o = 0;
+        s++;
+
+        o = value;
+        while (*s != '\\' && *s)
+        {
+            if (!*s)
+                return;
+            *o++ = *s++;
+        }
+        *o = 0;
+
+        if (pkey[0] == prefix)
+        {
+            func_00244AC8(start, pkey);
+            s = start;
+        }
+
+        if (!*s)
+            return;
+    }
+}
 
 INCLUDE_RODATA("asm/nonmatchings/engine/common", D_00388C68);
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_00244CF0);
+/* Info_IsKeyImportant */
+int func_00244CF0(char *key)
+{
+    if (key[0] == '*')
+        return 1;
+    if (!strcmp(key, D_00388C68))
+        return 1;
+    if (!strcmp(key, "model"))
+        return 1;
+    if (!strcmp(key, "rate"))
+        return 1;
+    if (!strcmp(key, "topcolor"))
+        return 1;
+    if (!strcmp(key, "bottomcolor"))
+        return 1;
+    return 0;
+}
 
+/* Info_FindLargestKey */
+#ifdef NON_MATCHING
+char *func_00244D88(char *s, int maxsize)
+{
+    int largestKeySize;
+    char key[256];
+    char value[256];
+    char *c;
+    int size;
+
+    largestKeySize = 0;
+    D_003AC218[0] = 0;
+
+    if (*s == '\\')
+        s++;
+
+    while (*s)
+    {
+        c = key;
+        while (*s && *s != '\\')
+            *c++ = *s++;
+        *c = 0;
+        size = strlen(key);
+
+        if (!*s)
+            break;
+        s++;
+
+        c = value;
+        while (*s && *s != '\\')
+            *c++ = *s++;
+        *c = 0;
+
+        if (*s)
+            s++;
+
+        size += strlen(value);
+
+        if (size > largestKeySize && !func_00244CF0(key))
+        {
+            largestKeySize = size;
+            strcpy(D_003AC218, key);
+        }
+    }
+
+    return D_003AC218;
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/common", func_00244D88);
+#endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_00244EE0);
+/* Info_SetValueForStarKey */
+void func_00244EE0(char *s, char *key, char *value, int maxsize)
+{
+    char newArray[1024];
+    char *v;
+    char *largekey;
+    int c;
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", Info_SetValueForKey);
+    if (strstr(key, D_00388C40) || strstr(value, D_00388C40))
+    {
+        Con_Printf("Can't use keys or values with a \\\n");
+        return;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", Info_Print);
+    if (strstr(key, "\"") || strstr(value, "\""))
+    {
+        Con_Printf("Can't use keys or values with a \"\n");
+        return;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_00245310);
+    if ((unsigned int)strlen(key) > 63 || (unsigned int)strlen(value) > 63)
+    {
+        Con_Printf("Keys and values must be < 64 characters.\n");
+        return;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_00245408);
+    func_00244AC8(s, key);
+    if (!value || !strlen(value))
+        return;
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_00245420);
+    sprintf(newArray, "\\%s\\%s", key, value);
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", PM_CalcRoll);
+    if ((int)(strlen(newArray) + strlen(s)) >= maxsize)
+    {
+        if (!func_00244CF0(key))
+        {
+            Con_Printf("Info string length exceeded\n");
+            return;
+        }
+
+        do
+        {
+            largekey = func_00244D88(s, maxsize);
+            func_00244AC8(s, largekey);
+        } while ((int)(strlen(newArray) + strlen(s)) >= maxsize && *largekey);
+
+        if (!*largekey)
+        {
+            Con_Printf("Info string length exceeded\n");
+            return;
+        }
+    }
+
+    s += strlen(s);
+    v = newArray;
+    while (*v)
+    {
+        c = (unsigned char)*v++;
+        if (strcasecmp(key, D_00388C68))
+        {
+            c &= 127;
+            if (c < 32 || c > 127)
+                continue;
+            if (!strcasecmp(key, "team"))
+                c = tolower(c);
+        }
+        if (c > 13)
+            *s++ = c;
+    }
+    *s = 0;
+}
+
+/* Info_SetValueForKey */
+void Info_SetValueForKey(char *s, char *key, char *value, int maxsize)
+{
+    if (key[0] == '*')
+    {
+        Con_Printf("Can't set * keys\n");
+        return;
+    }
+
+    func_00244EE0(s, key, value, maxsize);
+}
+
+/* Info_Print */
+void Info_Print(char *s)
+{
+    char key[512];
+    char value[512];
+    char *o;
+    int l;
+
+    if (*s == '\\')
+        s++;
+    while (*s)
+    {
+        o = key;
+        while (*s && *s != '\\')
+            *o++ = *s++;
+
+        l = o - key;
+        if (l < 20)
+        {
+            memset(o, ' ', 20 - l);
+            key[20] = 0;
+        }
+        else
+            *o = 0;
+        Con_Printf(D_00388B40, key);
+
+        if (!*s)
+        {
+            Con_Printf("MISSING VALUE\n");
+            return;
+        }
+
+        o = value;
+        s++;
+        while (*s && *s != '\\')
+            *o++ = *s++;
+        *o = 0;
+
+        if (*s)
+            s++;
+        Con_Printf("%s\n", value);
+    }
+}
+
+/* WON_Authenticate (nome provisório) */
+void func_00245310(void)
+{
+    char buf[2048];
+    int len;
+    float start;
+
+    if (!D_003997CC || !D_003997B0 || D_0033473C)
+    {
+        D_00334540 = 1;
+        return;
+    }
+
+    start = Sys_FloatTime();
+    if (D_003997CC(buf, &len) != 2)
+    {
+        Con_Printf("Trying to authenticate with WON servers\n");
+        if (!D_003997B0() || D_003997CC(buf, &len) != 2)
+        {
+            D_00334540 = 1;
+            return;
+        }
+        Con_Printf("WON Authentication successful\n");
+    }
+
+    D_00334540 = 0;
+    cls[0].connect_time += Sys_FloatTime() - start;
+}
+
+/* COM_EntsForPlayerSlots */
+int func_00245408(int nPlayers)
+{
+    return (nPlayers - 1) * 15 + 800;
+}
+
+/* COM_NormalizeName (nome provisório) */
+char *func_00245420(char *name)
+{
+    char *s;
+    char *p;
+    int i;
+
+    memset(D_003AC318, 0, sizeof(D_003AC318));
+    if (!strlen(name))
+        return "Noname";
+
+    s = name;
+    p = D_003AC318;
+    i = 0;
+    while (*s && i < 8)
+    {
+        if (isalpha(*s))
+        {
+            *p++ = *s;
+            i++;
+        }
+        s++;
+    }
+    *p = 0;
+
+    if (!strlen(D_003AC318))
+        return "Noname";
+    return D_003AC318;
+}
+
+/* PM_CalcRoll */
+float PM_CalcRoll(vec3_t angles, vec3_t velocity, float rollangle, float rollspeed)
+{
+    float sign;
+    float side;
+    float value;
+
+    AngleVectors(angles, pm_forward, pm_right, pm_up);
+
+    side = DotProduct(velocity, pm_right);
+    sign = side < 0 ? -1 : 1;
+    side = __builtin_fabsf(side);
+
+    value = rollangle;
+    if (side < rollspeed)
+        side = side * value / rollspeed;
+    else
+        side = value;
+
+    return side * sign;
+}
