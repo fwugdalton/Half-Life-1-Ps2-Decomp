@@ -86,6 +86,19 @@ typedef struct
 } studiobatch_t;
 extern studiobatch_t D_00439500;
 
+#define STUDIO_BATCHVERTS 74
+extern float D_00439580[2][STUDIO_BATCHVERTS][4];
+extern float D_00439F00[2][STUDIO_BATCHVERTS][4];
+extern float D_0043A880[2][STUDIO_BATCHVERTS][4];
+extern void *D_00331030, *D_00331034, *D_00331038;
+extern int D_0033103C, D_00331044;
+extern int currenttexture;
+int func_0023D5F0(void);
+void func_0023D618(int);
+void func_0023AF68(void);
+void GL_Bind(int texnum);
+void func_002C3C90(void);
+
 typedef struct
 {
     char name[0x104];           /* 0x000 */
@@ -116,7 +129,80 @@ void func_002C3038(void)
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_studio", func_002C3070);
 
+#ifdef NON_MATCHING
+studiobatch_t *func_002C3A80(int count, int texnum)
+{
+    int mode;
+    int done;
+    int n;
+    float *p0, *p1, *p2;
+
+    if (count < 0)
+    {
+        count = -count;
+        mode = 5;
+    }
+    else
+    {
+        mode = 4;
+    }
+
+    done = 0;
+
+    if (D_00439500.count > 0 && D_00439500.texnum == texnum && (n = D_00439500.count + count) < STUDIO_BATCHVERTS)
+    {
+        p0 = D_00439580[D_003342A0][D_00439500.count];
+        p1 = D_0043A880[D_003342A0][D_00439500.count];
+        p2 = D_00439F00[D_003342A0][D_00439500.count];
+        D_00439500.unk0C++;
+        D_00331030 = p0;
+        D_00331034 = p2;
+        D_00331038 = p1;
+        D_00439500.unk10 = (int)p0 | 0x30000000;
+        D_00439500.unk14 = (int)p2 | 0x30000000;
+        D_00439500.unk18 = (int)p1 | 0x30000000;
+        D_0033103C = count;
+        D_00439500.count = n;
+        D_00331044 = mode;
+        if (func_0023D5F0() == 1)
+        {
+            done = 1;
+            func_0023D618(0);
+        }
+    }
+
+    if (!done)
+    {
+        func_002C3C90();
+        if (currenttexture != texnum)
+        {
+            GL_Bind(texnum);
+            func_0023AF68();
+        }
+        p0 = D_00439580[D_003342A0][0];
+        p1 = D_0043A880[D_003342A0][0];
+        p2 = D_00439F00[D_003342A0][0];
+        D_00439500.texnum = texnum;
+        D_00331044 = mode;
+        D_00331030 = p0;
+        D_00331034 = p2;
+        D_00331038 = p1;
+        D_00439500.unk10 = (int)p0 | 0x30000000;
+        D_00439500.unk14 = (int)p2 | 0x30000000;
+        D_00439500.unk18 = (int)p1 | 0x30000000;
+        D_0033103C = count;
+        D_00439500.count = count;
+        D_00439500.unk0C = 0;
+        D_00439500.unk04 = mode;
+        func_0023D618(0);
+    }
+
+    D_00439500.unk0C++;
+    return &D_00439500;
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/gl_studio", func_002C3A80);
+#endif
 
 void func_002C3C90(void)
 {
