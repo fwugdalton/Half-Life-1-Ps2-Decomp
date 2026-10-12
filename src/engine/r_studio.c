@@ -136,6 +136,30 @@ extern vec3_t chromeup[MAXSTUDIOBONES];
 extern vec3_t chromeright[MAXSTUDIOBONES];
 extern vec3_t vright;
 extern int numlights;
+
+/* jogador passado para a estimativa de passo (R_StudioEstimateGait) */
+typedef struct
+{
+    byte pad0[0x64];
+    vec3_t velocity;            /* 0x64 */
+    byte pad70[0x98 - 0x70];
+    int renderframe;            /* 0x98 */
+} studioplayer_t;
+
+/* player_info_t do PS2 (só os campos de passo) */
+typedef struct
+{
+    byte pad0[0x3B0];
+    int gaitsequence;           /* 0x3B0 */
+    float gaitframe;            /* 0x3B4 */
+    float gaityaw;              /* 0x3B8 */
+    vec3_t prevgaitorigin;      /* 0x3BC */
+} studioplayerinfo_t;
+
+extern studioplayerinfo_t *m_pPlayerInfo;
+extern float m_flGaitMovement;
+extern cvar_t cl_gaitestimation;
+extern int r_framecount;
 extern cvar_t r_glowshellfreq;
 extern int g_NormalIndex[MAXSTUDIOVERTS];
 void tri_Color4ub(unsigned char r, unsigned char g, unsigned char b, unsigned char a);
@@ -1811,7 +1835,70 @@ void R_StudioSetupModel(int bodypart)
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", R_StudioDrawModel);
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BFB68);
+void R_StudioEstimateGait(studioplayer_t *pplayer, int clientId)
+{
+    float dt;
+    vec3_t est_velocity;
+
+    dt = cl[clientId].time - cl[clientId].oldtime;
+    if (dt < 0)
+        dt = 0;
+    else if (dt > 1.0f)
+        dt = 1;
+
+    if (dt == 0 || pplayer->renderframe == r_framecount)
+    {
+        m_flGaitMovement = 0;
+        return;
+    }
+
+    if (cl_gaitestimation.value)
+    {
+        VectorSubtract(currententity->origin, m_pPlayerInfo->prevgaitorigin, est_velocity);
+        VectorCopy(currententity->origin, m_pPlayerInfo->prevgaitorigin);
+        m_flGaitMovement = Length(est_velocity);
+        if (dt <= 0 || m_flGaitMovement / dt < 5)
+        {
+            m_flGaitMovement = 0;
+            est_velocity[0] = 0;
+            est_velocity[1] = 0;
+        }
+    }
+    else
+    {
+        VectorCopy(pplayer->velocity, est_velocity);
+        m_flGaitMovement = Length(est_velocity) * dt;
+    }
+
+    if (est_velocity[1] == 0 && est_velocity[0] == 0)
+    {
+        float flYawDiff = currententity->angles[1] - m_pPlayerInfo->gaityaw;
+
+        flYawDiff = flYawDiff - (int)(flYawDiff / 360) * 360.0f;
+        if (flYawDiff > 180)
+            flYawDiff -= 360;
+        if (flYawDiff < -180)
+            flYawDiff += 360;
+
+        if (dt < 0.25f)
+            flYawDiff *= dt * 4;
+        else
+            flYawDiff *= dt;
+
+        m_pPlayerInfo->gaityaw += flYawDiff;
+        m_pPlayerInfo->gaityaw = m_pPlayerInfo->gaityaw - (int)(m_pPlayerInfo->gaityaw / 360) * 360.0f;
+
+        m_flGaitMovement = 0;
+    }
+    else
+    {
+        m_pPlayerInfo->gaityaw = atan2f(est_velocity[1], est_velocity[0]) * (180.0f / M_PI);
+        if (m_pPlayerInfo->gaityaw > 180)
+            m_pPlayerInfo->gaityaw = 180;
+        if (m_pPlayerInfo->gaityaw < -180)
+            m_pPlayerInfo->gaityaw = -180;
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BFEA8);
 

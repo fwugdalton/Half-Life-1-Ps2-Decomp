@@ -1752,3 +1752,7 @@ locallinearlight = 0x00513F50; // size:0x24
 R_LightLambert = 0x2BE780; // type:func
 cl_elights = 0x00475268; // size:0xA00
 R_StudioEntityLight = 0x2C14C8; // type:func
+cl_gaitestimation = 0x003317D0; // size:0x14
+m_pPlayerInfo = 0x004394D4; // size:0x4
+m_flGaitMovement = 0x004394DC; // size:0x4
+R_StudioEstimateGait = 0x2BFB68; // type:func
