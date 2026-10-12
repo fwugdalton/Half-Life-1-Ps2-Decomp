@@ -118,6 +118,13 @@ extern vec3_t r_lightcolor;
 extern cvar_t v_lambert;
 extern int lightgammatable[1024];
 extern int D_00399694;
+
+#define STUDIO_MAXLIGHTS 3
+extern int lightbonecache[MAXSTUDIOBONES];
+extern int r_smodels_total;
+extern int numlights;
+extern struct dlight_s *locallight[];
+extern vec3_t lightbonepos[MAXSTUDIOBONES][STUDIO_MAXLIGHTS];
 void QuaternionSlerp(float p[4], float q[4], float t, float qt[4]);
 float func_002D7F00(float x);
 
@@ -1073,7 +1080,29 @@ void R_StudioLighting(float *lv, int bone, int flags, vec3_t normal)
     *lv = illum * 0.0006516779f;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BE5A0);
+void R_LightStrength(int bone, float *vert, float (*light)[4])
+{
+    int i;
+    vec3_t lpos;
+
+    if (lightbonecache[bone] != r_smodels_total)
+    {
+        for (i = 0; i < numlights; i++)
+        {
+            lpos[0] = ((float *)locallight[i])[0] - lighttransform[bone][0][3];
+            lpos[1] = ((float *)locallight[i])[1] - lighttransform[bone][1][3];
+            lpos[2] = ((float *)locallight[i])[2] - lighttransform[bone][2][3];
+            VectorIRotate(lpos, lighttransform[bone], lightbonepos[bone][i]);
+        }
+        lightbonecache[bone] = r_smodels_total;
+    }
+
+    for (i = 0; i < numlights; i++)
+    {
+        VectorSubtract(vert, lightbonepos[bone][i], light[i]);
+        light[i][3] = 0;
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BE780);
 
