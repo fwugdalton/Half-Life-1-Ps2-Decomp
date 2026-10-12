@@ -5,6 +5,7 @@
 #include "engine/server.h"
 #include "engine/eiface.h"
 #include "engine/progdefs.h"
+#include "engine/client.h"
 
 /* sistema do PS2: erros, tempo, init do jogo e carga das "DLLs" (sys_dll.c/sys_dll2.c do HL) */
 
@@ -620,3 +621,323 @@ void func_002C6A20(void)
     memset(pextdll, 0, sizeof(*pextdll));
     pextdll->lDLLHandle = 1;
 }
+
+/* rede do PS2: só existe o loopback (net_ws.c do HL reduzido, no mesmo arquivo:
+   a tabela do switch de func_002C6B18 só fica alinhada em 16 contando desde 0x295560) */
+
+#define NA_LOOPBACK 1
+#define MAX_LOOPBACK 4
+
+typedef struct loopmsg_s
+{
+    byte data[0x3720];
+    int datalen;                /* 0x3720 */
+    int sock;                   /* 0x3724 */
+} loopmsg_t;                    /* 0x3728 */
+
+typedef struct loopback_s
+{
+    loopmsg_t msgs[MAX_LOOPBACK];
+    int get;                    /* 0xDCA0 */
+    int send;                   /* 0xDCA4 */
+} loopback_t;                   /* 0xDCA8 */
+
+int vsprintf(char *buf, const char *fmt, va_list ap);
+int sprintf(char *buf, const char *fmt, ...);
+int strlen(const char *s);
+void *memset(void *, int, unsigned int);
+void *memcpy(void *, const void *, unsigned int);
+void func_00222500(void *f, char *fmt, ...);
+void Log_Printf(const char *fmt, ...);
+int COM_CheckParm(char *parm);
+int Q_atoi(char *str);
+
+extern int D_004E2BD4;
+extern char D_0043B9C8[];
+extern char D_0043BDC8[1024] __attribute__((aligned(8)));
+extern char D_0043C1D0[];
+extern char D_0043C210[];
+extern loopback_t D_0043C250[];
+extern int D_00334738;
+extern int D_0033473C;
+extern byte D_0053DE38[];
+extern int gfNoMasterServer;
+extern cvar_t developer;
+extern netadr_t net_from;
+extern sizebuf_t net_message;
+
+void NET_Shutdown(void)
+{
+    D_004E2BD4 = 0;
+}
+
+void func_002C6AA0(void *f, char *fmt, ...)
+{
+    va_list argptr;
+
+    va_start(argptr, fmt);
+    vsprintf(D_0043B9C8, fmt, argptr);
+    va_end(argptr);
+    func_00222500(f, "%s", D_0043B9C8);
+}
+
+void func_002C6B18(int level, char *fmt, ...)
+{
+    va_list argptr;
+
+    if (level == 5 && svs.maxclients >= 2)
+    {
+        va_start(argptr, fmt);
+        vsprintf(D_0043BDC8, fmt, argptr);
+        va_end(argptr);
+        Log_Printf("%s", D_0043BDC8);
+        return;
+    }
+    if (developer.value == 0.0f)
+        return;
+    switch (level)
+    {
+    case 0:
+        strcpy(D_0043BDC8, "NOTE:  ");
+        break;
+    case 2:
+        if (developer.value < 2.0f)
+            return;
+    case 1:
+        D_0043BDC8[0] = 0;
+        break;
+    case 3:
+        strcpy(D_0043BDC8, "WARNING:  ");
+        break;
+    case 4:
+        strcpy(D_0043BDC8, "ERROR:  ");
+        break;
+    }
+    va_start(argptr, fmt);
+    vsprintf(D_0043BDC8 + strlen(D_0043BDC8), fmt, argptr);
+    va_end(argptr);
+    Con_Printf("%s", D_0043BDC8);
+}
+
+qboolean NET_CompareAdr(netadr_t a, netadr_t b)
+{
+    if (a.type != b.type)
+        return false;
+    return *(int *)a.ip == *(int *)b.ip;
+}
+
+#ifdef NON_MATCHING
+qboolean func_002C6CF8(netadr_t a, netadr_t b)
+{
+    return NET_CompareAdr(a, b);
+}
+#else
+INCLUDE_ASM("asm/nonmatchings/engine/sys_ps2", func_002C6CF8);
+#endif
+
+#ifdef NON_MATCHING
+qboolean func_002C6D28(netadr_t a, netadr_t b)
+{
+    return NET_CompareAdr(a, b);
+}
+#else
+INCLUDE_ASM("asm/nonmatchings/engine/sys_ps2", func_002C6D28);
+#endif
+
+qboolean func_002C6D58(netadr_t adr)
+{
+    return adr.type == NA_LOOPBACK;
+}
+
+#ifdef NON_MATCHING
+qboolean func_002C6D78(netadr_t a, netadr_t b)
+{
+    return NET_CompareAdr(a, b);
+}
+#else
+INCLUDE_ASM("asm/nonmatchings/engine/sys_ps2", func_002C6D78);
+#endif
+
+INCLUDE_RODATA("asm/nonmatchings/engine/sys_ps2", D_003957B8);
+
+INCLUDE_RODATA("asm/nonmatchings/engine/sys_ps2", D_003957C8);
+
+INCLUDE_RODATA("asm/nonmatchings/engine/sys_ps2", D_003957D8);
+
+INCLUDE_RODATA("asm/nonmatchings/engine/sys_ps2", D_003957E0);
+
+INCLUDE_RODATA("asm/nonmatchings/engine/sys_ps2", D_003957E8);
+
+INCLUDE_RODATA("asm/nonmatchings/engine/sys_ps2", D_003957F8);
+
+INCLUDE_RODATA("asm/nonmatchings/engine/sys_ps2", D_00395800);
+
+char *NET_AdrToString(netadr_t a)
+{
+    memset(D_0043C1D0, 0, 64);
+    if (a.type == NA_LOOPBACK)
+        sprintf(D_0043C1D0, "loopback");
+    return D_0043C1D0;
+}
+
+char *func_002C6E08(netadr_t a)
+{
+    memset(D_0043C210, 0, 64);
+    if (a.type == NA_LOOPBACK)
+        sprintf(D_0043C210, "loopback");
+    return D_0043C210;
+}
+
+qboolean NET_StringToAdr(char *s, netadr_t *a)
+{
+    memset(a, 0, sizeof(*a));
+    a->type = NA_LOOPBACK;
+    return true;
+}
+
+qboolean NET_IsLocalAddress(netadr_t adr)
+{
+    return adr.type == NA_LOOPBACK;
+}
+
+qboolean func_002C6EC8(int sock, netadr_t *from, sizebuf_t *message)
+{
+    int i;
+    loopback_t *loop;
+
+    loop = &D_0043C250[sock];
+
+    if (loop->send - loop->get > MAX_LOOPBACK)
+        loop->get = loop->send - MAX_LOOPBACK;
+
+    if (loop->get >= loop->send)
+        return false;
+
+    i = loop->get & (MAX_LOOPBACK - 1);
+    loop->get++;
+
+    memcpy(message->data, loop->msgs[i].data, loop->msgs[i].datalen);
+    message->cursize = loop->msgs[i].datalen;
+    memset(from, 0, sizeof(*from));
+    from->type = NA_LOOPBACK;
+    *(int *)from->ip = loop->msgs[i].sock;
+    return true;
+}
+
+void func_002C6FB8(int sock, int length, void *data, netadr_t to, int id)
+{
+    int i;
+    loopback_t *loop;
+
+    loop = &D_0043C250[id];
+
+    i = loop->send & (MAX_LOOPBACK - 1);
+    loop->send++;
+
+    memcpy(loop->msgs[i].data, data, length);
+    loop->msgs[i].datalen = length;
+    loop->msgs[i].sock = sock;
+}
+
+qboolean NET_GetPacket(int sock)
+{
+    return func_002C6EC8(sock, &net_from, &net_message);
+}
+
+#ifdef NON_MATCHING
+void NET_SendPacket(int sock, int length, void *data, netadr_t to, int id)
+{
+    func_002C6FB8(sock, length, data, to, id);
+}
+#else
+INCLUDE_ASM("asm/nonmatchings/engine/sys_ps2", NET_SendPacket);
+#endif
+
+void func_002C70A0(void)
+{
+}
+
+void func_002C70A8(int multiplayer)
+{
+    D_0033473C = 1;
+    D_00334738 = 1;
+}
+
+void func_002C7168(void);
+void func_002C7268(void);
+
+#ifdef NON_MATCHING
+void NET_Init(void)
+{
+    Cmd_AddCommand("maxplayers", func_002C7168);
+    Cmd_AddCommand("numclients", func_002C7268);
+
+    net_message.data = D_0053DE38;
+    net_message.maxsize = 0x3714;
+
+    D_00334738 = 1;
+    D_0033473C = 1;
+
+    if (COM_CheckParm("-nomaster"))
+    {
+        Con_Printf("Master server communication disabled.\n");
+        gfNoMasterServer = 1;
+    }
+
+    Con_DPrintf("Base networking initialized.\n");
+}
+#else
+INCLUDE_ASM("asm/nonmatchings/engine/sys_ps2", NET_Init);
+#endif
+
+/* MaxPlayers_f */
+void func_002C7168(void)
+{
+    int n;
+
+    if (Cmd_Argc() != 2)
+    {
+        Con_Printf("\"maxplayers\" is \"%u\"\n", svs.maxclients);
+        return;
+    }
+
+    if (sv.active)
+    {
+        Con_Printf("maxplayers cannot be changed while a server is running.\n");
+        return;
+    }
+
+    n = Q_atoi(Cmd_Argv(1));
+    if (n < 1)
+        n = 1;
+    if (n > svs.maxclientslimit)
+    {
+        n = svs.maxclientslimit;
+        Con_Printf("\"maxplayers\" set to \"%u\"\n", n);
+    }
+
+    svs.maxclients = n;
+
+    if (n == 1)
+        Cvar_Set("deathmatch", "0");
+    else
+        Cvar_Set("deathmatch", "1");
+}
+
+/* NumClients_f */
+void func_002C7268(void)
+{
+    if (Cmd_Argc() == 2)
+    {
+        cl_numlocal = Q_atoi(Cmd_Argv(1));
+        if (cl_numlocal < 1)
+            cl_numlocal = 1;
+    }
+    else
+    {
+        Con_Printf("\"Num Clients\" is \"%u\"\n", cl_numlocal);
+    }
+}
+
+/* a rodata do próximo arquivo começa alinhada em 16 */
+__asm__(".section .rodata\n.align 4\n.section .text");
