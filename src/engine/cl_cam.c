@@ -25,8 +25,6 @@ void MSG_WriteCoord(sizebuf_t *sb, float f);
 struct model_s *Mod_ForName(char *name, qboolean crash);
 void Mod_TouchModel(struct model_s *mod);
 
-INCLUDE_RODATA("asm/nonmatchings/engine/cl_cam", D_0038A698);
-
 INCLUDE_RODATA("asm/nonmatchings/engine/cl_cam", D_0038A6A8);
 
 INCLUDE_RODATA("asm/nonmatchings/engine/cl_cam", D_0038A6B0);
