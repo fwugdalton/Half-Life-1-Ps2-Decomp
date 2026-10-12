@@ -1744,3 +1744,4 @@ R_StudioMergeBones = 0x2BD568; // type:func
 r_glowshellfreq = 0x003335B8; // size:0x14
 g_NormalIndex = 0x0052D778; // size:0x2000
 R_StudioSetupGlowShell = 0x2BC240; // type:func
+R_StudioSetUpTransform = 0x2BC520; // type:func

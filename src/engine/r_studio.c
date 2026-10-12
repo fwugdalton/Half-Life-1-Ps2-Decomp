@@ -1058,7 +1058,81 @@ void R_StudioSetupGlowShell(vec3_t *pstudioverts, float (*pout)[4])
     tri_Color4ub(currententity->rendercolor.r, currententity->rendercolor.g, currententity->rendercolor.b, 255);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BC520);
+void R_StudioSetUpTransform(int trivial_accept, int clientId)
+{
+    int i;
+    vec3_t angles;
+    vec3_t modelpos;
+
+    for (i = 0; i < 3; i++)
+        modelpos[i] = currententity->origin[i];
+
+    angles[2] = currententity->angles[2];
+    angles[0] = currententity->angles[0];
+    angles[1] = currententity->angles[1];
+
+    if (currententity->movetype == 4)
+    {
+        float f = 0;
+        float d;
+
+        if ((cl[clientId].time < currententity->animtime + 1.0f) &&
+            (currententity->animtime != currententity->prevanimtime))
+        {
+            f = (cl[clientId].time - currententity->animtime) / (currententity->animtime - currententity->prevanimtime);
+        }
+
+        if (r_dointerp)
+            f = f - 1.0f;
+        else
+            f = 0;
+
+        for (i = 0; i < 3; i++)
+            modelpos[i] += (currententity->origin[i] - currententity->prevorigin[i]) * f;
+
+        if (pstudiohdr->numattachments == 0 && (currententity->unk194 & 0x300))
+        {
+            if (currententity->unk194 & 0x100)
+                VectorCopy(modelpos, cl[0].viewattachment);
+            if (currententity->unk194 & 0x200)
+                VectorCopy(modelpos, cl[1].viewattachment);
+        }
+
+        for (i = 0; i < 3; i++)
+        {
+            float ang1, ang2;
+
+            ang1 = currententity->angles[i];
+            ang2 = currententity->prevangles[i];
+
+            d = ang1 - ang2;
+            if (d > 180)
+                d -= 360;
+            else if (d < -180)
+                d += 360;
+
+            angles[i] += d * f;
+        }
+    }
+    else
+    {
+        if (pstudiohdr->numattachments == 0 && (currententity->unk194 & 0x300))
+        {
+            if (currententity->unk194 & 0x100)
+                VectorCopy(modelpos, cl[0].viewattachment);
+            if (currententity->unk194 & 0x200)
+                VectorCopy(modelpos, cl[1].viewattachment);
+        }
+    }
+
+
+    angles[0] = -angles[0];
+    AngleMatrix(angles, D_0053CF68);
+
+    D_0053CF68[0][3] = modelpos[0];
+    D_0053CF68[1][3] = modelpos[1];
+    D_0053CF68[2][3] = modelpos[2];
+}
 
 void VectorIRotate(vec3_t in1, float in2[3][4], vec3_t out)
 {
