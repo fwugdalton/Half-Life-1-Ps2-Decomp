@@ -16,7 +16,7 @@ typedef struct cl_entity_s
     byte prevcontroller[4];     /* 0x08 */
     byte prevblending[2];       /* 0x0C */
     byte mouthopen;             /* 0x0E */
-    byte padF;
+    byte sndcount;              /* 0x0F: mouth.sndcount */
     int rendermode;             /* 0x10 */
     int renderamt;              /* 0x14 */
     int renderfx;               /* 0x18 */
@@ -57,7 +57,7 @@ typedef struct cl_entity_s
     byte pad18C[0x194 - 0x18C];
     int unk194;                 /* 0x194: bits 0x100/0x200 = viewmodel de qual jogador */
     int trivial_accept;         /* 0x198 */
-    byte pad19C[0x1A0 - 0x19C];
+    int sndavg;                 /* 0x19C: mouth.sndavg */
 } cl_entity_t; /* 0x1A0 */
 
 #endif
