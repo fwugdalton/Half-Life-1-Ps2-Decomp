@@ -16,7 +16,8 @@ extern cvar_t chase_right;
 extern cvar_t chase_active;
 extern vec3_t D_0046E510;   /* chase_dest */
 
-void func_00247660(void) /* Chase_Init */
+/* Chase_Init */
+void func_00247660(void)
 {
     Cvar_RegisterVariable(&chase_back);
     Cvar_RegisterVariable(&chase_up);
@@ -24,11 +25,13 @@ void func_00247660(void) /* Chase_Init */
     Cvar_RegisterVariable(&chase_active);
 }
 
-void func_002476A8(void) /* Chase_Reset */
+/* Chase_Reset */
+void func_002476A8(void)
 {
 }
 
-void func_002476B0(vec3_t start, vec3_t end, vec3_t impact) /* TraceLine */
+/* TraceLine */
+void func_002476B0(vec3_t start, vec3_t end, vec3_t impact)
 {
     trace_t trace;
 
