@@ -84,11 +84,33 @@ void glVertex3fv(float *v);
 #define FBEAM_SHADEIN 0x40
 #define FBEAM_SHADEOUT 0x80
 
-extern float D_0050F188[NOISE_DIVISIONS]; /* rgNoise */
+extern float D_0050F188[NOISE_DIVISIONS + 1]; /* rgNoise */
 double func_002D78A0(double x, double y); /* fmod */
 struct mnode_s *PVSNode(struct mnode_s *node, vec_t *emins, vec_t *emaxs, int clientId);
 qboolean R_CullBox(vec3_t mins, vec3_t maxs);
 void func_002B5590(float *noise, int divs);
+void func_002B5648(float *noise, int divs, int clientId);
+void func_002B57C8(vec3_t source, vec3_t delta, float width, float scale, float freq, float speed, int segments, int flags);
+void func_002B5DC8(vec3_t source, vec3_t delta, float width, float scale, float freq, float speed, int segments);
+void func_002B61D8(vec3_t source, vec3_t delta, float width, float scale, float freq, float speed, int segments);
+void func_002B6460(vec3_t source, vec3_t delta, float width, float scale, float freq, float speed, int segments);
+void func_002B6770(BEAM *pbeam, int clientId);
+void func_002B6CF0(vec3_t source, vec3_t delta, float width, float amplitude, float freq, float speed, int segments, int clientId);
+float *R_GetAttachmentPoint(int entity, int attachment, int clientId);
+void tri_Color4f(float r, float g, float b, float a);
+
+#define BEAMENT_ATTACHMENT(x) (((x) >> 12) & 0xF)
+#define FBEAM_FADEIN 0x00000004
+#define FBEAM_FADEOUT 0x00000008
+#define FBEAM_SOLID 0x00000020
+#define FBEAM_STARTVISIBLE 0x10000000
+#define FBEAM_ENDVISIBLE 0x20000000
+#define TE_BEAMPOINTS 0
+#define TE_BEAMTORUS 19
+#define TE_BEAMDISK 20
+#define TE_BEAMCYLINDER 21
+
+extern cvar_t D_00331BE8;
 
 particle_t *func_002B1420(vec3_t org, vec3_t vel, float life, int clientId);
 int func_002B74D0(float *start, float *end, int pvsOnly, int clientId);
@@ -1584,7 +1606,7 @@ void func_002B5590(float *noise, int divs)
     }
 }
 
-void func_002B5648(float *noise, int divs)
+void func_002B5648(float *noise, int divs, int clientId)
 {
     int i;
     float freq;
@@ -1618,7 +1640,7 @@ int ScreenTransform(vec3_t point, vec3_t screen)
 }
 
 #ifdef NON_MATCHING
-void func_002B57C8(vec3_t source, vec3_t delta, int segments, int flags, float width, float scale, float freq, float speed)
+void func_002B57C8(vec3_t source, vec3_t delta, float width, float scale, float freq, float speed, int segments, int flags)
 {
     int i, noiseIndex, noiseStep;
     float div, length, fraction, factor, vLast, vStep, brightness;
@@ -1756,7 +1778,7 @@ void func_002B57C8(vec3_t source, vec3_t delta, int segments, int flags, float w
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B57C8);
 #endif
 
-void func_002B5DC8(vec3_t source, vec3_t delta, int segments, float width, float scale, float freq, float speed)
+void func_002B5DC8(vec3_t source, vec3_t delta, float width, float scale, float freq, float speed, int segments)
 {
     int i, noiseIndex, noiseStep;
     float div, length, fraction, factor, vLast, vStep;
@@ -1842,7 +1864,7 @@ void func_002B5DC8(vec3_t source, vec3_t delta, int segments, float width, float
 }
 
 #ifdef NON_MATCHING
-void func_002B61D8(vec3_t source, vec3_t delta, int segments, float width, float scale, float freq, float speed)
+void func_002B61D8(vec3_t source, vec3_t delta, float width, float scale, float freq, float speed, int segments)
 {
     int i;
     float div, length, fraction, w, vLast, vStep;
@@ -1910,7 +1932,7 @@ void func_002B61D8(vec3_t source, vec3_t delta, int segments, float width, float
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B61D8);
 #endif
 
-void func_002B6460(vec3_t source, vec3_t delta, int segments, float width, float scale, float freq, float speed)
+void func_002B6460(vec3_t source, vec3_t delta, float width, float scale, float freq, float speed, int segments)
 {
     int i;
     float div, length, fraction, vLast, vStep;
@@ -2128,7 +2150,7 @@ void func_002B6770(BEAM *pbeam, int clientId)
 }
 
 #ifdef NON_MATCHING
-void func_002B6CF0(vec3_t source, vec3_t delta, int segments, int clientId, float width, float amplitude, float freq, float speed)
+void func_002B6CF0(vec3_t source, vec3_t delta, float width, float amplitude, float freq, float speed, int segments, int clientId)
 {
     int i, j, noiseIndex, noiseStep;
     float div, length, fraction, factor, vLast, vStep;
@@ -2324,7 +2346,146 @@ int func_002B74D0(float *start, float *end, int pvsOnly, int clientId)
 
 /* jump tables do gcc são alinhadas em 16 */
 __asm__(".section .rodata\n.align 4\n.section .text");
-INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B75F0);
+void func_002B75F0(BEAM *pbeam, float frametime, int clientId)
+{
+    model_t *sprite;
+    int idx;
+    particle_t *p;
+    vec3_t org, vel;
+    float len;
+
+    if (pbeam->modelIndex < 0)
+    {
+        pbeam->die = cl[clientId].time;
+        return;
+    }
+
+    sprite = cl[clientId].model_precache[pbeam->modelIndex];
+    if (!sprite)
+        return;
+
+    if (pbeam->flags & FBEAM_SOLID)
+        tri_RenderMode(kRenderNormal);
+    else
+        tri_RenderMode(kRenderTransAdd);
+
+    pbeam->freq += frametime;
+
+    D_0050F188[0] = 0;
+    D_0050F188[NOISE_DIVISIONS] = 0;
+    if (pbeam->amplitude != 0)
+    {
+        if (pbeam->flags & FBEAM_SINENOISE)
+            func_002B5648(D_0050F188, NOISE_DIVISIONS, clientId);
+        else
+            func_002B5590(D_0050F188, NOISE_DIVISIONS);
+    }
+
+    if (pbeam->flags & (FBEAM_STARTENTITY | FBEAM_ENDENTITY))
+    {
+        if (pbeam->flags & FBEAM_STARTENTITY)
+        {
+            idx = BEAMENT_ENTITY(pbeam->startEntity);
+            if (cl_entities[clientId][idx].model &&
+                (!pbeam->pFollowModel || pbeam->pFollowModel == cl_entities[clientId][idx].model))
+            {
+                float *attachment = R_GetAttachmentPoint(idx, BEAMENT_ATTACHMENT(pbeam->startEntity), clientId);
+                VectorCopy(attachment, pbeam->source);
+                pbeam->flags |= FBEAM_STARTVISIBLE;
+                if (!pbeam->pFollowModel)
+                    pbeam->pFollowModel = cl_entities[clientId][idx].model;
+            }
+            else if (!(pbeam->flags & FBEAM_FOREVER))
+            {
+                pbeam->flags &= ~FBEAM_STARTENTITY;
+            }
+        }
+
+        if (pbeam->flags & FBEAM_ENDENTITY)
+        {
+            idx = BEAMENT_ENTITY(pbeam->endEntity);
+            if (cl_entities[clientId][idx].model)
+            {
+                float *attachment = R_GetAttachmentPoint(idx, BEAMENT_ATTACHMENT(pbeam->endEntity), clientId);
+                VectorCopy(attachment, pbeam->target);
+                pbeam->flags |= FBEAM_ENDVISIBLE;
+            }
+            else
+            {
+                if (!(pbeam->flags & FBEAM_FOREVER))
+                {
+                    pbeam->flags &= ~FBEAM_ENDENTITY;
+                    pbeam->die = cl[clientId].time;
+                }
+                return;
+            }
+
+            if (!(pbeam->flags & FBEAM_ENDVISIBLE))
+                return;
+        }
+
+        if ((pbeam->flags & (FBEAM_STARTENTITY | FBEAM_STARTVISIBLE)) == FBEAM_STARTENTITY)
+            return;
+
+        VectorSubtract(pbeam->target, pbeam->source, pbeam->delta);
+        if (pbeam->amplitude >= 0.50f)
+            pbeam->segments = Length(pbeam->delta) * 0.25f + 3;
+        else
+            pbeam->segments = Length(pbeam->delta) * 0.075f + 3;
+    }
+
+    if (pbeam->type == TE_BEAMPOINTS && !func_002B74D0(pbeam->source, pbeam->target, 0, clientId))
+        return;
+
+    if (!tri_SpriteTexture(sprite, (int)(pbeam->frame + cl[clientId].time * pbeam->frameRate) % pbeam->frameCount))
+        return;
+
+    if ((pbeam->flags & FBEAM_SINENOISE) && D_00331BE8.value > 0)
+    {
+        VectorMA(pbeam->target, D_00331BE8.value * pbeam->amplitude * sinf(pbeam->freq * 10), vup, org);
+        VectorMA(org, D_00331BE8.value * pbeam->amplitude * cosf(pbeam->freq * 10), vright, org);
+        VectorSubtract(pbeam->source, org, vel);
+        len = Length(vel);
+        if (len != 0)
+            VectorScale(vel, 1000 / len, vel);
+        p = func_002B1420(org, vel, len * 0.001f, clientId);
+        if (p)
+            p->color = 7;
+    }
+
+    pbeam->t = pbeam->freq + (pbeam->die - cl[clientId].time);
+    if (pbeam->t != 0)
+        pbeam->t = 1.0f - pbeam->freq / pbeam->t;
+
+    if (pbeam->flags & FBEAM_FADEIN)
+        tri_Color4f(pbeam->r, pbeam->g, pbeam->b, pbeam->brightness * pbeam->t);
+    else if (pbeam->flags & FBEAM_FADEOUT)
+        tri_Color4f(pbeam->r, pbeam->g, pbeam->b, pbeam->brightness * (1.0f - pbeam->t));
+    else
+        tri_Color4f(pbeam->r, pbeam->g, pbeam->b, pbeam->brightness);
+
+    switch (pbeam->type)
+    {
+    case TE_BEAMTORUS:
+        func_002B5DC8(pbeam->source, pbeam->delta, pbeam->width, pbeam->amplitude, pbeam->freq, pbeam->speed, pbeam->segments);
+        break;
+    case TE_BEAMDISK:
+        func_002B61D8(pbeam->source, pbeam->delta, pbeam->width, pbeam->amplitude, pbeam->freq, pbeam->speed, pbeam->segments);
+        break;
+    case TE_BEAMCYLINDER:
+        func_002B6460(pbeam->source, pbeam->delta, pbeam->width, pbeam->amplitude, pbeam->freq, pbeam->speed, pbeam->segments);
+        break;
+    case TE_BEAMPOINTS:
+        func_002B57C8(pbeam->source, pbeam->delta, pbeam->width, pbeam->amplitude, pbeam->freq, pbeam->speed, pbeam->segments, pbeam->flags);
+        break;
+    case TE_BEAMFOLLOW:
+        func_002B6770(pbeam, clientId);
+        break;
+    case TE_BEAMRING:
+        func_002B6CF0(pbeam->source, pbeam->delta, pbeam->width, pbeam->amplitude, pbeam->freq, pbeam->speed, pbeam->segments, clientId);
+        break;
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B7CA8);
 
@@ -2333,3 +2494,6 @@ INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B7E98);
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B82F0);
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B8C18);
+
+/* jtbl do gcc termina antes do fim da seção; alinha como o original */
+__asm__(".section .rodata\n.align 4\n.section .text");
