@@ -94,6 +94,7 @@ void *memcpy(void *dst, const void *src, unsigned int n);
 void Mem_Free(void *p);
 int func_002E4560(const void *a, const void *b, int n);
 int strcasecmp(const char *a, const char *b);
+int abs(int x);
 void Con_Printf(const char *fmt, ...);
 void GL_Bind(int texnum);
 
@@ -284,7 +285,66 @@ INCLUDE_RODATA("asm/nonmatchings/engine/r_studio", D_00394FA0);
 
 INCLUDE_RODATA("asm/nonmatchings/engine/r_studio", D_00394FA8);
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", R_StudioCalcBoneAdj);
+void R_StudioCalcBoneAdj(float dadt, float *adj, byte *pcontroller1, byte *pcontroller2, byte mouthopen)
+{
+    int i, j;
+    float value;
+    mstudiobonecontroller_t *pbonecontroller;
+
+    pbonecontroller = (mstudiobonecontroller_t *)((byte *)pstudiohdr + pstudiohdr->bonecontrollerindex);
+
+    for (j = 0; j < pstudiohdr->numbonecontrollers; j++)
+    {
+        i = pbonecontroller[j].index;
+        if (i <= 3)
+        {
+            if (pbonecontroller[j].type & STUDIO_RLOOP)
+            {
+                if (abs(pcontroller1[i] - pcontroller2[i]) > 128)
+                {
+                    int a, b;
+                    a = (pcontroller1[j] + 128) % 256;
+                    b = (pcontroller2[j] + 128) % 256;
+                    value = ((a * dadt) + (b * (1.0f - dadt)) - 128) * (360.0f / 256.0f) + pbonecontroller[j].start;
+                }
+                else
+                {
+                    value = (pcontroller1[i] * dadt + pcontroller2[i] * (1.0f - dadt)) * (360.0f / 256.0f) + pbonecontroller[j].start;
+                }
+            }
+            else
+            {
+                value = (pcontroller1[i] * dadt + pcontroller2[i] * (1.0f - dadt)) * (1.0f / 255.0f);
+                if (value < 0)
+                    value = 0;
+                if (value > 1.0f)
+                    value = 1.0f;
+                value = (1.0f - value) * pbonecontroller[j].start + value * pbonecontroller[j].end;
+            }
+        }
+        else
+        {
+            value = mouthopen / 64.0f;
+            if (value > 1.0f)
+                value = 1.0f;
+            value = (1.0f - value) * pbonecontroller[j].start + value * pbonecontroller[j].end;
+        }
+
+        switch (pbonecontroller[j].type & STUDIO_TYPES)
+        {
+        case STUDIO_XR:
+        case STUDIO_YR:
+        case STUDIO_ZR:
+            adj[j] = value * (M_PI * (1.0f / 180.0f));
+            break;
+        case STUDIO_X:
+        case STUDIO_Y:
+        case STUDIO_Z:
+            adj[j] = value;
+            break;
+        }
+    }
+}
 
 void R_StudioCalcBoneQuaternion(int frame, float s, mstudiobone_t *pbone, mstudioanim_t *panim, float *adj, float *q)
 {
