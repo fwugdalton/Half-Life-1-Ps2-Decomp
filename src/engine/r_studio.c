@@ -286,9 +286,123 @@ INCLUDE_RODATA("asm/nonmatchings/engine/r_studio", D_00394FA8);
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", R_StudioCalcBoneAdj);
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", R_StudioCalcBoneQuaternion);
+void R_StudioCalcBoneQuaternion(int frame, float s, mstudiobone_t *pbone, mstudioanim_t *panim, float *adj, float *q)
+{
+    int j, k;
+    float q1[4], q2[4];
+    vec3_t angle1, angle2;
+    mstudioanimvalue_t *panimvalue;
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", R_StudioCalcBonePosition);
+    for (j = 0; j < 3; j++)
+    {
+        if (panim->offset[j + 3] == 0)
+        {
+            angle2[j] = angle1[j] = pbone->value[j + 3];
+        }
+        else
+        {
+            panimvalue = (mstudioanimvalue_t *)((byte *)panim + panim->offset[j + 3]);
+            k = frame;
+            if (panimvalue->num.total < panimvalue->num.valid)
+                k = 0;
+            while (panimvalue->num.total <= k)
+            {
+                k -= panimvalue->num.total;
+                panimvalue += panimvalue->num.valid + 1;
+                if (panimvalue->num.total < panimvalue->num.valid)
+                    k = 0;
+            }
+
+            if (panimvalue->num.valid > k)
+            {
+                angle1[j] = panimvalue[k + 1].value;
+
+                if (panimvalue->num.valid > k + 1)
+                {
+                    angle2[j] = panimvalue[k + 2].value;
+                }
+                else
+                {
+                    if (panimvalue->num.total > k + 1)
+                        angle2[j] = angle1[j];
+                    else
+                        angle2[j] = panimvalue[panimvalue->num.valid + 2].value;
+                }
+            }
+            else
+            {
+                angle1[j] = panimvalue[panimvalue->num.valid].value;
+                if (panimvalue->num.total > k + 1)
+                    angle2[j] = angle1[j];
+                else
+                    angle2[j] = panimvalue[panimvalue->num.valid + 2].value;
+            }
+            angle1[j] = pbone->value[j + 3] + angle1[j] * pbone->scale[j + 3];
+            angle2[j] = pbone->value[j + 3] + angle2[j] * pbone->scale[j + 3];
+        }
+
+        if (pbone->bonecontroller[j + 3] != -1)
+        {
+            angle1[j] += adj[pbone->bonecontroller[j + 3]];
+            angle2[j] += adj[pbone->bonecontroller[j + 3]];
+        }
+    }
+
+    if (!VectorCompare(angle1, angle2))
+    {
+        AngleQuaternion(angle1, q1);
+        AngleQuaternion(angle2, q2);
+        QuaternionSlerp(q1, q2, s, q);
+    }
+    else
+    {
+        AngleQuaternion(angle1, q);
+    }
+}
+
+void R_StudioCalcBonePosition(int frame, float s, mstudiobone_t *pbone, mstudioanim_t *panim, float *adj, float *pos)
+{
+    int j, k;
+    mstudioanimvalue_t *panimvalue;
+
+    for (j = 0; j < 3; j++)
+    {
+        pos[j] = pbone->value[j];
+        if (panim->offset[j] != 0)
+        {
+            panimvalue = (mstudioanimvalue_t *)((byte *)panim + panim->offset[j]);
+
+            k = frame;
+            if (panimvalue->num.total < panimvalue->num.valid)
+                k = 0;
+
+            while (panimvalue->num.total <= k)
+            {
+                k -= panimvalue->num.total;
+                panimvalue += panimvalue->num.valid + 1;
+                if (panimvalue->num.total < panimvalue->num.valid)
+                    k = 0;
+            }
+
+            if (panimvalue->num.valid > k)
+            {
+                if (panimvalue->num.valid > k + 1)
+                    pos[j] += (panimvalue[k + 1].value * (1.0f - s) + s * panimvalue[k + 2].value) * pbone->scale[j];
+                else
+                    pos[j] += panimvalue[k + 1].value * pbone->scale[j];
+            }
+            else
+            {
+                if (panimvalue->num.total <= k + 1)
+                    pos[j] += (panimvalue[panimvalue->num.valid].value * (1.0f - s) + s * panimvalue[panimvalue->num.valid + 2].value) * pbone->scale[j];
+                else
+                    pos[j] += panimvalue[panimvalue->num.valid].value * pbone->scale[j];
+            }
+        }
+        if (pbone->bonecontroller[j] != -1)
+            pos[j] += adj[pbone->bonecontroller[j]];
+    }
+}
 
 void R_StudioSlerpBones(float q1[][4], float pos1[][3], float q2[][4], float pos2[][3], float s)
 {
