@@ -10,6 +10,7 @@ void *memset(void *, int, unsigned int);
 int sprintf(char *, const char *, ...);
 int vsprintf(char *, const char *, va_list);
 char *strcat(char *, const char *);
+int strlen(const char *);
 char *strncpy(char *, const char *, unsigned int);
 extern char D_003A9D90[128];     /* COM_BinPrintf: szReturn */
 extern char D_003A9E10[1024];    /* COM_ExplainDisconnection: string */
@@ -62,6 +63,7 @@ int MSG_ReadByte(void);
 int MSG_ReadShort(void);
 float MSG_ReadFloat(void);
 void *memcpy(void *, const void *, unsigned int);
+void *Hunk_AllocName(int size, char *name);
 int MSG_ReadBits(int numbits);
 int MSG_ReadByteBits(int numbits);
 int MSG_ReadSBits(int numbits);
@@ -1372,23 +1374,136 @@ void MSG_ReadDeltaUsercmd(usercmd_t *move, usercmd_t *from)
 
 INCLUDE_RODATA("asm/nonmatchings/engine/common", D_00388B48);
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", SZ_Alloc);
+void SZ_Alloc(sizebuf_t *buf, int startsize)
+{
+    if (startsize < 256)
+        startsize = 256;
+    buf->data = Hunk_AllocName(startsize, "sizebuf");
+    buf->maxsize = startsize;
+    buf->cursize = 0;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", SZ_Clear);
+void SZ_Clear(sizebuf_t *buf)
+{
+    buf->cursize = 0;
+    buf->overflowed = 0;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_00243DC8);
+/* SZ_GetSpace */
+void *func_00243DC8(sizebuf_t *buf, int length)
+{
+    void *data;
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", SZ_Write);
+    if (buf->cursize + length > buf->maxsize)
+    {
+        if (!buf->allowoverflow)
+        {
+            if (!buf->maxsize)
+                Sys_Error("SZ_GetSpace:  Tried to write to an uninitialized sizebuf_t");
+            else
+                Sys_Error("SZ_GetSpace: overflow without allowoverflow set");
+        }
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", SZ_Print);
+        if (length > buf->maxsize)
+            Sys_Error("SZ_GetSpace: %i is > full buffer size", length);
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_00243F68);
+        Con_Printf("SZ_GetSpace: overflow\n");
+        SZ_Clear(buf);
+        buf->overflowed = 1;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_00243FA0);
+    data = buf->data + buf->cursize;
+    buf->cursize += length;
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", COM_FileBase);
+    return data;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_00244138);
+void SZ_Write(sizebuf_t *buf, const void *data, int length)
+{
+    memcpy(func_00243DC8(buf, length), data, length);
+}
+
+void SZ_Print(sizebuf_t *buf, const char *data)
+{
+    int len;
+
+    len = Q_strlen(data) + 1;
+
+    if (buf->data[buf->cursize - 1])
+        memcpy((byte *)func_00243DC8(buf, len), data, len);
+    else
+        memcpy((byte *)func_00243DC8(buf, len - 1) - 1, data, len);
+}
+
+/* COM_SkipPath */
+char *func_00243F68(char *pathname)
+{
+    char *last;
+
+    last = pathname;
+    while (*pathname)
+    {
+        if (*pathname == '/')
+            last = pathname + 1;
+        pathname++;
+    }
+    return last;
+}
+
+/* COM_StripExtension */
+void func_00243FA0(char *in, char *out)
+{
+    while (*in && *in != '.')
+        *out++ = *in++;
+    *out = 0;
+}
+
+void COM_FileBase(char *in, char *out)
+{
+    int len, start, end;
+
+    len = strlen(in);
+
+    end = len - 1;
+    while (end && in[end] != '.' && in[end] != '/' && in[end] != '\\')
+        end--;
+
+    if (in[end] != '.')
+        end = len - 1;
+    else
+        end--;
+
+    start = len - 1;
+    while (start >= 0 && in[start] != '/' && in[start] != '\\')
+        start--;
+
+    if (in[start] != '/' && in[start] != '\\')
+        start = 0;
+    else
+        start++;
+
+    len = end - start + 1;
+
+    strncpy(out, &in[start], len);
+    out[len] = 0;
+}
+
+/* COM_DefaultExtension */
+void func_00244138(char *path, char *extension)
+{
+    char *src;
+
+    src = path + strlen(path) - 1;
+
+    while (*src != '/' && src != path)
+    {
+        if (*src == '.')
+            return;
+        src--;
+    }
+
+    strcat(path, extension);
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/common", COM_Parse);
 
