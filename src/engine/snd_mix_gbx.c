@@ -971,9 +971,270 @@ void func_002C8F28(void)
 INCLUDE_ASM("asm/nonmatchings/engine/snd_mix_gbx", func_002C8F28);
 #endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/snd_mix_gbx", func_002C91A8);
+void func_002C91A8(int count)
+{
+    int val;
+    int valt;
+    int left;
+    int right;
+    short sampledly;
+    short samplexf;
+    portable_samplepair_t *pbuf;
+    int countr;
+    int voutm;
+    int vlr;
 
-INCLUDE_ASM("asm/nonmatchings/engine/snd_mix_gbx", func_002C96B8);
+    if (!D_00544DA8[1].lpdelayline)
+        return;
+
+    pbuf = D_00542D70;
+    countr = count;
+
+    while (countr--)
+    {
+        left = pbuf->left;
+        right = pbuf->right;
+        vlr = (left + right) >> 1;
+
+        if (--D_00544DA8[1].modcur < 0)
+            D_00544DA8[1].modcur = D_00544DA8[1].mod;
+
+        sampledly = D_00544DA8[1].lpdelayline[D_00544DA8[1].idelayoutput];
+
+        if (D_00544DA8[1].xfade || sampledly || left || right)
+        {
+            if (!D_00544DA8[1].xfade && !D_00544DA8[1].mod)
+            {
+                D_00544DA8[1].idelayoutputxf = D_00544DA8[1].idelayoutput + ((RandomLong(0, 255) * D_00544DA8[1].delaysamples) >> 9);
+
+                if (D_00544DA8[1].idelayoutputxf >= D_00544DA8[1].cdelaysamplesmax)
+                    D_00544DA8[1].idelayoutputxf -= D_00544DA8[1].cdelaysamplesmax;
+
+                D_00544DA8[1].xfade = 32;
+            }
+
+            if (D_00544DA8[1].xfade)
+            {
+                samplexf = (D_00544DA8[1].lpdelayline[D_00544DA8[1].idelayoutputxf] * (32 - D_00544DA8[1].xfade)) >> 5;
+                sampledly = ((sampledly * D_00544DA8[1].xfade) >> 5) + samplexf;
+
+                if (++D_00544DA8[1].idelayoutputxf >= D_00544DA8[1].cdelaysamplesmax)
+                    D_00544DA8[1].idelayoutputxf = 0;
+
+                if (--D_00544DA8[1].xfade == 0)
+                    D_00544DA8[1].idelayoutput = D_00544DA8[1].idelayoutputxf;
+            }
+
+            if (sampledly)
+            {
+                val = vlr + ((D_00544DA8[1].delayfeed * sampledly) >> 8);
+                if (val > 0x7fff)
+                    val = 0x7fff;
+                else if (val < (short)0x8000)
+                    val = (short)0x8000;
+            }
+            else
+                val = vlr;
+
+            if (D_00544DA8[1].lp)
+            {
+                valt = (D_00544DA8[1].lp0 + val) >> 1;
+                D_00544DA8[1].lp0 = val;
+            }
+            else
+                valt = val;
+
+            D_00544DA8[1].lpdelayline[D_00544DA8[1].idelayinput] = valt;
+            voutm = valt;
+        }
+        else
+        {
+            voutm = 0;
+            D_00544DA8[1].lp0 = 0;
+            D_00544DA8[1].lpdelayline[D_00544DA8[1].idelayinput] = 0;
+        }
+
+        if (++D_00544DA8[1].idelayinput >= D_00544DA8[1].cdelaysamplesmax)
+            D_00544DA8[1].idelayinput = 0;
+
+        if (++D_00544DA8[1].idelayoutput >= D_00544DA8[1].cdelaysamplesmax)
+            D_00544DA8[1].idelayoutput = 0;
+
+        if (--D_00544DA8[2].modcur < 0)
+            D_00544DA8[2].modcur = D_00544DA8[2].mod;
+
+        if (D_00544DA8[2].lpdelayline)
+        {
+            sampledly = D_00544DA8[2].lpdelayline[D_00544DA8[2].idelayoutput];
+
+            if (D_00544DA8[2].xfade || sampledly || left || right)
+            {
+                if (!D_00544DA8[2].xfade && !D_00544DA8[2].mod)
+                {
+                    D_00544DA8[2].idelayoutputxf = D_00544DA8[2].idelayoutput + ((RandomLong(0, 255) * D_00544DA8[2].delaysamples) >> 9);
+
+                    if (D_00544DA8[2].idelayoutputxf >= D_00544DA8[2].cdelaysamplesmax)
+                        D_00544DA8[2].idelayoutputxf -= D_00544DA8[2].cdelaysamplesmax;
+
+                    D_00544DA8[2].xfade = 32;
+                }
+
+                if (D_00544DA8[2].xfade)
+                {
+                    samplexf = (D_00544DA8[2].lpdelayline[D_00544DA8[2].idelayoutputxf] * (32 - D_00544DA8[2].xfade)) >> 5;
+                    sampledly = ((sampledly * D_00544DA8[2].xfade) >> 5) + samplexf;
+
+                    if (++D_00544DA8[2].idelayoutputxf >= D_00544DA8[2].cdelaysamplesmax)
+                        D_00544DA8[2].idelayoutputxf = 0;
+
+                    if (--D_00544DA8[2].xfade == 0)
+                        D_00544DA8[2].idelayoutput = D_00544DA8[2].idelayoutputxf;
+                }
+
+                if (sampledly)
+                {
+                    val = vlr + ((D_00544DA8[2].delayfeed * sampledly) >> 8);
+                    if (val > 0x7fff)
+                        val = 0x7fff;
+                    else if (val < (short)0x8000)
+                        val = (short)0x8000;
+                }
+                else
+                    val = vlr;
+
+                if (D_00544DA8[2].lp)
+                {
+                    valt = (D_00544DA8[2].lp0 + val) >> 1;
+                    D_00544DA8[2].lp0 = val;
+                }
+                else
+                    valt = val;
+
+                voutm += valt;
+                D_00544DA8[2].lpdelayline[D_00544DA8[2].idelayinput] = valt;
+            }
+            else
+            {
+                D_00544DA8[2].lp0 = 0;
+                D_00544DA8[2].lpdelayline[D_00544DA8[2].idelayinput] = 0;
+            }
+
+            if (++D_00544DA8[2].idelayinput >= D_00544DA8[2].cdelaysamplesmax)
+                D_00544DA8[2].idelayinput = 0;
+
+            if (++D_00544DA8[2].idelayoutput >= D_00544DA8[2].cdelaysamplesmax)
+                D_00544DA8[2].idelayoutput = 0;
+        }
+
+        voutm = (11 * voutm) >> 6;
+
+        left += voutm;
+        right += voutm;
+
+        if (left > 0x7fff)
+            left = 0x7fff;
+        else if (left < (short)0x8000)
+            left = (short)0x8000;
+
+        if (right > 0x7fff)
+            right = 0x7fff;
+        else if (right < (short)0x8000)
+            right = (short)0x8000;
+
+        pbuf->left = left;
+        pbuf->right = right;
+        pbuf++;
+    }
+}
+
+void func_002C96B8(int count)
+{
+    int valt;
+    int valr;
+    int left;
+    int right;
+    portable_samplepair_t *pbuf;
+    int countr;
+    int fLowpass;
+    int fmod;
+
+    if (D_00334868.value == 0.0f && D_00334880.value == 0.0f)
+        return;
+
+    pbuf = D_00542D70;
+    countr = count;
+
+    fLowpass = (D_00334868.value != 0.0f);
+    fmod = (D_00334880.value != 0.0f);
+
+    while (countr--)
+    {
+        left = pbuf->left;
+        right = pbuf->right;
+
+        if (fLowpass)
+        {
+            valt = left;
+            valr = right;
+
+            left = (D_00544D80[0] + D_00544D80[1] + D_00544D80[2] + D_00544D80[3] + D_00544D80[4] + valt) >> 2;
+            right = (D_00544D80[5] + D_00544D80[6] + D_00544D80[7] + D_00544D80[8] + D_00544D80[9] + valr) >> 2;
+
+            D_00544D80[0] = D_00544D80[1];
+            D_00544D80[1] = D_00544D80[2];
+            D_00544D80[2] = D_00544D80[3];
+            D_00544D80[3] = valt;
+            D_00544D80[4] = D_00544D80[5];
+            D_00544D80[5] = D_00544D80[6];
+            D_00544D80[6] = D_00544D80[7];
+            D_00544D80[7] = D_00544D80[8];
+            D_00544D80[8] = D_00544D80[9] = valr;
+        }
+
+        if (fmod)
+        {
+            if (--D_00399818 < 0)
+                D_00399818 = D_00399810;
+
+            if (!D_00399810)
+                D_0039980C = RandomLong(32, 255);
+
+            if (--D_00399834 < 0)
+                D_00399834 = D_0039983C;
+
+            if (!D_0039983C)
+                D_0039980C = RandomLong(32, 255);
+
+            left = (left * D_00399820) >> 8;
+            right = (right * D_00399838) >> 8;
+
+            if (D_00399820 < D_0039980C)
+                D_00399820++;
+            else if (D_00399820 > D_0039980C)
+                D_00399820--;
+
+            if (D_00399838 < D_00399830)
+                D_00399838++;
+            else if (D_00399838 > D_00399830)
+                D_00399838--;
+        }
+
+        if (left > 32767)
+            left = 32767;
+        else if (left < -32768)
+            left = -32768;
+
+        if (right > 32767)
+            right = 32767;
+        else if (right < -32768)
+            right = -32768;
+
+        pbuf->left = left;
+        pbuf->right = right;
+
+        pbuf++;
+    }
+}
 
 #ifdef NON_MATCHING
 void func_002C9980(void)
