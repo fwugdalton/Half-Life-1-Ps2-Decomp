@@ -85,7 +85,7 @@ typedef struct client_state_s
 {
     int max_edicts;             /* 0x000 */
     int num_resources;          /* 0x004 */
-    byte pad8[0x208 - 0x8];
+    char serverinfo[0x200];     /* 0x008 */
     int servercount;            /* 0x208 */
     int validsequence;          /* 0x20C */
     int parsecount;             /* 0x210 */
