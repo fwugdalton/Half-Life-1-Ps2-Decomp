@@ -57,6 +57,45 @@ void func_0025AEA8(int clientId);
 void func_00251CA8(void);
 extern float realtime;
 
+typedef struct
+{
+    unsigned int buf[4];
+    unsigned int bits[2];
+    unsigned char in[64];
+} MD5Context_t;
+
+void MD5Init(MD5Context_t *ctx);
+void MD5Update(MD5Context_t *ctx, unsigned char const *buf, unsigned int len);
+void MD5Final(unsigned char digest[16], MD5Context_t *ctx);
+char *MD5_Print(unsigned char hash[16]);
+extern void (*D_003997A4)(char *key, int *len, qboolean *bDedicated); /* pega a CD key */
+typedef struct master_s
+{
+    qboolean sent;              /* 0x00 */
+    float time;                 /* 0x04 */
+    int challenge;              /* 0x08 */
+    int sequence;               /* 0x0C */
+    float last_heartbeat;       /* 0x10 */
+    netadr_t adr;               /* 0x14 */
+    struct master_s *next;      /* 0x1C */
+} master_t;
+
+extern master_t *valvemaster_adr;
+extern netadr_t net_from;
+extern sizebuf_t net_message;
+extern int (*D_003990DC)(short port); /* ntohs */
+qboolean func_002C6D78(netadr_t a, netadr_t b); /* NET_CompareAdr */
+char *NET_AdrToString(netadr_t a);
+void NET_SendPacket(int sock, int length, void *data, netadr_t to, int unused);
+char *MSG_ReadString(void);
+int MSG_ReadByte(void);
+int MSG_ReadShort(void);
+int MSG_ReadLong(void);
+int sprintf(char *, const char *, ...);
+int strcasecmp(const char *, const char *);
+extern char D_00389BE8[];       /* "" */
+extern char D_003AC9C8[256];    /* szHashedKeyBuffer */
+
 qboolean NET_GetPacket(int sock);
 void CL_Disconnect(int clientId);
 void Host_ShutdownServer(qboolean crash);
@@ -206,25 +245,172 @@ INCLUDE_RODATA("asm/nonmatchings/engine/Cl_main", D_00389D28);
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Cl_main", D_00389D38);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Cl_main", func_0024F100);
+void func_0024F100(void)
+{
+    char szText[4096];
+    master_t *p;
+    char *str;
+    char *in;
+    char *out;
 
-INCLUDE_RODATA("asm/nonmatchings/engine/Cl_main", D_00389D78);
+    if (!valvemaster_adr)
+        return;
 
-INCLUDE_RODATA("asm/nonmatchings/engine/Cl_main", D_00389D80);
+    for (p = valvemaster_adr; p; p = p->next)
+    {
+        if (func_002C6D78(net_from, p->adr))
+            break;
+    }
+    if (!p)
+        return;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Cl_main", func_0024F220);
+    Con_Printf("---- MOTD -----\n");
 
-INCLUDE_ASM("asm/nonmatchings/engine/Cl_main", func_0024F388);
+    while (1)
+    {
+        str = MSG_ReadString();
+        in = str;
+        out = szText;
+        while (*in)
+        {
+            if (*in == '\r' && in - 1 > str && in[-1] != '\n')
+            {
+                *out++ = '\n';
+                *out++ = '\r';
+                in++;
+            }
+            else
+            {
+                *out++ = *in++;
+            }
+        }
+        *out = 0;
 
-INCLUDE_RODATA("asm/nonmatchings/engine/Cl_main", D_00389DE8);
+        if (!szText[0])
+            break;
+        Con_Printf(szText);
+    }
 
-INCLUDE_RODATA("asm/nonmatchings/engine/Cl_main", D_00389DF8);
+    Con_Printf("\n---------------\n");
+}
 
-INCLUDE_RODATA("asm/nonmatchings/engine/Cl_main", D_00389E08);
+void func_0024F220(void)
+{
+    char szAddress[128] = "";
+    unsigned char ip[4];
+    int nNumAddresses;
+    int i;
+    int j;
+    unsigned short port;
 
-INCLUDE_RODATA("asm/nonmatchings/engine/Cl_main", D_00389E38);
+    i = 1;
+    MSG_ReadByte();
+    nNumAddresses = net_message.cursize - 6;
+    nNumAddresses /= 6;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Cl_main", func_0024F528);
+    while (nNumAddresses-- > 0)
+    {
+        memset(szAddress, 0, sizeof(szAddress));
+        for (j = 0; j < 4; j++)
+            ip[j] = MSG_ReadByte();
+        sprintf(szAddress, "%i.%i.%i.%i", ip[0], ip[1], ip[2], ip[3]);
+        port = D_003990DC(MSG_ReadShort());
+        if (i <= 100)
+            Con_Printf("%4i:  %s:%i\n", i, szAddress, port);
+        i++;
+    }
+
+    Con_Printf("%i total servers\n", i);
+}
+
+void func_0024F388(void)
+{
+    char szLastMod[256];
+    char szRequest[128];
+    char *str;
+    char *s1;
+    char *s2;
+    int n1;
+    int n2;
+    int nCount;
+
+    nCount = 0;
+    MSG_ReadByte();
+    szLastMod[0] = 0;
+
+    while (1)
+    {
+        str = MSG_ReadString();
+        if (!str || !str[0])
+            break;
+        if (!strcasecmp(str, "end-of-list") || !strcasecmp(str, "more-in-list"))
+            break;
+
+        strcpy(szLastMod, str);
+        nCount++;
+        s1 = MSG_ReadString();
+        n1 = atoi(s1);
+        s2 = MSG_ReadString();
+        n2 = atoi(s2);
+        if (s1 && s2)
+            Con_Printf("%3i %5i %s\n", n1, n2, szLastMod);
+    }
+
+    Con_Printf("%i servers\n", nCount);
+
+    if (str && str[0] && !strcasecmp(str, "more-in-list"))
+    {
+        sprintf(szRequest, "%c\r\n%s\r\n", 'x', szLastMod);
+        Con_DPrintf("Requesting next batch ( >%s ) of mods from %s\n", szLastMod, NET_AdrToString(net_from));
+        NET_SendPacket(0, strlen(szRequest) + 1, szRequest, net_from, 2);
+    }
+    else
+    {
+        Con_Printf("Done.\n");
+    }
+}
+
+void func_0024F528(void)
+{
+    char szAddress[128] = "";
+    unsigned char ip[4];
+    char data[16];
+    int nNumAddresses;
+    int nCount;
+    int j;
+    int nextid;
+
+    nCount = 1;
+    MSG_ReadByte();
+    nextid = MSG_ReadLong();
+    nNumAddresses = net_message.cursize - 6;
+    nNumAddresses /= 6;
+
+    while (nNumAddresses-- > 0)
+    {
+        memset(szAddress, 0, sizeof(szAddress));
+        for (j = 0; j < 4; j++)
+            ip[j] = MSG_ReadByte();
+        sprintf(szAddress, "%i.%i.%i.%i", ip[0], ip[1], ip[2], ip[3]);
+        nCount++;
+        D_003990DC(MSG_ReadShort());
+    }
+
+    Con_Printf("%i servers\n", nCount);
+
+    if (nextid)
+    {
+        func_002C70A8(true);
+        data[0] = 'e';
+        *(int *)&data[1] = nextid;
+        Con_DPrintf("Requesting next batch ( %i ) server list from %s\n", nextid, NET_AdrToString(net_from));
+        NET_SendPacket(0, 5, data, net_from, 2);
+    }
+    else
+    {
+        Con_Printf("Done.\n");
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/Cl_main", func_0024F6E8);
 
@@ -345,7 +531,42 @@ void func_002502D8(int clientId)
     cl[clientId].frames = NULL;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Cl_main", func_002503E0);
+char *func_002503E0(void)
+{
+    char szKeyBuffer[256];
+    MD5Context_t ctx;
+    unsigned char digest[16];
+    int nKeyLength;
+    qboolean bDedicated;
+
+    nKeyLength = 13;
+    bDedicated = false;
+    D_003997A4(szKeyBuffer, &nKeyLength, &bDedicated);
+
+    if (bDedicated)
+    {
+        Con_Printf("Key has no meaning on dedicated server...\n");
+        return D_00389BE8;
+    }
+
+    if (nKeyLength <= 0 || nKeyLength >= 256)
+    {
+        Con_Printf("Bogus key length on CD Key...\n");
+        return D_00389BE8;
+    }
+
+    szKeyBuffer[nKeyLength] = 0;
+
+    memset(&ctx, 0, sizeof(ctx));
+    memset(digest, 0, sizeof(digest));
+    MD5Init(&ctx);
+    MD5Update(&ctx, (unsigned char *)szKeyBuffer, nKeyLength);
+    MD5Final(digest, &ctx);
+
+    memset(D_003AC9C8, 0, sizeof(D_003AC9C8));
+    strcpy(D_003AC9C8, MD5_Print(digest));
+    return D_003AC9C8;
+}
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Cl_main", D_0038A108);
 
