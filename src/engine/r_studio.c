@@ -257,12 +257,16 @@ extern int D_003996A4;
 /* extensão do PS2 no fim do studiohdr_t */
 typedef struct
 {
-    int unk00;
-    byte pad04[0x14 - 0x04];
+    int unk00;                  /* 0x00 */
+    int lod[4];                 /* 0x04: distância de cada nível */
 } mstudiounkF4_t;               /* 0x14 */
 #define STUDIOHDR_UNKF4(h) (*(int *)((byte *)(h) + 0xF4))
 #define STUDIOHDR_UNKF8(h) (*((byte *)(h) + 0xF8))
 #define STUDIOHDR_UNKF9(h) (*((byte *)(h) + 0xF9))
+#define STUDIOHDR_FADESTART(h) (*(int *)((byte *)(h) + 0xFC))
+#define STUDIOHDR_FADEEND(h) (*(int *)((byte *)(h) + 0x100))
+extern float D_003332E0[]; /* fov por jogador */
+void AddTEntity(cl_entity_t *e, int clientId);
 extern int D_003342A0;
 
 /* lote de triângulos do studio */
@@ -2196,4 +2200,87 @@ void func_002C2BF8(int bodypart, int submodel, int offset)
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002C2CE0);
+int R_StudioCheckLOD(int clientId)
+{
+    vec3_t delta;
+    float dist;
+    float fov;
+    float maxfov = 90.0f;
+    float frac, range, d;
+    float val;
+    int numlod;
+    int i, j;
+    int model;
+    int lod;
+    mstudiounkF4_t *plod;
+
+    lod = 0;
+    numlod = STUDIOHDR_UNKF8(pstudiohdr);
+    VectorSubtract(currententity->origin, r_refdef.vieworg, delta);
+    dist = Length(delta);
+
+    fov = D_003332E0[clientId] * 1.7f;
+    if (fov == 0)
+        fov = maxfov;
+    else if (fov > maxfov)
+        fov = maxfov;
+    dist *= fov / maxfov;
+
+    if (currententity->rendermode == 0)
+    {
+        if (STUDIOHDR_FADESTART(pstudiohdr) && STUDIOHDR_FADESTART(pstudiohdr) < dist)
+        {
+            currententity->rendermode = 4;
+            frac = 1.0f;
+            range = STUDIOHDR_FADEEND(pstudiohdr) - STUDIOHDR_FADESTART(pstudiohdr);
+            d = dist - STUDIOHDR_FADESTART(pstudiohdr);
+            if (range <= d)
+                frac = 1.0f;
+            else if (range != 0)
+                frac = d / range;
+            currententity->renderamt = (1.0f - frac) * 255;
+            if (currententity->renderamt < 5)
+                currententity->renderamt = 0;
+            AddTEntity(currententity, clientId);
+            return 0;
+        }
+    }
+    else if (currententity->renderamt <= 0)
+    {
+        return 0;
+    }
+
+    if (numlod)
+    {
+        plod = (mstudiounkF4_t *)((byte *)pstudiohdr + STUDIOHDR_UNKF4(pstudiohdr));
+        for (i = 0; i < numlod && plod[i * numlod].unk00; i++)
+        {
+            model = func_002C2B68(i);
+            for (j = 0; j < 4; j++)
+            {
+                val = plod[i * numlod + model].lod[j];
+                if (cl_numlocal >= 2)
+                    val *= 0.6f;
+                if (val == 0)
+                    break;
+                if (j == 0 && cl_numlocal >= 2)
+                {
+                    lod = 0;
+                    continue;
+                }
+                if (dist < val)
+                {
+                    lod = j;
+                    break;
+                }
+                if (j == 3 || plod[i * numlod + model].lod[j + 1] == 0)
+                {
+                    lod = j + 1;
+                    break;
+                }
+            }
+            func_002C2BF8(i, model, lod);
+        }
+    }
+    return 1;
+}

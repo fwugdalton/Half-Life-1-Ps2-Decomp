@@ -1757,3 +1757,4 @@ m_pPlayerInfo = 0x004394D4; // size:0x4
 m_flGaitMovement = 0x004394DC; // size:0x4
 R_StudioEstimateGait = 0x2BFB68; // type:func
 R_StudioProcessGait = 0x2BFEA8; // type:func
+R_StudioCheckLOD = 0x2C2CE0; // type:func
