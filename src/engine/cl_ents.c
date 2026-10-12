@@ -67,6 +67,48 @@ int VectorCompare(const vec3_t v1, const vec3_t v2);
 void func_002578C0(vec3_t pos, int clientId);
 void func_002B2F08(vec3_t start, vec3_t end, int type, int clientId); /* R_RocketTrail */
 extern int cl_numvisedicts[2];
+extern int cl_parsecountmod[2];
+extern float realtime;
+extern int playerbitcounts[32];
+extern float D_00399498[2];
+extern int D_003994A0;              /* modelindex padrão do jogador */
+int func_00243318(int numbits);     /* coordenada em bits */
+void func_00243AA0(usercmd_t *to, usercmd_t *from); /* MSG_ReadDeltaUsercmd */
+/* máscaras PF_* (ver sv_main.c) */
+extern int D_00399354;
+extern int D_00399358;
+extern int D_00399360;
+extern int D_00399364;
+extern int D_00399368;
+extern int D_0039936C;
+extern int D_00399374;
+extern int D_00399378;
+extern int D_0039937C;
+extern int D_00399380;
+extern int D_00399384;
+extern int D_00399388;
+extern int D_0039938C;
+extern int D_00399390;
+extern int D_00399394;
+extern int D_00399398;
+extern int D_0039939C;
+extern int D_003993A0;
+extern int D_003993A4;
+extern int D_003993A8;
+extern int D_003993AC;
+extern int D_003993B0;
+extern int D_003993B4;
+extern int D_003993B8;
+extern int D_003993C0;
+extern int D_003993C4;
+extern int D_003993CC;
+extern int D_003993D0;
+extern int D_003993D4;
+extern int D_003993D8;
+extern int D_003993DC;
+extern int D_003993E0;
+extern int D_003993E4;
+char *func_002447B8(vec3_t v); /* vtos */
 extern cl_entity_t *cl_visedicts[2];
 extern int D_00399658[2];               /* cl_numbeamentities */
 extern cl_entity_t *D_0050EF88[2][64];  /* cl_beamentities */
@@ -897,9 +939,314 @@ void func_0024A160(int clientId)
 INCLUDE_ASM("asm/nonmatchings/engine/cl_ents", func_0024A160);
 #endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_ents", func_0024ABF8);
+void func_0024ABF8(player_state_t *state, int pnum, int clientId)
+{
+    player_state_t *prev;
+    int i;
 
+    for (i = 0; i < cl_updatebackup[clientId] - 1; i++)
+    {
+        prev = &cl[clientId].frames[(cl_parsecountmod[clientId] - i) & cl_updatemask[clientId]].playerstate[pnum];
+        if (prev == state)
+            Con_Printf("*");
+        Con_Printf("%s", func_002447B8(prev->origin));
+        Con_Printf(" pred %s\n", func_002447B8(prev->predorigin));
+    }
+}
+
+#ifdef NON_MATCHING
+void func_0024AD40(int clientId)
+{
+    vec3_t oldorigin;
+    vec3_t oldangles;
+    vec3_t origin;
+    usercmd_t nullcmd;
+    int flags;
+    int num;
+    int spec;
+    int pmflags;
+    int i;
+    player_info_t *info;
+    player_state_t *state;
+    cl_entity_t *ent;
+    float animtime;
+    int seq;
+    unsigned int x;
+
+    spec = 0;
+
+    flags = MSG_ReadByte();
+    if (flags & D_00399398)
+        flags |= MSG_ReadByte() << 8;
+    if (flags & D_003993E4)
+        flags |= MSG_ReadByte() << 16;
+    if (flags & D_00399358)
+        flags |= MSG_ReadByte() << 24;
+
+    MSG_StartBitReading(&net_message);
+
+    num = MSG_ReadByteBits(6);
+    if (num & 0x40)
+    {
+        spec = 1;
+        num &= ~0x40;
+    }
+    if (num > 3)
+        Sys_Error("CL_ParsePlayerinfo: bad num");
+
+    info = &cl[clientId].players[num];
+    info->spectator = spec;
+
+    state = &cl[clientId].frames[cl_parsecountmod[clientId]].playerstate[num];
+    state->msg_time = realtime;
+    state->number = num;
+    state->messagenum = cl[clientId].parsecount;
+    state->flags = flags;
+
+    pmflags = MSG_ReadByteBits(5);
+    state->pmflags = 8;
+    if (pmflags & D_003993D4)
+        state->pmflags = 0x1000008;
+    if (pmflags & D_003993A4)
+        state->pmflags |= 0x4000;
+    if (pmflags & D_003993B4)
+        state->pmflags |= 0x1000;
+    if (pmflags & D_0039936C)
+        state->pmflags |= 0x4000000;
+    if (pmflags & D_00399380)
+        state->pmflags |= 0x800;
+
+    origin[0] = func_00243318(18) * 0.03125f;
+    origin[1] = func_00243318(18) * 0.03125f;
+    origin[2] = func_00243318(18) * 0.03125f;
+    VectorCopy(origin, state->origin);
+    VectorSubtract(state->origin, state->predorigin, state->deltaorigin);
+
+    state->frame = MSG_ReadByteBits(8);
+
+    for (i = 0; i < 32; i++)
+    {
+        if (flags & (1 << i))
+            playerbitcounts[i]++;
+    }
+
+    if (flags & D_00399354)
+    {
+        memset(&nullcmd, 0, sizeof(nullcmd));
+        func_00243AA0(&state->command, &nullcmd);
+        VectorCopy(state->command.viewangles, state->viewangles);
+    }
+    else
+        VectorCopy(vec3_origin, state->viewangles);
+
+    if (flags & D_00399394)
+        state->state_time = D_00399498[clientId] - MSG_ReadByteBits(8) * 0.001f;
+    else
+        state->state_time = D_00399498[clientId];
+
+    if (flags & D_00399374)
+    {
+        state->velocity[0] = MSG_ReadSBits(14) * 0.125f;
+        state->velocity[1] = MSG_ReadSBits(14) * 0.125f;
+    }
+    else
+    {
+        state->velocity[0] = 0;
+        state->velocity[1] = 0;
+    }
+
+    if (flags & D_003993A0)
+        state->velocity[2] = MSG_ReadSBits(14) * 0.125f;
+    else
+        state->velocity[2] = 0;
+
+    if ((flags & D_003993CC) || (flags & D_0039939C))
+    {
+        if (flags & D_003993CC)
+            state->modelindex = MSG_ReadBits(10);
+        else
+            state->modelindex = MSG_ReadByteBits(8);
+    }
+    else
+        state->modelindex = D_003994A0;
+
+    if (flags & D_003993A8)
+        state->skin = MSG_ReadBits(10);
+    else
+        state->skin = 0;
+
+    if (flags & D_00399368)
+        state->effects = MSG_ReadBits(10);
+    else
+        state->effects = 0;
+
+    if ((flags & D_003993D8) || (flags & D_003993C0))
+    {
+        if (flags & D_003993D8)
+            state->weaponmodel = MSG_ReadBits(10);
+        else
+            state->weaponmodel = MSG_ReadByteBits(8);
+    }
+    else
+        state->weaponmodel = 0;
+
+    if (flags & D_003993DC)
+        state->movetype = MSG_ReadByteBits(4);
+    else
+        state->movetype = 3;
+
+    if (flags & D_00399388)
+    {
+        seq = MSG_ReadByteBits(8);
+        animtime = (int)(cl[clientId].time * 100.0f);
+        animtime = (animtime - ((int)animtime & 0xFF)) * 0.01f;
+        animtime += MSG_ReadByteBits(8) * 0.01f;
+        while (animtime > cl[clientId].time + 0.1f)
+            animtime -= 2.56f;
+        state->sequence = seq;
+        state->animtime = animtime;
+    }
+
+    if (flags & D_003993D0)
+    {
+        state->rendermode = MSG_ReadByteBits(8);
+        state->renderamt = MSG_ReadByteBits(8);
+        state->rendercolor.r = MSG_ReadByteBits(8);
+        state->rendercolor.g = MSG_ReadByteBits(8);
+        state->rendercolor.b = MSG_ReadByteBits(8);
+        state->renderfx = MSG_ReadByteBits(8);
+    }
+    else
+    {
+        state->rendermode = 0;
+        state->renderamt = 0;
+        state->rendercolor.r = 0;
+        state->rendercolor.g = 0;
+        state->rendercolor.b = 0;
+        state->renderfx = 0;
+    }
+
+    if (flags & D_0039938C)
+        state->framerate = MSG_ReadByteBits(8) * 0.0625f;
+    else
+        state->framerate = 1.0f;
+
+    if (flags & D_00399360)
+        state->body = MSG_ReadByteBits(8);
+    else
+        state->body = 0;
+
+    if (flags & D_003993B8)
+        state->controller[0] = MSG_ReadByteBits(8);
+    else
+        state->controller[0] = 0;
+    if (flags & D_00399390)
+        state->controller[1] = MSG_ReadByteBits(8);
+    else
+        state->controller[1] = 0;
+    if (flags & D_003993AC)
+        state->controller[2] = MSG_ReadByteBits(8);
+    else
+        state->controller[2] = 0;
+    if (flags & D_003993E0)
+        state->controller[3] = MSG_ReadByteBits(8);
+    else
+        state->controller[3] = 0;
+    if (flags & D_00399364)
+        state->blending[0] = MSG_ReadByteBits(8);
+    else
+        state->blending[0] = 0;
+    if (flags & D_003993C4)
+        state->blending[1] = MSG_ReadByteBits(8);
+    else
+        state->blending[1] = 0;
+
+    if (flags & D_0039937C)
+    {
+        state->basevelocity[0] = MSG_ReadSBits(16) * 0.125f;
+        state->basevelocity[1] = MSG_ReadSBits(16) * 0.125f;
+        state->basevelocity[2] = MSG_ReadSBits(16) * 0.125f;
+    }
+    else
+        VectorCopy(vec3_origin, state->basevelocity);
+
+    if (flags & D_003993B0)
+        state->friction = MSG_ReadSBits(16) * 0.125f;
+    else
+        state->friction = 1.0f;
+
+    if (flags & D_00399384)
+    {
+        info->unk_E8 = MSG_ReadBits(12);
+        info->unk_EA = x = MSG_ReadByteBits(6);
+        if (x > 100)
+            info->unk_EA = 100;
+        else
+            info->unk_EA = x;
+    }
+
+    if (flags & D_00399378)
+        state->gaitsequence = MSG_ReadByteBits(8);
+    else
+        state->gaitsequence = 0;
+
+    MSG_EndBitReading(&net_message);
+
+    ent = &cl_entities[clientId][num + 1];
+    VectorCopy(ent->origin, oldorigin);
+    VectorCopy(ent->angles, oldangles);
+    VectorCopy(state->origin, ent->origin);
+    VectorCopy(state->viewangles, ent->angles);
+    if (cl_numlocal == 1)
+        ent->angles[0] = -ent->angles[0] * 0.33333334f;
+    else
+        ent->angles[0] = -ent->angles[0] * 0.16666667f;
+
+    ent->frame = state->frame;
+    ent->movetype = state->movetype;
+    ent->unk194 = state->effects;
+    ent->model = cl[clientId].model_precache[state->modelindex];
+    ent->skin = state->skin;
+    ent->body = state->body;
+
+    if (ent->animtime != state->animtime)
+    {
+        if (state->sequence != ent->sequence)
+        {
+            ent->sequencetime = state->animtime;
+            ent->prevsequence = ent->sequence;
+            ent->prevseqblending[0] = ent->blending[0];
+            ent->prevseqblending[1] = ent->blending[1];
+            ent->sequence = state->sequence;
+        }
+        ent->prevanimtime = ent->animtime;
+        ent->prevcontroller[0] = ent->controller[0];
+        ent->prevcontroller[1] = ent->controller[1];
+        ent->prevcontroller[2] = ent->controller[2];
+        ent->prevcontroller[3] = ent->controller[3];
+        ent->prevblending[0] = ent->blending[0];
+        ent->prevblending[1] = ent->blending[1];
+        VectorCopy(oldorigin, ent->prevorigin);
+        VectorCopy(oldangles, ent->prevangles);
+        ent->animtime = state->animtime;
+    }
+
+    ent->rendermode = state->rendermode;
+    ent->renderamt = state->renderamt;
+    ent->renderfx = state->renderfx;
+    ent->rendercolor.r = state->rendercolor.r;
+    ent->rendercolor.g = state->rendercolor.g;
+    ent->rendercolor.b = state->rendercolor.b;
+    ent->framerate = state->framerate;
+
+    for (i = 0; i < 4; i++)
+        ent->controller[i] = state->controller[i];
+    for (i = 0; i < 2; i++)
+        ent->blending[i] = state->blending[i];
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/cl_ents", func_0024AD40);
+#endif
 
 INCLUDE_ASM("asm/nonmatchings/engine/cl_ents", func_0024B920);
 

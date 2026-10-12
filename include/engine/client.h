@@ -21,23 +21,46 @@ typedef struct screenfade_s
 #define FFADE_MODULATE 0x0002
 #define FFADE_STAYOUT 0x0004
 
-/* estado de jogador guardado no frame (layout parcial) */
+/* estado de jogador guardado no frame (CL_ParsePlayerinfo) */
 typedef struct player_state_s
 {
-    byte pad0[0x08];
+    int messagenum;             /* 0x00 */
+    float state_time;           /* 0x04 */
     float msg_time;             /* 0x08 */
-    byte pad0C[0x30 - 0x0C];
+    usercmd_t command;          /* 0x0C */
     byte number;                /* 0x30 */
-    byte pad31[0x4C - 0x31];
+    byte pad31[0x34 - 0x31];
+    vec3_t predorigin;          /* 0x34 */
+    vec3_t deltaorigin;         /* 0x40: origin - predorigin */
     vec3_t origin;              /* 0x4C */
     vec3_t viewangles;          /* 0x58 */
     vec3_t velocity;            /* 0x64 */
-    byte pad70[0x98 - 0x70];
+    int movetype;               /* 0x70 */
+    int modelindex;             /* 0x74 */
+    float frame;                /* 0x78 */
+    int skin;                   /* 0x7C */
+    int effects;                /* 0x80 */
+    int flags;                  /* 0x84: bits do delta */
+    int pmflags;                /* 0x88 */
+    byte pad8C[0x98 - 0x8C];
     int renderframe;            /* 0x98 */
-    byte pad9C[0xC4 - 0x9C];
+    int rendermode;             /* 0x9C */
+    int renderamt;              /* 0xA0 */
+    color24 rendercolor;        /* 0xA4 */
+    byte padA7;
+    int renderfx;               /* 0xA8 */
+    int sequence;               /* 0xAC */
+    float animtime;             /* 0xB0 */
+    float framerate;            /* 0xB4 */
+    int body;                   /* 0xB8 */
+    byte controller[4];         /* 0xBC */
+    byte blending[4];           /* 0xC0 */
     int weaponmodel;            /* 0xC4 */
     int gaitsequence;           /* 0xC8 */
-    byte padCC[0xF8 - 0xCC];
+    byte padCC[0xD0 - 0xCC];
+    vec3_t basevelocity;        /* 0xD0 */
+    float friction;             /* 0xDC */
+    byte padE0[0xF8 - 0xE0];
 } player_state_t; /* 0xF8 */
 
 typedef struct
@@ -69,7 +92,9 @@ typedef struct player_info_s
     int userid;                 /* 0x000 */
     char userinfo[196];         /* 0x004 */
     char name[32];              /* 0x0C8 */
-    int unk_E8;                 /* 0x0E8 */
+    short unk_E8;               /* 0x0E8 */
+    byte unk_EA;                /* 0x0EA: 0..100 */
+    byte padEB;
     int spectator;              /* 0x0EC */
     char model[64];             /* 0x0F0 */
     int topcolor;               /* 0x130 */
