@@ -166,6 +166,7 @@ void glDisable(int cap);
 void glTexEnvf(int target, int pname, float param);
 void glBlendFunc(int sfactor, int dfactor);
 void func_0023AF68(void);
+void func_0023D430(int);
 
 enum
 {
@@ -215,6 +216,19 @@ extern qvec_t *D_00331030;
 extern qvec_t *D_00331034;
 extern qvec_t *D_00331038;
 extern int D_0033103C;
+extern qvec_t *D_003341A4;      /* feixe: ponteiro de vértice (uncached) */
+extern qvec_t *D_003341A8;      /* feixe: ponteiro de cor (uncached) */
+extern qvec_t *D_003341AC;      /* feixe: ponteiro de st (uncached) */
+extern int D_003341A0;          /* feixe: buffer atual */
+extern int D_003341B0;          /* feixe: número de vértices */
+extern qvec_t D_00415F80;       /* st atual */
+extern qvec_t D_00415F90;       /* cor atual */
+extern float D_00399670[3];     /* cor do tri_Color */
+extern float D_003994E0, D_003994E4, D_003994E8, D_003994EC;
+void func_002B8C18(float *vLast, vec3_t point, vec3_t screenLast, float brightness, float width, float vStep);
+extern qvec_t D_00416000[2][74];
+extern qvec_t D_00416980[2][74];
+extern qvec_t D_00417300[2][74];
 
 void func_0023D520(void);
 int func_0023D5F0(void);
@@ -2616,9 +2630,308 @@ void func_002B7E98(vec3_t org, int random, int density, vec3_t angles, int clien
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B7E98);
 #endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B82F0);
+/* func_002B82F0: R_DrawSegs do PS2 (sempre sombreado, emite via func_002B8C18) */
+#ifdef NON_MATCHING
+void func_002B82F0(vec3_t source, vec3_t delta, int segments, int flags, float width, float scale, float freq, float speed)
+{
+    qvec_t last1, last2;
+    vec3_t point, screen, screenLast, tmp, normal;
+    float vLast;
+    int i, noiseIndex, noiseStep;
+    float div, length, fraction, factor, vStep, brightness;
+    float a;
 
+    if (segments < 2)
+        return;
+
+    D_00399670[1] = D_003994E0 * D_003994E4;
+    D_00399670[2] = D_003994E8 * D_003994E4;
+    D_00399670[0] = D_003994EC * D_003994E4;
+    func_0023AF68();
+
+    if (segments > NOISE_DIVISIONS)
+        segments = NOISE_DIVISIONS;
+
+    last1.v[3] = 1.0f;
+    last2.v[3] = 1.0f;
+
+    length = Length(delta) * 0.01f;
+    if (length < 0.5f)
+        length = 0.5f;
+    div = 1.0f / (segments - 1);
+
+    vLast = fmodf(freq * speed, 1);
+    vStep = length * div;
+
+    if (flags & FBEAM_SINENOISE)
+    {
+        if (segments < 16)
+            segments = 16;
+        scale *= 100;
+        length = segments * 0.1f;
+    }
+    else
+        scale *= length;
+
+    ScreenTransform(source, screenLast);
+    VectorMA(source, div, delta, point);
+    ScreenTransform(point, screen);
+
+    VectorSubtract(screen, screenLast, tmp);
+    tmp[2] = 0;
+    VectorNormalize(tmp);
+
+    brightness = 1.0f;
+    VectorScale(vup, tmp[0], normal);
+    VectorMA(normal, -tmp[1], vright, normal);
+
+    VectorMA(source, width, normal, last1.v);
+    VectorMA(source, -width, normal, last2.v);
+
+    noiseStep = (int)(div * (NOISE_DIVISIONS * 65536.0f));
+    noiseIndex = noiseStep;
+    if (flags & FBEAM_SINENOISE)
+        noiseIndex = 0;
+
+    if (flags & FBEAM_SHADEIN)
+        brightness = 0;
+
+    D_00331044 = 4;
+    D_00331034 = D_00416980[D_003341A0];
+    D_00399534++;
+    D_00399598 += 2;
+    D_00415F90.v[0] = brightness * D_00399670[1];
+    D_00415F90.v[1] = brightness * D_00399670[2];
+    D_00415F90.v[2] = brightness * D_00399670[0];
+    D_00415F90.v[3] = 1.0f;
+    D_0033102C = 1;
+    D_00331030 = D_00416000[D_003341A0];
+    D_00331038 = D_00417300[D_003341A0];
+    D_003341B0 = 2;
+    D_003341A4 = UNCACHED(D_00416000[D_003341A0]);
+    D_003341A8 = UNCACHED(D_00416980[D_003341A0]);
+    D_003341AC = UNCACHED(D_00417300[D_003341A0]);
+
+    *D_003341A8++ = D_00415F90;
+    *D_003341A8++ = D_00415F90;
+    D_00415F80.v[0] = 0.0f;
+    D_00415F80.v[1] = vLast;
+    D_00415F80.v[2] = 1.0f;
+    D_00415F80.v[3] = 0.0f;
+    *D_003341AC++ = D_00415F80;
+    *D_003341A4++ = last1;
+    D_00415F80.v[0] = 1.0f;
+    D_00415F80.v[1] = vLast;
+    *D_003341AC++ = D_00415F80;
+    *D_003341A4++ = last2;
+
+    if (flags & FBEAM_SHADEIN)
+    {
+        if (scale != 0)
+        {
+            if (flags & FBEAM_SINENOISE)
+            {
+                for (i = 1; i < segments; i++)
+                {
+                    fraction = i * div;
+                    brightness = fraction;
+                    VectorMA(source, fraction, delta, point);
+                    a = fraction * (length * M_PI) + freq;
+                    factor = D_0050F188[noiseIndex >> 16] * scale;
+                    noiseIndex += noiseStep;
+                    VectorMA(point, factor * sinf(a), vup, point);
+                    VectorMA(point, factor * cosf(a), vright, point);
+                    func_002B8C18(&vLast, point, screenLast, brightness, width, vStep);
+                }
+            }
+            else
+            {
+                for (i = 1; i < segments; i++)
+                {
+                    fraction = i * div;
+                    brightness = fraction;
+                    VectorMA(source, fraction, delta, point);
+                    VectorMA(point, D_0050F188[noiseIndex >> 16] * scale, vup, point);
+                    VectorMA(point, D_0050F188[noiseIndex >> 16] * scale * cosf(fraction * (M_PI * 3) + freq), vright, point);
+                    noiseIndex += noiseStep;
+                    func_002B8C18(&vLast, point, screenLast, brightness, width, vStep);
+                }
+            }
+        }
+        else
+        {
+            for (i = 1; i < segments; i++)
+            {
+                fraction = i * div;
+                brightness = fraction;
+                VectorMA(source, fraction, delta, point);
+                func_002B8C18(&vLast, point, screenLast, brightness, width, vStep);
+            }
+        }
+    }
+    else
+    {
+        if (scale != 0)
+        {
+            if (flags & FBEAM_SINENOISE)
+            {
+                for (i = 1; i < segments; i++)
+                {
+                    fraction = i * div;
+                    brightness = 1.0f - fraction;
+                    VectorMA(source, fraction, delta, point);
+                    a = fraction * (length * M_PI) + freq;
+                    factor = D_0050F188[noiseIndex >> 16] * scale;
+                    noiseIndex += noiseStep;
+                    VectorMA(point, factor * sinf(a), vup, point);
+                    VectorMA(point, factor * cosf(a), vright, point);
+                    func_002B8C18(&vLast, point, screenLast, brightness, width, vStep);
+                }
+            }
+            else
+            {
+                for (i = 1; i < segments; i++)
+                {
+                    fraction = i * div;
+                    brightness = 1.0f - fraction;
+                    VectorMA(source, fraction, delta, point);
+                    VectorMA(point, D_0050F188[noiseIndex >> 16] * scale, vup, point);
+                    VectorMA(point, D_0050F188[noiseIndex >> 16] * scale * cosf(fraction * (M_PI * 3) + freq), vright, point);
+                    noiseIndex += noiseStep;
+                    func_002B8C18(&vLast, point, screenLast, brightness, width, vStep);
+                }
+            }
+        }
+        else
+        {
+            for (i = 1; i < segments; i++)
+            {
+                fraction = i * div;
+                brightness = 1.0f - fraction;
+                VectorMA(source, fraction, delta, point);
+                func_002B8C18(&vLast, point, screenLast, brightness, width, vStep);
+            }
+        }
+    }
+
+    D_0033103C = D_003341B0;
+    if (D_003341B0 > 2)
+    {
+        func_0023D430(0);
+        D_003341A0 = !D_003341A0;
+    }
+    D_0033102C = 0;
+}
+#else
+INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B82F0);
+#endif
+
+/* func_002B8C18: emite um segmento do feixe (dois vértices) */
+#ifdef NON_MATCHING
+void func_002B8C18(float *vLast, vec3_t point, vec3_t screenLast, float brightness, float width, float vStep)
+{
+    qvec_t last1;
+    qvec_t last2;
+    vec3_t screen;
+    vec3_t tmp;
+    vec3_t normal;
+    float w;
+    float length;
+
+    last1.v[3] = 1.0f;
+    last2.v[3] = 1.0f;
+
+    screen[0] = D_004F9430[0][0] * point[0] + D_004F9430[1][0] * point[1] + D_004F9430[2][0] * point[2] + D_004F9430[3][0];
+    screen[1] = D_004F9430[0][1] * point[0] + D_004F9430[1][1] * point[1] + D_004F9430[2][1] * point[2] + D_004F9430[3][1];
+    w = D_004F9430[0][3] * point[0] + D_004F9430[1][3] * point[1] + D_004F9430[2][3] * point[2] + D_004F9430[3][3];
+    if (w != 0.0f)
+    {
+        w = 1.0f / w;
+        screen[0] *= w;
+        screen[1] *= w;
+    }
+
+    tmp[0] = screen[0] - screenLast[0];
+    tmp[1] = screen[1] - screenLast[1];
+    tmp[2] = 0;
+    __asm__("sqrt.s %0, %1" : "=f"(length) : "f"(tmp[0] * tmp[0] + tmp[1] * tmp[1]));
+    if (length != 0.0f)
+    {
+        length = 1.0f / length;
+        tmp[0] *= length;
+        tmp[1] *= length;
+    }
+
+    normal[0] = vup[0] * tmp[0] - tmp[1] * vright[0];
+    normal[1] = vup[1] * tmp[0] - tmp[1] * vright[1];
+    normal[2] = vup[2] * tmp[0] - tmp[1] * vright[2];
+
+    *vLast += vStep;
+
+    last1.v[0] = point[0] + width * normal[0];
+    last1.v[1] = point[1] + width * normal[1];
+    last1.v[2] = point[2] + width * normal[2];
+    last2.v[0] = point[0] - width * normal[0];
+    last2.v[1] = point[1] - width * normal[1];
+    last2.v[2] = point[2] - width * normal[2];
+
+    D_00415F90.v[0] = brightness * D_00399670[1];
+    D_00415F90.v[1] = brightness * D_00399670[2];
+    D_00415F90.v[2] = brightness * D_00399670[0];
+
+    *D_003341A8++ = D_00415F90;
+    *D_003341A8++ = D_00415F90;
+    D_00415F80.v[0] = 0.0f;
+    D_00415F80.v[1] = *vLast;
+    *D_003341AC++ = D_00415F80;
+    *D_003341A4++ = last1;
+    D_00415F80.v[0] = 1.0f;
+    D_00415F80.v[1] = *vLast;
+    *D_003341AC++ = D_00415F80;
+    *D_003341A4++ = last2;
+
+    if (D_003341B0 >= 72)
+    {
+        D_0033103C = D_003341B0;
+        func_0023D430(0);
+        D_003341A0 = !D_003341A0;
+        D_00331044 = 4;
+        D_00331034 = D_00416980[D_003341A0];
+        D_003341B0 = 2;
+        D_00399534++;
+        D_00399598 += 2;
+        D_00331030 = D_00416000[D_003341A0];
+        D_00331038 = D_00417300[D_003341A0];
+        D_003341A4 = UNCACHED(D_00416000[D_003341A0]);
+        D_003341A8 = UNCACHED(D_00416980[D_003341A0]);
+        D_003341AC = UNCACHED(D_00417300[D_003341A0]);
+
+        *vLast = fmodf(*vLast, 1.0f);
+
+        *D_003341A8++ = D_00415F90;
+        *D_003341A8++ = D_00415F90;
+        D_00415F80.v[0] = 0.0f;
+        D_00415F80.v[1] = *vLast;
+        *D_003341AC++ = D_00415F80;
+        *D_003341A4++ = last1;
+        D_00415F80.v[0] = 1.0f;
+        D_00415F80.v[1] = *vLast;
+        *D_003341AC++ = D_00415F80;
+        *D_003341A4++ = last2;
+    }
+    else
+    {
+        D_003341B0 += 2;
+        D_00399598 += 2;
+    }
+
+    screenLast[0] = screen[0];
+    screenLast[1] = screen[1];
+    screenLast[2] = screen[2];
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B8C18);
+#endif
 
 /* jtbl do gcc termina antes do fim da seção; alinha como o original */
 __asm__(".section .rodata\n.align 4\n.section .text");
