@@ -13,7 +13,7 @@ typedef struct entity_state_s
 {
     int entityType;             /* 0x00 */
     int number;                 /* 0x04 */
-    float msg_time;             /* 0x08 */
+    int flags;                  /* 0x08: bits do último delta (QW) */
     vec3_t origin;              /* 0x0C */
     vec3_t angles;              /* 0x18 */
     int modelindex;             /* 0x24 */

@@ -3591,7 +3591,7 @@ void SV_AddEntitiesToPacket(full_packet_entities_t *pack, int start, byte *pvs)
         pack->num_entities++;
 
         state->number = e;
-        state->msg_time = 0;
+        state->flags = 0;
         state->entityType = 0;
         if (ent->v.flags & FL_CUSTOMENTITY)
             state->entityType = 1;
