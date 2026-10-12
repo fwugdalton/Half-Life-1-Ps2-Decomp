@@ -82,6 +82,7 @@ $(BUILD_DIR)/src/engine/r_part.o: CFLAGS += -fmove-all-movables
 $(BUILD_DIR)/src/engine/r_studio.o: CFLAGS += -fmove-all-movables -ffast-math
 $(BUILD_DIR)/src/engine/gl_studio.o: CFLAGS += -ffast-math
 $(BUILD_DIR)/src/engine/snd_dma.o: CFLAGS += -ffast-math
+$(BUILD_DIR)/src/engine/snd_mix_gbx.o: CFLAGS += -ffast-math
 # a .rodata do gl_warp começa alinhada em 16 no original
 $(BUILD_DIR)/src/engine/gl_warp.o: SECTALIGN_C := --set-section-alignment .text=8 --set-section-alignment .data=4 --set-section-alignment .rodata=16
 

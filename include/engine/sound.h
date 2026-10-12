@@ -52,10 +52,11 @@ typedef struct
     int iword;                  /* 0x38 */
     int pitch;                  /* 0x3C */
     char unk_40;                /* 1 = stream */
-    byte unk_41;
+    char unk_41;                /* id da voz SPU */
     byte unk_42;
     byte unk_43;
-    byte unk_44[0x4C - 0x44];
+    int unk_44;                 /* lba do stream da frase */
+    byte *unk_48;               /* buffer do SPU */
 } channel_t;                    /* 0x4C */
 
 typedef struct
