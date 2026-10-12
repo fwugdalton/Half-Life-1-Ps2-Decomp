@@ -93,7 +93,14 @@ int MSG_ReadShort(void);
 int MSG_ReadLong(void);
 int sprintf(char *, const char *, ...);
 int strcasecmp(const char *, const char *);
-extern char D_00389BE8[];       /* "" */
+extern char D_00389BE8[];
+extern float host_frametime;
+qboolean NET_CompareAdr(netadr_t a, netadr_t b);
+qboolean Netchan_Process(netchan_t *chan);
+void CL_ParseServerMessage(int clientId);
+void CL_PrintResource(int index, resource_t *pResource);
+void func_0024F6E8(int clientId);
+qboolean func_0024FB28(int clientId);       /* "" */
 extern char D_003AC9C8[256];    /* szHashedKeyBuffer */
 
 qboolean NET_GetPacket(int sock);
@@ -419,9 +426,74 @@ qboolean func_0024FB28(int sock)
     return NET_GetPacket(sock) != 0;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Cl_main", func_0024FB48);
+#ifdef NON_MATCHING
+void func_0024FB48(int clientId)
+{
+    cl[clientId].oldtime = cl[clientId].time;
+    cl[clientId].time += host_frametime;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Cl_main", func_0024FCE8);
+    while (func_0024FB28(clientId))
+    {
+        if (*(int *)net_message.data == -1)
+        {
+            func_0024F6E8(clientId);
+            continue;
+        }
+
+        if (cls[clientId].state == ca_disconnected || cls[clientId].state == ca_connecting)
+            continue;
+
+        if (net_message.cursize < 8)
+        {
+            Con_Printf("%s: Runt packet\n", NET_AdrToString(net_from));
+            continue;
+        }
+
+        if (!NET_CompareAdr(net_from, cls[clientId].netchan.remote_address))
+        {
+            Con_Printf("%s:sequenced packet without connection\n", NET_AdrToString(net_from));
+            continue;
+        }
+
+        if (!Netchan_Process(&cls[clientId].netchan))
+            continue;
+
+        CL_ParseServerMessage(clientId);
+    }
+}
+#else
+INCLUDE_ASM("asm/nonmatchings/engine/Cl_main", func_0024FB48);
+#endif
+
+void func_0024FCE8(void)
+{
+    int i;
+    int j;
+    player_info_t *pl;
+    customization_t *pCust;
+
+    if (cls[0].state != ca_active)
+    {
+        Con_Printf("Can't cl_print_custom, not connected\n");
+        return;
+    }
+
+    for (i = 0; i < MAX_CLIENTS; i++)
+    {
+        pl = &cl[0].players[i];
+        if (!((customization_t *)pl->customdata)->pNext)
+            continue;
+
+        Con_DPrintf("CL Customizations:\nPlayer %i:%s\n", i + 1, pl->name);
+        j = 1;
+        for (pCust = ((customization_t *)pl->customdata)->pNext; pCust; pCust = pCust->pNext)
+        {
+            if (pCust->bInUse)
+                CL_PrintResource(j++, &pCust->resource);
+        }
+        Con_DPrintf("-----------------\n\n");
+    }
+}
 
 void func_0024FDE0(void)
 {
