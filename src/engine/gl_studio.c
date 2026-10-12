@@ -96,6 +96,12 @@ extern playermodel_t r_playermodels[3];
 extern studiohdr_t *pstudiohdr;
 extern float bonetransform[MAXSTUDIOBONES][3][4];
 extern cl_entity_t *currententity;
+extern float lighttransform[MAXSTUDIOBONES][3][4];
+extern int r_smodels_total;
+extern int chromeage[MAXSTUDIOBONES];
+extern vec3_t chromeup[MAXSTUDIOBONES];
+extern vec3_t chromeright[MAXSTUDIOBONES];
+extern vec3_t vright;
 
 void func_002C3038(void)
 {
@@ -154,6 +160,37 @@ void func_002C4840(vec3_t in1, float in2[3][4], vec3_t out)
     out[2] = in1[0] * in2[0][2] + in1[1] * in2[1][2] + in1[2] * in2[2][2];
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_studio", func_002C48D8);
+void func_002C48D8(int *pchrome, int bone, vec3_t normal)
+{
+    float n;
+
+    if (chromeage[bone] != r_smodels_total)
+    {
+        vec3_t chromeupvec;
+        vec3_t chromerightvec;
+        vec3_t tmp;
+
+        VectorScale(chrome_origin, -1, tmp);
+        tmp[0] += lighttransform[bone][0][3];
+        tmp[1] += lighttransform[bone][1][3];
+        tmp[2] += lighttransform[bone][2][3];
+        VectorNormalize(tmp);
+        CrossProduct(tmp, vright, chromeupvec);
+        VectorNormalize(chromeupvec);
+        CrossProduct(chromeupvec, tmp, chromerightvec);
+        VectorNormalize(chromerightvec);
+
+        func_002C4840(chromeupvec, lighttransform[bone], chromeup[bone]);
+        func_002C4840(chromerightvec, lighttransform[bone], chromeright[bone]);
+
+        chromeage[bone] = r_smodels_total;
+    }
+
+    n = DotProduct(normal, chromeright[bone]);
+    pchrome[0] = (n + 1.0f) * 32768.0f;
+
+    n = DotProduct(normal, chromeup[bone]);
+    pchrome[1] = (n + 1.0f) * 32768.0f;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/gl_studio", func_002C4B00);
