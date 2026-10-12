@@ -13,6 +13,19 @@ int MSG_ReadByteBits(int numbits);
 int MSG_ReadSBits(int numbits);
 void Host_Error(const char *error, ...);
 extern int custombitcounts[32];
+extern int bitcounts[40];
+float func_00242D60(int numbits); /* MSG_ReadBitAngle */
+int func_00243278(int numbits);
+int func_00243190(int numbits); /* MSG_PeekBits */
+int func_00243120(int numbits);
+void MSG_StartBitReading(sizebuf_t *buf);
+void MSG_EndBitReading(sizebuf_t *buf);
+void Host_EndGame(const char *message, ...);
+extern sizebuf_t net_message;
+extern int msg_badread;
+extern int cl_updatemask[2];
+void *memset(void *, int, unsigned int);
+extern char D_003892C0[];       /* "msg_badread in packetentities\n" */
 extern char D_00389290[];       /* "\n" */
 
 void func_00248148(char *pszFile, usercmd_t *cmd)
@@ -55,7 +68,7 @@ int func_002481C0(int *pbits, int *pmorebits)
 
 INCLUDE_RODATA("asm/nonmatchings/engine/cl_ents", D_00389290);
 
-void func_002482A8(entity_state_t *from, entity_state_t *to, int bits, int morebits, int number)
+void func_002482A8(entity_state_t *from, entity_state_t *to, int bits, int morebits, int number, int unused)
 {
     int i;
 
@@ -124,9 +137,181 @@ void func_002482A8(entity_state_t *from, entity_state_t *to, int bits, int moreb
         to->animtime = MSG_ReadByteBits(8) * 0.1f;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_ents", func_00248710);
+void func_00248710(entity_state_t *from, entity_state_t *to, int bits, int morebits, int number, int unused)
+{
+    int i;
+    int seq;
+    float animtime;
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_ents", func_00248F40);
+    *to = *from;
+    to->number = number;
+    to->entityType = 0;
+
+    for (i = 0; i < 32; i++)
+    {
+        if ((bits >> i) & 1)
+            bitcounts[i]++;
+    }
+    for (i = 0; i < 8; i++)
+    {
+        if ((morebits >> i) & 1)
+            bitcounts[32 + i]++;
+    }
+
+    to->flags = bits;
+
+    if (bits & 0x800)
+    {
+        if (MSG_ReadByteBits(1) == 1)
+            to->modelindex = MSG_ReadBits(10);
+        else
+            to->modelindex = MSG_ReadByteBits(8);
+    }
+
+    if (bits & 0x80)
+        to->frame = MSG_ReadByteBits(8);
+
+    if (bits & 0x40)
+        to->movetype = MSG_ReadByteBits(4);
+
+    if (bits & 0x40000)
+        to->colormap = MSG_ReadBits(16);
+
+    if (bits & 0x80000)
+    {
+        to->skin = MSG_ReadBits(10);
+        to->solid = MSG_ReadByteBits(3);
+    }
+
+    if (bits & 0x40000000)
+        to->scale = MSG_ReadBits(16) * (1.0f / 256.0f);
+
+    if (bits & 0x4000)
+        to->effects = MSG_ReadBits(10);
+
+    if (bits & 0x2)
+        to->origin[0] = MSG_ReadSBits(16) * 0.125f;
+    if (bits & 0x200)
+        to->angles[0] = func_00242D60(11);
+    if (bits & 0x4)
+        to->origin[1] = MSG_ReadSBits(16) * 0.125f;
+    if (bits & 0x20)
+        to->angles[1] = func_00242D60(13);
+    if (bits & 0x8)
+        to->origin[2] = MSG_ReadSBits(16) * 0.125f;
+    if (bits & 0x400)
+        to->angles[2] = func_00242D60(11);
+
+    if (bits & 0x1000)
+    {
+        seq = MSG_ReadByteBits(8);
+        animtime = (int)(cl[0].time * 100.0f);
+        animtime = (animtime - ((int)animtime & 0xFF)) * 0.01f;
+        animtime += MSG_ReadByteBits(8) * 0.01f;
+        while (animtime > cl[0].time + 0.1f)
+            animtime -= 2.56f;
+        to->sequence = seq;
+        to->animtime = animtime;
+    }
+
+    if (bits & 0x10000)
+        to->framerate = func_00243278(8) * 0.0625f;
+
+    if (bits & 0x1000000)
+        to->controller[0] = MSG_ReadByteBits(8);
+    if (bits & 0x2000000)
+        to->controller[1] = MSG_ReadByteBits(8);
+    if (bits & 0x4000000)
+        to->controller[2] = MSG_ReadByteBits(8);
+    if (bits & 0x8000000)
+        to->controller[3] = MSG_ReadByteBits(8);
+    if (bits & 0x10000000)
+        to->blending[0] = MSG_ReadByteBits(8);
+    if (bits & 0x20000000)
+        to->blending[1] = MSG_ReadByteBits(8);
+
+    if (bits & 0x400000)
+        to->body = MSG_ReadBits(10);
+
+    if (bits & 0x100000)
+    {
+        to->rendermode = MSG_ReadByteBits(8);
+        to->renderamt = MSG_ReadByteBits(8);
+        to->rendercolor.r = MSG_ReadByteBits(8);
+        to->rendercolor.g = MSG_ReadByteBits(8);
+        to->rendercolor.b = MSG_ReadByteBits(8);
+        to->renderfx = MSG_ReadByteBits(8);
+    }
+
+    if (morebits & 0x1)
+        to->mins[0] = MSG_ReadSBits(16) * 0.125f;
+    if (morebits & 0x2)
+        to->mins[1] = MSG_ReadSBits(16) * 0.125f;
+    if (morebits & 0x4)
+        to->mins[2] = MSG_ReadSBits(16) * 0.125f;
+    if (morebits & 0x8)
+        to->maxs[0] = MSG_ReadSBits(16) * 0.125f;
+    if (morebits & 0x10)
+        to->maxs[1] = MSG_ReadSBits(16) * 0.125f;
+    if (morebits & 0x20)
+        to->maxs[2] = MSG_ReadSBits(16) * 0.125f;
+
+    if (morebits & 0x40)
+        to->aiment = MSG_ReadBits(10);
+
+    if (morebits & 0x100)
+    {
+        if (MSG_ReadByteBits(1) == 1)
+            to->weaponmodel = MSG_ReadBits(10);
+        else
+            to->weaponmodel = MSG_ReadByteBits(8);
+    }
+}
+
+void func_00248F40(qboolean bBitReading)
+{
+    entity_state_t from;
+    entity_state_t to;
+    int bits;
+    int morebits;
+    int num;
+
+    memset(&from, 0, sizeof(from));
+
+    cl[0].validsequence = 0;
+    cl[0].frames[cls[0].netchan.incoming_sequence & cl_updatemask[0]].invalid = true;
+
+    if (bBitReading)
+        MSG_StartBitReading(&net_message);
+
+    while (1)
+    {
+        if (!func_00243190(32))
+            num = func_00243120(32);
+        else
+            num = func_002481C0(&bits, &morebits);
+
+        if (msg_badread)
+        {
+            Host_EndGame(D_003892C0);
+            break;
+        }
+
+        if (!num)
+            break;
+
+        if (bits & 0x10)
+            continue;
+
+        if (bits & 0x2000)
+            func_002482A8(&from, &to, bits, morebits, num, 0);
+        else
+            func_00248710(&from, &to, bits, morebits, num, 0);
+    }
+
+    if (bBitReading)
+        MSG_EndBitReading(&net_message);
+}
 
 void func_00249070(cl_packet_entities_t *pack)
 {

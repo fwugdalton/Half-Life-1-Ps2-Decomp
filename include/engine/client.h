@@ -53,7 +53,7 @@ typedef struct frame_s
     float senttime;             /* 0x24 */
     int delta_sequence;         /* 0x28 */
     float receivedtime;         /* 0x2C */
-    byte pad30[0x34 - 0x30];
+    qboolean invalid;           /* 0x30 */
     player_state_t playerstate[3]; /* 0x34 (MAX_CLIENTS) */
     cl_packet_entities_t packet_entities; /* 0x31C */
     short unk_324;              /* 0x324 */
