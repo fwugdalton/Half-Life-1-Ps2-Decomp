@@ -1701,3 +1701,5 @@ m_nCachedBoneNames = 0x005343A8; // size:0x1000
 m_rgCachedBoneTransform = 0x00510F50; // size:0x1800
 lighttransform = 0x00512750; // size:0x1800
 m_rgCachedLightTransform = 0x00513F78; // size:0x1800
+R_CheckStudioCache = 0x2B91D8; // type:func
+R_StudioSetupSkin = 0x2BF1C8; // type:func

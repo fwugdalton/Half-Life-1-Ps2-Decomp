@@ -20,7 +20,25 @@ extern int studio_hull_hitgroup[MAXSTUDIOBONES];        /* studio_hull_hitgroup 
 extern dclipnode_t studio_clipnodes[6];                 /* studio_clipnodes */
 extern mplane_t studio_planes[MAXSTUDIOBONES * 6];      /* studio_planes */
 
-extern byte rgStudioCache[0x440];
+#define STUDIO_CACHE_SIZE 16
+#define STUDIO_CACHEMASK (STUDIO_CACHE_SIZE - 1)
+
+typedef struct r_studiocache_s
+{
+    float frame;                /* 0x00 */
+    int sequence;               /* 0x04 */
+    vec3_t angles;              /* 0x08 */
+    vec3_t origin;              /* 0x14 */
+    vec3_t size;                /* 0x20 */
+    byte controller[4];         /* 0x2C */
+    byte blending[2];           /* 0x30 */
+    model_t *pModel;            /* 0x34 */
+    int nStartHull;             /* 0x38 */
+    int nStartPlane;            /* 0x3C */
+    int numhulls;               /* 0x40 */
+} r_studiocache_t;              /* 0x44 */
+
+extern r_studiocache_t rgStudioCache[STUDIO_CACHE_SIZE];
 extern int r_cachecurrent;
 extern int nCurrentHull;
 extern int nCurrentPlane;
@@ -74,6 +92,17 @@ void *func_00244928(char *name, int *pLength);
 void *Cache_Alloc(cache_user_t *c, int size, char *name);
 void *memcpy(void *dst, const void *src, unsigned int n);
 void Mem_Free(void *p);
+int func_002E4560(const void *a, const void *b, int n);
+int strcasecmp(const char *a, const char *b);
+void Con_Printf(const char *fmt, ...);
+void GL_Bind(int texnum);
+
+extern int D_0039967C;
+extern int D_00399698;
+extern int D_003996C0;
+
+/* no PS2 o número da textura GL fica nos últimos 4 bytes do nome */
+#define STUDIO_TEXNUM(ptex) (*(int *)&(ptex)->name[60])
 float sinf(float);
 float cosf(float);
 
@@ -92,6 +121,11 @@ typedef struct
     cache_user_t cache;         /* 0x124 */
     int unk128;                 /* 0x128 */
 } studiotexcache_t;
+
+studiotexcache_t *func_002BF028(int index);
+extern studiotexcache_t *D_0053C2E8[];
+extern studiotexcache_t D_005377E8[64];
+extern int D_003996A4;
 
 #define kRenderFxGlowShell 19
 
@@ -158,7 +192,27 @@ void SV_InitStudioHull(void)
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002B91D8);
+r_studiocache_t *R_CheckStudioCache(model_t *pModel, float frame, int sequence, vec3_t angles, vec3_t origin,
+                                    vec3_t size, byte *controller, byte *blending)
+{
+    int i;
+    r_studiocache_t *pCached;
+
+    for (i = 0; i < STUDIO_CACHE_SIZE; i++)
+    {
+        pCached = &rgStudioCache[(r_cachecurrent - i) & STUDIO_CACHEMASK];
+
+        if (pCached->pModel == pModel && pCached->frame == frame && pCached->sequence == sequence
+            && VectorCompare(pCached->angles, angles) && VectorCompare(pCached->origin, origin)
+            && VectorCompare(pCached->size, size)
+            && !func_002E4560(pCached->controller, controller, 4)
+            && !func_002E4560(pCached->blending, blending, 2))
+        {
+            return pCached;
+        }
+    }
+    return NULL;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002B9330);
 
@@ -613,7 +667,26 @@ void func_002BEF98(void)
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BF028);
+studiotexcache_t *func_002BF028(int index)
+{
+    studiotexcache_t **ppcache;
+    studiotexcache_t *pcache;
+
+    ppcache = &D_0053C2E8[index];
+    pcache = *ppcache;
+    if (pcache && pcache->index == index)
+        return pcache;
+
+    pcache = &D_005377E8[D_003996A4];
+    D_003996A4 = (D_003996A4 + 1) % 64;
+    *ppcache = pcache;
+    pcache->index = index;
+    pcache->unk004 = -1;
+    pcache->unk008 = -1;
+    if (Cache_Check(&pcache->cache))
+        Cache_Free(&pcache->cache);
+    return pcache;
+}
 
 void func_002BF0E8(char *name, int texindex, studiotexcache_t *pcache)
 {
@@ -640,7 +713,31 @@ void func_002BF0E8(char *name, int texindex, studiotexcache_t *pcache)
 }
 
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BF1C8);
+void R_StudioSetupSkin(studiohdr_t *ptexturehdr, int index)
+{
+    mstudiotexture_t *ptexture;
+    studiotexcache_t *pcache;
+
+    if (g_ForcedFaceFlags & STUDIO_NF_CHROME)
+        return;
+
+    ptexture = (mstudiotexture_t *)((byte *)ptexturehdr + ptexturehdr->textureindex) + index;
+
+    if (currententity->index > 0 && !strcasecmp(ptexture->name, "DM_Base.bmp"))
+    {
+        pcache = func_002BF028(currententity->index);
+        if (pcache->unk00C != (char *)D_0039967C || pcache->unk004 != D_00399698 || pcache->unk008 != D_003996C0)
+            Con_Printf("If you just died, blame Mike\n");
+
+        if (pcache->unk128)
+        {
+            GL_Bind(pcache->unk128);
+            return;
+        }
+    }
+
+    GL_Bind(STUDIO_TEXNUM(ptexture));
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BF2B0);
 
@@ -668,7 +765,16 @@ INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BFB68);
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BFEA8);
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002C0258);
+void func_002C0258(void)
+{
+    studiotexcache_t *pcache;
+
+    pcache = func_002BF028(currententity->index);
+    pcache->unk004 = -1;
+    pcache->unk008 = -1;
+    if (Cache_Check(&pcache->cache))
+        Cache_Free(&pcache->cache);
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", R_StudioDrawPlayer);
 
@@ -757,6 +863,27 @@ int func_002C2B68(int bodypart)
     return model;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002C2BF8);
+void func_002C2BF8(int bodypart, int submodel, int offset)
+{
+    mstudiobodyparts_t *pbodypart;
+    mstudiounkF4_t *p;
+    int i;
+    int total;
+    int body;
+
+    pbodypart = (mstudiobodyparts_t *)((byte *)pstudiohdr + pstudiohdr->bodypartindex) + bodypart;
+    p = (mstudiounkF4_t *)((byte *)pstudiohdr + STUDIOHDR_UNKF4(pstudiohdr));
+    total = 0;
+    for (i = 0; i < STUDIOHDR_UNKF9(pstudiohdr) && i != submodel; i++)
+        total += 1 + p[bodypart * STUDIOHDR_UNKF8(pstudiohdr) + i].unk00;
+    total += offset;
+
+    if (bodypart <= pstudiohdr->numbodyparts && submodel < pbodypart->nummodels)
+    {
+        body = currententity->body;
+        currententity->body = body - (body / pbodypart->base) % pbodypart->nummodels * pbodypart->base
+                            + total * pbodypart->base;
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002C2CE0);
