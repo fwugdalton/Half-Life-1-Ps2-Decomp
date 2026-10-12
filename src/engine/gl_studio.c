@@ -115,6 +115,13 @@ extern int chromeage[MAXSTUDIOBONES];
 extern vec3_t chromeup[MAXSTUDIOBONES];
 extern vec3_t chromeright[MAXSTUDIOBONES];
 extern vec3_t vright;
+extern int lineargammatable[1024];
+extern int screengammatable[1024];
+extern float locallightR2[3];
+extern int locallinearlight[3][3];
+float sqrtf(float);
+extern int numlights;
+extern float r_blend;
 
 void func_002C3038(void)
 {
@@ -279,4 +286,61 @@ void func_002C48D8(int *pchrome, int bone, vec3_t normal)
     pchrome[1] = (n + 1.0f) * 32768.0f;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/gl_studio", func_002C4B00);
+void func_002C4B00(float (*light)[4], float *normal, float *src, float *lambert)
+{
+    float lightcos;
+    int i;
+    int c;
+    float r;
+    float red, green, blue;
+
+    red = green = blue = 0;
+
+    for (i = 0; i < numlights; i++)
+    {
+        lightcos = DotProduct(normal, light[i]);
+        if (lightcos < 0)
+        {
+            lightcos = -lightcos;
+            if (light[i][3] == 0)
+            {
+                r = DotProduct(light[i], light[i]);
+                if (r > 0)
+                    light[i][3] = locallightR2[i] / (r * sqrtf(r));
+                else
+                    light[i][3] = 1;
+            }
+
+            lightcos *= light[i][3];
+            red += locallinearlight[i][0] * lightcos;
+            green += locallinearlight[i][1] * lightcos;
+            blue += locallinearlight[i][2] * lightcos;
+        }
+    }
+
+    if (red != 0 || green != 0 || blue != 0)
+    {
+    c = lineargammatable[(int)(src[0] * 1023)] + red;
+    if (c > 1023)
+        lambert[0] = 1.0f;
+    else
+        lambert[0] = screengammatable[c] * (1.0f / 1023.0f);
+
+    c = lineargammatable[(int)(src[1] * 1023)] + green;
+    if (c > 1023)
+        lambert[1] = 1.0f;
+    else
+        lambert[1] = screengammatable[c] * (1.0f / 1023.0f);
+
+    c = lineargammatable[(int)(src[2] * 1023)] + blue;
+    if (c > 1023)
+        lambert[2] = 1.0f;
+    else
+        lambert[2] = screengammatable[c] * (1.0f / 1023.0f);
+
+    lambert[3] = r_blend;
+    return;
+    }
+
+    VectorCopy(src, lambert);
+}
