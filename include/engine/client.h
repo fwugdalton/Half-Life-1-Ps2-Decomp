@@ -148,7 +148,8 @@ typedef struct client_state_s
     int unk_15A8;               /* 0x15A8 */
     float weaponstarttime;      /* 0x15AC */
     int weaponsequence;         /* 0x15B0 */
-    byte pad15B4[0x15C4 - 0x15B4];
+    int unk_15B4;               /* 0x15B4 */
+    void *flashlights[MAX_CLIENTS]; /* 0x15B8: dlight_t da lanterna de cada jogador */
     player_info_t players[MAX_CLIENTS]; /* 0x15C4 */
     vec3_t viewattachment;      /* 0x211C: último attachment do viewmodel */
     int unk2128;                /* 0x2128: entidade de câmera (comparada com sv.num_edicts) */

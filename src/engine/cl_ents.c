@@ -4,6 +4,8 @@
 #include "engine/mathlib.h"
 #include "engine/client.h"
 #include "engine/entity_state.h"
+#include "engine/model.h"
+#include "engine/pmove.h"
 
 int sprintf(char *, const char *, ...);
 char *strcat(char *, const char *);
@@ -28,6 +30,48 @@ void *memset(void *, int, unsigned int);
 extern char D_003892C0[];       /* "msg_badread in packetentities\n" */
 extern char D_00389290[];       /* "\n" */
 extern int cl_updatebackup[2];
+extern vec3_t vec3_origin;
+
+typedef struct particle_s
+{
+    vec3_t org;                 /* 0x00 */
+    short color;                /* 0x0C */
+    short packedColor;          /* 0x0E */
+    struct particle_s *next;    /* 0x10 */
+    vec3_t vel;                 /* 0x14 */
+    float ramp;                 /* 0x20 */
+    float die;                  /* 0x24 */
+    int type;                   /* 0x28 */
+} particle_t; /* 0x2C */
+
+extern particle_t *D_0039966C;  /* free_particles */
+extern particle_t *D_00399660;  /* active_particles */
+
+typedef struct
+{
+    vec3_t origin;      /* 0x00 */
+    float radius;       /* 0x0C */
+    color24 color;      /* 0x10 */
+    float die;          /* 0x14 */
+    float decay;        /* 0x18 */
+    float minlight;     /* 0x1C */
+    int key;            /* 0x20 */
+    qboolean dark;      /* 0x24 */
+} dlight_t;
+
+dlight_t *func_002510D0(int key); /* CL_AllocDlight */
+void func_002514D0(dlight_t *dl);
+void Pmove_Init(void);
+float anglemod(float a);
+int VectorCompare(const vec3_t v1, const vec3_t v2);
+void func_002578C0(vec3_t pos, int clientId);
+void func_002B2F08(vec3_t start, vec3_t end, int type, int clientId); /* R_RocketTrail */
+extern int cl_numvisedicts[2];
+extern cl_entity_t *cl_visedicts[2];
+extern int D_00399658[2];               /* cl_numbeamentities */
+extern cl_entity_t *D_0050EF88[2][64];  /* cl_beamentities */
+extern int D_003AC498[2][166];          /* bits de entidades vistas no último frame */
+float RandomFloat(float flLow, float flHigh);
 extern cl_entity_t *cl_entities[2];
 int MSG_ReadShort(void);
 int MSG_ReadByte(void);
@@ -518,15 +562,340 @@ void func_002490B0(qboolean delta, int clientId)
 INCLUDE_ASM("asm/nonmatchings/engine/cl_ents", func_002490B0);
 #endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_ents", func_00249868);
+void func_00249868(cl_entity_t *ent)
+{
+    Con_DPrintf("----------------------------\n");
+    Con_DPrintf("T %.2f", cl[0].time);
+    Con_DPrintf(":Gap %.2f\n", cl[0].time - ent->animtime);
+    Con_DPrintf("#%i", ent->index);
+    if (ent->model)
+        Con_DPrintf(":%s\n", ent->model);
+    else
+        Con_DPrintf(":?\n");
+    Con_DPrintf("AT %4.2f ST %4.2f S %i F %4.1f\n", ent->animtime, ent->sequencetime, ent->sequence, ent->frame);
+    Con_DPrintf("PA %4.2f PS %i FR %.1f\n", ent->prevanimtime, ent->prevsequence, ent->framerate);
+    Con_DPrintf("C0 %i:%i BL %i:%i\n", ent->controller[0], ent->prevcontroller[0], ent->blending[0], ent->prevblending[0]);
+    Con_DPrintf("O : %.0f %.0f %.0f\n", ent->origin[0], ent->origin[1], ent->origin[2]);
+    Con_DPrintf("PO: %.0f %.0f %.0f\n", ent->prevorigin[0], ent->prevorigin[1], ent->prevorigin[2]);
+    Con_DPrintf("RM:  %i RA: %i RX: %i PF %4.2f\n", ent->rendermode, ent->renderamt, ent->renderfx, ent->prevframe);
+    Con_DPrintf("MT: %i:", ent->movetype);
+    if (ent->unk194 & 0x20)
+        Con_DPrintf("NoInterp ");
+    if (ent->unk194 & 0x80)
+        Con_DPrintf("NoDraw ");
+    if (ent->unk194 & 0x40)
+        Con_DPrintf("Light ");
+    if (ent->unk194 & 0x2)
+        Con_DPrintf("MUZ ");
+    if (ent->unk194 & 0x4)
+        Con_DPrintf("BLT ");
+    if (ent->unk194 & 0x8)
+        Con_DPrintf("Dim ");
+    if (ent->unk194 & 0x10)
+        Con_DPrintf("Inv ");
+    if (ent->unk18C)
+        Con_DPrintf("F ");
+    Con_DPrintf(D_00389290);
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_ents", func_00249B50);
+void func_00249B50(cl_entity_t *ent, entity_state_t *state, qboolean bSync)
+{
+    int i;
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_ents", func_00249CE8);
+    ent->index = state->number;
+    ent->model = cl[0].model_precache[state->modelindex];
+    if (ent->model && bSync)
+    {
+        if (ent->model->synctype == 1)
+            ent->syncbase = RandomFloat(0, 1);
+        else
+            ent->syncbase = 0;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_ents", func_00249D98);
+    ent->colormap = state->colormap;
+    ent->unk4C = 0;
+    ent->skin = state->skin;
+    ent->frame = state->frame;
+    ent->unk194 = state->effects;
+    ent->framerate = state->framerate;
+    ent->rendermode = state->rendermode;
+    ent->renderamt = state->renderamt;
+    ent->rendercolor.r = state->rendercolor.r;
+    ent->rendercolor.g = state->rendercolor.g;
+    ent->rendercolor.b = state->rendercolor.b;
+    ent->renderfx = state->renderfx;
 
+    for (i = 0; i < 4; i++)
+        ent->controller[i] = state->controller[i];
+    for (i = 0; i < 2; i++)
+        ent->blending[i] = state->blending[i];
+
+    VectorCopy(state->origin, ent->origin);
+    VectorCopy(state->angles, ent->angles);
+    ent->scale = state->scale;
+    ent->sequence = state->sequence;
+    ent->animtime = state->animtime;
+    ent->movetype = state->movetype;
+    ent->body = state->body;
+    ent->aiment = state->aiment;
+}
+
+void func_00249CE8(vec3_t org, int color, float life, int zpos, int zvel)
+{
+    particle_t *p;
+
+    if (!D_0039966C)
+        return;
+
+    p = D_0039966C;
+    D_0039966C = p->next;
+    p->next = D_00399660;
+    D_00399660 = p;
+
+    p->die = cl[0].time + life;
+    p->packedColor = 0;
+    p->color = color;
+    p->type = 0;
+    VectorCopy(vec3_origin, p->vel);
+    p->vel[2] += zvel;
+    VectorCopy(org, p->org);
+    p->org[2] += zpos;
+}
+
+void func_00249D98(int i, int clientId)
+{
+    cl_entity_t *ent;
+    player_state_t *state;
+    dlight_t *dl;
+    vec3_t forward;
+    pmtrace_t trace;
+    vec3_t end;
+    float falloff;
+
+    ent = &cl_entities[clientId][i + 1];
+    state = &cl[clientId].frames[cl[clientId].parsecount & cl_updatemask[clientId]].playerstate[i];
+
+    if ((ent->unk194 & (4 | 8)) && cl[clientId].worldmodel)
+    {
+        if (cl[clientId].flashlights[i] && ((dlight_t *)cl[clientId].flashlights[i])->key == i + 1)
+            dl = cl[clientId].flashlights[i];
+        else
+            dl = func_002510D0(i + 1);
+
+        if (ent->unk194 & 4)
+        {
+            dl->color.r = dl->color.g = dl->color.b = 250;
+            dl->radius = 400;
+            VectorCopy(ent->origin, dl->origin);
+            dl->origin[2] += 16;
+        }
+        else
+        {
+            VectorCopy(ent->origin, dl->origin);
+            dl->origin[2] += cl[clientId].viewheight;
+            AngleVectors(state->viewangles, forward, NULL, NULL);
+            VectorMA(dl->origin, 2000, forward, end);
+
+            pmove[clientId].usehull = 2;
+            Pmove_Init();
+            trace = PM_PlayerTrace(dl->origin, end, 2, clientId);
+            if (trace.ent > 0 && pmove[clientId].physents[trace.ent].studiomodel)
+                VectorCopy(pmove[clientId].physents[trace.ent].origin, trace.endpos);
+
+            VectorCopy(trace.endpos, dl->origin);
+
+            falloff = trace.fraction * 2000;
+            if (falloff < 500)
+                falloff = 1.0f;
+            else
+                falloff = 500.0f / falloff;
+            falloff *= falloff;
+
+            dl->radius = 80;
+            dl->color.r = dl->color.g = dl->color.b = 255 * falloff;
+        }
+
+        cl[clientId].flashlights[i] = dl;
+        dl->die = cl[clientId].time + 0.2f;
+        func_002514D0(dl);
+    }
+    else
+    {
+        if (cl[clientId].flashlights[i] && ((dlight_t *)cl[clientId].flashlights[i])->key == i + 1)
+            ((dlight_t *)cl[clientId].flashlights[i])->die = cl[clientId].time;
+        cl[clientId].flashlights[i] = NULL;
+    }
+
+    if (cl_entities[clientId][cl[clientId].viewentity].unk194 & 2)
+        cl[clientId].viewent.unk194 |= 2;
+}
+
+#ifdef NON_MATCHING
+void func_0024A160(int clientId)
+{
+    cl_entity_t old;
+    vec3_t oldorg;
+    cl_packet_entities_t *pack;
+    entity_state_t *s1;
+    cl_entity_t *ent;
+    model_t *model;
+    dlight_t *dl;
+    int pnum;
+    int bitset;
+    float autorotate;
+    float time;
+
+    pack = &cl[clientId].frames[cls[clientId].netchan.incoming_sequence & cl_updatemask[clientId]].packet_entities;
+    autorotate = anglemod(100 * cl[clientId].time);
+    time = cl[clientId].time;
+
+    for (pnum = 0; pnum < pack->num_entities; pnum++)
+    {
+        s1 = &pack->entities[pnum];
+
+        if (!s1->modelindex)
+            continue;
+        if (cl_numvisedicts[clientId] >= 512)
+            break;
+        if (s1->effects & 0x80)
+            continue;
+
+        ent = &cl_visedicts[clientId][cl_numvisedicts[clientId]++];
+        *ent = cl_entities[clientId][s1->number];
+        old = cl_entities[clientId][s1->number];
+        bitset = D_003AC498[clientId][ent->index / 8] & (1 << (ent->index % 8));
+        func_00249B50(ent, s1, 1);
+
+        model = ent->model;
+        if (s1->entityType)
+        {
+            ent->movetype = s1->modelindex;
+            if (model && model->type != 1)
+                Sys_Error("Bad model on beam");
+            ent->prevsequence = ent->sequence;
+            VectorCopy(ent->origin, ent->prevorigin);
+            VectorCopy(ent->angles, ent->prevangles);
+            cl_entities[clientId][ent->index] = *ent;
+            cl_numvisedicts[clientId]--;
+            if (D_00399658[clientId] < 64)
+                D_0050EF88[clientId][D_00399658[clientId]++] = &cl_entities[clientId][ent->index];
+            else
+                Con_DPrintf("Overflow beam entity list!\n");
+            continue;
+        }
+
+        if (old.animtime != ent->animtime)
+        {
+            if (old.sequence != ent->sequence)
+            {
+                ent->sequencetime = ent->animtime;
+                ent->prevsequence = old.sequence;
+                ent->prevseqblending[0] = old.blending[0];
+                ent->prevseqblending[1] = old.blending[1];
+            }
+            ent->prevanimtime = old.animtime;
+            ent->prevcontroller[0] = old.controller[0];
+            ent->prevcontroller[1] = old.controller[1];
+            ent->prevcontroller[2] = old.controller[2];
+            ent->prevcontroller[3] = old.controller[3];
+            ent->prevblending[0] = old.blending[0];
+            ent->prevblending[1] = old.blending[1];
+            VectorCopy(old.origin, ent->prevorigin);
+            VectorCopy(old.angles, ent->prevangles);
+        }
+        else if (!VectorCompare(ent->origin, old.origin))
+        {
+            ent->unk70 = time + 0.2f;
+            VectorCopy(ent->origin, ent->prevorigin);
+            VectorCopy(ent->angles, ent->prevangles);
+        }
+
+        if ((s1->flags & 0x200000) && ent->unk70 < cl[clientId].time)
+            ent->movetype = 4;
+        else
+            ent->movetype = 0;
+
+        if (ent->aiment)
+            ent->movetype = 12;
+
+        if (!bitset)
+            ent->unk18C = 1;
+        if (!bitset || (ent->unk194 & 0x20))
+        {
+            ent->prevsequence = ent->sequence;
+            VectorCopy(ent->origin, ent->prevorigin);
+            VectorCopy(ent->angles, ent->prevangles);
+            ent->animtime = time;
+            ent->prevanimtime = time;
+        }
+
+        bitset = ent->index;
+        if (bitset != 1)
+        {
+            if (ent->unk194 & 4)
+            {
+                dl = func_002510D0(bitset);
+                VectorCopy(ent->origin, dl->origin);
+                dl->origin[2] += 16;
+                dl->color.r = dl->color.g = dl->color.b = 250;
+                dl->radius = RandomFloat(400, 431);
+                dl->die = cl[clientId].time + 0.001f;
+            }
+            if (ent->unk194 & 8)
+            {
+                dl = func_002510D0(bitset);
+                VectorCopy(ent->origin, dl->origin);
+                dl->color.r = dl->color.g = dl->color.b = 100;
+                dl->radius = RandomFloat(200, 231);
+                dl->die = cl[clientId].time + 0.001f;
+            }
+        }
+
+        if (ent->unk194 & 0x40)
+        {
+            func_002578C0(ent->origin, clientId);
+            if (cl_numlocal < 2)
+            {
+                dl = func_002510D0(bitset);
+                VectorCopy(ent->origin, dl->origin);
+                dl->radius = 200;
+                dl->color.r = dl->color.g = dl->color.b = 100;
+                dl->die = cl[clientId].time + 0.001f;
+            }
+        }
+
+        if (model)
+        {
+            if (ent->model->flags & 4)
+                func_002B2F08(oldorg, ent->origin, 2, clientId);
+            else if (ent->model->flags & 0x20)
+                func_002B2F08(oldorg, ent->origin, 4, clientId);
+            else if (ent->model->flags & 0x10)
+                func_002B2F08(oldorg, ent->origin, 3, clientId);
+            else if (ent->model->flags & 0x40)
+                func_002B2F08(oldorg, ent->origin, 5, clientId);
+            else if (ent->model->flags & 1)
+            {
+                func_002B2F08(oldorg, ent->origin, 0, clientId);
+                dl = func_002510D0(bitset);
+                VectorCopy(ent->origin, dl->origin);
+                dl->radius = 200;
+                dl->color.r = dl->color.g = dl->color.b = 200;
+                dl->die = cl[clientId].time + 0.01f;
+            }
+            else if (ent->model->flags & 2)
+                func_002B2F08(oldorg, ent->origin, 1, clientId);
+            else if (ent->model->flags & 0x80)
+                func_002B2F08(oldorg, ent->origin, 6, clientId);
+        }
+
+        ent->weaponmodel = s1->weaponmodel;
+        cl_entities[clientId][ent->index] = *ent;
+    }
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/cl_ents", func_0024A160);
+#endif
 
 INCLUDE_ASM("asm/nonmatchings/engine/cl_ents", func_0024ABF8);
 

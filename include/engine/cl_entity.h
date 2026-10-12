@@ -31,16 +31,16 @@ typedef struct cl_entity_s
     byte pad3C[0x44 - 0x3C];
     int aiment;                 /* 0x44 */
     int weaponmodel;            /* 0x48 */
-    byte pad4C[0x50 - 0x4C];
+    int unk4C;                  /* 0x4C */
     struct model_s *model;      /* 0x50 */
     struct efrag_s *efrag;      /* 0x54 */
     void *topnode;              /* 0x58 */
     float framerate;            /* 0x5C */
     float frame;                /* 0x60 */
-    byte pad64[0x68 - 0x64];
+    float syncbase;             /* 0x64 */
     float animtime;             /* 0x68 */
     float scale;                /* 0x6C */
-    byte pad70[0x74 - 0x70];
+    float unk70;                /* 0x70 */
     float prevanimtime;         /* 0x74 */
     float prevframe;            /* 0x78 */
     float sequencetime;         /* 0x7C */
@@ -54,7 +54,8 @@ typedef struct cl_entity_s
     byte padE7;
     unsigned int cvFloorColor[4]; /* 0xE8: colorVec */
     entity_state_t baseline;    /* 0xF8 */
-    byte pad18C[0x194 - 0x18C];
+    int unk18C;                 /* 0x18C */
+    int unk190;                 /* 0x190 */
     int unk194;                 /* 0x194: bits 0x100/0x200 = viewmodel de qual jogador */
     int trivial_accept;         /* 0x198 */
     int sndavg;                 /* 0x19C: mouth.sndavg */
