@@ -117,6 +117,7 @@ segments:
       - [0x1B0600, c, engine/r_part]
       - [0x1B15D0, c, engine/r_part2]
       - [0x1B9100, c, engine/r_studio]
+      - [0x1C3038, c, engine/gl_studio]
       - [0x1C4E10, asm, cod/1C4E10]
       - [0x1F5980, textbin, cod/1F5980] # .vutext
       - [0x201B00, data, cod/201B00] # .data
@@ -183,6 +184,7 @@ segments:
       - [0x294E30, .rodata, engine/r_part]
       - [0x294EE0, .rodata, engine/r_part2]
       - [0x294FA0, .rodata, engine/r_studio]
+      - [0x295220, .rodata, engine/gl_studio]
       - [0x295228, rodata, cod/295228]
       - [0x298E80, gcc_except_table, cod/298E80] # .gcc_except_table
       - [0x298F80, sdata, cod/298F80] # .sdata

@@ -42,6 +42,35 @@ void func_0023D520(void);
 int strcmp(const char *a, const char *b);
 
 extern int r_dointerp;
+extern vec3_t r_origin;
+extern vec3_t chrome_origin;
+extern int g_ForcedFaceFlags;
+extern struct model_s *cl_shellchrome;
+int tri_SpriteTexture(struct model_s *pSpriteModel, int frame);
+void R_StudioRenderFinal(void);
+int func_002C2AF0(int bodypart);
+void *Mem_DbgCalloc(int num, int size, const char *file, int line);
+void *COM_LoadFileCached(char *path, cache_user_t *cu, int *pLength);
+void Con_DPrintf(const char *fmt, ...);
+model_t *Mod_ForName(char *name, qboolean crash);
+char *strcpy(char *dst, const char *src);
+int strlen(const char *s);
+
+extern float D_0053CF68[3][4];
+extern mstudiobodyparts_t *pbodypart;
+extern mstudiomodel_t *psubmodel;
+
+#define kRenderFxGlowShell 19
+
+/* extensão do PS2 no fim do studiohdr_t */
+typedef struct
+{
+    int unk00;
+    byte pad04[0x14 - 0x04];
+} mstudiounkF4_t;               /* 0x14 */
+#define STUDIOHDR_UNKF4(h) (*(int *)((byte *)(h) + 0xF4))
+#define STUDIOHDR_UNKF8(h) (*((byte *)(h) + 0xF8))
+#define STUDIOHDR_UNKF9(h) (*((byte *)(h) + 0xF9))
 extern int D_003342A0;
 
 /* lote de triângulos do studio */
@@ -118,11 +147,58 @@ INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002B9FE8);
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BA1B8);
 
-INCLUDE_RODATA("asm/nonmatchings/engine/r_studio", D_00395040);
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BA320);
+mstudioanim_t *R_GetAnim(model_t *pmodel, mstudioseqdesc_t *pseqdesc)
+{
+    mstudioseqgroup_t *pseqgroup;
+    cache_user_t *paSequences;
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BA420);
+    pseqgroup = (mstudioseqgroup_t *)((byte *)pstudiohdr + pstudiohdr->seqgroupindex) + pseqdesc->seqgroup;
+
+    if (pseqdesc->seqgroup == 0)
+        return (mstudioanim_t *)((byte *)pstudiohdr + pseqgroup->data + pseqdesc->animindex);
+
+    paSequences = (cache_user_t *)pmodel->submodels;
+    if (paSequences == NULL)
+    {
+        paSequences = (cache_user_t *)Mem_DbgCalloc(MAXSTUDIOGROUPS + 1, sizeof(cache_user_t), "engine/R_studio.c", 636);
+        pmodel->submodels = (void *)paSequences;
+    }
+
+    if (!Cache_Check(&paSequences[pseqdesc->seqgroup]))
+    {
+        Con_DPrintf("Loading sequence [%s]\n", pseqgroup->name);
+        COM_LoadFileCached(pseqgroup->name, &paSequences[pseqdesc->seqgroup], NULL);
+    }
+
+    return (mstudioanim_t *)((byte *)paSequences[pseqdesc->seqgroup].data + pseqdesc->animindex);
+}
+
+void R_StudioLoadSeqGroup(model_t *pmodel, int seqgroup)
+{
+    studiohdr_t *phdr;
+    mstudioseqgroup_t *pseqgroup;
+    cache_user_t *paSequences;
+
+    if (!seqgroup)
+        return;
+
+    phdr = (studiohdr_t *)Mod_Extradata(pmodel);
+    if (seqgroup >= phdr->numseqgroups)
+        return;
+
+    pseqgroup = (mstudioseqgroup_t *)((byte *)phdr + phdr->seqgroupindex) + seqgroup;
+
+    paSequences = (cache_user_t *)pmodel->submodels;
+    if (paSequences == NULL)
+    {
+        paSequences = (cache_user_t *)Mem_DbgCalloc(MAXSTUDIOGROUPS + 1, sizeof(cache_user_t), "engine/R_studio.c", 675);
+        pmodel->submodels = (void *)paSequences;
+    }
+
+    if (!Cache_Check(&paSequences[seqgroup]))
+        COM_LoadFileCached(pseqgroup->name, &paSequences[seqgroup], NULL);
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BA4D8);
 
@@ -238,13 +314,23 @@ INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BBA78);
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BC048);
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BC188);
+void R_StudioTransform(vec3_t in, vec3_t out)
+{
+    out[0] = in[0] * D_0053CF68[0][0] + in[1] * D_0053CF68[0][1] + in[2] * D_0053CF68[0][2] + D_0053CF68[0][3];
+    out[1] = in[0] * D_0053CF68[1][0] + in[1] * D_0053CF68[1][1] + in[2] * D_0053CF68[1][2] + D_0053CF68[1][3];
+    out[2] = in[0] * D_0053CF68[2][0] + in[1] * D_0053CF68[2][1] + in[2] * D_0053CF68[2][2] + D_0053CF68[2][3];
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BC240);
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BC520);
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BC808);
+void VectorIRotate(vec3_t in1, float in2[3][4], vec3_t out)
+{
+    out[0] = in1[0] * in2[0][0] + in1[1] * in2[1][0] + in1[2] * in2[2][0];
+    out[1] = in1[0] * in2[0][1] + in1[1] * in2[1][1] + in1[2] * in2[2][1];
+    out[2] = in1[0] * in2[0][2] + in1[1] * in2[1][2] + in1[2] * in2[2][2];
+}
 
 float R_StudioEstimateInterpolant(int clientId)
 {
@@ -291,7 +377,26 @@ INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BE780);
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BEA90);
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BECB8);
+studiohdr_t *R_LoadTextures(model_t *pmodel)
+{
+    char modelname[260];
+    model_t *ptexturemodel;
+
+    if (pstudiohdr->textureindex)
+        return pstudiohdr;
+
+    ptexturemodel = *(model_t **)((byte *)pmodel + 0x190);
+    if (ptexturemodel && ptexturemodel->cache.data)
+        return (studiohdr_t *)ptexturemodel->cache.data;
+
+    strcpy(modelname, pmodel->name);
+    strcpy(&modelname[strlen(modelname) - 4], "T.dol");
+
+    ptexturemodel = Mod_ForName(modelname, true);
+    *(model_t **)((byte *)pmodel + 0x190) = ptexturemodel;
+    strcpy(((studiohdr_t *)ptexturemodel->cache.data)->name, modelname);
+    return (studiohdr_t *)ptexturemodel->cache.data;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BED78);
 
@@ -316,7 +421,23 @@ INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BF1C8);
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BF2B0);
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BF430);
+void R_StudioSetupModel(int bodypart)
+{
+    int index;
+
+    if (bodypart > pstudiohdr->numbodyparts)
+    {
+        Con_DPrintf("R_StudioSetupModel: no such bodypart %d\n", bodypart);
+        bodypart = 0;
+    }
+
+    pbodypart = (mstudiobodyparts_t *)((byte *)pstudiohdr + pstudiohdr->bodypartindex) + bodypart;
+
+    index = currententity->body / pbodypart->base;
+    index = index % pbodypart->nummodels;
+
+    psubmodel = (mstudiomodel_t *)((byte *)pstudiohdr + pbodypart->modelindex) + index;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", R_StudioDrawModel);
 
@@ -350,9 +471,31 @@ INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002C1890);
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002C1A68);
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002C1E10);
+void R_StudioRenderModel(void)
+{
+    int fx;
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002C1EC0);
+    VectorCopy(r_origin, chrome_origin);
+    g_ForcedFaceFlags = 0;
+
+    fx = currententity->renderfx;
+    if (fx == kRenderFxGlowShell)
+    {
+        currententity->renderfx = 0;
+        R_StudioRenderFinal();
+
+        g_ForcedFaceFlags = STUDIO_NF_CHROME;
+        tri_SpriteTexture(cl_shellchrome, 0);
+        currententity->renderfx = fx;
+        R_StudioRenderFinal();
+    }
+    else
+    {
+        R_StudioRenderFinal();
+    }
+}
+
+INCLUDE_ASM("asm/nonmatchings/engine/r_studio", R_StudioRenderFinal);
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002C2260);
 
@@ -368,45 +511,29 @@ int func_002C2AF0(int bodypart)
     return (currententity->body / pbodypart->base) % pbodypart->nummodels;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002C2B68);
+int func_002C2B68(int bodypart)
+{
+    int model;
+    int total;
+    int i;
+    mstudiounkF4_t *p;
+
+    model = func_002C2AF0(bodypart);
+    total = 0;
+    p = (mstudiounkF4_t *)((byte *)pstudiohdr + STUDIOHDR_UNKF4(pstudiohdr));
+    for (i = 0; i < STUDIOHDR_UNKF9(pstudiohdr); i++)
+    {
+        total++;
+        total += p[bodypart * STUDIOHDR_UNKF8(pstudiohdr) + i].unk00;
+        if (model < total)
+        {
+            model = i;
+            break;
+        }
+    }
+    return model;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002C2BF8);
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002C2CE0);
-
-void func_002C3038(void)
-{
-    D_00439500.texnum = -1;
-    D_00439500.unk04 = 0xFFFFFFFF;
-    D_00439500.unk10 = 0;
-    D_00439500.unk14 = 0;
-    D_00439500.unk18 = 0;
-    D_00439500.count = 0;
-    D_00439500.unk0C = 0;
-}
-
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002C3070);
-
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002C3A80);
-
-void func_002C3C90(void)
-{
-    if (D_00439500.count > 0)
-    {
-        func_0023D520();
-        D_003342A0 = !D_003342A0;
-    }
-    D_00439500.count = 0;
-}
-
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002C3CE0);
-
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002C43A0);
-
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002C4460);
-
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002C4840);
-
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002C48D8);
-
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002C4B00);
