@@ -136,6 +136,61 @@ void MSG_BeginReading(void);
 int Q_strncasecmp(const char *s1, const char *s2, int n);
 extern int (*D_003990F0)(int l); /* ntohl */
 extern float D_00332F30;        /* pingtime */
+
+/* CL_Init */
+typedef struct
+{
+    byte *base;
+    byte *mid;
+} cl_heap_t;
+extern cl_heap_t D_00473C58[2];
+extern byte *D_00331AFC;
+extern int D_00331B00;
+extern qboolean D_00331B08;     /* primeira inicialização */
+extern char D_00389AB8[];       /* "0" */
+extern char D_00389CE0[];       /* "2500" */
+extern char D_00389CE8[];       /* "rate" */
+extern char D_00389D00[];       /* "topcolor" */
+extern char D_00389D10[];       /* "bottomcolor" */
+extern cvar_t D_00331A28, D_00331A40, D_00331A70, D_00331A88, D_00331AA0, D_00331AB8, D_00331A58;
+extern cvar_t D_003317B8, cl_gaitestimation, D_003316C0, cl_forwardspeed, D_003316F0, D_00331708;
+extern cvar_t D_00331720, D_00331738, D_00331750, D_00331768;
+extern cvar_t cl_skyname, cl_skycolor_r, cl_skycolor_g, cl_skycolor_b, cl_skyvec_x, cl_skyvec_y, cl_skyvec_z;
+extern cvar_t D_00331818, D_00331830, D_00331AD0, D_00331AE8, D_00331938, D_00331950, D_00331800;
+extern cvar_t D_003318F0, D_00331908, D_00331920, D_00331998, cl_downloadinterval, D_003319F8, D_00331A10;
+extern cvar_t D_00331788, D_003317A0;
+extern cvar_t D_0055A328[2], D_00556030[2], D_0055A2D8[2], D_0056A220[2], D_0056A1F8[2];
+extern cvar_t D_00556008[2], D_0055A350[2], D_0055A3A0[2], D_0055A300[2];
+extern int bitcounts[40];
+extern int playerbitcounts[32];
+extern int custombitcounts[32];
+void Info_SetValueForKey(char *s, char *key, char *value, int maxsize);
+void func_002548B8(int clientId);
+void func_0024E700(void);
+void func_0028BD90(void);
+void func_00246E78(void);
+void func_00247088(int clientId);
+void func_002527D0(void);
+void func_00254860(void);
+void Pmove_Init(void);
+void Mem_PushTag(void);
+void Mem_SetTag(int tag);
+void Mem_PopTag(void);
+void CL_DumpMessageLoad_f(void);
+void CL_BitCounts_f(void);
+void CL_UserMsgs_f(void);
+void func_00251E20(void);
+void func_00250A98(void);
+void func_00250280(void);
+void func_00250EE8(void);
+void func_00250F80(void);
+void func_00250FF8(void);
+void func_00250D80(void);
+void func_00251040(void);
+void func_00251D40(void);
+void func_00251CD0(void);
+void func_00251CB0(void);
+void func_0024FCE8(void);
 extern char D_00389C18[];       /* "cl_resend" */
 extern char D_0038A110[];       /* "%s" */
 extern char D_0038A118[];       /* "localhost" */
@@ -1484,4 +1539,129 @@ void func_00251E20(void)
     strcpy(cl[0].serverinfo, Cmd_Argv(1));
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Cl_main", CL_Init);
+void CL_Init(int clientId)
+{
+    char szName[16];
+
+    D_00473C58[clientId].base = Mem_DbgMalloc(0x68000, D_0038A068, 2258);
+    D_00473C58[clientId].mid = D_00473C58[clientId].base + 0x34000;
+    if (clientId == 1)
+    {
+        D_00331AFC = D_00473C58[1].base;
+        D_00331B00 = 0x68000;
+    }
+
+    sprintf(szName, "name_%d", clientId);
+    Info_SetValueForKey(cls[clientId].userinfo, "name", szName, MAX_INFO_STRING);
+    Info_SetValueForKey(cls[clientId].userinfo, D_00389D00, D_00389AB8, MAX_INFO_STRING);
+    Info_SetValueForKey(cls[clientId].userinfo, D_00389D10, D_00389AB8, MAX_INFO_STRING);
+    Info_SetValueForKey(cls[clientId].userinfo, D_00389CE8, D_00389CE0, MAX_INFO_STRING);
+
+    func_002548B8(clientId);
+    if (D_00331B08 == 1)
+    {
+        func_0024E700();
+        func_0028BD90();
+        func_00246E78();
+    }
+    func_00247088(clientId);
+
+    if (D_00331B08 == 1)
+    {
+        Cvar_RegisterVariable(&D_00331A28);
+        Cvar_RegisterVariable(&D_00331A40);
+        Cvar_RegisterVariable(&D_00331A70);
+        Cvar_RegisterVariable(&D_00331A88);
+        Cvar_RegisterVariable(&D_00331AA0);
+        Cvar_RegisterVariable(&D_00331AB8);
+        Cvar_RegisterVariable(&D_00331A58);
+        Cvar_RegisterVariable(&D_003317B8);
+        Cvar_RegisterVariable(&cl_gaitestimation);
+        Cvar_RegisterVariable(&D_003316C0);
+        Cvar_RegisterVariable(&cl_forwardspeed);
+        Cvar_RegisterVariable(&D_003316F0);
+        Cvar_RegisterVariable(&D_00331708);
+        Cvar_RegisterVariable(&D_00331720);
+        Cvar_RegisterVariable(&D_00331738);
+        Cvar_RegisterVariable(&D_00331750);
+        Cvar_RegisterVariable(&D_00331768);
+        Cvar_RegisterVariable(&D_003317E8);
+        Cvar_RegisterVariable(&cl_skyname);
+        Cvar_RegisterVariable(&cl_skycolor_r);
+        Cvar_RegisterVariable(&cl_skycolor_g);
+        Cvar_RegisterVariable(&cl_skycolor_b);
+        Cvar_RegisterVariable(&cl_skyvec_x);
+        Cvar_RegisterVariable(&cl_skyvec_y);
+        Cvar_RegisterVariable(&cl_skyvec_z);
+        Cvar_RegisterVariable(&D_00331818);
+        Cvar_RegisterVariable(&D_00331830);
+        Cvar_RegisterVariable(&D_00331AD0);
+        Cvar_RegisterVariable(&D_00331AE8);
+        Cvar_RegisterVariable(&D_00331968);
+        Cvar_RegisterVariable(&D_00331938);
+        Cvar_RegisterVariable(&D_00331950);
+        Cvar_RegisterVariable(&D_00331800);
+        Cvar_RegisterVariable(&D_003318F0);
+        Cvar_RegisterVariable(&D_00331908);
+        Cvar_RegisterVariable(&D_00331920);
+        Cvar_RegisterVariable(&D_00331998);
+        Cvar_RegisterVariable(&cl_downloadinterval);
+        Cvar_RegisterVariable(&D_003319E0);
+        Cvar_RegisterVariable(&D_003319F8);
+        Cvar_RegisterVariable(&D_00331A10);
+        Cvar_RegisterVariable(&D_003319B0);
+        Cvar_RegisterVariable(&D_003319C8);
+        Cvar_RegisterVariable(&D_00331788);
+        Cvar_RegisterVariable(&D_003317A0);
+
+        Cmd_AddCommand("fullserverinfo", func_00251E20);
+        Cmd_AddCommand("retry", func_00250A98);
+        Cmd_AddCommand("disconnect", func_00250280);
+        Cmd_AddCommand("snapshot", func_00250EE8);
+        Cmd_AddCommand("startmovie", func_00250F80);
+        Cmd_AddCommand("endmovie", func_00250FF8);
+        Cmd_AddCommand("entities", func_00250D80);
+        Cmd_AddCommand("cl_view", func_00251040);
+        Cmd_AddCommand("cl_messages", CL_DumpMessageLoad_f);
+        Cmd_AddCommand("cl_bitcounts", CL_BitCounts_f);
+        Cmd_AddCommand("cl_usr", CL_UserMsgs_f);
+        Cmd_AddCommand("cl_allow_upload", func_00251D40);
+        Cmd_AddCommand("cl_allow_download", func_00251CD0);
+        Cmd_AddCommand("allowupload", func_00251D40);
+        Cmd_AddCommand("skipdl", func_00251CB0);
+        Cmd_AddCommand("cl_print_custom", func_0024FCE8);
+
+        memset(bitcounts, 0, sizeof(bitcounts));
+        memset(playerbitcounts, 0, sizeof(playerbitcounts));
+        memset(custombitcounts, 0, sizeof(custombitcounts));
+    }
+
+    Cvar_RegisterVariable(&D_0055A328[clientId]);
+    Cvar_RegisterVariable(&D_00556030[clientId]);
+    Cvar_RegisterVariable(&D_0055A2D8[clientId]);
+    Cvar_RegisterVariable(&D_0056A220[clientId]);
+    Cvar_RegisterVariable(&D_0056A1F8[clientId]);
+    Cvar_RegisterVariable(&D_00556008[clientId]);
+    Cvar_RegisterVariable(&D_0055A350[clientId]);
+    Cvar_RegisterVariable(&D_0055A3A0[clientId]);
+    Cvar_RegisterVariable(&D_0055A300[clientId]);
+
+    if (D_00331B08 == 1)
+    {
+        func_002527D0();
+        func_00254860();
+        Pmove_Init();
+    }
+
+    memset(&cl[clientId], 0, sizeof(client_state_t));
+
+    Mem_PushTag();
+    Mem_SetTag(2);
+    cl[clientId].frames = Mem_DbgMalloc(cl_updatebackup[clientId] * sizeof(frame_t), D_0038A068, 2431);
+    Mem_PopTag();
+    if (!cl[clientId].frames)
+        Sys_Error(D_0038A080, cl_updatebackup);
+    memset(cl[clientId].frames, 0, cl_updatebackup[clientId] * sizeof(frame_t));
+
+    D_00331B08 = 0;
+}
