@@ -43,7 +43,7 @@ typedef struct player_state_s
 typedef struct
 {
     int num_entities;
-    void *entities;
+    entity_state_t *entities;
 } cl_packet_entities_t;
 
 /* frame_t do PS2 (0x330), cl.frames[cl_updatebackup] */

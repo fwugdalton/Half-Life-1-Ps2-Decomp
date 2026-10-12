@@ -27,6 +27,13 @@ extern int cl_updatemask[2];
 void *memset(void *, int, unsigned int);
 extern char D_003892C0[];       /* "msg_badread in packetentities\n" */
 extern char D_00389290[];       /* "\n" */
+extern int cl_updatebackup[2];
+extern cl_entity_t *cl_entities[2];
+int MSG_ReadShort(void);
+int MSG_ReadByte(void);
+void func_00250C50(int clientId); /* CL_SignonReply */
+cl_entity_t *CL_EntityNum(int number, int clientId);
+void func_002B5228(int deadEntity, int clientId);
 
 void func_00248148(char *pszFile, usercmd_t *cmd)
 {
@@ -323,7 +330,193 @@ void func_00249070(cl_packet_entities_t *pack)
 
 INCLUDE_RODATA("asm/nonmatchings/engine/cl_ents", D_003892C0);
 
+#ifdef NON_MATCHING
+void func_002490B0(qboolean delta, int clientId)
+{
+    cl_entity_t *ent;
+    cl_packet_entities_t dummy;
+    cl_packet_entities_t *oldp;
+    cl_packet_entities_t *newp;
+    int bits;
+    int morebits;
+    int full;
+    int error;
+    int oldpacket;
+    int newpacket;
+    frame_t *newframe;
+    int oldindex;
+    int newindex;
+    int newnum;
+    int oldnum;
+    int from;
+    int count;
+    int num;
+
+    error = 0;
+
+    if (cls[clientId].signon == 2)
+    {
+        cls[clientId].signon = 3;
+        func_00250C50(clientId);
+    }
+
+    newpacket = cls[clientId].netchan.incoming_sequence & cl_updatemask[clientId];
+    newframe = &cl[clientId].frames[newpacket];
+    newframe->invalid = 0;
+    newp = &newframe->packet_entities;
+
+    count = MSG_ReadShort();
+    if (!count)
+        count = 1;
+
+    if (newp->entities)
+        Mem_Free(newp->entities);
+    newp->entities = Mem_DbgMalloc(count * sizeof(entity_state_t), "engine/cl_ents.c", 618);
+    if (!newp->entities)
+        Sys_Error("CL_ParsePacketEntities:  Failed to allocate space for %i entities.\n", count);
+    memset(newp->entities, 0, count * sizeof(entity_state_t));
+    newframe->packet_entities.num_entities = count;
+
+    if (delta)
+    {
+        from = MSG_ReadByte();
+        oldpacket = cl[clientId].frames[newpacket].delta_sequence;
+        if ((from & cl_updatemask[clientId]) != (oldpacket & cl_updatemask[clientId]))
+            Con_DPrintf("WARNING: from mismatch\n");
+    }
+    else
+        oldpacket = -1;
+
+    full = 0;
+    if (oldpacket != -1)
+    {
+        if (cls[clientId].netchan.outgoing_sequence - oldpacket >= cl_updatebackup[clientId] - 1)
+        {
+            func_00248F40(1);
+            func_00249070(newp);
+            return;
+        }
+        cl[clientId].validsequence = cls[clientId].netchan.incoming_sequence;
+        oldp = &cl[clientId].frames[oldpacket & cl_updatemask[clientId]].packet_entities;
+    }
+    else
+    {
+        memset(&dummy, 0, sizeof(dummy));
+        dummy.num_entities = 0;
+        oldp = &dummy;
+        full = 1;
+        cl[clientId].validsequence = cls[clientId].netchan.incoming_sequence;
+    }
+
+    newp->num_entities = 0;
+    MSG_StartBitReading(&net_message);
+
+    oldindex = 0;
+    newindex = 0;
+
+    while (1)
+    {
+        if (!func_00243190(32))
+            newnum = func_00243120(32);
+        else
+            newnum = func_002481C0(&bits, &morebits);
+
+        if (!newnum)
+        {
+            while (oldindex < oldp->num_entities)
+            {
+                if (newindex >= 256)
+                    Host_EndGame("CL_ParsePacketEntities: newindex == MAX_PACKET_ENTITIES");
+                newp->entities[newindex] = oldp->entities[oldindex];
+                newindex++;
+                oldindex++;
+            }
+            break;
+        }
+
+        num = newnum;
+        oldnum = oldindex >= oldp->num_entities ? 9999 : oldp->entities[oldindex].number;
+
+        while (newnum > oldnum)
+        {
+            if (full)
+            {
+                Con_Printf("WARNING: oldcopy on full update");
+                error = 1;
+                func_00248F40(0);
+                func_00249070(newp);
+                break;
+            }
+            if (newindex >= 256)
+                Host_EndGame("CL_ParsePacketEntities: newindex == MAX_PACKET_ENTITIES");
+            newp->entities[newindex] = oldp->entities[oldindex];
+            newindex++;
+            oldindex++;
+            oldnum = oldindex >= oldp->num_entities ? 9999 : oldp->entities[oldindex].number;
+        }
+
+        if (newnum < oldnum)
+        {
+            if (bits & 0x10)
+            {
+                if (full)
+                {
+                    cl[clientId].validsequence = 0;
+                    Con_Printf("WARNING: U_REMOVE on full update\n");
+                    error = 1;
+                    func_00248F40(0);
+                    func_00249070(newp);
+                    break;
+                }
+                continue;
+            }
+
+            if (newindex >= 256)
+                Host_EndGame("CL_ParsePacketEntities: newindex == MAX_PACKET_ENTITIES");
+
+            CL_EntityNum(newnum, clientId);
+            ent = &cl_entities[clientId][num];
+            if (bits & 0x2000)
+                func_002482A8(&ent->baseline, &newp->entities[newindex], bits, morebits, newnum, 1);
+            else
+                func_00248710(&ent->baseline, &newp->entities[newindex], bits, morebits, newnum, 1);
+            newindex++;
+            continue;
+        }
+
+        if (newnum == oldnum)
+        {
+            if (full)
+            {
+                cl[clientId].validsequence = 0;
+                Con_Printf("WARNING: delta on full update");
+            }
+            if (bits & 0x10)
+            {
+                func_002B5228(newnum, clientId);
+                oldindex++;
+                continue;
+            }
+            if (bits & 0x2000)
+                func_002482A8(&oldp->entities[oldindex], &newp->entities[newindex], bits, morebits, newnum, 0);
+            else
+                func_00248710(&oldp->entities[oldindex], &newp->entities[newindex], bits, morebits, newnum, 0);
+            newindex++;
+            oldindex++;
+        }
+    }
+
+    if (!error)
+        newp->num_entities = newindex;
+
+    MSG_EndBitReading(&net_message);
+
+    if (msg_badread)
+        Host_EndGame(D_003892C0);
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/cl_ents", func_002490B0);
+#endif
 
 INCLUDE_ASM("asm/nonmatchings/engine/cl_ents", func_00249868);
 
