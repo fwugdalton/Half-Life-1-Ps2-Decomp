@@ -53,8 +53,8 @@ typedef struct
     int pitch;                  /* 0x3C */
     char unk_40;                /* 1 = stream */
     char unk_41;                /* id da voz SPU */
-    byte unk_42;
-    byte unk_43;
+    char unk_42;
+    char unk_43;
     int unk_44;                 /* lba do stream da frase */
     byte *unk_48;               /* buffer do SPU */
 } channel_t;                    /* 0x4C */

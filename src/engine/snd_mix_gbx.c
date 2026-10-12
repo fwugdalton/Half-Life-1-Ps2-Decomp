@@ -27,6 +27,7 @@ typedef struct
 
 extern volatile dma_t *shm;
 extern int D_0039984C;          /* paintedtime */
+extern int D_00399844;          /* total_channels */
 extern cvar_t D_00334D58;       /* volume */
 extern portable_samplepair_t D_00542D70[]; /* paintbuffer */
 extern voxword_t D_00544E98[][32]; /* rgrgvoxword */
@@ -381,7 +382,202 @@ int func_002C7788(channel_t *ch, sfxcache_t **psc, int ltime, int ichan, int cli
 INCLUDE_ASM("asm/nonmatchings/engine/snd_mix_gbx", func_002C7788);
 #endif
 
+extern int D_004A96BC;
+extern int D_00553E24[];      /* &D_00553DE8[0].unk_3C */
+int func_00238A48(int voice);
+void func_00238BD0(int voice);
+sfxcache_t *S_LoadStreamChunk(sfx_t *s, int unused, byte *data, int len, int stream);
+void ResampleSfx(sfx_t *sfx, int inrate, int inwidth, byte *data);
+sfxcache_t *S_LoadSoundFromMemory(sfx_t *s, int unused, byte *data, int len);
+void func_002CC510(channel_t *ch, int clientId);
+void func_002C9EF8(channel_t *ch, sfxcache_t *sc, int count, int clientId);
+int func_002CAB28(channel_t *ch, sfxcache_t *sc, int count, int pitch, int timecompress, int offset);
+void func_002C8278(channel_t *ch, sfxcache_t *sc, int count);
+void func_002C8350(channel_t *ch, sfxcache_t *sc, int count, int offset);
+void func_002C8430(channel_t *ch, sfxcache_t *sc, int count, int offset);
+void func_002C9E48(int entnum, int entchannel, int clientId);
+
+/* S_MixChannelsToPaintbuffer: estrutura igual; sobram registradores (v0/v1/a0) e o agendamento do fim do laço */
+#ifdef NON_MATCHING
+void func_002C7A20(int end, int fhisound, int clientId)
+{
+    int i;
+    int j;
+    channel_t *ch;
+    sfxcache_t *sc;
+    int ltime;
+    int count;
+    int chend;
+    int offset;
+    int pitch;
+    int timecompress;
+    int fChanFinished;
+    int hi;
+    sfxcache_t *sc2;
+
+    hi = (fhisound != 0);
+
+    if (D_004A96BC || D_003347A0.value == 1.0f)
+    {
+        ch = channels;
+        for (j = 0; j < D_00399844; j++, ch++)
+        {
+            if (!ch->sfx)
+                continue;
+
+            sc = S_LoadSound(ch->sfx, ch);
+            if (!sc)
+                continue;
+
+            if (fhisound)
+            {
+                if (shm->speed >= sc->speed)
+                    continue;
+            }
+            else if (sc->speed != shm->speed)
+                continue;
+
+            ch->end += end - D_0039984C;
+        }
+        return;
+    }
+
+    ch = channels;
+    for (i = 0; i < D_00399844; ch++, i++)
+    {
+        if (!ch->sfx)
+            continue;
+
+        if (ch->unk_40 == 1)
+        {
+            if (func_00238A48(ch->unk_41) != 1)
+                continue;
+
+            if (ch->entchannel == CHAN_STREAM)
+            {
+                func_00238BD0(ch->unk_41);
+                ch->unk_40 = 0;
+                sc2 = ch->sfx->cache.data;
+                if (ch->unk_43 == 1)
+                {
+                    S_LoadStreamChunk(ch->sfx, (int)ch, sc2->data, D_00553DE8[((unsigned)ch - (unsigned)channels) / sizeof(channel_t)].unk_3C, ((unsigned)ch - (unsigned)channels) / sizeof(channel_t));
+                    ch->unk_43 = 0;
+                }
+                else
+                    ResampleSfx(ch->sfx, sc2->speed, sc2->width, sc2->data);
+                ch->end = D_0039984C + sc2->length;
+            }
+            else
+            {
+                func_00238BD0(ch->unk_41);
+                ch->unk_40 = 0;
+                sc2 = S_LoadSoundFromMemory(ch->sfx, (int)ch, ch->unk_48, ch->unk_44);
+                func_00225DB8(ch->unk_48);
+                if (ch->unk_42 == 1)
+                {
+                    ch->end = D_0039984C + sc2->length;
+                    func_002CB290(ch, sc2);
+                    func_002CC510(ch, clientId);
+                }
+                else
+                {
+                    ch->pos = 0;
+                    ch->end = D_0039984C + sc2->length;
+                    func_002CB290(ch, sc2);
+                    func_002C9E48(ch->entnum, ch->entchannel, clientId);
+                }
+            }
+        }
+
+        sc = S_LoadSound(ch->sfx, ch);
+
+        if (!ch->leftvol && !ch->rightvol)
+        {
+            if (sc->loopstart < 0)
+                func_002C7660(ch, clientId);
+            continue;
+        }
+
+        if (!sc)
+            continue;
+
+        if (fhisound)
+        {
+            if (shm->speed >= sc->speed)
+                continue;
+        }
+        else if (sc->speed != shm->speed)
+            continue;
+
+        ltime = D_0039984C;
+        pitch = ch->pitch;
+
+        if (ch->isentence >= 0)
+        {
+            if (D_00544E98[ch->isentence][ch->iword].pitch > 0)
+                pitch = pitch + D_00544E98[ch->isentence][ch->iword].pitch - 100;
+            timecompress = D_00544E98[ch->isentence][ch->iword].timecompress;
+        }
+        else
+            timecompress = 0;
+
+        fChanFinished = 0;
+
+        while (!fChanFinished && ltime < end)
+        {
+            if (hi)
+                chend = ch->end - sc->length + (sc->length >> 1);
+            else
+                chend = ch->end;
+
+            if (chend < end)
+                count = chend - ltime;
+            else
+                count = end - ltime;
+
+            offset = ltime - D_0039984C;
+
+            count <<= hi;
+            offset <<= hi;
+
+            if (count > 0)
+            {
+                if (sc->width == 1 && ch->entnum > 0 && (ch->entchannel == CHAN_VOICE || ch->entchannel == CHAN_STREAM))
+                    func_002C9EF8(ch, sc, count, clientId);
+            }
+
+            if (count > 0)
+            {
+                if (sc->width == 1)
+                {
+                    if ((pitch != 100 || timecompress) && ch->isentence >= 0)
+                        fChanFinished = func_002CAB28(ch, sc, count, pitch, timecompress, offset);
+                    else if (ltime == D_0039984C)
+                        func_002C8278(ch, sc, count);
+                    else
+                        func_002C8350(ch, sc, count, offset);
+                }
+                else
+                    func_002C8430(ch, sc, count, offset);
+
+                ltime += count >> hi;
+
+                if (ch->entchannel == CHAN_STREAM)
+                    D_00553DE8[i].pos += count;
+            }
+
+            if (fChanFinished || ltime >= chend)
+            {
+                fChanFinished = 0;
+                if (func_002C7788(ch, &sc, ltime, i, clientId))
+                    break;
+            }
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/snd_mix_gbx", func_002C7A20);
+#endif
 
 #ifdef NON_MATCHING
 void func_002C7FF8(int endtime, int clientId)
