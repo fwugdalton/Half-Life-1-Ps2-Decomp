@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x152868, c, engine/cl_cam]
       - [0x1548B8, c, engine/cl_tent]
       - [0x15CF10, c, engine/Cmd]
       - [0x15E2D8, c, engine/cmodel]
@@ -149,6 +150,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x28A6A8, .rodata, engine/cl_cam]
       - [0x28A760, .rodata, engine/cl_tent]
       - [0x28B158, .rodata, engine/Cmd]
       - [0x28B538, .rodata, engine/cmodel]
