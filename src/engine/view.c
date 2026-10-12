@@ -131,7 +131,7 @@ float V_CalcBob(int clientId)
 {
     float cycle;
 
-    if (cl[clientId].paused)
+    if (cl[clientId].spectator)
         return 0;
 
     if (pm_onground[clientId] == -1 || cl[clientId].time == cl[clientId].oldtime)
@@ -199,7 +199,7 @@ void V_DriftPitch(int clientId)
 {
     float delta, move;
 
-    if (noclip_anglehack || !cl[clientId].onground || cl[clientId].paused)
+    if (noclip_anglehack || !cl[clientId].onground || cl[clientId].spectator)
     {
         cl[clientId].driftmove = 0;
         cl[clientId].pitchvel = 0;

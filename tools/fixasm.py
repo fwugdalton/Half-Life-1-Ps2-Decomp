@@ -136,13 +136,29 @@ for line in lines:
             if v & ~(0xFFFF << sh) == 0:
                 break
         else:
-            raise SystemExit('li.d sem expansao: ' + line)
-        out.append('%sori\t%s,$0,0x%X' % (ind, rd, v >> sh))
-        if sh >= 32:
-            line = '%sdsll32\t%s,%s,%d' % (ind, rd, rd, sh - 32)
-        elif sh:
-            line = '%sdsll\t%s,%s,%d' % (ind, rd, rd, sh)
+            # valor sem forma curta: o ee-as põe o double na .rodata e carrega com lui/ld via $at
+            lit_n = globals().get('lit_n', 0) + 1
+            globals()['lit_n'] = lit_n
+            lab = '$LIT%d' % lit_n
+            out.append('\t.pushsection .rodata')
+            out.append('\t.align\t3')
+            out.append('%s:' % lab)
+            out.append('\t.dword\t0x%016X' % v)
+            out.append('\t.popsection')
+            out.append('\t.set\tnoat')
+            out.append('%slui\t$1,%%hi(%s)' % (ind, lab))
+            out.append('%sld\t%s,%%lo(%s)($1)' % (ind, rd, lab))
+            line = '\t.set\tat'
+            sh = None
+        if sh is None:
+            pass
         else:
+          out.append('%sori\t%s,$0,0x%X' % (ind, rd, v >> sh))
+          if sh >= 32:
+            line = '%sdsll32\t%s,%s,%d' % (ind, rd, rd, sh - 32)
+          elif sh:
+            line = '%sdsll\t%s,%s,%d' % (ind, rd, rd, sh)
+          else:
             line = out.pop()
     m = re.match(r'^(\s+)cvt\.w\.s\s+\$f(\d+),\s*\$f(\d+)\s*$', line)
     m2 = re.match(r'^(\s+)sqrt\.s\s+\$f(\d+),\s*\$f(\d+)\s*$', line)

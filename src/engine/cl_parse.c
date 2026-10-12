@@ -1090,7 +1090,7 @@ void CL_ParseServerInfo(int clientId)
     cl[clientId].playernum = MSG_ReadByte();
     if (cl[clientId].playernum & 0x80)
     {
-        cl[clientId].paused = true;
+        cl[clientId].spectator = true;
         cl[clientId].playernum &= ~0x80;
     }
 

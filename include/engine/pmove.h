@@ -37,6 +37,7 @@
 #define MOVETYPE_BOUNCE 10
 #define MOVETYPE_BOUNCEMISSILE 11
 
+#define IN_ATTACK (1 << 0)
 #define IN_JUMP (1 << 1)
 #define IN_DUCK (1 << 2)
 #define IN_FORWARD (1 << 3)
@@ -44,6 +45,7 @@
 #define IN_USE (1 << 5)
 #define IN_MOVELEFT (1 << 9)
 #define IN_MOVERIGHT (1 << 10)
+#define IN_ATTACK2 (1 << 11)
 
 #define FL_WATERJUMP (1 << 11)
 #define FL_DUCKING (1 << 14)

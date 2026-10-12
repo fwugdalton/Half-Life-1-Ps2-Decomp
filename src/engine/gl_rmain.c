@@ -742,7 +742,7 @@ void R_DrawViewModel(int clientId)
 
     if (!D_00333474 || cam_thirdperson || D_00331694 || D_00399588 || !r_drawentities.value
         || cl[clientId].stats[STAT_HEALTH] <= 0 || !currententity->model
-        || cl[clientId].viewentity > cl[clientId].maxclients || cl[clientId].paused)
+        || cl[clientId].viewentity > cl[clientId].maxclients || cl[clientId].spectator)
     {
         c = R_LightPoint(currententity->origin);
         cl[clientId].light_level = (c.r + c.g + c.b) / 3;
@@ -782,7 +782,7 @@ void R_PreDrawViewModel(int clientId)
 
     if (D_00333474 && !cam_thirdperson && !D_00331694 && !D_00399588 && r_drawentities.value
         && cl[clientId].stats[STAT_HEALTH] > 0 && currententity->model
-        && cl[clientId].viewentity <= cl[clientId].maxclients && !cl[clientId].paused)
+        && cl[clientId].viewentity <= cl[clientId].maxclients && !cl[clientId].spectator)
     {
         switch ((unsigned)currententity->model->type)
         {

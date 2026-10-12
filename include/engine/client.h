@@ -20,10 +20,23 @@ typedef struct screenfade_s
 #define FFADE_MODULATE 0x0002
 #define FFADE_STAYOUT 0x0004
 
-/* estado de jogador guardado no frame (layout ainda não mapeado) */
-typedef struct
+/* estado de jogador guardado no frame (layout parcial) */
+typedef struct player_state_s
 {
-    byte data[0xF8];
+    byte pad0[0x08];
+    float msg_time;             /* 0x08 */
+    byte pad0C[0x30 - 0x0C];
+    byte number;                /* 0x30 */
+    byte pad31[0x4C - 0x31];
+    vec3_t origin;              /* 0x4C */
+    vec3_t viewangles;          /* 0x58 */
+    vec3_t velocity;            /* 0x64 */
+    byte pad70[0x98 - 0x70];
+    int renderframe;            /* 0x98 */
+    byte pad9C[0xC4 - 0x9C];
+    int weaponmodel;            /* 0xC4 */
+    int gaitsequence;           /* 0xC8 */
+    byte padCC[0xF8 - 0xCC];
 } player_state_t; /* 0xF8 */
 
 /* frame_t do PS2 (0x330), cl.frames[cl_updatebackup] */
@@ -112,7 +125,7 @@ typedef struct client_state_s
     byte pad3A8[0x3AC - 0x3A8];
     frame_t *frames;     /* 0x3AC: frame_t[cl_updatebackup] (0x330 cada) */
     int playernum;              /* 0x3B0 */
-    qboolean paused;            /* 0x3B4 */
+    qboolean spectator;         /* 0x3B4 */
     struct model_s *model_precache[512]; /* 0x3B8 */
     struct sfx_s *sound_precache[512]; /* 0xBB8 */
     char levelname[40];         /* 0x13B8 */
