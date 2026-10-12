@@ -241,6 +241,45 @@ int func_00243460(void);
 char *MSG_ReadString(void);
 char *strcpy(char *, const char *);
 void func_00251DC0(const char *pMessage, int a1);
+void func_00254F40(cl_entity_t *pent, int modelIndex, int density, int clientId);
+void func_002551E8(vec3_t mins, vec3_t maxs, float height, int modelIndex, int count, float speed, int clientId);
+void func_00255460(vec3_t start, vec3_t end, float height, int modelIndex, int count, float speed, int clientId);
+void func_002556A8(vec3_t origin, vec3_t velocity, int modelIndex, int life, int owner, int clientId);
+void func_002558C0(int type, vec3_t start, vec3_t end, int modelIndex, int count, float life, float size, float amp, int renderamt, float speed, int clientId);
+void func_00255DB8(vec3_t pos, vec3_t size, vec3_t dir, float random, float life, int count, int modelIndex, char flags, int clientId);
+TEMPENTITY *func_00256478(vec3_t pos, vec3_t dir, float scale, int modelIndex, int rendermode, int renderfx, float a, float life, int flags, int clientId);
+void func_00256668(vec3_t pos, vec3_t dir, int modelIndex, int count, int speed, int iRand, int clientId);
+void func_002568F8(vec3_t pos, vec3_t dir, int modelIndex, int count, int speed, int iRand, int renderMode, int clientId);
+void func_00256F20(vec3_t org, int radius, int modelIndex, int count, int flags, float life, int clientId);
+void func_002579E0(vec3_t pos, int color, int model2Index, int modelIndex, float scale, int clientId);
+void func_0025CA10(vec3_t org, int modelIndex, int reverse, int density, vec3_t angles, int clientId);
+float MSG_ReadCoord(void);
+float func_00243770(void);
+dlight_t *func_00251250(int key);
+extern int D_00399220;
+void func_002B17F8(vec3_t org, vec3_t dir, int color, int count, int clientId);
+void func_002B1D78(vec3_t pos, vec3_t dir, int color, int count, float speed, int velocityMin, int velocityMax, int clientId);
+void func_002B1F20(vec3_t pos, int size, int color, int clientId, float life);
+void func_002B14D8(vec3_t org, vec3_t vel, float life, int colorIndex, float length, int clientId);
+void func_002B1AB8(vec3_t org, int clientId);
+void func_002B1238(vec3_t org, int clientId);
+void func_002B10C8(vec3_t org, int colorStart, int colorLength, int clientId);
+void func_002B2128(vec3_t org, int clientId);
+void func_002B2598(vec3_t org, int clientId);
+void func_002B2330(vec3_t org, int reverse, int clientId);
+void func_002B27B8(vec3_t start, vec3_t end, int clientId);
+void func_002B2938(vec3_t org, vec3_t dir, int pcolor, int speed, int clientId);
+void func_002B2C70(vec3_t org, vec3_t dir, int pcolor, int speed, int clientId);
+void func_002B5458(float *org, int count, float size, float speed, int clientId);
+void func_002B53A0(int deadEntity, int clientId);
+void func_002B7E98(vec3_t org, int random, int density, vec3_t angles, int clientId);
+struct beam_s *func_002B4680(float *start, float *end, int modelIndex, float life, float width, float amplitude, float brightness, float speed, int clientId);
+struct beam_s *func_002B4BB0(int startEnt, int endEnt, int modelIndex, float life, float width, float amplitude, float brightness, float speed, int startFrame, float framerate, float r, float g, float b, int clientId);
+struct beam_s *func_002B4CE8(int startEnt, float *end, int modelIndex, float life, float width, float amplitude, float brightness, float speed, int startFrame, float framerate, float r, float g, float b, int clientId);
+struct beam_s *func_002B4E08(float *start, float *end, int modelIndex, float life, float width, float amplitude, float brightness, float speed, int startFrame, float framerate, float r, float g, float b, int clientId);
+struct beam_s *func_002B4F58(int type, float *start, float *end, int modelIndex, float life, float width, float amplitude, float brightness, float speed, int startFrame, float framerate, float r, float g, float b, int clientId);
+struct beam_s *func_002B5028(int startEnt, int modelIndex, float life, float width, float r, float g, float b, float brightness, int clientId);
+struct beam_s *func_002B50F0(int startEnt, int endEnt, int modelIndex, float life, float width, float amplitude, float brightness, float speed, int startFrame, float framerate, float r, float g, float b, int clientId);
 
 INCLUDE_RODATA("asm/nonmatchings/engine/cl_tent", D_0038A760);
 
@@ -1611,7 +1650,751 @@ void func_002585C8(void)
     func_00251DC0(pNetMessage->pName, 0);
 }
 
+#ifdef NON_MATCHING
+void func_00258778(int clientId)
+{
+    vec3_t pos;
+    vec3_t tmp;
+    vec3_t dir;
+    vec3_t end;
+    int type;
+    int startEnt = 0;
+    int endEnt = 0;
+    int modelIndex;
+    int entity;
+    int decal;
+    int flags;
+    int count;
+    int speed;
+    int startFrame;
+    int r;
+    int life;
+    float framerate, flife, fr, fg, fb, fa;
+    dlight_t *dl;
+
+    type = MSG_ReadByte();
+    switch (type)
+    {
+    case 111:
+        pos[0] = MSG_ReadCoord();
+        pos[1] = MSG_ReadCoord();
+        pos[2] = MSG_ReadCoord();
+        tmp[0] = MSG_ReadByte() * 0.1f;
+        func_002577D8(pos, (struct model_s *)D_00399268, 0.1f, tmp[0], clientId);
+        func_00254CE8(pos, clientId);
+        break;
+
+    case 25:
+        pos[0] = MSG_ReadCoord();
+        pos[1] = MSG_ReadCoord();
+        pos[2] = MSG_ReadCoord();
+        dir[0] = MSG_ReadCoord();
+        dir[1] = MSG_ReadCoord();
+        dir[2] = MSG_ReadCoord();
+        decal = MSG_ReadByte();
+        count = MSG_ReadShort();
+        speed = MSG_ReadShort();
+        r = MSG_ReadShort();
+        func_002B1D78(pos, dir, decal, count, speed, -r, r, clientId);
+        break;
+
+    case 9:
+        pos[0] = MSG_ReadCoord();
+        pos[1] = MSG_ReadCoord();
+        pos[2] = MSG_ReadCoord();
+        func_00257438(pos, 8, -200, 200, clientId);
+        break;
+
+    case 2:
+        pos[0] = MSG_ReadCoord();
+        pos[1] = MSG_ReadCoord();
+        pos[2] = MSG_ReadCoord();
+        func_002B17F8(pos, vec3_origin, 0, 20, clientId);
+        func_00254CE8(pos, clientId);
+        break;
+
+    case 13:
+    case 104:
+    case 116:
+    case 117:
+    case 118:
+        modelIndex = 0;
+        pos[0] = MSG_ReadCoord();
+        pos[1] = MSG_ReadCoord();
+        pos[2] = MSG_ReadCoord();
+        if (type == 13)
+        {
+            decal = MSG_ReadShort();
+            flags = 1;
+        }
+        else
+        {
+            decal = MSG_ReadByte();
+            flags = 0;
+        }
+
+        if (type == 104 || type == 118 || type == 13)
+        {
+            entity = MSG_ReadShort();
+            if (type == 13 && entity)
+                modelIndex = MSG_ReadShort();
+        }
+        else
+        {
+            entity = 0;
+        }
+
+        if (type == 117 || type == 118)
+            decal += 256;
+
+        if (entity >= cl[clientId].max_edicts)
+            Sys_Error("Decal: entity = %i", entity);
+
+        if (r_decals.value)
+            R_DecalShoot(Draw_DecalIndex(decal), entity, modelIndex, pos, flags, clientId);
+        break;
+
+    case 119:
+        pos[0] = MSG_ReadCoord();
+        pos[1] = MSG_ReadCoord();
+        pos[2] = MSG_ReadCoord();
+        dir[0] = MSG_ReadCoord();
+        dir[1] = MSG_ReadCoord();
+        dir[2] = MSG_ReadCoord();
+        modelIndex = MSG_ReadShort();
+        flife = MSG_ReadByte();
+        func_002556A8(pos, dir, modelIndex, flife, MSG_ReadByte(), clientId);
+        break;
+
+    case 120:
+        pos[0] = MSG_ReadCoord();
+        pos[1] = MSG_ReadCoord();
+        pos[2] = MSG_ReadCoord();
+        dir[0] = MSG_ReadCoord();
+        dir[1] = MSG_ReadCoord();
+        dir[2] = MSG_ReadCoord();
+        modelIndex = MSG_ReadShort();
+        count = MSG_ReadByte();
+        speed = MSG_ReadByte();
+        r = MSG_ReadByte();
+        func_002568F8(pos, dir, modelIndex, count, speed, r, MSG_ReadByte(), clientId);
+        break;
+
+    case 121:
+        entity = MSG_ReadShort();
+        modelIndex = MSG_ReadShort();
+        count = MSG_ReadByte();
+        func_00256BC8(entity, modelIndex, count, MSG_ReadByte(), clientId);
+        break;
+
+    case 122:
+        pos[0] = MSG_ReadCoord();
+        pos[1] = MSG_ReadCoord();
+        pos[2] = MSG_ReadCoord();
+        count = MSG_ReadShort();
+        decal = MSG_ReadByte();
+        func_002B1F20(pos, count, decal, clientId, MSG_ReadByte() * 0.1f);
+        break;
+
+    case 123:
+        pos[0] = MSG_ReadCoord();
+        pos[1] = MSG_ReadCoord();
+        pos[2] = MSG_ReadCoord();
+        r = MSG_ReadShort();
+        modelIndex = MSG_ReadShort();
+        count = MSG_ReadByte();
+        flags = MSG_ReadByte();
+        func_00256F20(pos, r, modelIndex, count, flags, MSG_ReadByte() * 0.1f, clientId);
+        break;
+
+    case 124:
+        entity = MSG_ReadByte();
+        framerate = MSG_ReadCoord();
+        modelIndex = MSG_ReadShort();
+        func_002571D0(entity, modelIndex, framerate, MSG_ReadShort() * 0.1f, clientId);
+        break;
+
+    case 125:
+        func_00257398(MSG_ReadByte(), clientId);
+        break;
+
+    case 126:
+        pos[0] = MSG_ReadCoord();
+        pos[1] = MSG_ReadCoord();
+        pos[2] = MSG_ReadCoord();
+        dir[0] = MSG_ReadCoord() * 0.1f;
+        dir[1] = MSG_ReadCoord() * 0.1f;
+        dir[2] = MSG_ReadCoord() * 0.1f;
+        tmp[0] = MSG_ReadCoord();
+        tmp[1] = MSG_ReadCoord();
+        tmp[2] = 0;
+        tmp[0] *= 0.01f;
+        tmp[1] *= 0.01f;
+        count = MSG_ReadByte();
+        func_00258108(pos, dir, tmp, count, MSG_ReadByte(), clientId);
+        break;
+
+    case 127:
+        pos[0] = MSG_ReadCoord();
+        pos[1] = MSG_ReadCoord();
+        pos[2] = MSG_ReadCoord();
+        dir[0] = MSG_ReadCoord();
+        dir[1] = MSG_ReadCoord();
+        dir[2] = MSG_ReadCoord();
+        flife = MSG_ReadByte();
+        decal = MSG_ReadByte();
+        framerate = MSG_ReadByte();
+        func_002B14D8(pos, dir, flife * 0.1f, decal, framerate * 0.1f, clientId);
+        break;
+
+    case 112:
+        flags = (type == 13) ? 5 : 4;
+        MSG_ReadByte();
+        pos[0] = MSG_ReadCoord();
+        pos[1] = MSG_ReadCoord();
+        pos[2] = MSG_ReadCoord();
+        entity = MSG_ReadShort();
+        decal = MSG_ReadByte();
+        D_00399220 = decal;
+        if (entity && type == 13)
+            modelIndex = MSG_ReadShort();
+        else
+            modelIndex = 0;
+
+        if (entity >= cl[clientId].max_edicts)
+            Sys_Error("Decal: entity = %i", entity);
+
+        if (r_decals.value)
+            R_DecalShoot(Draw_DecalIndex(decal), entity, modelIndex, pos, flags, clientId);
+        break;
+
+    case 109:
+        pos[0] = MSG_ReadCoord();
+        pos[1] = MSG_ReadCoord();
+        pos[2] = MSG_ReadCoord();
+        entity = MSG_ReadShort();
+        decal = MSG_ReadByte();
+        func_002B15D0(pos, clientId);
+
+        r = RandomLong(0, 0x7FFF);
+        if (r < 0x3FFF)
+        {
+            switch (r % 5)
+            {
+            case 0:
+                S_StartDynamicSound(-1, 0, D_003991DC, pos, 1.0f, 1.0f, 0, 100, clientId);
+                break;
+            case 1:
+                S_StartDynamicSound(-1, 0, D_00399230, pos, 1.0f, 1.0f, 0, 100, clientId);
+                break;
+            case 2:
+                S_StartDynamicSound(-1, 0, D_0039925C, pos, 1.0f, 1.0f, 0, 100, clientId);
+                break;
+            case 3:
+                S_StartDynamicSound(-1, 0, D_0039927C, pos, 1.0f, 1.0f, 0, 100, clientId);
+                break;
+            case 4:
+                S_StartDynamicSound(-1, 0, D_0039922C, pos, 1.0f, 1.0f, 0, 100, clientId);
+                break;
+            }
+        }
+
+        if (entity >= cl[clientId].max_edicts)
+            Sys_Error("Decal: entity = %i", entity);
+
+        if (r_decals.value)
+            R_DecalShoot(Draw_DecalIndex(decal), entity, 0, pos, 0, clientId);
+        break;
+
+    case 6:
+        pos[0] = MSG_ReadCoord();
+        pos[1] = MSG_ReadCoord();
+        pos[2] = MSG_ReadCoord();
+        end[0] = MSG_ReadCoord();
+        end[1] = MSG_ReadCoord();
+        end[2] = MSG_ReadCoord();
+        func_00254DF0(pos, end, clientId);
+        break;
+
+    case 7:
+        pos[0] = MSG_ReadCoord();
+        pos[1] = MSG_ReadCoord();
+        pos[2] = MSG_ReadCoord();
+        end[0] = MSG_ReadCoord();
+        end[1] = MSG_ReadCoord();
+        end[2] = MSG_ReadCoord();
+        life = MSG_ReadByte();
+        tmp[0] = MSG_ReadByte();
+        tmp[1] = MSG_ReadByte();
+        modelIndex = MSG_ReadShort();
+        func_002B4680(pos, end, modelIndex, life * 0.1f, tmp[0] * 0.1f, tmp[1] * 0.01f, 0.6f, 3.5f, clientId);
+        break;
+
+    case 0:
+    case 1:
+    case 8:
+        if (type == 8)
+        {
+            startEnt = MSG_ReadShort();
+            endEnt = MSG_ReadShort();
+        }
+        else
+        {
+            if (type == 1)
+            {
+                startEnt = MSG_ReadShort();
+            }
+            else
+            {
+                pos[0] = MSG_ReadCoord();
+                pos[1] = MSG_ReadCoord();
+                pos[2] = MSG_ReadCoord();
+            }
+            end[0] = MSG_ReadCoord();
+            end[1] = MSG_ReadCoord();
+            end[2] = MSG_ReadCoord();
+        }
+        modelIndex = MSG_ReadShort();
+        startFrame = MSG_ReadByte();
+        framerate = (unsigned int)MSG_ReadByte() * 0.1f;
+        flife = (unsigned int)MSG_ReadByte() * 0.1f;
+        tmp[0] = (unsigned int)MSG_ReadByte();
+        tmp[1] = MSG_ReadByte();
+        fr = (unsigned int)MSG_ReadByte() / 255.0f;
+        fg = (unsigned int)MSG_ReadByte() / 255.0f;
+        fb = (unsigned int)MSG_ReadByte() / 255.0f;
+        fa = (unsigned int)MSG_ReadByte() / 255.0f;
+        speed = MSG_ReadByte() * 0.1f;
+        if (type == 8)
+            func_002B4BB0(startEnt, endEnt, modelIndex, flife, tmp[0] * 0.1f, tmp[1] * 0.01f, fa, speed, startFrame, framerate, fr, fg, fb, clientId);
+        else if (type == 1)
+            func_002B4CE8(startEnt, end, modelIndex, flife, tmp[0] * 0.1f, tmp[1] * 0.01f, fa, speed, startFrame, framerate, fr, fg, fb, clientId);
+        else if (type == 0)
+            func_002B4E08(pos, end, modelIndex, flife, tmp[0] * 0.1f, tmp[1] * 0.01f, fa, speed, startFrame, framerate, fr, fg, fb, clientId);
+        break;
+
+    case 19:
+    case 20:
+    case 21:
+        pos[0] = MSG_ReadCoord();
+        pos[1] = MSG_ReadCoord();
+        pos[2] = MSG_ReadCoord();
+        end[0] = MSG_ReadCoord();
+        end[1] = MSG_ReadCoord();
+        end[2] = MSG_ReadCoord();
+        modelIndex = MSG_ReadShort();
+        startFrame = MSG_ReadByte();
+        framerate = (unsigned int)MSG_ReadByte() * 0.1f;
+        flife = (unsigned int)MSG_ReadByte() * 0.1f;
+        tmp[0] = (unsigned int)MSG_ReadByte();
+        tmp[1] = MSG_ReadByte();
+        fr = (unsigned int)MSG_ReadByte() / 255.0f;
+        fg = (unsigned int)MSG_ReadByte() / 255.0f;
+        fb = (unsigned int)MSG_ReadByte() / 255.0f;
+        fa = (unsigned int)MSG_ReadByte() / 255.0f;
+        speed = MSG_ReadByte() * 0.1f;
+        func_002B4F58(type, pos, end, modelIndex, flife, tmp[0], tmp[1] * 0.01f, fa, speed, startFrame, framerate, fr, fg, fb, clientId);
+        break;
+
+    case 24:
+        startEnt = MSG_ReadShort();
+        endEnt = MSG_ReadShort();
+        modelIndex = MSG_ReadShort();
+        startFrame = MSG_ReadByte();
+        framerate = (unsigned int)MSG_ReadByte() * 0.1f;
+        flife = (unsigned int)MSG_ReadByte() * 0.1f;
+        tmp[0] = (unsigned int)MSG_ReadByte();
+        tmp[1] = MSG_ReadByte();
+        fr = (unsigned int)MSG_ReadByte() / 255.0f;
+        fg = (unsigned int)MSG_ReadByte() / 255.0f;
+        fb = (unsigned int)MSG_ReadByte() / 255.0f;
+        fa = (unsigned int)MSG_ReadByte() / 255.0f;
+        speed = MSG_ReadByte() * 0.1f;
+        func_002B50F0(startEnt, endEnt, modelIndex, flife, tmp[0] * 0.1f, tmp[1] * 0.01f, fa, speed, startFrame, framerate, fr, fg, fb, clientId);
+        break;
+
+    case 5:
+        pos[0] = MSG_ReadCoord();
+        pos[1] = MSG_ReadCoord();
+        pos[2] = MSG_ReadCoord();
+        modelIndex = MSG_ReadShort();
+        tmp[0] = MSG_ReadByte() * 0.1f;
+        tmp[1] = MSG_ReadByte();
+        func_00257F88(func_00257E28(pos, modelIndex, tmp[1], clientId), tmp[0]);
+        break;
+
+    case 3:
+        pos[0] = MSG_ReadCoord();
+        pos[1] = MSG_ReadCoord();
+        pos[2] = MSG_ReadCoord();
+        modelIndex = MSG_ReadShort();
+        tmp[0] = MSG_ReadByte() * 0.1f;
+        tmp[1] = MSG_ReadByte();
+        flags = MSG_ReadByte();
+        if (tmp[0] != 0.0f)
+        {
+            func_00258008(func_00257E28(pos, modelIndex, tmp[1], clientId), tmp[0], flags);
+
+            if (!(flags & 8))
+                func_002B1AB8(pos, clientId);
+
+            if (cl_numlocal < 2 && !(flags & 2))
+            {
+                dl = func_002510D0(0);
+                VectorCopy(pos, dl->origin);
+                dl->radius = 200;
+                dl->color.r = dl->color.g = 250;
+                dl->color.b = 150;
+                dl->die = cl[clientId].time + 0.01f;
+                dl->decay = 800;
+
+                dl = func_002510D0(0);
+                VectorCopy(pos, dl->origin);
+                dl->radius = 150;
+                dl->color.r = 255;
+                dl->color.g = 190;
+                dl->color.b = 40;
+                dl->die = cl[clientId].time + 1.0f;
+                dl->decay = 200;
+            }
+        }
+
+        if (!(flags & 4))
+        {
+            switch (RandomLong(0, 2))
+            {
+            case 0:
+                S_StartDynamicSound(-1, 0, D_00399214, pos, 1.0f, 0.3f, 0, 100, clientId);
+                break;
+            case 1:
+                S_StartDynamicSound(-1, 0, D_00399238, pos, 1.0f, 0.3f, 0, 100, clientId);
+                break;
+            case 2:
+                S_StartDynamicSound(-1, 0, D_003991E8, pos, 1.0f, 0.3f, 0, 100, clientId);
+                break;
+            }
+        }
+        break;
+
+    case 17:
+        pos[0] = MSG_ReadCoord();
+        pos[1] = MSG_ReadCoord();
+        pos[2] = MSG_ReadCoord();
+        modelIndex = MSG_ReadShort();
+        tmp[0] = MSG_ReadByte() * 0.1f;
+        func_00256478(pos, vec3_origin, tmp[0], modelIndex, 5, 0, (unsigned int)MSG_ReadByte() / 255.0f, 0, 0x100, clientId);
+        break;
+
+    case 23:
+        pos[0] = MSG_ReadCoord();
+        pos[1] = MSG_ReadCoord();
+        pos[2] = MSG_ReadCoord();
+        modelIndex = MSG_ReadShort();
+        flife = (unsigned int)MSG_ReadByte() * 0.1f;
+        tmp[0] = MSG_ReadByte() * 0.1f;
+        func_00256478(pos, vec3_origin, tmp[0], modelIndex, 3, 14, (unsigned int)MSG_ReadByte() / 255.0f, flife, 0x80, clientId);
+        break;
+
+    case 4:
+        pos[0] = MSG_ReadCoord();
+        pos[1] = MSG_ReadCoord();
+        pos[2] = MSG_ReadCoord();
+        func_002B1238(pos, clientId);
+        S_StartDynamicSound(-1, 0, D_00399214, pos, 1.0f, 1.0f, 0, 100, clientId);
+        break;
+
+    case 10:
+        pos[0] = MSG_ReadCoord();
+        pos[1] = MSG_ReadCoord();
+        pos[2] = MSG_ReadCoord();
+        func_002B2128(pos, clientId);
+        break;
+
+    case 11:
+        pos[0] = MSG_ReadCoord();
+        pos[1] = MSG_ReadCoord();
+        pos[2] = MSG_ReadCoord();
+        func_002B2598(pos, clientId);
+        break;
+
+    case 12:
+        pos[0] = MSG_ReadCoord();
+        pos[1] = MSG_ReadCoord();
+        pos[2] = MSG_ReadCoord();
+        count = MSG_ReadByte();
+        func_002B10C8(pos, count, MSG_ReadByte(), clientId);
+
+        if (cl_numlocal < 2)
+        {
+            dl = func_002510D0(0);
+            VectorCopy(pos, dl->origin);
+            dl->radius = 350;
+            dl->die = cl[clientId].time + 0.5f;
+            dl->decay = 300;
+        }
+
+        S_StartDynamicSound(-1, 0, D_00399214, pos, 1.0f, 0.6f, 0, 100, clientId);
+        break;
+
+    case 100:
+        pos[0] = MSG_ReadCoord();
+        pos[1] = MSG_ReadCoord();
+        pos[2] = MSG_ReadCoord();
+        modelIndex = MSG_ReadShort();
+        flags = MSG_ReadShort();
+        func_002B2330(pos, flags, clientId);
+        func_002574B0(pos, modelIndex, flags, clientId);
+        break;
+
+    case 102:
+        pos[0] = MSG_ReadCoord();
+        pos[1] = MSG_ReadCoord();
+        pos[2] = MSG_ReadCoord();
+        end[0] = MSG_ReadCoord();
+        end[1] = MSG_ReadCoord();
+        end[2] = MSG_ReadCoord();
+        func_002B27B8(pos, end, clientId);
+        break;
+
+    case 18:
+        pos[0] = MSG_ReadCoord();
+        pos[1] = MSG_ReadCoord();
+        pos[2] = MSG_ReadCoord();
+        end[0] = MSG_ReadCoord();
+        end[1] = MSG_ReadCoord();
+        end[2] = MSG_ReadCoord();
+        modelIndex = MSG_ReadShort();
+        entity = MSG_ReadShort();
+        func_002B4E08(pos, end, modelIndex, 0.01f, 0.4f, 0, RandomFloat(0.5f, 0.655f), 5, 0, 0, 1, 0, 0, clientId);
+        func_00256478(end, vec3_origin, 0.1f, entity, 5, 0, 0.35f, 0.01f, 0, clientId);
+        break;
+
+    case 101:
+        pos[0] = MSG_ReadCoord();
+        pos[1] = MSG_ReadCoord();
+        pos[2] = MSG_ReadCoord();
+        dir[0] = MSG_ReadCoord();
+        dir[1] = MSG_ReadCoord();
+        dir[2] = MSG_ReadCoord();
+        decal = MSG_ReadByte();
+        func_002B2938(pos, dir, decal, MSG_ReadByte(), clientId);
+        break;
+
+    case 103:
+        pos[0] = MSG_ReadCoord();
+        pos[1] = MSG_ReadCoord();
+        pos[2] = MSG_ReadCoord();
+        dir[0] = MSG_ReadCoord();
+        dir[1] = MSG_ReadCoord();
+        dir[2] = MSG_ReadCoord();
+        decal = MSG_ReadByte();
+        func_002B2C70(pos, dir, decal, MSG_ReadByte(), clientId);
+        break;
+
+    case 115:
+        pos[0] = MSG_ReadCoord();
+        pos[1] = MSG_ReadCoord();
+        pos[2] = MSG_ReadCoord();
+        modelIndex = MSG_ReadShort();
+        entity = MSG_ReadShort();
+        decal = MSG_ReadByte();
+        tmp[0] = MSG_ReadByte();
+        func_002579E0(pos, decal, modelIndex, entity, tmp[0], clientId);
+        break;
+
+    case 105:
+        entity = MSG_ReadShort();
+        if (entity >= cl[clientId].max_edicts)
+            Sys_Error("Bubble: entity = %i", entity);
+        modelIndex = MSG_ReadShort();
+        func_00254F40(&cl_entities[clientId][entity], modelIndex, MSG_ReadByte(), clientId);
+        break;
+
+    case 106:
+        pos[0] = MSG_ReadCoord();
+        pos[1] = MSG_ReadCoord();
+        pos[2] = MSG_ReadCoord();
+        dir[0] = MSG_ReadCoord();
+        dir[1] = MSG_ReadCoord();
+        dir[2] = MSG_ReadCoord();
+        end[0] = 0;
+        end[1] = func_00243770();
+        end[2] = 0;
+        modelIndex = MSG_ReadShort();
+        flags = MSG_ReadByte();
+        func_002561F0(pos, dir, end, MSG_ReadByte() * 0.1f, modelIndex, flags, clientId);
+        break;
+
+    case 107:
+        pos[0] = MSG_ReadCoord();
+        pos[1] = MSG_ReadCoord();
+        pos[2] = MSG_ReadCoord();
+        dir[0] = MSG_ReadCoord();
+        modelIndex = MSG_ReadShort();
+        count = MSG_ReadShort();
+        func_00255B70(pos, dir[0], MSG_ReadByte() * 0.1f, count, modelIndex, clientId);
+        break;
+
+    case 108:
+        pos[0] = MSG_ReadCoord();
+        pos[1] = MSG_ReadCoord();
+        pos[2] = MSG_ReadCoord();
+        tmp[0] = MSG_ReadCoord();
+        tmp[1] = MSG_ReadCoord();
+        tmp[2] = MSG_ReadCoord();
+        dir[0] = MSG_ReadCoord();
+        dir[1] = MSG_ReadCoord();
+        dir[2] = MSG_ReadCoord();
+        framerate = MSG_ReadByte() * 10.0f;
+        modelIndex = MSG_ReadShort();
+        count = MSG_ReadByte();
+        flife = MSG_ReadByte() * 0.1f;
+        func_00255DB8(pos, tmp, dir, framerate, flife, count, modelIndex, MSG_ReadByte(), clientId);
+        break;
+
+    case 14:
+        pos[0] = MSG_ReadCoord();
+        pos[1] = MSG_ReadCoord();
+        pos[2] = MSG_ReadCoord();
+        tmp[0] = MSG_ReadByte();
+        tmp[1] = MSG_ReadByte();
+        tmp[2] = MSG_ReadByte() * 0.1f;
+        func_002B5458(pos, tmp[1], tmp[0], tmp[2], clientId);
+        break;
+
+    case 15:
+        pos[0] = MSG_ReadCoord();
+        pos[1] = MSG_ReadCoord();
+        pos[2] = MSG_ReadCoord();
+        end[0] = MSG_ReadCoord();
+        end[1] = MSG_ReadCoord();
+        end[2] = MSG_ReadCoord();
+        modelIndex = MSG_ReadShort();
+        count = MSG_ReadByte();
+        flife = (unsigned int)MSG_ReadByte() * 0.1f;
+        tmp[0] = (unsigned int)MSG_ReadByte();
+        tmp[0] = (tmp[0] != 0.0f) ? tmp[0] * 0.1f : 1.0f;
+        tmp[1] = MSG_ReadByte() * 10.0f;
+        speed = MSG_ReadByte() * 10.0f;
+        func_002558C0(type, pos, end, modelIndex, count, flife, tmp[0], tmp[1], 255, speed, clientId);
+        break;
+
+    case 22:
+        startEnt = MSG_ReadShort();
+        modelIndex = MSG_ReadShort();
+        flife = (unsigned int)MSG_ReadByte() * 0.1f;
+        tmp[0] = (unsigned int)MSG_ReadByte();
+        fr = (unsigned int)MSG_ReadByte() / 255.0f;
+        fg = (unsigned int)MSG_ReadByte() / 255.0f;
+        fb = (unsigned int)MSG_ReadByte() / 255.0f;
+        fa = (unsigned int)MSG_ReadByte() / 255.0f;
+        func_002B5028(startEnt, modelIndex, flife, tmp[0], fr, fg, fb, fa, clientId);
+        break;
+
+    case 27:
+        pos[0] = MSG_ReadCoord();
+        pos[1] = MSG_ReadCoord();
+        pos[2] = MSG_ReadCoord();
+        dl = func_002510D0(0);
+        VectorCopy(pos, dl->origin);
+        dl->radius = MSG_ReadByte() * 10;
+        dl->color.r = MSG_ReadByte();
+        dl->color.g = MSG_ReadByte();
+        dl->color.b = MSG_ReadByte();
+        dl->die = cl[clientId].time + MSG_ReadByte() * 0.1f;
+        dl->decay = MSG_ReadByte() * 10;
+        break;
+
+    case 28:
+        dl = func_00251250(MSG_ReadShort());
+        dl->origin[0] = MSG_ReadCoord();
+        dl->origin[1] = MSG_ReadCoord();
+        dl->origin[2] = MSG_ReadCoord();
+        dl->radius = MSG_ReadCoord();
+        dl->color.r = MSG_ReadByte();
+        dl->color.g = MSG_ReadByte();
+        dl->color.b = MSG_ReadByte();
+        flife = MSG_ReadByte() * 0.1f;
+        if (flife != 0.0f)
+            dl->die = cl[clientId].time + flife;
+        else
+            dl->die = 0;
+        dl->decay = MSG_ReadCoord();
+        if (flife != 0.0f)
+            dl->decay /= flife;
+        break;
+
+    case 99:
+        func_002B53A0(MSG_ReadShort(), clientId);
+        break;
+
+    case 110:
+        pos[0] = MSG_ReadCoord();
+        pos[1] = MSG_ReadCoord();
+        pos[2] = MSG_ReadCoord();
+        dir[0] = MSG_ReadCoord();
+        dir[1] = MSG_ReadCoord();
+        dir[2] = MSG_ReadCoord();
+        modelIndex = MSG_ReadShort();
+        count = MSG_ReadByte();
+        speed = MSG_ReadByte();
+        func_00256668(pos, dir, modelIndex, count, speed * 2, MSG_ReadByte(), clientId);
+        break;
+
+    case 113:
+        pos[0] = MSG_ReadCoord();
+        pos[1] = MSG_ReadCoord();
+        pos[2] = MSG_ReadCoord();
+        end[0] = MSG_ReadCoord();
+        end[1] = MSG_ReadCoord();
+        end[2] = MSG_ReadCoord();
+        tmp[0] = MSG_ReadCoord();
+        modelIndex = MSG_ReadShort();
+        count = MSG_ReadByte();
+        tmp[1] = MSG_ReadCoord();
+        func_002551E8(pos, end, tmp[0], modelIndex, count, tmp[1], clientId);
+        break;
+
+    case 114:
+        pos[0] = MSG_ReadCoord();
+        pos[1] = MSG_ReadCoord();
+        pos[2] = MSG_ReadCoord();
+        end[0] = MSG_ReadCoord();
+        end[1] = MSG_ReadCoord();
+        end[2] = MSG_ReadCoord();
+        tmp[0] = MSG_ReadCoord();
+        modelIndex = MSG_ReadShort();
+        count = MSG_ReadByte();
+        tmp[1] = MSG_ReadCoord();
+        func_00255460(pos, end, tmp[0], modelIndex, count, tmp[1], clientId);
+        break;
+
+    case 29:
+        func_002585C8();
+        break;
+
+    case 128:
+        pos[0] = MSG_ReadCoord();
+        pos[1] = MSG_ReadCoord();
+        pos[2] = MSG_ReadCoord();
+        dir[0] = MSG_ReadCoord();
+        dir[1] = MSG_ReadCoord();
+        dir[2] = MSG_ReadCoord();
+        modelIndex = MSG_ReadShort();
+        count = MSG_ReadShort();
+        flags = MSG_ReadShort();
+        func_002B7E98(pos, count, flags, dir, clientId);
+        func_0025CA10(pos, modelIndex, count, flags, dir, clientId);
+        break;
+
+    default:
+        Sys_Error("CL_ParseTEnt: bad type");
+        break;
+    }
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/cl_tent", func_00258778);
+#endif
 
 void func_0025AEA8(int clientId)
 {
