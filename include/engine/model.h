@@ -3,6 +3,7 @@
 
 #include "common.h"
 
+#define CONTENTS_EMPTY -1
 #define CONTENTS_SOLID -2
 
 #define MODEL_MAX_PVS 1024

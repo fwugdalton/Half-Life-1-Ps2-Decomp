@@ -3188,7 +3188,7 @@ void Host_Viewmodel_f(void)
 }
 
 void PrintFrameName(model_t *m, int frame);
-extern int D_003341B8;
+extern int r_dointerp;
 void CRC32_ProcessBuffer(unsigned int *pulCRC, void *pBuffer, int nBuffer);
 void MSG_WriteShort(sizebuf_t *sb, int c);
 void func_002CFD08(void *p);
@@ -3253,9 +3253,9 @@ void Host_Viewprev_f(void)
 
 void Host_Interp_f(void)
 {
-    D_003341B8 = !D_003341B8;
+    r_dointerp = !r_dointerp;
 
-    if (!D_003341B8)
+    if (!r_dointerp)
         Con_Printf("Frame Interpolation OFF\n");
     else
         Con_Printf("Frame Interpolation ON\n");

@@ -1655,3 +1655,25 @@ R_InitParticleTexture = 0x2AFED0; // type:func
 R_NewMap = 0x2B0280; // type:func
 R_TimeRefresh_f = 0x2B0530; // type:func
 D_FlushCaches = 0x2B05F8; // type:func
+
+// engine/r_studio.c
+studio_hull = 0x004344A0; // size:0x1400
+studio_hull_hitgroup = 0x004342A0; // size:0x200
+studio_clipnodes = 0x004358A0; // size:0x30
+studio_planes = 0x004358D0; // size:0x3C00
+SV_InitStudioHull = 0x2B9100; // type:func
+R_ResetStudio = 0x2BB090; // type:func
+R_StudioBodyVariations = 0x2BB0F0; // type:func
+R_FlushStudioCache = 0x2BB0D0; // type:func
+rgStudioCache = 0x00433E58; // size:0x440
+r_cachecurrent = 0x00434298; // size:0x4
+nCurrentHull = 0x00433E50; // size:0x4
+nCurrentPlane = 0x00433E54; // size:0x4
+MatrixCopy = 0x2BD400; // type:func
+r_dointerp = 0x003341B8; // size:0x4
+pstudiohdr = 0x00399684; // size:0x4
+bonetransform = 0x005353C0; // size:0x6000
+SV_SetStudioHullPlane = 0x2BA9D0; // type:func
+R_StudioEstimateInterpolant = 0x2BC8A0; // type:func
+R_StudioIdentityMatrix = 0x2BBA28; // type:func
+r_playermodels = 0x00536BC0; // size:0x624
