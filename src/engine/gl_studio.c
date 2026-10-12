@@ -122,6 +122,19 @@ extern int locallinearlight[3][3];
 float sqrtf(float);
 extern int numlights;
 extern float r_blend;
+extern int r_ambientlight;
+extern float r_shadelight;
+extern vec3_t r_plightvec;
+extern vec3_t r_blightvec[MAXSTUDIOBONES];
+extern vec3_t r_lightcolor;
+extern cvar_t v_lambert;
+extern int lightgammatable[1024];
+extern int D_00399694;
+extern float *D_003996BC;
+extern int D_0052F778[MAXSTUDIOVERTS][2];
+#define kRenderTransAdd 5
+void func_002C48D8(int *pchrome, int bone, vec3_t normal);
+void func_002C4840(vec3_t in1, float in2[3][4], vec3_t out);
 extern cvar_t r_glowshellfreq;
 extern int g_NormalIndex[MAXSTUDIOVERTS];
 void tri_Color4ub(unsigned char r, unsigned char g, unsigned char b, unsigned char a);
@@ -224,7 +237,128 @@ void func_002C3C90(void)
     D_00439500.count = 0;
 }
 
+#ifdef NON_MATCHING
+void func_002C3CE0(mstudiotexture_t *ptexture, short *pskinref, mstudiomesh_t *pmesh, vec3_t *pstudionorms, byte *pnormbone)
+{
+    int i, j;
+    int flags;
+    float *lv;
+    float lv_tmp;
+    float illum;
+    float lightcos;
+    float r;
+    int bone;
+    int *pchrome;
+    float n;
+    vec3_t chromeupvec;
+    vec3_t chromerightvec;
+    vec3_t tmp;
+
+    lv = D_003996BC;
+
+    if (currententity->rendermode == kRenderTransAdd)
+    {
+        for (j = 0; j < psubmodel->nummesh; j++)
+        {
+            flags = ptexture[pskinref[pmesh[j].skinref]].flags | g_ForcedFaceFlags;
+
+            for (i = 0; i < pmesh[j].numnorms; i++, lv += 4)
+            {
+                lv[0] = lv[3] = lv[2] = lv[1] = r_blend * 0.6666665f;
+                if (flags & STUDIO_NF_CHROME)
+                    func_002C48D8(D_0052F778[i], *pnormbone, (float *)pstudionorms);
+            }
+        }
+        return;
+    }
+
+    for (j = 0; j < psubmodel->nummesh; j++)
+    {
+        flags = ptexture[pskinref[pmesh[j].skinref]].flags | g_ForcedFaceFlags;
+
+        for (i = 0; i < pmesh[j].numnorms; i++, lv += 4, pstudionorms++, pnormbone++)
+        {
+            illum = r_ambientlight;
+            bone = *pnormbone;
+
+            if ((flags & STUDIO_NF_FLATSHADE) && D_00399694 != 1)
+            {
+                illum += r_shadelight * 0.8f;
+            }
+            else
+            {
+                if (bone != -1)
+                    lightcos = DotProduct(pstudionorms[0], r_blightvec[bone]);
+                else
+                    lightcos = DotProduct(pstudionorms[0], r_plightvec);
+
+                if (lightcos > 1.0f)
+                    lightcos = 1.0f;
+
+                r = v_lambert.value;
+                if (r >= 1.0f)
+                {
+                    lightcos = (lightcos + (r - 1.0f)) / r;
+                    illum += r_shadelight;
+                    if (lightcos > 0.0f)
+                        illum -= r_shadelight * lightcos;
+                }
+                else
+                {
+                    lightcos = (r - lightcos) / (r + 1.0f);
+                    if (lightcos > 0.0f)
+                        illum += r_shadelight * lightcos;
+                }
+
+                if (illum <= 0)
+                    illum = 0;
+            }
+
+            if (illum > 255)
+                illum = 255;
+
+            illum = lightgammatable[(int)(illum * 4)];
+            lv_tmp = illum * 0.0006516779f;
+
+            if (flags & STUDIO_NF_CHROME)
+            {
+                pchrome = D_0052F778[(float (*)[4])lv - (float (*)[4])D_003996BC];
+
+                if (chromeage[bone] != r_smodels_total)
+                {
+                    VectorScale(chrome_origin, -1, tmp);
+                    tmp[0] += lighttransform[bone][0][3];
+                    tmp[1] += lighttransform[bone][1][3];
+                    tmp[2] += lighttransform[bone][2][3];
+                    VectorNormalize(tmp);
+                    CrossProduct(tmp, vright, chromeupvec);
+                    VectorNormalize(chromeupvec);
+                    CrossProduct(chromeupvec, tmp, chromerightvec);
+                    VectorNormalize(chromerightvec);
+
+                    func_002C4840(chromeupvec, lighttransform[bone], chromeup[bone]);
+                    func_002C4840(chromerightvec, lighttransform[bone], chromeright[bone]);
+
+                    chromeage[bone] = r_smodels_total;
+                }
+
+                n = DotProduct(pstudionorms[0], chromeright[bone]);
+                pchrome[0] = (n + 1.0f) * 32768.0f;
+
+                n = DotProduct(pstudionorms[0], chromeup[bone]);
+                pchrome[1] = (n + 1.0f) * 32768.0f;
+            }
+
+            lv[0] = lv_tmp * r_lightcolor[0];
+            lv[1] = lv_tmp * r_lightcolor[1];
+            lv[2] = lv_tmp * r_lightcolor[2];
+            lv[3] = r_blend;
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/gl_studio", func_002C3CE0);
+#endif
 
 studiohdr_t *func_002C43A0(model_t *pmodel)
 {
