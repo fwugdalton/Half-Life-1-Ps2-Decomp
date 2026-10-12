@@ -1,5 +1,7 @@
 #include "common.h"
 #include "engine/cmd.h"
+#include "engine/cvar.h"
+#include "engine/client.h"
 
 /* snd_dma.c do HL (versão PS2: três listas de sfx, global/jogo/fase) */
 
@@ -55,6 +57,38 @@ extern int D_00465884;          /* espaço livre */
 extern int D_00465888;          /* num_sfx do jogo */
 extern int D_0046588C;          /* num_sfx globais */
 extern int D_00465890;          /* num_sfx total */
+extern cvar_t D_00334D40;        /* volume */
+extern cvar_t D_00334D58;
+extern cvar_t D_00334D70;
+extern cvar_t D_00334D88;
+extern cvar_t D_00334DB8;
+extern cvar_t hisound;
+extern cvar_t D_00334DD0;
+extern cvar_t loadas8bit;
+extern cvar_t D_00334E00;
+extern cvar_t D_00334E18;
+extern cvar_t D_00334E30;
+extern cvar_t D_00334E48;
+extern cvar_t D_00334E60;
+extern cvar_t D_00334E78;
+extern int D_00334D30;          /* snd_initialized */
+extern sfx_t *D_00465870;       /* known_sfx */
+
+int strcasecmp(const char *, const char *);
+void func_002CA018(void);
+void func_002C8218(void);
+void func_002C84C0(void);
+void func_002C9C10(void);
+void func_002CD340(int, int);
+void func_002CECC0(void);
+void func_00231D68(float);
+void func_00231CB8(float);
+void func_002CDB18(void);
+void func_002CDC20(void);
+void func_002CDDD8(void);
+void func_002CD3F8(void);
+void func_002CB7B0(void);
+void func_002CBAA8(void);
 
 INCLUDE_RODATA("asm/nonmatchings/engine/snd_dma", D_00395BF0);
 
@@ -266,13 +300,150 @@ void func_002CBBB0(void)
     D_00334D3C = 1;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/snd_dma", S_Init);
+void S_Init(int arg)
+{
+    Con_DPrintf("\nSound Initialization\n");
+    func_002CA018();
 
-INCLUDE_ASM("asm/nonmatchings/engine/snd_dma", func_002CBE10);
+    if (COM_CheckParm(D_00395D18))
+        return;
 
-INCLUDE_ASM("asm/nonmatchings/engine/snd_dma", func_002CBE40);
+    Cmd_AddCommand("play", func_002CDB18);
+    Cmd_AddCommand("playvol", func_002CDC20);
+    Cmd_AddCommand("speak", func_002CDDD8);
+    Cmd_AddCommand("stopsound", func_002CD3F8);
+    Cmd_AddCommand("soundreport", func_002CB7B0);
+    Cmd_AddCommand("soundinfo", func_002CBAA8);
 
-INCLUDE_ASM("asm/nonmatchings/engine/snd_dma", func_002CBE80);
+    Cvar_RegisterVariable(&D_00334D58);
+    Cvar_RegisterVariable(&D_00334D70);
+    Cvar_RegisterVariable(&D_00334D40);
+    Cvar_RegisterVariable(&D_00334D88);
+    Cvar_RegisterVariable(&D_00334DB8);
+    Cvar_RegisterVariable(&hisound);
+    Cvar_RegisterVariable(&D_00334DD0);
+    Cvar_RegisterVariable(&loadas8bit);
+    Cvar_RegisterVariable(&D_00334E00);
+    Cvar_RegisterVariable(&D_00334E18);
+    Cvar_RegisterVariable(&D_00334E30);
+    Cvar_RegisterVariable(&D_00334E48);
+    Cvar_RegisterVariable(&D_00334E60);
+    Cvar_RegisterVariable(&D_00334E78);
+
+    D_00334D30 = 1;
+
+    func_002CBBB0();
+    func_002C8218();
+
+    D_00465870 = Mem_DbgMalloc(MAX_SFX * sizeof(sfx_t), "engine/snd_dma_gbx.c", 340);
+    memset(D_00465870, 0, MAX_SFX * sizeof(sfx_t));
+    D_00465874 = D_00465870;
+    D_00465878 = NULL;
+    D_0046587C = NULL;
+    D_00465890 = 0;
+    D_0046588C = 0;
+    D_00465888 = 0;
+    D_00465880 = 0;
+
+    Con_DPrintf("Sound sampling rate: %i\n", shm->speed);
+
+    func_002CD340(1, arg);
+    func_002C84C0();
+    func_002C9C10();
+    func_00231D68(D_00334D40.value);
+}
+
+void func_002CBE10(void)
+{
+    func_00231CB8(D_00334D58.value);
+    func_00231D68(D_00334D40.value);
+}
+
+void func_002CBE40(void)
+{
+    if (!D_00334D3C)
+        return;
+
+    if (shm)
+        shm->gamealive = 0;
+
+    shm = NULL;
+    D_00334D3C = 0;
+    func_002CECC0();
+}
+
+sfx_t *func_002CBE80(char *name, int *pfInCache)
+{
+    int i;
+    sfx_t *sfx;
+
+    sfx = NULL;
+
+    for (i = 0; i < D_0046588C; i++)
+    {
+        if (!strcasecmp(D_00465874[i].name, name))
+        {
+            if (pfInCache)
+                *pfInCache = 1;
+            return &D_00465874[i];
+        }
+    }
+
+    for (i = 0; i < D_00465888; i++)
+    {
+        if (!strcasecmp(D_00465878[i].name, name))
+        {
+            if (pfInCache)
+                *pfInCache = 1;
+            return &D_00465878[i];
+        }
+    }
+
+    for (i = 0; i < D_00465880; i++)
+    {
+        if (!strcasecmp(D_0046587C[i].name, name))
+        {
+            if (pfInCache)
+            {
+                if (!Cache_Check(&D_0046587C[i].cache))
+                    *pfInCache = 0;
+                else
+                    *pfInCache = 1;
+            }
+            D_0046587C[i].unk_4C = cl[0].servercount;
+            return &D_0046587C[i];
+        }
+
+        if (D_0046587C[i].unk_4C != cl[0].servercount)
+            sfx = &D_0046587C[i];
+    }
+
+    if (!sfx)
+    {
+        if (D_00465880 < D_00465884)
+        {
+            sfx = &D_0046587C[D_00465880];
+            memset(sfx, 0, sizeof(sfx_t));
+            D_00465880++;
+            D_00465890++;
+        }
+    }
+    else
+    {
+        if (Cache_Check(&sfx->cache))
+            Cache_Free(&sfx->cache);
+    }
+
+    if (sfx)
+    {
+        strcpy(sfx->name, name);
+        sfx->servercount = 2;
+        sfx->unk_4C = cl[0].servercount;
+        if (pfInCache)
+            *pfInCache = 0;
+    }
+    return sfx;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/snd_dma", S_PrecacheSound);
 
