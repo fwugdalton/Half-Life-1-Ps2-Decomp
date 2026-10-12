@@ -171,6 +171,7 @@ void func_0025C428(cl_entity_t *ent, float transform[3][4]); /* StudioFxTransfor
 extern cvar_t sv_clienttrace;
 #define FL_CLIENT 8
 #define STUDIO_TRACE_HITBOX 0x200
+#define FABS(x) ((x) < 0 ? -(x) : (x))
 hull_t *R_StudioHull(model_t *pModel, float frame, int sequence, vec3_t angles, vec3_t origin, vec3_t size,
                      byte *pcontroller, byte *pblending, int *pNumHulls);
 hull_t *SV_HullForEntity(edict_t *ent, vec3_t mins, vec3_t maxs, vec3_t offset);
@@ -864,7 +865,77 @@ void SV_SetStudioHullPlane(mplane_t *pl, int iBone, int k, float dist)
              + dist;
 }
 
+#ifdef NON_MATCHING
+hull_t *R_StudioHull(model_t *pModel, float frame, int sequence, vec3_t angles, vec3_t origin, vec3_t size,
+                     byte *pcontroller, byte *pblending, int *pNumHulls)
+{
+    int i, j, k6;
+    mstudiobbox_t *pbbox;
+    vec3_t angles2;
+    r_studiocache_t *pCached;
+
+    SV_InitStudioHull();
+
+    pCached = R_CheckStudioCache(pModel, frame, sequence, angles, origin, size, pcontroller, pblending);
+    if (pCached)
+    {
+        memcpy(studio_planes, &cache_planes[pCached->nStartPlane], pCached->numhulls * sizeof(mplane_t) * 6);
+        memcpy(studio_hull, &cache_hull[pCached->nStartHull], pCached->numhulls * sizeof(hull_t));
+        memcpy(studio_hull_hitgroup, &cache_hull_hitgroup[pCached->nStartHull], pCached->numhulls * sizeof(int));
+        *pNumHulls = pCached->numhulls;
+        return studio_hull;
+    }
+
+    pstudiohdr = (studiohdr_t *)Mod_Extradata(pModel);
+
+    angles2[0] = -angles[0];
+    angles2[2] = angles[2];
+    angles2[1] = angles[1];
+
+    SV_StudioSetupBones(pModel, frame, sequence, angles2, origin, pcontroller, pblending, -1);
+
+    pbbox = (mstudiobbox_t *)((byte *)pstudiohdr + pstudiohdr->hitboxindex);
+
+    for (i = 0, k6 = 0; i < pstudiohdr->numhitboxes; i++, k6 += 6)
+    {
+        studio_hull_hitgroup[i] = pbbox[i].group;
+
+        for (j = 0; j < 6; j++)
+        {
+            int k = j / 2;
+            mplane_t *plane = &studio_planes[k6 + j];
+            float d;
+
+            if (j & 1)
+                d = pbbox[i].bbmin[k];
+            else
+                d = pbbox[i].bbmax[k];
+
+            plane->type = 5;
+            plane->normal[0] = bonetransform[pbbox[i].bone][0][k];
+            plane->normal[1] = bonetransform[pbbox[i].bone][1][k];
+            plane->normal[2] = bonetransform[pbbox[i].bone][2][k];
+            plane->dist = bonetransform[pbbox[i].bone][0][3] * plane->normal[0]
+                        + bonetransform[pbbox[i].bone][1][3] * plane->normal[1]
+                        + bonetransform[pbbox[i].bone][2][3] * plane->normal[2] + d;
+        }
+
+        studio_planes[k6 + 0].dist += FABS(studio_planes[k6 + 0].normal[0] * size[0]) + FABS(studio_planes[k6 + 0].normal[1] * size[1]) + FABS(studio_planes[k6 + 0].normal[2] * size[2]);
+        studio_planes[k6 + 1].dist -= FABS(studio_planes[k6 + 1].normal[0] * size[0]) + FABS(studio_planes[k6 + 1].normal[1] * size[1]) + FABS(studio_planes[k6 + 1].normal[2] * size[2]);
+        studio_planes[k6 + 2].dist += FABS(studio_planes[k6 + 2].normal[0] * size[0]) + FABS(studio_planes[k6 + 2].normal[1] * size[1]) + FABS(studio_planes[k6 + 2].normal[2] * size[2]);
+        studio_planes[k6 + 3].dist -= FABS(studio_planes[k6 + 3].normal[0] * size[0]) + FABS(studio_planes[k6 + 3].normal[1] * size[1]) + FABS(studio_planes[k6 + 3].normal[2] * size[2]);
+        studio_planes[k6 + 4].dist += FABS(studio_planes[k6 + 4].normal[0] * size[0]) + FABS(studio_planes[k6 + 4].normal[1] * size[1]) + FABS(studio_planes[k6 + 4].normal[2] * size[2]);
+        studio_planes[k6 + 5].dist -= FABS(studio_planes[k6 + 5].normal[0] * size[0]) + FABS(studio_planes[k6 + 5].normal[1] * size[1]) + FABS(studio_planes[k6 + 5].normal[2] * size[2]);
+    }
+
+    *pNumHulls = pstudiohdr->numhitboxes;
+    R_AddToStudioCache(frame, sequence, angles, origin, size, pcontroller, pblending, pModel, studio_hull, pstudiohdr->numhitboxes);
+
+    return studio_hull;
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", R_StudioHull);
+#endif
 
 int SV_HitgroupForStudioHull(int index)
 {
