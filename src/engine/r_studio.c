@@ -224,6 +224,11 @@ void R_StudioRotateBBox(vec3_t mins, vec3_t maxs, vec3_t angles);
 void R_StudioCalcBoneAdj(float dadt, float *adj, byte *pcontroller1, byte *pcontroller2, byte mouthopen);
 void R_StudioCalcBoneQuaternion(int frame, float s, mstudiobone_t *pbone, mstudioanim_t *panim, float *adj, float *q);
 void R_StudioCalcBonePosition(int frame, float s, mstudiobone_t *pbone, mstudioanim_t *panim, float *adj, float *pos);
+/* pos/q estáticos de SV_StudioSetupBones */
+extern float D_00417C40[MAXSTUDIOBONES][3];
+extern float D_00418240[MAXSTUDIOBONES][4];
+extern float D_00418A40[MAXSTUDIOBONES][3];
+extern float D_00419040[MAXSTUDIOBONES][4];
 
 /* campos do cl_entity_t ainda não mapeados em cl_entity.h */
 #define ENT_CONTROLLER(e) ((byte *)(e) + 0x00)
@@ -754,7 +759,98 @@ void R_StudioLoadSeqGroup(model_t *pmodel, int seqgroup)
         COM_LoadFileCached(pseqgroup->name, &paSequences[seqgroup], NULL);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", SV_StudioSetupBones);
+void SV_StudioSetupBones(model_t *pModel, float frame, int sequence, vec3_t angles, vec3_t origin,
+                         byte *pcontroller, byte *pblending, int iBone)
+{
+    int i, j;
+    float f;
+    float s;
+    float adj[MAXSTUDIOCONTROLLERS];
+    float bonematrix[3][4];
+    int boneused[MAXSTUDIOBONES];
+    int chainlength;
+    mstudiobone_t *pbones;
+    mstudioseqdesc_t *pseqdesc;
+    mstudioanim_t *panim;
+
+    chainlength = 0;
+
+    if (sequence < 0 || sequence >= pstudiohdr->numseq)
+    {
+        Con_DPrintf("sequence %d out of range for model %s\n", sequence, pstudiohdr->name);
+        sequence = 0;
+    }
+
+    pseqdesc = (mstudioseqdesc_t *)((byte *)pstudiohdr + pstudiohdr->seqindex) + sequence;
+    pbones = (mstudiobone_t *)((byte *)pstudiohdr + pstudiohdr->boneindex);
+    panim = R_GetAnim(pModel, pseqdesc);
+
+    if (iBone < -1 || iBone >= pstudiohdr->numbones)
+        iBone = 0;
+
+    if (iBone == -1)
+    {
+        chainlength = pstudiohdr->numbones;
+        for (i = 0; i < pstudiohdr->numbones; i++)
+            boneused[chainlength - i - 1] = i;
+    }
+    else
+    {
+        for (i = iBone; i != -1; i = pbones[i].parent)
+            boneused[chainlength++] = i;
+    }
+
+    if (pseqdesc->numframes <= 1)
+        f = 0;
+    else
+        f = frame * (pseqdesc->numframes - 1) / 256.0f;
+
+    s = f - (int)f;
+
+    R_StudioCalcBoneAdj(0, adj, pcontroller, pcontroller, 0);
+
+    for (j = chainlength - 1; j >= 0; j--)
+    {
+        i = boneused[j];
+        R_StudioCalcBoneQuaternion((int)f, s, &pbones[i], &panim[i], adj, D_00418240[i]);
+        R_StudioCalcBonePosition((int)f, s, &pbones[i], &panim[i], adj, D_00417C40[i]);
+    }
+
+    if (pseqdesc->numblends > 1)
+    {
+        panim = R_GetAnim(pModel, (mstudioseqdesc_t *)((byte *)pstudiohdr + pstudiohdr->seqindex) + sequence);
+        panim += pstudiohdr->numbones;
+
+        for (j = chainlength - 1; j >= 0; j--)
+        {
+            i = boneused[j];
+            R_StudioCalcBoneQuaternion((int)f, s, &pbones[i], &panim[i], adj, D_00419040[i]);
+            R_StudioCalcBonePosition((int)f, s, &pbones[i], &panim[i], adj, D_00418A40[i]);
+        }
+
+        R_StudioSlerpBones(D_00418240, D_00417C40, D_00419040, D_00418A40, pblending[0] / 255.0f);
+    }
+
+    AngleMatrix(angles, D_0053CF68);
+    D_0053CF68[0][3] = origin[0];
+    D_0053CF68[1][3] = origin[1];
+    D_0053CF68[2][3] = origin[2];
+
+    for (j = chainlength - 1; j >= 0; j--)
+    {
+        i = boneused[j];
+        QuaternionMatrix(D_00418240[i], bonematrix);
+
+        bonematrix[0][3] = D_00417C40[i][0];
+        bonematrix[1][3] = D_00417C40[i][1];
+        bonematrix[2][3] = D_00417C40[i][2];
+
+        if (pbones[i].parent == -1)
+            R_ConcatTransforms(D_0053CF68, bonematrix, bonetransform[i]);
+        else
+            R_ConcatTransforms(bonetransform[pbones[i].parent], bonematrix, bonetransform[i]);
+    }
+}
 
 void SV_SetStudioHullPlane(mplane_t *pl, int iBone, int k, float dist)
 {
