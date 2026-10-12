@@ -15,7 +15,7 @@ typedef struct kbutton_s
 
 #define K_MOUSE1 200
 
-extern int D_003315B4;
+extern int iMouseInUse;
 extern int key_dest;
 extern qboolean noclip_anglehack;
 
@@ -60,7 +60,7 @@ void Key_Event(int key, qboolean down);
 
 void func_002C5338(void)
 {
-    if (!D_003315B4)
+    if (!iMouseInUse)
         cl[atoi(Cmd_Argv(1))].viewangles[0] = 0;
 }
 
@@ -187,7 +187,7 @@ void func_002C55C0(usercmd_t *cmd, int clientId)
     int mx, my;
     signed char delta[2];
 
-    if (D_003315B4)
+    if (iMouseInUse)
         return;
     if (key_dest == 4)
         return;
@@ -244,7 +244,7 @@ void func_002C55C0(usercmd_t *cmd, int clientId)
 
 void func_002C5980(usercmd_t *cmd, int clientId)
 {
-    if (!D_003315B4 && D_0043B1C0)
+    if (!iMouseInUse && D_0043B1C0)
         func_002C55C0(cmd, clientId);
 
     func_0021BFC0(clientId);
@@ -257,7 +257,7 @@ void func_002C5A30(void)
 {
     signed char delta[2];
 
-    if (D_003315B4)
+    if (iMouseInUse)
         return;
     if (key_dest == 4)
         return;
