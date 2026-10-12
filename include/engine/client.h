@@ -56,7 +56,11 @@ typedef struct player_info_s
     int bottomcolor;            /* 0x134 */
     byte pad138[0x340 - 0x138];
     float maxspeed;             /* 0x340 */
-    byte customdata[0x3C8 - 0x344]; /* 0x344: customization_t (cabeça da lista) */
+    byte customdata[0x3B0 - 0x344]; /* 0x344: customization_t (cabeça da lista) */
+    int gaitsequence;           /* 0x3B0 */
+    float gaitframe;            /* 0x3B4 */
+    float gaityaw;              /* 0x3B8 */
+    vec3_t prevgaitorigin;      /* 0x3BC */
 } player_info_t; /* 0x3C8 */
 
 #define MAX_CLIENTS 3

@@ -2645,7 +2645,163 @@ void func_002C0258(void)
         Cache_Free(&pcache->cache);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", R_StudioDrawPlayer);
+extern int D_004394D8; /* m_nPlayerIndex */
+extern cvar_t developer;
+qboolean Host_IsSinglePlayerGame(void);
+char *strcat(char *dst, const char *src);
+void func_002C0258(void);
+void R_StudioProcessGait(studioplayer_t *pplayer, int clientId);
+
+int R_StudioDrawPlayer(int flags, studioplayer_t *pplayer, int clientId)
+{
+    alight_t lighting;
+    vec3_t dir;
+    vec3_t orig_angles;
+    cl_entity_t saveent;
+    model_t *pweaponmodel;
+    player_info_t *pinfo;
+
+    D_004394D8 = pplayer->number;
+
+    if (D_004394D8 < 0 || D_004394D8 >= cl[clientId].maxclients)
+        return 0;
+
+    if ((developer.value == 0 && Host_IsSinglePlayerGame()) || !cl[clientId].players[D_004394D8].model[0])
+    {
+        r_playermodels[D_004394D8].name[0] = 0;
+        if (r_playermodels[D_004394D8].unk208 != (int)currententity->model)
+        {
+            r_playermodels[D_004394D8].unk208 = (int)currententity->model;
+            func_002C0258();
+        }
+    }
+    else if (strcmp(r_playermodels[D_004394D8].name, cl[clientId].players[D_004394D8].model))
+    {
+        strcpy(r_playermodels[D_004394D8].name, cl[clientId].players[D_004394D8].model);
+        strcpy(r_playermodels[D_004394D8].modelname, "models/player/");
+        strcat(r_playermodels[D_004394D8].modelname, cl[clientId].players[D_004394D8].model);
+        strcat(r_playermodels[D_004394D8].modelname, "/");
+        strcat(r_playermodels[D_004394D8].modelname, cl[clientId].players[D_004394D8].model);
+        strcat(r_playermodels[D_004394D8].modelname, ".dol");
+
+        r_playermodels[D_004394D8].unk208 = (int)Mod_ForName(r_playermodels[D_004394D8].modelname, false);
+        if (!r_playermodels[D_004394D8].unk208)
+            r_playermodels[D_004394D8].unk208 = (int)currententity->model;
+
+        func_002C0258();
+    }
+
+    D_0039967C = r_playermodels[D_004394D8].unk208;
+    if (!D_0039967C)
+        return 0;
+
+    pstudiohdr = (studiohdr_t *)Mod_Extradata((model_t *)D_0039967C);
+
+    if (flags & STUDIO_RENDER)
+        R_StudioCheckLOD(clientId);
+
+    if (pplayer->gaitsequence)
+    {
+        m_pPlayerInfo = (studioplayerinfo_t *)&cl[clientId].players[D_004394D8];
+        VectorCopy(currententity->angles, orig_angles);
+
+        R_StudioProcessGait(pplayer, clientId);
+        m_pPlayerInfo->gaitsequence = pplayer->gaitsequence;
+        m_pPlayerInfo = NULL;
+
+        R_StudioSetUpTransform(0, clientId);
+        VectorCopy(orig_angles, currententity->angles);
+    }
+    else
+    {
+        currententity->controller[0] = 127;
+        currententity->controller[1] = 127;
+        currententity->controller[2] = 127;
+        currententity->controller[3] = 127;
+        currententity->prevcontroller[0] = currententity->controller[0];
+        currententity->prevcontroller[1] = currententity->controller[1];
+        currententity->prevcontroller[2] = currententity->controller[2];
+        currententity->prevcontroller[3] = currententity->controller[3];
+
+        cl[clientId].players[D_004394D8].gaitsequence = 0;
+
+        R_StudioSetUpTransform(0, clientId);
+    }
+
+    if (flags & STUDIO_RENDER)
+    {
+        if (!R_StudioCheckBBox())
+            return 0;
+
+        D_003996B0++;
+        r_smodels_total++;
+
+        if (pstudiohdr->numbodyparts == 0)
+            return 1;
+    }
+
+    m_pPlayerInfo = (studioplayerinfo_t *)&cl[clientId].players[D_004394D8];
+    func_002BCBE8(clientId);
+    R_StudioSaveBones();
+    pplayer->renderframe = r_framecount;
+    m_pPlayerInfo = NULL;
+
+    if (flags & STUDIO_EVENTS)
+    {
+        R_StudioCalcAttachments(clientId);
+        R_StudioClientEvents(clientId);
+
+        if (currententity->index > 0)
+            memcpy(cl_entities[clientId][currententity->index].attachment, currententity->attachment, sizeof(vec3_t) * 4);
+    }
+
+    if (flags & STUDIO_RENDER)
+    {
+        if (developer.value == 0 && Host_IsSinglePlayerGame())
+        {
+        }
+
+        lighting.plightvec = dir;
+        func_002C0A50(currententity, &lighting, clientId);
+        R_StudioEntityLight(&lighting, clientId);
+        R_StudioSetupLighting(&lighting);
+
+        pinfo = &cl[clientId].players[D_004394D8];
+        m_pPlayerInfo = (studioplayerinfo_t *)pinfo;
+
+        D_00399698 = pinfo->topcolor;
+        if (D_00399698 < 0)
+            D_00399698 = 0;
+        if (D_00399698 > 360)
+            D_00399698 = 360;
+
+        D_003996C0 = pinfo->bottomcolor;
+        if (D_003996C0 < 0)
+            D_003996C0 = 0;
+        if (D_003996C0 > 360)
+            D_003996C0 = 360;
+
+        R_StudioRenderModel();
+        m_pPlayerInfo = NULL;
+
+        if (pplayer->weaponmodel)
+        {
+            saveent = *currententity;
+            pweaponmodel = cl[clientId].model_precache[pplayer->weaponmodel];
+
+            pstudiohdr = (studiohdr_t *)Mod_Extradata(pweaponmodel);
+
+            R_StudioMergeBones(pweaponmodel, clientId);
+            R_StudioSetupLighting(&lighting);
+            R_StudioRenderModel();
+            R_StudioCalcAttachments(clientId);
+
+            *currententity = saveent;
+        }
+    }
+
+    return 1;
+}
 
 typedef struct
 {
