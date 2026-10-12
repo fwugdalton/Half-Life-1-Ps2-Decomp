@@ -2487,7 +2487,52 @@ void func_002B75F0(BEAM *pbeam, float frametime, int clientId)
     }
 }
 
+#ifdef NON_MATCHING
+void func_002B7CA8(int clientId)
+{
+    BEAM *pBeam, *pPrev;
+    float frametime;
+
+    if (!D_00414290[clientId] && !D_00399658[clientId])
+        return;
+
+    frametime = cl[clientId].time - cl[clientId].oldtime;
+    glDisable(GL_ALPHA_TEST);
+    glDepthMask(0);
+    func_002A0EE0(1);
+
+    if (D_00414290[clientId])
+    {
+        while ((pBeam = D_00414290[clientId]) && !(pBeam->flags & FBEAM_FOREVER) && pBeam->die < cl[clientId].time)
+        {
+            D_00414290[clientId] = pBeam->next;
+            pBeam->next = D_00414298[clientId];
+            D_00414298[clientId] = pBeam;
+        }
+
+        pPrev = D_00414290[clientId];
+        while (pPrev)
+        {
+            while ((pBeam = pPrev->next) && !(pBeam->flags & FBEAM_FOREVER) && pBeam->die <= cl[clientId].time)
+            {
+                pPrev->next = pBeam->next;
+                pBeam->next = D_00414298[clientId];
+                D_00414298[clientId] = pBeam;
+            }
+
+            func_002B75F0(pPrev, frametime, clientId);
+            pPrev = pPrev->next;
+        }
+    }
+
+    func_002B4948(clientId, frametime);
+    glDepthMask(1);
+    func_002A0EE0(0);
+    tri_RenderMode(kRenderNormal);
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B7CA8);
+#endif
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B7E98);
 
