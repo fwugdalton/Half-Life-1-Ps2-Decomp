@@ -30,7 +30,8 @@ typedef struct cl_entity_s
     int visframe;               /* 0x38 */
     byte pad3C[0x44 - 0x3C];
     int aiment;                 /* 0x44 */
-    byte pad48[0x50 - 0x48];
+    int weaponmodel;            /* 0x48 */
+    byte pad4C[0x50 - 0x4C];
     struct model_s *model;      /* 0x50 */
     struct efrag_s *efrag;      /* 0x54 */
     void *topnode;              /* 0x58 */

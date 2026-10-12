@@ -140,13 +140,17 @@ extern int numlights;
 /* jogador passado para a estimativa de passo (R_StudioEstimateGait) */
 typedef struct
 {
-    byte pad0[0x64];
+    byte pad0[0x30];
+    byte number;                /* 0x30 */
+    byte pad31[0x64 - 0x31];
     vec3_t velocity;            /* 0x64 */
     byte pad70[0x98 - 0x70];
     int renderframe;            /* 0x98 */
-    byte pad9C[0xC8 - 0x9C];
+    byte pad9C[0xC4 - 0x9C];
+    int weaponmodel;            /* 0xC4 */
     int gaitsequence;           /* 0xC8 */
-} studioplayer_t;
+    byte padCC[0xF8 - 0xCC];
+} studioplayer_t;               /* 0xF8: player_state_t */
 
 /* player_info_t do PS2 (só os campos de passo) */
 typedef struct
@@ -268,6 +272,10 @@ extern int D_003996A4;
 
 #define kRenderFxGlowShell 19
 #define kRenderTransAdd 5
+#define kRenderFxDeadPlayer 17
+#define STUDIO_RENDER 1
+#define STUDIO_EVENTS 2
+#define MOVETYPE_FOLLOW 12
 
 /* extensão do PS2 no fim do studiohdr_t */
 typedef struct
@@ -2348,7 +2356,146 @@ void R_StudioSetupModel(int bodypart)
     psubmodel = (mstudiomodel_t *)((byte *)pstudiohdr + pbodypart->modelindex) + index;
 }
 
+extern int D_003996B0; /* r_amodels_drawn */
+extern int cl_updatemask[];
+extern cl_entity_t *cl_entities[];
+int func_00228C00(char *name, model_t *model);
+qboolean func_002A8C20(vec3_t mins, vec3_t maxs);
+void R_StudioCalcAttachments(int clientId);
+int R_StudioDrawPlayer(int flags, studioplayer_t *pplayer, int clientId);
+void func_002C0A50(cl_entity_t *ent, alight_t *plight, int clientId); /* R_StudioDynamicLight */
+void R_StudioEntityLight(alight_t *plight, int clientId);
+void R_StudioRenderModel(void);
+void R_StudioClientEvents(int clientId);
+int R_StudioCheckLOD(int clientId);
+
+#ifdef NON_MATCHING
+int R_StudioDrawModel(int flags, int clientId, int unk)
+{
+    alight_t lighting;
+    vec3_t dir;
+    studioplayer_t deadplayer;
+    vec3_t mins, maxs;
+    cl_entity_t saveent;
+    mstudioseqdesc_t *pseqdesc;
+    model_t *pweaponmodel;
+    int i;
+
+    if (currententity->renderfx == kRenderFxDeadPlayer)
+    {
+        if (currententity->renderamt <= 0 || currententity->renderamt > cl[clientId].maxclients)
+            return 0;
+
+        i = currententity->renderamt - 1;
+        deadplayer = *(studioplayer_t *)&cl[clientId].frames[cl[clientId].parsecount & cl_updatemask[clientId]].playerstate[i];
+
+        deadplayer.number = currententity->renderamt - 1;
+        deadplayer.weaponmodel = 0;
+        deadplayer.gaitsequence = 0;
+
+        return R_StudioDrawPlayer(flags, &deadplayer, clientId);
+    }
+
+    D_0039967C = (int)currententity->model;
+    pstudiohdr = (studiohdr_t *)Mod_Extradata(currententity->model);
+
+    if (flags & STUDIO_RENDER)
+    {
+        if (!R_StudioCheckLOD(clientId))
+            return 0;
+    }
+
+    R_StudioSetUpTransform(0, clientId);
+
+    if (flags & STUDIO_RENDER)
+    {
+        if (unk && !R_StudioCheckBBox())
+            return 0;
+
+        D_003996B0++;
+        r_smodels_total++;
+
+        if (pstudiohdr->numbodyparts == 0)
+            return 1;
+    }
+
+    if (currententity->movetype == MOVETYPE_FOLLOW)
+        R_StudioMergeBones((model_t *)D_0039967C, clientId);
+    else
+        func_002BCBE8(clientId);
+
+    R_StudioSaveBones();
+
+    if (flags & STUDIO_EVENTS)
+    {
+        R_StudioCalcAttachments(clientId);
+        R_StudioClientEvents(clientId);
+
+        if (currententity->index > 0)
+        {
+            memcpy(cl_entities[clientId][currententity->index].attachment, currententity->attachment, sizeof(vec3_t) * 4);
+        }
+    }
+
+    if (flags & STUDIO_RENDER)
+    {
+        pseqdesc = (mstudioseqdesc_t *)((byte *)pstudiohdr + pstudiohdr->seqindex) + currententity->sequence;
+        VectorCopy(pseqdesc->bbmin, mins);
+        VectorCopy(pseqdesc->bbmax, maxs);
+
+        R_StudioRotateBBox(mins, maxs, currententity->angles);
+
+        VectorAdd(currententity->origin, mins, mins);
+        VectorAdd(currententity->origin, maxs, maxs);
+
+        if (!func_00228C00("models/barnacle.dol", currententity->model))
+        {
+            if (cl_numlocal == 1)
+            {
+                if (func_002A8C20(mins, maxs))
+                    glHint(0x80F0, 0x1101);
+                else
+                    glHint(0x80F0, 0x1102);
+            }
+            else
+            {
+                glHint(0x80F0, 0x1102);
+            }
+        }
+
+        lighting.plightvec = dir;
+        func_002C0A50(currententity, &lighting, clientId);
+        R_StudioEntityLight(&lighting, clientId);
+        R_StudioSetupLighting(&lighting);
+
+        D_00399698 = currententity->colormap & 0xFF;
+        D_003996C0 = (currententity->colormap & 0xFF00) >> 8;
+
+        R_StudioRenderModel();
+
+        glHint(0x80F0, 0x1102);
+
+        if (currententity->weaponmodel)
+        {
+            saveent = *currententity;
+            pweaponmodel = cl[clientId].model_precache[currententity->weaponmodel];
+
+            pstudiohdr = (studiohdr_t *)Mod_Extradata(pweaponmodel);
+
+            R_StudioMergeBones(pweaponmodel, clientId);
+            R_StudioSetupLighting(&lighting);
+            R_StudioRenderModel();
+            R_StudioCalcAttachments(clientId);
+
+            *currententity = saveent;
+        }
+    }
+
+    return 1;
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", R_StudioDrawModel);
+#endif
 
 void R_StudioEstimateGait(studioplayer_t *pplayer, int clientId)
 {
@@ -2804,7 +2951,7 @@ struct sfx_s *func_002C1800(char *name, int clientId)
     return NULL;
 }
 
-void R_StudioCalcAttachments(void)
+void R_StudioCalcAttachments(int clientId)
 {
     int i;
     mstudioattachment_t *pattachment;
