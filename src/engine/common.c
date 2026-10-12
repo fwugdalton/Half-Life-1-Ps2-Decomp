@@ -64,6 +64,7 @@ float MSG_ReadFloat(void);
 void *memcpy(void *, const void *, unsigned int);
 int MSG_ReadBits(int numbits);
 int MSG_ReadByteBits(int numbits);
+int MSG_ReadSBits(int numbits);
 int func_00242EB0(void);          /* MSG_ReadOneBit */
 int func_00243120(int numbits);   /* MSG_ReadBitsUInt? */
 #define isupper(c) (D_00397D81[(int)(c)] & 1)
@@ -1288,11 +1289,86 @@ void func_002437E0(usercmd_t *move, usercmd_t *from)
     move->msec = MSG_ReadByte();
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_00243930);
+/* MSG_ReadDeltaUsercmd com movimentos em short */
+void func_00243930(usercmd_t *move, usercmd_t *from)
+{
+    int bits;
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_00243AA0);
+    *move = *from;
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", MSG_ReadDeltaUsercmd);
+    bits = MSG_ReadByte();
+
+    if (bits & 1)
+        move->viewangles[0] = func_002437A8();
+    if (bits & 2)
+        move->viewangles[1] = func_002437A8();
+    if (bits & 4)
+        move->viewangles[2] = func_00243770();
+
+    if (bits & 8)
+        move->forwardmove = MSG_ReadShort();
+    if (bits & 0x10)
+        move->sidemove = MSG_ReadShort();
+    if (bits & 0x20)
+        move->upmove = MSG_ReadShort();
+
+    if (bits & 0x40)
+        move->buttons = MSG_ReadShort();
+    if (bits & 0x80)
+        move->impulse = MSG_ReadByte();
+
+    move->lightlevel = MSG_ReadByte();
+    move->msec = MSG_ReadByte();
+}
+
+/* MSG_ReadDeltaUsercmd em bits */
+void func_00243AA0(usercmd_t *move, usercmd_t *from)
+{
+    int bits;
+    int i;
+
+    *move = *from;
+
+    bits = MSG_ReadByteBits(8);
+
+    if (bits & 1)
+        move->viewangles[0] = MSG_ReadBits(10) * (360.0f / 1024);
+    if (bits & 2)
+        move->viewangles[1] = MSG_ReadBits(10) * (360.0f / 1024);
+    if (bits & 4)
+        move->viewangles[2] = MSG_ReadByteBits(6) * (360.0f / 64);
+
+    for (i = 0; i < 3; i++)
+    {
+        if (move->viewangles[i] > 180)
+            move->viewangles[i] -= 360;
+        if (move->viewangles[i] < -180)
+            move->viewangles[i] += 360;
+    }
+
+    if (bits & 8)
+        move->forwardmove = MSG_ReadSBits(8) * 4.0f;
+    if (bits & 0x10)
+        move->sidemove = MSG_ReadSBits(8) * 4.0f;
+    if (bits & 0x20)
+        move->upmove = MSG_ReadSBits(8) * 4.0f;
+
+    if (bits & 0x40)
+        move->buttons = MSG_ReadBits(16);
+    if (bits & 0x80)
+        move->impulse = MSG_ReadByteBits(8);
+
+    move->lightlevel = MSG_ReadByteBits(6) << 2;
+    move->msec = MSG_ReadByteBits(8);
+}
+
+void MSG_ReadDeltaUsercmd(usercmd_t *move, usercmd_t *from)
+{
+    if (protocol_version == 35)
+        func_002437E0(move, from);
+    else
+        func_00243930(move, from);
+}
 
 INCLUDE_RODATA("asm/nonmatchings/engine/common", D_00388B48);
 
