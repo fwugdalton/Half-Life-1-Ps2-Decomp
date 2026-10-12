@@ -12,7 +12,7 @@ typedef struct kbutton_s
     int state;
 } kbutton_t;
 
-extern kbutton_t D_0046EA00[2];
+extern kbutton_t D_0046EA00[2]; /* in_klook */
 extern kbutton_t in_jlook[2];
 extern kbutton_t in_mlook[2];
 extern kbutton_t in_leftStickYLook[2];
@@ -23,31 +23,31 @@ extern kbutton_t in_leftStickForwardMove[2];
 extern kbutton_t in_leftStickSideMove[2];
 extern kbutton_t in_rightStickForwardMove[2];
 extern kbutton_t in_rightStickSideMove[2];
-extern kbutton_t D_0046EBE0[2];
-extern kbutton_t D_0046E988[2];
-extern kbutton_t D_0046EA78[2];
-extern kbutton_t D_0046E9E8[2];
-extern kbutton_t D_0046E940[2];
-extern kbutton_t D_0046E958[2];
-extern kbutton_t D_0046EA60[2];
-extern kbutton_t D_0046EB68[2];
-extern kbutton_t D_0046EB50[2];
-extern kbutton_t D_0046E928[2];
-extern kbutton_t D_0046E9B8[2];
-extern kbutton_t D_0046EB08[2];
-extern kbutton_t D_0046EAA8[2];
-extern kbutton_t D_0046E9D0[2];
-extern kbutton_t D_0046E910[2];
-extern kbutton_t D_0046EA48[2];
-extern kbutton_t D_0046EAD8[2];
-extern kbutton_t D_0046EB20[2];
-extern kbutton_t D_0046EBB0[2];
-extern kbutton_t D_0046EAF0[2];
-extern kbutton_t D_0046EAC0[2];
-extern kbutton_t D_0046EC10[2];
-extern kbutton_t D_0046EB80[2];
+extern kbutton_t D_0046EBE0[2]; /* in_moveup */
+extern kbutton_t D_0046E988[2]; /* in_movedown */
+extern kbutton_t D_0046EA78[2]; /* in_left */
+extern kbutton_t D_0046E9E8[2]; /* in_right */
+extern kbutton_t D_0046E940[2]; /* in_forward */
+extern kbutton_t D_0046E958[2]; /* in_back */
+extern kbutton_t D_0046EA60[2]; /* in_kbforward */
+extern kbutton_t D_0046EB68[2]; /* in_kbback */
+extern kbutton_t D_0046EB50[2]; /* in_lookup */
+extern kbutton_t D_0046E928[2]; /* in_lookdown */
+extern kbutton_t D_0046E9B8[2]; /* in_moveleft */
+extern kbutton_t D_0046EB08[2]; /* in_moveright */
+extern kbutton_t D_0046EAA8[2]; /* in_kbmoveleft */
+extern kbutton_t D_0046E9D0[2]; /* in_kbmoveright */
+extern kbutton_t D_0046E910[2]; /* in_speed */
+extern kbutton_t D_0046EA48[2]; /* in_strafe */
+extern kbutton_t D_0046EAD8[2]; /* in_attack */
+extern kbutton_t D_0046EB20[2]; /* in_attack2 */
+extern kbutton_t D_0046EBB0[2]; /* in_use */
+extern kbutton_t D_0046EAF0[2]; /* in_jump */
+extern kbutton_t D_0046EAC0[2]; /* in_reload */
+extern kbutton_t D_0046EC10[2]; /* in_alt1 */
+extern kbutton_t D_0046EB80[2]; /* in_alt2 */
 
-extern kbutton_t D_0046EBC8[2];
+extern kbutton_t D_0046EBC8[2]; /* in_duck */
 extern int D_00399150[2];
 extern float D_0033282C, D_00332844; /* toggle do duck por jogador */
 int func_0024E2E0(int bResetState, int clientId);
