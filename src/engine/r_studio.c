@@ -1157,7 +1157,57 @@ void R_StudioIdentityMatrix(float m[4][4])
     m[3][3] = 1.0f;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", R_StudioRotateBBox);
+void R_StudioRotateBBox(vec3_t mins, vec3_t maxs, vec3_t angles)
+{
+    vec3_t p[8];
+    vec3_t out[8];
+    float m[4][4];
+    float rot[3][4];
+    int i, j, k, l;
+
+    p[0][0] = mins[0]; p[0][1] = mins[1]; p[0][2] = mins[2];
+    p[1][0] = mins[0]; p[1][1] = mins[1]; p[1][2] = maxs[2];
+    p[2][0] = mins[0]; p[2][1] = maxs[1]; p[2][2] = mins[2];
+    p[3][0] = mins[0]; p[3][1] = maxs[1]; p[3][2] = maxs[2];
+    p[4][0] = maxs[0]; p[4][1] = mins[1]; p[4][2] = mins[2];
+    p[5][0] = maxs[0]; p[5][1] = mins[1]; p[5][2] = maxs[2];
+    p[6][0] = maxs[0]; p[6][1] = maxs[1]; p[6][2] = mins[2];
+    p[7][0] = maxs[0]; p[7][1] = maxs[1]; p[7][2] = maxs[2];
+
+    R_StudioIdentityMatrix(m);
+    func_002BB930(m, angles[1]);
+    func_002BB838(m, angles[0]);
+    func_002BB740(m, angles[2]);
+
+    for (k = 0; k < 3; k++)
+        for (l = 0; l < 3; l++)
+            rot[k][l] = m[k][l];
+
+#define ROT(a, b) \
+    (b)[0] = (a)[0] * rot[0][0] + (a)[1] * rot[0][1] + (a)[2] * rot[0][2]; \
+    (b)[1] = (a)[0] * rot[1][0] + (a)[1] * rot[1][1] + (a)[2] * rot[1][2]; \
+    (b)[2] = (a)[0] * rot[2][0] + (a)[1] * rot[2][1] + (a)[2] * rot[2][2];
+    ROT(p[0], out[0])
+    ROT(p[1], out[1])
+    ROT(p[2], out[2])
+    ROT(p[3], out[3])
+    ROT(p[4], out[4])
+    ROT(p[5], out[5])
+    ROT(p[6], out[6])
+    ROT(p[7], out[7])
+#undef ROT
+
+    for (i = 0; i < 8; i++)
+    {
+        for (j = 0; j < 3; j++)
+        {
+            if (i == 0 || out[i][j] < mins[j])
+                mins[j] = out[i][j];
+            if (i == 0 || out[i][j] > maxs[j])
+                maxs[j] = out[i][j];
+        }
+    }
+}
 
 int R_StudioCheckBBox(void)
 {
