@@ -45,7 +45,10 @@ extern kbutton_t D_0046EAC0[2];
 extern kbutton_t D_0046EC10[2];
 extern kbutton_t D_0046EB80[2];
 
+extern kbutton_t D_0046EBC8[2];
 extern int D_00399150[2];
+extern float D_0033282C, D_00332844; /* toggle do duck por jogador */
+int func_0024E2E0(int bResetState, int clientId);
 extern int D_00399160[2];       /* in_impulse */
 extern float D_00331824;        /* lookspring.value */
 
@@ -437,9 +440,33 @@ void func_0024D608(void)
     func_0024C5B0(&D_0046EAF0[atoi(Cmd_Argv(1))]);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_input", func_0024D648);
+void func_0024D648(void)
+{
+    int clientId;
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_input", func_0024D710);
+    clientId = atoi(Cmd_Argv(1));
+    if ((clientId == 0 && D_0033282C > 0) || (clientId == 1 && D_00332844 > 0))
+    {
+        if (D_0046EBC8[clientId].state & 1)
+            func_0024C5B0(&D_0046EBC8[clientId]);
+        else
+            func_0024C500(&D_0046EBC8[clientId]);
+    }
+    else
+    {
+        func_0024C500(&D_0046EBC8[clientId]);
+    }
+}
+
+void func_0024D710(void)
+{
+    int clientId;
+
+    clientId = atoi(Cmd_Argv(1));
+    if ((clientId == 0 && D_0033282C > 0) || (clientId == 1 && D_00332844 > 0))
+        return;
+    func_0024C5B0(&D_0046EBC8[clientId]);
+}
 
 void func_0024D7A0(void)
 {
@@ -495,9 +522,59 @@ void func_0024D9B8(void)
         func_0024C500(&D_0046E910[clientId]);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_input", func_0024DA18);
+void func_0024DA18(void)
+{
+    int clientId;
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_input", func_0024DA78);
+    clientId = atoi(Cmd_Argv(1));
+    if (D_0046EBC8[clientId].state & 1)
+        func_0024C5B0(&D_0046EBC8[clientId]);
+    else
+        func_0024C500(&D_0046EBC8[clientId]);
+}
+
+float func_0024DA78(kbutton_t *key)
+{
+    float val;
+    int impulsedown, impulseup, down;
+
+    impulsedown = key->state & 2;
+    impulseup = key->state & 4;
+    down = key->state & 1;
+    val = 0;
+
+    if (impulsedown && !impulseup)
+    {
+        if (down)
+            val = 0.5;
+        else
+            val = 0;
+    }
+    if (impulseup && !impulsedown)
+    {
+        if (down)
+            val = 0;
+        else
+            val = 0;
+    }
+    if (!impulsedown && !impulseup)
+    {
+        if (down)
+            val = 1.0;
+        else
+            val = 0;
+    }
+    if (impulsedown && impulseup)
+    {
+        if (down)
+            val = 0.75;
+        else
+            val = 0.25;
+    }
+
+    key->state &= 1;
+    return val;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/cl_input", func_0024DB18);
 
@@ -505,7 +582,19 @@ INCLUDE_ASM("asm/nonmatchings/engine/cl_input", func_0024DDF0);
 
 INCLUDE_ASM("asm/nonmatchings/engine/cl_input", func_0024E2E0);
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_input", func_0024E670);
+void func_0024E670(int bits, int clientId)
+{
+    int bitsNew;
+
+    bitsNew = func_0024E2E0(0, clientId) ^ bits;
+    if (bitsNew & 1)
+    {
+        if (bits & 1)
+            func_0024C500(&D_0046EAD8[clientId]);
+        else
+            D_0046EAD8[clientId].state &= ~7;
+    }
+}
 
 INCLUDE_RODATA("asm/nonmatchings/engine/cl_input", D_00389610);
 
