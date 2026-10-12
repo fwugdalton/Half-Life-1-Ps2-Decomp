@@ -8,7 +8,8 @@ src = sys.argv[1]
 s = open(src).read()
 asmdir = 'asm/nonmatchings/' + os.path.splitext(os.path.relpath(src, 'src'))[0]
 for fn in sys.argv[2:]:
-    m = re.search(r'^[^\n]*\b%s\(.*?\)\n\{.*?^\}\n' % re.escape(fn), s, re.S | re.M)
+    # [^;{]* impede casar um protótipo (linha com ';') antes da definição
+    m = re.search(r'^[^\n;]*\b%s\([^;{]*?\)\n\{.*?^\}\n' % re.escape(fn), s, re.S | re.M)
     if not m:
         sys.exit('não achei ' + fn)
     s = s[:m.start()] + '#ifdef NON_MATCHING\n' + m.group(0) + '#else\nINCLUDE_ASM("%s", %s);\n#endif\n' % (asmdir, fn) + s[m.end():]
