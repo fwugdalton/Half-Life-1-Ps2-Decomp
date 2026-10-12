@@ -1756,3 +1756,4 @@ cl_gaitestimation = 0x003317D0; // size:0x14
 m_pPlayerInfo = 0x004394D4; // size:0x4
 m_flGaitMovement = 0x004394DC; // size:0x4
 R_StudioEstimateGait = 0x2BFB68; // type:func
+R_StudioProcessGait = 0x2BFEA8; // type:func

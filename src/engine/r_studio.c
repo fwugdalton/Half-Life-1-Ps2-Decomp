@@ -144,6 +144,8 @@ typedef struct
     vec3_t velocity;            /* 0x64 */
     byte pad70[0x98 - 0x70];
     int renderframe;            /* 0x98 */
+    byte pad9C[0xC8 - 0x9C];
+    int gaitsequence;           /* 0xC8 */
 } studioplayer_t;
 
 /* player_info_t do PS2 (só os campos de passo) */
@@ -1900,7 +1902,77 @@ void R_StudioEstimateGait(studioplayer_t *pplayer, int clientId)
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BFEA8);
+void R_StudioProcessGait(studioplayer_t *pplayer, int clientId)
+{
+    mstudioseqdesc_t *pseqdesc;
+    float dt;
+    int iBlend;
+    float flYaw;
+    int c;
+
+    pseqdesc = (mstudioseqdesc_t *)((byte *)pstudiohdr + pstudiohdr->seqindex) + currententity->sequence;
+
+    R_StudioPlayerBlend(pseqdesc, &iBlend, &currententity->angles[0]);
+
+    currententity->prevangles[0] = currententity->angles[0];
+    currententity->blending[0] = iBlend;
+    currententity->prevblending[0] = currententity->blending[0];
+    currententity->prevseqblending[0] = currententity->blending[0];
+
+    dt = cl[clientId].time - cl[clientId].oldtime;
+    if (dt < 0)
+        dt = 0;
+    else if (dt > 1.0f)
+        dt = 1;
+
+    R_StudioEstimateGait(pplayer, clientId);
+
+    flYaw = currententity->angles[1] - m_pPlayerInfo->gaityaw;
+    flYaw = flYaw - (int)(flYaw / 360) * 360.0f;
+    if (flYaw < -180)
+        flYaw = flYaw + 360;
+    if (flYaw > 180)
+        flYaw = flYaw - 360;
+
+    if (flYaw > 120)
+    {
+        m_pPlayerInfo->gaityaw = m_pPlayerInfo->gaityaw - 180;
+        m_flGaitMovement = -m_flGaitMovement;
+        flYaw = flYaw - 180;
+    }
+    else if (flYaw < -120)
+    {
+        m_pPlayerInfo->gaityaw = m_pPlayerInfo->gaityaw + 180;
+        m_flGaitMovement = -m_flGaitMovement;
+        flYaw = flYaw + 180;
+    }
+
+    c = ((flYaw / 4.0f) + 30) / (60.0f / 255.0f);
+    currententity->controller[0] = c;
+    currententity->controller[1] = c;
+    currententity->controller[2] = c;
+    currententity->controller[3] = c;
+    currententity->prevcontroller[0] = currententity->controller[0];
+    currententity->prevcontroller[1] = currententity->controller[1];
+    currententity->prevcontroller[2] = currententity->controller[2];
+    currententity->prevcontroller[3] = currententity->controller[3];
+
+    currententity->angles[1] = m_pPlayerInfo->gaityaw;
+    if (currententity->angles[1] < -0.0f)
+        currententity->angles[1] += 360;
+    currententity->prevangles[1] = currententity->angles[1];
+
+    pseqdesc = (mstudioseqdesc_t *)((byte *)pstudiohdr + pstudiohdr->seqindex) + pplayer->gaitsequence;
+
+    if (pseqdesc->linearmovement[0] > 0)
+        m_pPlayerInfo->gaitframe += (m_flGaitMovement / pseqdesc->linearmovement[0]) * pseqdesc->numframes;
+    else
+        m_pPlayerInfo->gaitframe += pseqdesc->fps * dt;
+
+    m_pPlayerInfo->gaitframe = m_pPlayerInfo->gaitframe - (int)(m_pPlayerInfo->gaitframe / pseqdesc->numframes) * pseqdesc->numframes;
+    if (m_pPlayerInfo->gaitframe < 0)
+        m_pPlayerInfo->gaitframe += pseqdesc->numframes;
+}
 
 void func_002C0258(void)
 {

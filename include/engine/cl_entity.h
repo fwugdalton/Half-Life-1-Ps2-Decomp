@@ -10,7 +10,13 @@ struct model_s;
 /* cl_entity_t do PS2, 0x1A0 bytes. Layout parcial (r_trans.c, pmove.c e pr_cmds.c ainda têm versões locais). */
 typedef struct cl_entity_s
 {
-    byte pad0[0x10];
+    byte controller[4];         /* 0x00 */
+    byte blending[2];           /* 0x04 */
+    byte prevseqblending[2];    /* 0x06 */
+    byte prevcontroller[4];     /* 0x08 */
+    byte prevblending[2];       /* 0x0C */
+    byte mouthopen;             /* 0x0E */
+    byte padF;
     int rendermode;             /* 0x10 */
     int renderamt;              /* 0x14 */
     int renderfx;               /* 0x18 */
