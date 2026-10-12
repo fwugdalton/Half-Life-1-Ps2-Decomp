@@ -1690,3 +1690,6 @@ R_StudioSetupModel = 0x2BF430; // type:func
 R_LoadTextures = 0x2BECB8; // type:func
 pbodypart = 0x004394D0; // size:0x4
 psubmodel = 0x003996B8; // size:0x4
+R_StudioPlayerBlend = 0x2BB168; // type:func
+GetBonePosition = 0x2BB500; // type:func
+SV_StudioSetupBones = 0x2BA4D8; // type:func

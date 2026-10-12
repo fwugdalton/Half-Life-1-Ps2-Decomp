@@ -7,6 +7,7 @@
 #include "engine/glquake.h"
 #include "engine/cl_entity.h"
 #include "engine/studio.h"
+#include "engine/server.h"
 
 void *Mod_Extradata(model_t *mod);
 void *Cache_Check(cache_user_t *c);
@@ -59,6 +60,29 @@ int strlen(const char *s);
 extern float D_0053CF68[3][4];
 extern mstudiobodyparts_t *pbodypart;
 extern mstudiomodel_t *psubmodel;
+
+void SV_StudioSetupBones(model_t *pModel, float frame, int sequence, vec3_t angles, vec3_t origin,
+                         byte *pcontroller, byte *pblending, int iBone);
+void *func_00244928(char *name, int *pLength);
+void *Cache_Alloc(cache_user_t *c, int size, char *name);
+void *memcpy(void *dst, const void *src, unsigned int n);
+void Mem_Free(void *p);
+
+/* cache de texturas de modelo por índice (0x12C bytes) */
+typedef struct
+{
+    int index;                  /* 0x000 */
+    int unk004;                 /* 0x004 */
+    int unk008;                 /* 0x008 */
+    char *unk00C;               /* 0x00C */
+    char name[0x104];           /* 0x010 */
+    int texindex;               /* 0x114 */
+    int unk118;                 /* 0x118 */
+    int width;                  /* 0x11C */
+    int height;                 /* 0x120 */
+    cache_user_t cache;         /* 0x124 */
+    int unk128;                 /* 0x128 */
+} studiotexcache_t;
 
 #define kRenderFxGlowShell 19
 
@@ -200,7 +224,7 @@ void R_StudioLoadSeqGroup(model_t *pmodel, int seqgroup)
         COM_LoadFileCached(pseqgroup->name, &paSequences[seqgroup], NULL);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BA4D8);
+INCLUDE_ASM("asm/nonmatchings/engine/r_studio", SV_StudioSetupBones);
 
 void SV_SetStudioHullPlane(mplane_t *pl, int iBone, int k, float dist)
 {
@@ -255,14 +279,48 @@ int R_StudioBodyVariations(model_t *model)
     return count;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BB168);
+void R_StudioPlayerBlend(mstudioseqdesc_t *pseqdesc, int *pBlend, float *pPitch)
+{
+    *pBlend = (*pPitch * 3);
+    if (*pBlend < pseqdesc->blendstart[0])
+    {
+        *pPitch -= pseqdesc->blendstart[0] * (1.0f / 3.0f);
+        *pBlend = 0;
+    }
+    else if (*pBlend > pseqdesc->blendend[0])
+    {
+        *pPitch -= pseqdesc->blendend[0] * (1.0f / 3.0f);
+        *pBlend = 255;
+    }
+    else
+    {
+        if (pseqdesc->blendend[0] - pseqdesc->blendstart[0] < 0.1f)
+            *pBlend = 127;
+        else
+            *pBlend = 255 * (*pBlend - pseqdesc->blendstart[0]) / (pseqdesc->blendend[0] - pseqdesc->blendstart[0]);
+        *pPitch = 0;
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", SV_HullForStudioModel);
 
 void func_002BB4F8(void) {
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BB500);
+void GetBonePosition(edict_t *pEdict, int iBone, float *rgflOrigin, float *rgflAngles)
+{
+    pstudiohdr = (studiohdr_t *)Mod_Extradata(sv.models[pEdict->v.modelindex]);
+
+    SV_StudioSetupBones(sv.models[pEdict->v.modelindex], pEdict->v.frame, pEdict->v.sequence,
+                        pEdict->v.angles, pEdict->v.origin, pEdict->v.controller, pEdict->v.blending, iBone);
+
+    if (rgflOrigin)
+    {
+        rgflOrigin[0] = bonetransform[iBone][0][3];
+        rgflOrigin[1] = bonetransform[iBone][1][3];
+        rgflOrigin[2] = bonetransform[iBone][2][3];
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BB5E0);
 
@@ -414,7 +472,29 @@ void func_002BEF98(void)
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BF028);
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BF0E8);
+void func_002BF0E8(char *name, int texindex, studiotexcache_t *pcache)
+{
+    studiohdr_t *phdr;
+    mstudiotexture_t *ptexture;
+    int size;
+
+    if (Cache_Check(&pcache->cache))
+    {
+        if (pcache->unk00C == name)
+            return;
+        Cache_Free(&pcache->cache);
+    }
+
+    pcache->texindex = texindex;
+    phdr = (studiohdr_t *)func_00244928(name, NULL);
+    ptexture = (mstudiotexture_t *)((byte *)phdr + phdr->textureindex) + pcache->texindex;
+    pcache->width = ptexture->width;
+    pcache->height = ptexture->height;
+    size = ptexture->width * ptexture->height + 0x300;
+    Cache_Alloc(&pcache->cache, size, pcache->name);
+    memcpy(pcache->cache.data, (byte *)phdr + ptexture->index, size);
+    Mem_Free(phdr);
+}
 
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BF1C8);
