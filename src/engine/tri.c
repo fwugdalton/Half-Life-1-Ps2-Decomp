@@ -24,7 +24,7 @@ typedef struct
 } mspriteframe_t;
 
 void glColor4f(float r, float g, float b, float a); /* glColor4f */
-void func_0023BE70(int mode);                            /* glShadeModel */
+void glShadeModel(int mode);                            /* glShadeModel */
 void glEnable(int cap);
 void glDisable(int cap);
 void glDepthMask(int flag);
@@ -74,19 +74,19 @@ void tri_RenderMode(int mode)
     case kRenderNormal:
         glDisable(GL_BLEND);
         glDepthMask(1);
-        func_0023BE70(GL_FLAT);
+        glShadeModel(GL_FLAT);
         break;
     case kRenderTransColor:
     case kRenderTransTexture:
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glEnable(GL_BLEND);
-        func_0023BE70(GL_SMOOTH);
+        glShadeModel(GL_SMOOTH);
         break;
     case kRenderTransAdd:
         glBlendFunc(GL_ONE, GL_ONE);
         glEnable(GL_BLEND);
         glDepthMask(0);
-        func_0023BE70(GL_SMOOTH);
+        glShadeModel(GL_SMOOTH);
         break;
     }
 }

@@ -182,8 +182,8 @@ void R_InitParticleTexture(void)
 
 extern cvar_t D_00333438, r_fullbright, r_decals, mp_decals, r_drawentities, D_00333468, D_00333510;
 extern cvar_t r_wateralpha, r_dynamic, r_novis, D_00333498, D_00333480, D_003335D0, D_003335A0;
-extern cvar_t D_003334F8, D_00333570, r_traceglow, r_glowshellfreq, D_003335E8, D_00333600, D_00333618;
-extern cvar_t D_00333630, D_00333660, D_00333678, D_003336D8, gl_polyoffset, D_00333708, D_00333690;
+extern cvar_t D_003334F8, D_00333570, r_traceglow, r_glowshellfreq, D_003335E8, D_00333600, gl_smoothmodels;
+extern cvar_t gl_affinemodels, D_00333660, D_00333678, D_003336D8, gl_polyoffset, D_00333708, D_00333690;
 extern cvar_t D_003336A8, gl_wateramp, gl_overbright, gl_zmax, gl_alphamin, D_00333798, gl_monolights;
 extern cvar_t D_003337C8, D_003337E0, D_003337F8, D_00333810, D_00333828, D_00333840, D_00333858;
 extern cvar_t D_00333870, D_00333888, D_003338A0;
@@ -222,8 +222,8 @@ void R_Init(void)
     Cvar_RegisterVariable(&r_glowshellfreq);
     Cvar_RegisterVariable(&D_003335E8);
     Cvar_RegisterVariable(&D_00333600);
-    Cvar_RegisterVariable(&D_00333618);
-    Cvar_RegisterVariable(&D_00333630);
+    Cvar_RegisterVariable(&gl_smoothmodels);
+    Cvar_RegisterVariable(&gl_affinemodels);
     Cvar_RegisterVariable(&D_00333660);
     Cvar_RegisterVariable(&D_00333678);
     Cvar_RegisterVariable(&D_003336D8);

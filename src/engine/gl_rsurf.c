@@ -173,7 +173,7 @@ extern int D_00331048;
 extern float *D_00331020, *D_00331024, *D_00331028;
 extern float D_00330180[], D_00330680[], D_00330B80[], D_0032F280[], D_0032F780[], D_0032FC80[];
 extern float D_003937E8[], D_00393BE8[], D_00393FE8[];
-void func_0023BE70(int);
+void glShadeModel(int);
 void func_002A0F18(int a, int b, int c, int d);
 void func_002A7238(byte *p);
 #define SURF_DRAWSCROLL 0x20
@@ -2807,7 +2807,7 @@ void func_002A7AF8(msurface_t *surf)
     GL_Bind(t->gl_texturenum);
     GL_DisableMultitexture();
     glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-    func_0023BE70(0x1D01);
+    glShadeModel(0x1D01);
     func_0023C808(surf->unk_3C, 1.0f);
     func_0023AF68();
 

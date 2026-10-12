@@ -1758,3 +1758,7 @@ m_flGaitMovement = 0x004394DC; // size:0x4
 R_StudioEstimateGait = 0x2BFB68; // type:func
 R_StudioProcessGait = 0x2BFEA8; // type:func
 R_StudioCheckLOD = 0x2C2CE0; // type:func
+glShadeModel = 0x0023BE70; // type:func
+glHint = 0x0023B1A0; // type:func
+gl_smoothmodels = 0x00333618; // size:0x14
+gl_affinemodels = 0x00333630; // size:0x14

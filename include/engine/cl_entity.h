@@ -52,7 +52,8 @@ typedef struct cl_entity_s
     entity_state_t baseline;    /* 0xF8 */
     byte pad18C[0x194 - 0x18C];
     int unk194;                 /* 0x194: bits 0x100/0x200 = viewmodel de qual jogador */
-    byte pad198[0x1A0 - 0x198];
+    int trivial_accept;         /* 0x198 */
+    byte pad19C[0x1A0 - 0x19C];
 } cl_entity_t; /* 0x1A0 */
 
 #endif

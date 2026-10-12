@@ -267,6 +267,31 @@ typedef struct
 #define STUDIOHDR_FADEEND(h) (*(int *)((byte *)(h) + 0x100))
 extern float D_003332E0[]; /* fov por jogador */
 void AddTEntity(cl_entity_t *e, int clientId);
+extern int D_00333290;
+extern float D_00333474;
+extern cvar_t r_drawentities;
+extern cvar_t gl_smoothmodels;
+extern cvar_t gl_affinemodels;
+extern float r_blend;
+extern float *D_003996B4;
+extern float *D_003996BC;
+extern float D_0041EC50[];
+extern float D_00426C50[];
+void GL_DisableMultitexture(void);
+void glPushMatrix(void);
+void glPopMatrix(void);
+void glShadeModel(int mode);
+void glHint(int target, int mode);
+void glTexEnvf(int target, int pname, float param);
+void glEnable(int cap);
+void glDisable(int cap);
+void glBlendFunc(int sfactor, int dfactor);
+void glColor4f(float r, float g, float b, float a);
+void glDepthMask(int flag);
+void func_002BDDC0(void);
+void R_StudioDrawHulls(void);
+void R_StudioSetupModel(int bodypart);
+void func_002C3070(void);
 extern int D_003342A0;
 
 /* lote de triângulos do studio */
@@ -2138,7 +2163,106 @@ void R_StudioRenderModel(void)
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", R_StudioRenderFinal);
+void R_StudioRenderFinal(void)
+{
+    int i;
+    int rendermode;
+
+    if (D_00333290 && cl_numlocal != 1)
+    {
+        if (D_00333474 > 1.5f)
+            goto draw;
+        if (D_00333290 != 1)
+            return;
+        if (currententity->model->name[12] != 'w' && currententity->model->name[10] != 'l')
+            return;
+    }
+draw:
+
+    D_003996B4 = D_0041EC50;
+    D_003996BC = D_00426C50;
+
+    GL_DisableMultitexture();
+    glPushMatrix();
+
+    if (gl_smoothmodels.value)
+        glShadeModel(0x1D01);
+
+    glTexEnvf(0x2300, 0x2200, 0x2100);
+
+    if (gl_affinemodels.value)
+        glHint(0xC50, 0x1101);
+
+    if (g_ForcedFaceFlags)
+    {
+        rendermode = 5;
+    }
+    else
+    {
+        rendermode = currententity->rendermode;
+        if (rendermode != 0)
+        {
+            glEnable(0xBE2);
+            if (rendermode == 1)
+            {
+                glBlendFunc(0x302, 0x303);
+                glTexEnvf(0x2300, 0x2200, 0x1906);
+            }
+            else if (rendermode == 5)
+            {
+                glTexEnvf(0x2300, 0x2200, 0x2100);
+                glBlendFunc(1, 1);
+                glColor4f(r_blend, r_blend, r_blend, 1.0f);
+                glDepthMask(0);
+            }
+            else
+            {
+                glTexEnvf(0x2300, 0x2200, 0x2100);
+                glBlendFunc(0x302, 0x303);
+                glColor4f(1.0f, 1.0f, 1.0f, r_blend);
+                glDepthMask(1);
+            }
+        }
+    }
+
+    if (r_drawentities.value == 2)
+    {
+        func_002BDDC0();
+    }
+    else if (r_drawentities.value == 3)
+    {
+        R_StudioDrawHulls();
+    }
+    else
+    {
+        for (i = 0; i < pstudiohdr->numbodyparts; i++)
+        {
+            R_StudioSetupModel(i);
+            if (r_dointerp)
+                currententity->trivial_accept = 0;
+            func_002C3070();
+            glDepthMask(1);
+        }
+    }
+
+    if (r_drawentities.value == 4)
+    {
+        tri_RenderMode(5);
+        R_StudioDrawHulls();
+        tri_RenderMode(0);
+    }
+
+    if (rendermode != 0)
+        glDisable(0xBE2);
+
+    glTexEnvf(0x2300, 0x2200, 0x1E01);
+    glShadeModel(0x1D00);
+
+    if (gl_affinemodels.value)
+        glHint(0xC50, 0x1102);
+
+    glPopMatrix();
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002C2260);
 
