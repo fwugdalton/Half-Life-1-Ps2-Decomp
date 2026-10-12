@@ -129,6 +129,9 @@ extern vec3_t chromeup[MAXSTUDIOBONES];
 extern vec3_t chromeright[MAXSTUDIOBONES];
 extern vec3_t vright;
 extern int numlights;
+extern cvar_t r_glowshellfreq;
+extern int g_NormalIndex[MAXSTUDIOVERTS];
+void tri_Color4ub(unsigned char r, unsigned char g, unsigned char b, unsigned char a);
 extern float D_0041DE40[MAXSTUDIOBONES][3]; /* pos estático de R_StudioMergeBones */
 extern float D_0041E440[MAXSTUDIOBONES][4]; /* q estático de R_StudioMergeBones */
 void func_0025C428(cl_entity_t *ent, float transform[3][4]); /* StudioFxTransform */
@@ -1001,7 +1004,59 @@ void R_StudioTransform(vec3_t in, vec3_t out)
     out[2] = in[0] * D_0053CF68[2][0] + in[1] * D_0053CF68[2][1] + in[2] * D_0053CF68[2][2] + D_0053CF68[2][3];
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BC240);
+void R_StudioSetupGlowShell(vec3_t *pstudioverts, float (*pout)[4])
+{
+    int i, j;
+    float scale;
+    byte *pvertbone;
+    vec3_t *pstudionorms;
+    float (*pv)[4];
+    mstudiomesh_t *pmesh;
+    short *ptricmds;
+
+    scale = currententity->renderamt * 0.05f;
+    pvertbone = (byte *)pstudiohdr + psubmodel->vertinfoindex;
+    pstudionorms = (vec3_t *)((byte *)pstudiohdr + psubmodel->normindex);
+
+    for (i = 0; i < psubmodel->numverts; i++)
+        g_NormalIndex[i] = -1;
+
+    for (i = 0; i < pstudiohdr->numbones; i++)
+        chromeage[i] = 0;
+
+    for (j = 0; j < psubmodel->nummesh; j++)
+    {
+        pmesh = (mstudiomesh_t *)((byte *)pstudiohdr + psubmodel->meshindex) + j;
+        ptricmds = (short *)((byte *)pstudiohdr + pmesh->triindex);
+
+        while ((i = *(ptricmds++)))
+        {
+            if (i < 0)
+                i = -i;
+
+            for (; i > 0; i--, ptricmds += 4)
+            {
+                if (g_NormalIndex[ptricmds[0]] < 0)
+                    g_NormalIndex[ptricmds[0]] = ptricmds[1];
+            }
+        }
+    }
+
+    pv = pout;
+    for (i = 0; i < psubmodel->numverts; i++, pstudioverts++, pv++)
+    {
+        vec3_t tmp;
+
+        VectorMA(pstudioverts[0], scale, pstudionorms[g_NormalIndex[i]], tmp);
+        func_002BE2D0(*pv, pvertbone[i], tmp);
+    }
+
+    chrome_origin[0] = cosf(cl[0].time * r_glowshellfreq.value) * 4000.0f;
+    chrome_origin[1] = sinf(cl[0].time * r_glowshellfreq.value) * 4000.0f;
+    chrome_origin[2] = cosf(cl[0].time * r_glowshellfreq.value * 0.33f) * 4000.0f;
+
+    tri_Color4ub(currententity->rendercolor.r, currententity->rendercolor.g, currententity->rendercolor.b, 255);
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BC520);
 

@@ -12,7 +12,7 @@ typedef struct cl_entity_s
 {
     byte pad0[0x10];
     int rendermode;             /* 0x10 */
-    byte pad14[0x18 - 0x14];
+    int renderamt;              /* 0x14 */
     int renderfx;               /* 0x18 */
     int movetype;               /* 0x1C */
     int body;                   /* 0x20: body do viewmodel (svc_weaponanim) */
