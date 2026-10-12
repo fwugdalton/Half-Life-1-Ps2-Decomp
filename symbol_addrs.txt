@@ -1693,3 +1693,4 @@ psubmodel = 0x003996B8; // size:0x4
 R_StudioPlayerBlend = 0x2BB168; // type:func
 GetBonePosition = 0x2BB500; // type:func
 SV_StudioSetupBones = 0x2BA4D8; // type:func
+GetAttachment = 0x2BB5E0; // type:func

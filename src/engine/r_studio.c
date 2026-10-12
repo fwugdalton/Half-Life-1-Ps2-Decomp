@@ -67,6 +67,8 @@ void *func_00244928(char *name, int *pLength);
 void *Cache_Alloc(cache_user_t *c, int size, char *name);
 void *memcpy(void *dst, const void *src, unsigned int n);
 void Mem_Free(void *p);
+float sinf(float);
+float cosf(float);
 
 /* cache de texturas de modelo por índice (0x12C bytes) */
 typedef struct
@@ -322,7 +324,24 @@ void GetBonePosition(edict_t *pEdict, int iBone, float *rgflOrigin, float *rgflA
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BB5E0);
+void GetAttachment(edict_t *pEdict, int iAttachment, float *rgflOrigin, float *rgflAngles)
+{
+    mstudioattachment_t *pattachment;
+    vec3_t angles;
+
+    pstudiohdr = (studiohdr_t *)Mod_Extradata(sv.models[pEdict->v.modelindex]);
+    pattachment = (mstudioattachment_t *)((byte *)pstudiohdr + pstudiohdr->attachmentindex) + iAttachment;
+
+    angles[2] = pEdict->v.angles[2];
+    angles[0] = -pEdict->v.angles[0];
+    angles[1] = pEdict->v.angles[1];
+
+    SV_StudioSetupBones(sv.models[pEdict->v.modelindex], pEdict->v.frame, pEdict->v.sequence,
+                        angles, pEdict->v.origin, pEdict->v.controller, pEdict->v.blending, pattachment->bone);
+
+    if (rgflOrigin)
+        VectorTransform(pattachment->org, bonetransform[pattachment->bone], rgflOrigin);
+}
 
 int ModelFrameCount(model_t *model)
 {
@@ -342,11 +361,89 @@ int ModelFrameCount(model_t *model)
     return count;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BB740);
+void func_002BB740(float m[4][4], float angle)
+{
+    float s, c;
+    float a0, a1, a2, a3, b0, b1, b2, b3;
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BB838);
+    angle = angle * (M_PI * (1.0f / 180.0f));
+    s = sinf(angle);
+    c = cosf(angle);
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BB930);
+    a0 = m[0][1] * c + m[0][2] * s;
+    a1 = m[1][1] * c + m[1][2] * s;
+    a2 = m[2][1] * c + m[2][2] * s;
+    a3 = m[3][1] * c + m[3][2] * s;
+    b0 = m[0][1] * -s + m[0][2] * c;
+    b1 = m[1][1] * -s + m[1][2] * c;
+    b2 = m[2][1] * -s + m[2][2] * c;
+    b3 = m[3][1] * -s + m[3][2] * c;
+
+    m[0][1] = a0;
+    m[1][1] = a1;
+    m[2][1] = a2;
+    m[3][1] = a3;
+    m[0][2] = b0;
+    m[1][2] = b1;
+    m[2][2] = b2;
+    m[3][2] = b3;
+}
+
+void func_002BB838(float m[4][4], float angle)
+{
+    float s, c;
+    float a0, a1, a2, a3, b0, b1, b2, b3;
+
+    angle = angle * (M_PI * (1.0f / 180.0f));
+    s = sinf(angle);
+    c = cosf(angle);
+
+    a0 = m[0][0] * c + m[0][2] * -s;
+    a1 = m[1][0] * c + m[1][2] * -s;
+    a2 = m[2][0] * c + m[2][2] * -s;
+    a3 = m[3][0] * c + m[3][2] * -s;
+    b0 = m[0][0] * s + m[0][2] * c;
+    b1 = m[1][0] * s + m[1][2] * c;
+    b2 = m[2][0] * s + m[2][2] * c;
+    b3 = m[3][0] * s + m[3][2] * c;
+
+    m[0][0] = a0;
+    m[1][0] = a1;
+    m[2][0] = a2;
+    m[3][0] = a3;
+    m[0][2] = b0;
+    m[1][2] = b1;
+    m[2][2] = b2;
+    m[3][2] = b3;
+}
+
+void func_002BB930(float m[4][4], float angle)
+{
+    float s, c;
+    float a0, a1, a2, a3, b0, b1, b2, b3;
+
+    angle = angle * (M_PI * (1.0f / 180.0f));
+    s = sinf(angle);
+    c = cosf(angle);
+
+    a0 = m[0][0] * c + m[0][1] * s;
+    a1 = m[1][0] * c + m[1][1] * s;
+    a2 = m[2][0] * c + m[2][1] * s;
+    a3 = m[3][0] * c + m[3][1] * s;
+    b0 = m[0][0] * -s + m[0][1] * c;
+    b1 = m[1][0] * -s + m[1][1] * c;
+    b2 = m[2][0] * -s + m[2][1] * c;
+    b3 = m[3][0] * -s + m[3][1] * c;
+
+    m[0][0] = a0;
+    m[1][0] = a1;
+    m[2][0] = a2;
+    m[3][0] = a3;
+    m[0][1] = b0;
+    m[1][1] = b1;
+    m[2][1] = b2;
+    m[3][1] = b3;
+}
 
 void R_StudioIdentityMatrix(float m[4][4])
 {
