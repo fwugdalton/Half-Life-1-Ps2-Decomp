@@ -1,0 +1,12 @@
+/* inffast.h -- header to use inffast.c
+ * Copyright (C) 1995-1998 Mark Adler
+ * For conditions of distribution and use, see copyright notice in zlib.h
+ */
+
+extern int inflate_fast OF((
+    uInt,
+    uInt,
+    inflate_huft *,
+    inflate_huft *,
+    inflate_blocks_statef *,
+    z_streamp ));
