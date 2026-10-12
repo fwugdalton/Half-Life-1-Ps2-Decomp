@@ -267,6 +267,7 @@ extern studiotexcache_t D_005377E8[64];
 extern int D_003996A4;
 
 #define kRenderFxGlowShell 19
+#define kRenderTransAdd 5
 
 /* extensão do PS2 no fim do studiohdr_t */
 typedef struct
@@ -3030,7 +3031,213 @@ draw:
     glPopMatrix();
 }
 
+extern float D_00515778[MAXSTUDIOVERTS][3][4]; /* lightpos */
+extern int D_0052F778[MAXSTUDIOVERTS][2];     /* g_chrome */
+extern int D_00399568;
+void func_0023C218(float x, float y, float z); /* glVertex3f */
+
+#ifdef NON_MATCHING
+void func_002C2260(void)
+{
+    int i, j;
+    mstudiomesh_t *pmesh;
+    byte *pvertbone;
+    byte *pnormbone;
+    vec3_t *pstudioverts;
+    vec3_t *pstudionorms;
+    studiohdr_t *ptexturehdr;
+    mstudiotexture_t *ptexture;
+    short *pskinref;
+    float *av;
+    float *pv;
+    float *lv;
+    float lv_tmp;
+    vec3_t col;
+    int flags;
+    short *ptricmds;
+    float s, t;
+
+    pvertbone = (byte *)pstudiohdr + psubmodel->vertinfoindex;
+    pnormbone = (byte *)pstudiohdr + psubmodel->norminfoindex;
+
+    ptexturehdr = R_LoadTextures((model_t *)D_0039967C);
+    ptexture = (mstudiotexture_t *)((byte *)ptexturehdr + ptexturehdr->textureindex);
+
+    pmesh = (mstudiomesh_t *)((byte *)pstudiohdr + psubmodel->meshindex);
+
+    pstudioverts = (vec3_t *)((byte *)pstudiohdr + psubmodel->vertindex);
+    pstudionorms = (vec3_t *)((byte *)pstudiohdr + psubmodel->normindex);
+
+    pskinref = (short *)((byte *)ptexturehdr + ptexturehdr->skinindex);
+    if (currententity->skin != 0 && currententity->skin < ptexturehdr->numskinfamilies)
+        pskinref += (currententity->skin * ptexturehdr->numskinref);
+
+    if (currententity->renderfx == kRenderFxGlowShell)
+    {
+        R_StudioSetupGlowShell(pstudioverts, (float (*)[4])D_003996B4);
+    }
+    else
+    {
+        pv = D_003996B4;
+        for (i = 0; i < psubmodel->numverts; i++, pv += 4)
+            func_002BE2D0(pv, pvertbone[i], pstudioverts[i]);
+    }
+
+    pvertbone = (byte *)pstudiohdr + psubmodel->vertinfoindex;
+    pstudioverts = (vec3_t *)((byte *)pstudiohdr + psubmodel->vertindex);
+
+    for (i = 0; i < psubmodel->numverts; i++, pvertbone++)
+        R_LightStrength(*pvertbone, pstudioverts[i], D_00515778[i]);
+
+    lv = D_003996BC;
+    for (j = 0; j < psubmodel->nummesh; j++)
+    {
+        flags = ptexture[pskinref[pmesh[j].skinref]].flags | g_ForcedFaceFlags;
+        if (r_fullbright.value >= 2)
+            flags &= ~3;
+
+        if (currententity->rendermode == kRenderTransAdd)
+        {
+            for (i = 0; i < pmesh[j].numnorms; i++, lv += 4)
+            {
+                lv[0] = r_blend;
+                lv[1] = r_blend;
+                lv[2] = r_blend;
+                if (flags & STUDIO_NF_CHROME)
+                    R_StudioChrome(D_0052F778[i], *pnormbone, (float *)pstudionorms);
+            }
+        }
+        else
+        {
+            for (i = 0; i < pmesh[j].numnorms; i++, lv += 12, pstudionorms++, pnormbone++)
+            {
+                R_StudioLighting(&lv_tmp, *pnormbone, flags, (float *)pstudionorms);
+
+                if (flags & STUDIO_NF_CHROME)
+                    R_StudioChrome(D_0052F778[i], *pnormbone, (float *)pstudionorms);
+
+                lv[0] = lv_tmp * r_lightcolor[0];
+                lv[1] = lv_tmp * r_lightcolor[1];
+                lv[2] = lv_tmp * r_lightcolor[2];
+            }
+        }
+    }
+
+    pstudionorms = (vec3_t *)((byte *)pstudiohdr + psubmodel->normindex);
+
+    for (j = 0; j < psubmodel->nummesh; j++)
+    {
+        pmesh = (mstudiomesh_t *)((byte *)pstudiohdr + psubmodel->meshindex) + j;
+        ptricmds = (short *)((byte *)pstudiohdr + pmesh->triindex);
+
+        D_00399568 += pmesh->numtris;
+
+        flags = ptexture[pskinref[pmesh->skinref]].flags | g_ForcedFaceFlags;
+        if (r_fullbright.value >= 2)
+            flags &= ~3;
+
+        if (r_fullbright.value < 2)
+        {
+            s = 1.0f / (float)ptexture[pskinref[pmesh->skinref]].width;
+            t = 1.0f / (float)ptexture[pskinref[pmesh->skinref]].height;
+            R_StudioSetupSkin(ptexturehdr, pskinref[pmesh->skinref]);
+        }
+        else
+        {
+            s = t = 1.0f / 256.0f;
+            tri_SpriteTexture(D_003991CC, 0);
+        }
+
+        if (flags & STUDIO_NF_CHROME)
+        {
+            s /= 1024.0f;
+            t /= 1024.0f;
+
+            if (g_ForcedFaceFlags & STUDIO_NF_CHROME)
+            {
+                while ((i = *(ptricmds++)))
+                {
+                    if (i < 0)
+                    {
+                        glBegin(6);
+                        i = -i;
+                    }
+                    else
+                    {
+                        glBegin(5);
+                    }
+                    D_00399574++;
+                    D_0039954C += i;
+
+                    for (; i > 0; i--, ptricmds += 4)
+                    {
+                        glTexCoord2f(D_0052F778[g_NormalIndex[ptricmds[0]]][0] * s, D_0052F778[g_NormalIndex[ptricmds[0]]][1] * t);
+                        av = &D_003996B4[ptricmds[0] * 4];
+                        func_0023C218(av[0], av[1], av[2]);
+                    }
+                    glEnd();
+                }
+            }
+            else
+            {
+                while ((i = *(ptricmds++)))
+                {
+                    if (i < 0)
+                    {
+                        glBegin(6);
+                        i = -i;
+                    }
+                    else
+                    {
+                        glBegin(5);
+                    }
+                    D_00399574++;
+                    D_0039954C += i;
+
+                    for (; i > 0; i--, ptricmds += 4)
+                    {
+                        glTexCoord2f(D_0052F778[ptricmds[1]][0] * s, D_0052F778[ptricmds[1]][1] * t);
+                        R_LightLambert(D_00515778[ptricmds[0]], pstudionorms[ptricmds[1]], &D_003996BC[ptricmds[1] * 4], col);
+                        glColor4f(col[0], col[1], col[2], r_blend);
+                        av = &D_003996B4[ptricmds[0] * 4];
+                        func_0023C218(av[0], av[1], av[2]);
+                    }
+                    glEnd();
+                }
+            }
+        }
+        else
+        {
+            while ((i = *(ptricmds++)))
+            {
+                if (i < 0)
+                {
+                    glBegin(6);
+                    i = -i;
+                }
+                else
+                {
+                    glBegin(5);
+                }
+                D_00399574++;
+                D_0039954C += i;
+
+                for (; i > 0; i--, ptricmds += 4)
+                {
+                    glTexCoord2f(ptricmds[2] * s, ptricmds[3] * t);
+                    R_LightLambert(D_00515778[ptricmds[0]], pstudionorms[ptricmds[1]], &D_003996BC[ptricmds[1] * 4], col);
+                    glColor4f(col[0], col[1], col[2], r_blend);
+                    av = &D_003996B4[ptricmds[0] * 4];
+                    func_0023C218(av[0], av[1], av[2]);
+                }
+                glEnd();
+            }
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002C2260);
+#endif
 
 int func_002C2AF0(int bodypart)
 {
