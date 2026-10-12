@@ -100,7 +100,12 @@ qboolean Netchan_Process(netchan_t *chan);
 void CL_ParseServerMessage(int clientId);
 void CL_PrintResource(int index, resource_t *pResource);
 void func_0024F6E8(int clientId);
-qboolean func_0024FB28(int clientId);       /* "" */
+qboolean func_0024FB28(int clientId);
+void Netchan_Transmit(netchan_t *chan, int length, byte *data, int unk);
+void func_002CD340(int a0, int a1); /* S_StopAllSounds */
+void CL_DeallocateDynamicData(int clientId);
+void func_00254838(int clientId);
+void func_0024FF90(qboolean bQuiet, int clientId);       /* "" */
 extern char D_003AC9C8[256];    /* szHashedKeyBuffer */
 
 qboolean NET_GetPacket(int sock);
@@ -562,7 +567,37 @@ INCLUDE_RODATA("asm/nonmatchings/engine/Cl_main", D_0038A068);
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Cl_main", D_0038A080);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Cl_main", CL_Disconnect);
+void CL_Disconnect(int clientId)
+{
+    byte final[32];
+
+    cls[clientId].connect_time = -99999.0f;
+    cls[clientId].connect_retry = 0;
+
+    func_002CD340(1, clientId);
+
+    if (cls[clientId].state == ca_active || cls[clientId].state == ca_connected ||
+        cls[clientId].state == ca_uninitialized || cls[clientId].state == ca_connecting)
+    {
+        if (cls[clientId].netchan.remote_address.type)
+        {
+            final[0] = 4; /* clc_stringcmd */
+            strcpy((char *)final + 1, "dropclient\n");
+            Netchan_Transmit(&cls[clientId].netchan, 13, final, 2);
+            Netchan_Transmit(&cls[clientId].netchan, 13, final, 2);
+            Netchan_Transmit(&cls[clientId].netchan, 13, final, 2);
+        }
+
+        cls[clientId].state = ca_disconnected;
+        if (sv.active)
+            Host_ShutdownServer(false);
+    }
+
+    cls[clientId].signon = 0;
+    func_0024FF90(true, clientId);
+    CL_DeallocateDynamicData(clientId);
+    func_00254838(clientId);
+}
 
 void func_00250248(int clientId)
 {
