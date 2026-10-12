@@ -16,6 +16,14 @@
 #endif
 
 #define OF(args)  args
+#define ZEXPORTVA
+
+#ifndef MAX_MEM_LEVEL
+#  define MAX_MEM_LEVEL 9
+#endif
+#ifndef MAX_WBITS
+#  define MAX_WBITS   15 /* 32K LZ77 window */
+#endif
 #define ZEXPORT
 #define ZEXTERN extern
 #define FAR
@@ -78,9 +86,42 @@ typedef z_stream FAR *z_streamp;
 #define Z_BUF_ERROR    (-5)
 #define Z_VERSION_ERROR (-6)
 
+#define Z_NO_COMPRESSION         0
+#define Z_BEST_SPEED             1
+#define Z_BEST_COMPRESSION       9
+#define Z_DEFAULT_COMPRESSION  (-1)
+
+#define Z_FILTERED            1
+#define Z_HUFFMAN_ONLY        2
+#define Z_DEFAULT_STRATEGY    0
+
+#define Z_BINARY   0
+#define Z_ASCII    1
+#define Z_UNKNOWN  2
+
 #define Z_DEFLATED   8
 
 #define Z_NULL  0
+
+ZEXTERN int ZEXPORT deflate OF((z_streamp strm, int flush));
+ZEXTERN int ZEXPORT deflateEnd OF((z_streamp strm));
+ZEXTERN int ZEXPORT deflateSetDictionary OF((z_streamp strm,
+                                             const Bytef *dictionary,
+                                             uInt  dictLength));
+ZEXTERN int ZEXPORT deflateCopy OF((z_streamp dest,
+                                    z_streamp source));
+ZEXTERN int ZEXPORT deflateReset OF((z_streamp strm));
+ZEXTERN int ZEXPORT deflateParams OF((z_streamp strm,
+                                      int level,
+                                      int strategy));
+ZEXTERN int ZEXPORT deflateInit_ OF((z_streamp strm, int level,
+                                     const char *version, int stream_size));
+ZEXTERN int ZEXPORT deflateInit2_ OF((z_streamp strm, int  level, int  method,
+                                      int windowBits, int memLevel,
+                                      int strategy, const char *version,
+                                      int stream_size));
+ZEXTERN uLong ZEXPORT crc32   OF((uLong crc, const Bytef *buf, uInt len));
+ZEXTERN const uLongf * ZEXPORT get_crc_table    OF((void));
 
 ZEXTERN int ZEXPORT inflate OF((z_streamp strm, int flush));
 ZEXTERN int ZEXPORT inflateEnd OF((z_streamp strm));

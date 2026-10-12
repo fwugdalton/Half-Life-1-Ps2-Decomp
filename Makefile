@@ -51,6 +51,7 @@ $(BUILD_DIR)/%.o: %.s
 
 # o zlib (inflate 1.1.3) foi compilado sem strict aliasing (o ee-gcc liga por padrão no -O2)
 $(BUILD_DIR)/src/zlib/%.o: CFLAGS += -fno-strict-aliasing
+$(BUILD_DIR)/src/zlib/adler32.o: CFLAGS += -fmove-all-movables
 
 # mathlib.c foi compilado com -ffast-math (sqrt.s direto, sem o teste de errno)
 $(BUILD_DIR)/src/engine/mathlib.o: CFLAGS += -ffast-math
