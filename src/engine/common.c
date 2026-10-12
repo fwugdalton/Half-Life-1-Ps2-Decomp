@@ -54,6 +54,14 @@ extern bf_read_t D_003AC420;    /* bfread */
 void func_00242880(int nValue);  /* MSG_WriteOneBit */
 extern int msg_readcount;
 extern int msg_badread;
+extern sizebuf_t net_message;
+extern char D_003AA210[2048];   /* MSG_ReadString: string */
+extern char D_003AAA10[2048];   /* MSG_ReadStringLine: string */
+int func_00243370(void);         /* MSG_ReadChar */
+int MSG_ReadByte(void);
+int MSG_ReadShort(void);
+float MSG_ReadFloat(void);
+void *memcpy(void *, const void *, unsigned int);
 int MSG_ReadBits(int numbits);
 int MSG_ReadByteBits(int numbits);
 int func_00242EB0(void);          /* MSG_ReadOneBit */
@@ -969,47 +977,316 @@ int MSG_ReadByteBits(int numbits)
     return result;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_00242FC8);
+/* MSG_PeekByteBits */
+int func_00242FC8(int numbits)
+{
+    bf_read_t savebf;
+    byte result;
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", MSG_ReadBits);
+    savebf = D_003AC420;
+    result = 0;
+    while (numbits-- > 0)
+    {
+        if (func_00242EB0())
+            result |= 1 << numbits;
+    }
+    D_003AC420 = savebf;
+    return result;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_00243120);
+int MSG_ReadBits(int numbits)
+{
+    unsigned short result;
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_00243190);
+    result = 0;
+    while (numbits-- > 0)
+    {
+        if (func_00242EB0())
+            result |= 1 << numbits;
+    }
+    return result;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_00243278);
+/* MSG_ReadBitsUInt */
+int func_00243120(int numbits)
+{
+    unsigned int result;
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", MSG_ReadSBits);
+    result = 0;
+    while (numbits-- > 0)
+    {
+        if (func_00242EB0())
+            result |= 1 << numbits;
+    }
+    return result;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_00243318);
+/* MSG_PeekBits */
+int func_00243190(int numbits)
+{
+    bf_read_t savebf;
+    unsigned int result;
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", MSG_BeginReading);
+    savebf = D_003AC420;
+    result = 0;
+    while (numbits-- > 0)
+    {
+        if (func_00242EB0())
+            result |= 1 << numbits;
+    }
+    D_003AC420 = savebf;
+    return result;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_00243370);
+/* MSG_ReadSByteBits */
+int func_00243278(int numbits)
+{
+    int nSign;
+    char c;
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", MSG_ReadByte);
+    nSign = func_00242EB0();
+    c = MSG_ReadByteBits(numbits - 1);
+    if (nSign)
+        c = -c;
+    return c;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", MSG_ReadShort);
+int MSG_ReadSBits(int numbits)
+{
+    int nSign;
+    short s;
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_00243460);
+    nSign = func_00242EB0();
+    s = MSG_ReadBits(numbits - 1);
+    if (nSign)
+        s = -s;
+    return s;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", MSG_ReadLong);
+/* MSG_ReadSBitsInt */
+int func_00243318(int numbits)
+{
+    int nSign;
+    int i;
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", MSG_ReadFloat);
+    nSign = func_00242EB0();
+    i = func_00243120(numbits - 1);
+    if (nSign)
+        i = -i;
+    return i;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", MSG_ReadBuf);
+void MSG_BeginReading(void)
+{
+    msg_readcount = 0;
+    msg_badread = 0;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", MSG_ReadString);
+/* MSG_ReadChar */
+int func_00243370(void)
+{
+    int c;
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", MSG_ReadStringLine);
+    if (msg_readcount + 1 > net_message.cursize)
+    {
+        msg_badread = 1;
+        return -1;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", MSG_ReadCoord);
+    c = (signed char)net_message.data[msg_readcount];
+    msg_readcount++;
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_00243770);
+    return c;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_002437A8);
+int MSG_ReadByte(void)
+{
+    int c;
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_002437E0);
+    if (msg_readcount + 1 > net_message.cursize)
+    {
+        msg_badread = 1;
+        return -1;
+    }
+
+    c = (unsigned char)net_message.data[msg_readcount];
+    msg_readcount++;
+
+    return c;
+}
+
+int MSG_ReadShort(void)
+{
+    int c;
+
+    if (msg_readcount + 2 > net_message.cursize)
+    {
+        msg_badread = 1;
+        return -1;
+    }
+
+    c = (short)(net_message.data[msg_readcount] + (net_message.data[msg_readcount + 1] << 8));
+    msg_readcount += 2;
+
+    return c;
+}
+
+/* MSG_ReadWord */
+int func_00243460(void)
+{
+    int c;
+
+    if (msg_readcount + 2 > net_message.cursize)
+    {
+        msg_badread = 1;
+        return -1;
+    }
+
+    c = net_message.data[msg_readcount] | (net_message.data[msg_readcount + 1] << 8);
+    msg_readcount += 2;
+
+    return c;
+}
+
+int MSG_ReadLong(void)
+{
+    int c;
+
+    if (msg_readcount + 4 > net_message.cursize)
+    {
+        msg_badread = 1;
+        return -1;
+    }
+
+    c = net_message.data[msg_readcount]
+        + (net_message.data[msg_readcount + 1] << 8)
+        + (net_message.data[msg_readcount + 2] << 16)
+        + (net_message.data[msg_readcount + 3] << 24);
+    msg_readcount += 4;
+
+    return c;
+}
+
+float MSG_ReadFloat(void)
+{
+    union
+    {
+        byte b[4];
+        float f;
+        int l;
+    } dat;
+
+    dat.b[0] = net_message.data[msg_readcount];
+    dat.b[1] = net_message.data[msg_readcount + 1];
+    dat.b[2] = net_message.data[msg_readcount + 2];
+    dat.b[3] = net_message.data[msg_readcount + 3];
+    msg_readcount += 4;
+
+    dat.l = LittleLong(dat.l);
+
+    return dat.f;
+}
+
+int MSG_ReadBuf(int iSize, void *pbuf)
+{
+    if (msg_readcount + iSize > net_message.cursize)
+    {
+        msg_badread = 1;
+        return -1;
+    }
+
+    memcpy(pbuf, &net_message.data[msg_readcount], iSize);
+    msg_readcount += iSize;
+
+    return 1;
+}
+
+char *MSG_ReadString(void)
+{
+    int l, c;
+
+    l = 0;
+    do
+    {
+        c = func_00243370();
+        if (c == -1 || c == 0)
+            break;
+        D_003AA210[l] = c;
+        l++;
+    } while (l < sizeof(D_003AA210) - 1);
+
+    D_003AA210[l] = 0;
+
+    return D_003AA210;
+}
+
+char *MSG_ReadStringLine(void)
+{
+    int l, c;
+
+    l = 0;
+    do
+    {
+        c = func_00243370();
+        if (c == -1 || c == 0 || c == '\n')
+            break;
+        D_003AAA10[l] = c;
+        l++;
+    } while (l < sizeof(D_003AAA10) - 1);
+
+    D_003AAA10[l] = 0;
+
+    return D_003AAA10;
+}
+
+float MSG_ReadCoord(void)
+{
+    return MSG_ReadShort() * (1.0f / 8);
+}
+
+/* MSG_ReadAngle */
+float func_00243770(void)
+{
+    return func_00243370() * (360.0f / 256);
+}
+
+/* MSG_ReadHangle */
+float func_002437A8(void)
+{
+    return MSG_ReadShort() * (360.0f / 65536);
+}
+
+/* MSG_ReadDeltaUsercmd (formato antigo) */
+void func_002437E0(usercmd_t *move, usercmd_t *from)
+{
+    int bits;
+
+    *move = *from;
+
+    bits = MSG_ReadByte();
+
+    if (bits & 1)
+        move->viewangles[0] = func_002437A8();
+    if (bits & 2)
+        move->viewangles[1] = func_002437A8();
+    if (bits & 4)
+        move->viewangles[2] = func_00243770();
+
+    if (bits & 8)
+        move->forwardmove = MSG_ReadFloat();
+    if (bits & 0x10)
+        move->sidemove = MSG_ReadFloat();
+    if (bits & 0x20)
+        move->upmove = MSG_ReadFloat();
+
+    if (bits & 0x40)
+        move->buttons = MSG_ReadShort();
+    if (bits & 0x80)
+        move->impulse = MSG_ReadByte();
+
+    move->lightlevel = MSG_ReadByte();
+    move->msec = MSG_ReadByte();
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/common", func_00243930);
 
