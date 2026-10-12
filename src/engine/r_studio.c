@@ -96,6 +96,16 @@ int func_002E4560(const void *a, const void *b, int n);
 int strcasecmp(const char *a, const char *b);
 void Con_Printf(const char *fmt, ...);
 void GL_Bind(int texnum);
+qboolean R_CullBox(vec3_t mins, vec3_t maxs);
+void R_StudioRotateBBox(vec3_t mins, vec3_t maxs, vec3_t angles);
+void R_StudioCalcBoneAdj(float dadt, float *adj, byte *pcontroller1, byte *pcontroller2, byte mouthopen);
+void R_StudioCalcBoneQuaternion(int frame, float s, mstudiobone_t *pbone, mstudioanim_t *panim, float *adj, float *q);
+void R_StudioCalcBonePosition(int frame, float s, mstudiobone_t *pbone, mstudioanim_t *panim, float *adj, float *pos);
+
+/* campos do cl_entity_t ainda não mapeados em cl_entity.h */
+#define ENT_CONTROLLER(e) ((byte *)(e) + 0x00)
+#define ENT_PREVCONTROLLER(e) ((byte *)(e) + 0x08)
+#define ENT_MOUTHOPEN(e) (*((byte *)(e) + 0x0E))
 
 extern int D_0039967C;
 extern int D_00399698;
@@ -245,11 +255,11 @@ INCLUDE_RODATA("asm/nonmatchings/engine/r_studio", D_00394FA0);
 
 INCLUDE_RODATA("asm/nonmatchings/engine/r_studio", D_00394FA8);
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002B9A60);
+INCLUDE_ASM("asm/nonmatchings/engine/r_studio", R_StudioCalcBoneAdj);
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002B9CF0);
+INCLUDE_ASM("asm/nonmatchings/engine/r_studio", R_StudioCalcBoneQuaternion);
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002B9FE8);
+INCLUDE_ASM("asm/nonmatchings/engine/r_studio", R_StudioCalcBonePosition);
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BA1B8);
 
@@ -545,9 +555,28 @@ void R_StudioIdentityMatrix(float m[4][4])
     m[3][3] = 1.0f;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BBA78);
+INCLUDE_ASM("asm/nonmatchings/engine/r_studio", R_StudioRotateBBox);
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BC048);
+int R_StudioCheckBBox(void)
+{
+    mstudioseqdesc_t *pseqdesc;
+    vec3_t mins, maxs;
+
+    pseqdesc = (mstudioseqdesc_t *)((byte *)pstudiohdr + pstudiohdr->seqindex) + currententity->sequence;
+
+    VectorCopy(pseqdesc->bbmin, mins);
+    VectorCopy(pseqdesc->bbmax, maxs);
+
+    R_StudioRotateBBox(mins, maxs, currententity->angles);
+
+    VectorAdd(currententity->origin, mins, mins);
+    VectorAdd(currententity->origin, maxs, maxs);
+
+    if (currententity->model && !func_002E4560(currententity->model->name + 7, "barnacle", 8))
+        mins[2] -= 1024.0f;
+
+    return !R_CullBox(mins, maxs);
+}
 
 void R_StudioTransform(vec3_t in, vec3_t out)
 {
@@ -581,9 +610,64 @@ float R_StudioEstimateInterpolant(int clientId)
     return 1.0f;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BC930);
+void R_StudioCalcRotations(float pos[][3], float q[][4], mstudioseqdesc_t *pseqdesc, mstudioanim_t *panim, float f, int clientId)
+{
+    int i;
+    int frame;
+    mstudiobone_t *pbone;
+    float s;
+    float adj[MAXSTUDIOCONTROLLERS];
+    float dadt;
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BCA88);
+    if (f > pseqdesc->numframes - 1)
+        f = 0;
+
+    frame = (int)f;
+    dadt = R_StudioEstimateInterpolant(clientId);
+    s = f - frame;
+
+    pbone = (mstudiobone_t *)((byte *)pstudiohdr + pstudiohdr->boneindex);
+    R_StudioCalcBoneAdj(dadt, adj, ENT_CONTROLLER(currententity), ENT_PREVCONTROLLER(currententity), ENT_MOUTHOPEN(currententity));
+
+    for (i = 0; i < pstudiohdr->numbones; i++, pbone++, panim++)
+    {
+        R_StudioCalcBoneQuaternion(frame, s, pbone, panim, adj, q[i]);
+        R_StudioCalcBonePosition(frame, s, pbone, panim, adj, pos[i]);
+    }
+}
+
+float R_StudioEstimateFrame(mstudioseqdesc_t *pseqdesc, int clientId)
+{
+    float dfdt, f;
+
+    if (r_dointerp)
+        dfdt = (cl[clientId].time - currententity->animtime) * currententity->framerate * pseqdesc->fps;
+    else
+        dfdt = 0;
+
+    if (pseqdesc->numframes <= 1)
+        f = 0;
+    else
+        f = (currententity->frame * (pseqdesc->numframes - 1)) / 256.0f;
+
+    f += dfdt;
+
+    if (pseqdesc->flags & STUDIO_LOOPING)
+    {
+        if (pseqdesc->numframes > 1)
+            f -= (int)(f / (pseqdesc->numframes - 1)) * (pseqdesc->numframes - 1);
+        if (f < 0)
+            f += (pseqdesc->numframes - 1);
+    }
+    else
+    {
+        if (f >= pseqdesc->numframes - 1.001f)
+            f = pseqdesc->numframes - 1.001f;
+        if (f < 0.0f)
+            f = 0.0f;
+    }
+    return f;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BCBE8);
 

@@ -30,6 +30,15 @@ FPWRITE = re.compile(r'^\s+(li\.s|mtc1)\s')
 
 def fp_reads(line):
     """Registradores de FPU lidos pela instrução (só os pares importam)."""
+    w = re.match(r'^\s+\.word\s+0x([0-9A-Fa-f]{8})\s*$', line)
+    if w:
+        # cvt.w.s e sqrt.s já convertidos em .word também leem registrador
+        w = int(w.group(1), 16)
+        if w & 0xFFE0003F == 0x46000024:
+            return {(w >> 11) & 31}
+        if w & 0xFFE0003F == 0x46000004:
+            return {(w >> 16) & 31}
+        return set()
     m = re.match(r'^\s+([\w.]+)\s+(.*)$', line)
     if not m:
         return set()
