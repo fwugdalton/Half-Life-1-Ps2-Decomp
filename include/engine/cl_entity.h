@@ -50,7 +50,8 @@ typedef struct cl_entity_s
     vec3_t prevangles;          /* 0xA8 */
     vec3_t attachment[4];       /* 0xB4 */
     color24 rendercolor;        /* 0xE4 */
-    byte padE7[0xF8 - 0xE7];
+    byte padE7;
+    unsigned int cvFloorColor[4]; /* 0xE8: colorVec */
     entity_state_t baseline;    /* 0xF8 */
     byte pad18C[0x194 - 0x18C];
     int unk194;                 /* 0x194: bits 0x100/0x200 = viewmodel de qual jogador */

@@ -2499,7 +2499,211 @@ void func_002C0258(void)
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", R_StudioDrawPlayer);
 
+typedef struct
+{
+    unsigned int r, g, b, a;
+} colorVec;
+
+extern cvar_t cl_skycolor_r, cl_skycolor_g, cl_skycolor_b;
+extern cvar_t cl_skyvec_x, cl_skyvec_y, cl_skyvec_z;
+extern cvar_t v_direct, r_fullbright;
+#define MAX_DLIGHTS 32
+extern dlight_t cl_dlights[MAX_DLIGHTS];
+#define SURF_DRAWSKY 4
+colorVec R_LightVec(vec3_t start, vec3_t end);
+msurface_t *SurfaceAtPoint(model_t *pModel, mnode_t *node, vec_t *start, vec_t *end);
+int func_002E0F18(float f); /* LinearToTexture */
+#define STUDIO_FORCE_SKYLIGHT 0x400
+#define STUDIO_AMBIENT_LIGHT 0x100
+#define EF_INVLIGHT 0x10
+#define max(a, b) (((a) > (b)) ? (a) : (b))
+
+#ifdef NON_MATCHING
+void func_002C0A50(cl_entity_t *ent, alight_t *plight, int clientId)
+{
+    int i;
+    dlight_t *dl;
+    float total, add, distance, scale;
+    vec3_t dist;
+    colorVec lightcolor, gcolor, c;
+    vec3_t lightvec, skyvec, direction, start, end, finalLight, upend;
+    colorVec cs;
+    float fl[4];
+
+    if (r_fullbright.value == 1.0f)
+    {
+        plight->ambientlight = 192;
+        plight->shadelight = 0;
+        plight->plightvec[0] = 0;
+        plight->plightvec[1] = 0;
+        plight->plightvec[2] = -1.0f;
+        plight->color[0] = 1.0f;
+        plight->color[1] = 1.0f;
+        plight->color[2] = 1.0f;
+        return;
+    }
+
+    lightvec[0] = lightvec[1] = 0;
+    if (ent->unk194 & EF_INVLIGHT)
+        lightvec[2] = 1.0f;
+    else
+        lightvec[2] = -1.0f;
+
+    VectorCopy(lightvec, skyvec);
+    VectorCopy(lightvec, direction);
+
+    start[0] = ent->origin[0] - lightvec[0] * 8.0f;
+    start[1] = ent->origin[1] - lightvec[1] * 8.0f;
+    start[2] = ent->origin[2] - lightvec[2] * 8.0f;
+
+    lightcolor.r = lightcolor.g = lightcolor.b = 0;
+    gcolor.r = gcolor.g = gcolor.b = 0;
+    c.r = c.g = c.b = 0;
+
+    if (cl_skycolor_r.value + cl_skycolor_g.value + cl_skycolor_b.value != 0)
+    {
+        msurface_t *psurf;
+
+        upend[0] = ent->origin[0] - cl_skyvec_x.value * 8192.0f;
+        upend[1] = ent->origin[1] - cl_skyvec_y.value * 8192.0f;
+        upend[2] = ent->origin[2] - cl_skyvec_z.value * 8192.0f;
+
+        psurf = SurfaceAtPoint(cl[clientId].worldmodel, cl[clientId].worldmodel->nodes, start, upend);
+
+        if ((ent->model->flags & STUDIO_FORCE_SKYLIGHT) || (psurf && (psurf->flags & SURF_DRAWSKY)))
+        {
+            gcolor.r = func_002E0F18(cl_skycolor_r.value);
+            gcolor.g = func_002E0F18(cl_skycolor_g.value);
+            gcolor.b = func_002E0F18(cl_skycolor_b.value);
+            skyvec[0] = cl_skyvec_x.value;
+            skyvec[1] = cl_skyvec_y.value;
+            skyvec[2] = cl_skyvec_z.value;
+        }
+    }
+
+    VectorScale(lightvec, 8192.0f, end);
+    VectorAdd(start, end, end);
+
+    c = R_LightVec(start, end);
+
+    if (gcolor.r + gcolor.g + gcolor.b < c.r + c.g + c.b)
+    {
+        start[0] -= 16.0f;
+        start[1] -= 16.0f;
+        end[0] -= 16.0f;
+        end[1] -= 16.0f;
+
+        cs = R_LightVec(start, end);
+        fl[0] = (cs.r + cs.g + cs.b) / 768.0f;
+
+        start[0] += 32.0f;
+        end[0] += 32.0f;
+
+        cs = R_LightVec(start, end);
+        fl[1] = (cs.r + cs.g + cs.b) / 768.0f;
+
+        start[1] += 32.0f;
+        end[1] += 32.0f;
+
+        cs = R_LightVec(start, end);
+        fl[2] = (cs.r + cs.g + cs.b) / 768.0f;
+
+        start[0] -= 32.0f;
+        end[0] -= 32.0f;
+
+        cs = R_LightVec(start, end);
+        fl[3] = (cs.r + cs.g + cs.b) / 768.0f;
+
+        direction[0] = fl[0] - fl[1] - fl[2] + fl[3];
+        direction[1] = fl[0] + fl[1] - fl[2] - fl[3];
+        VectorNormalize(direction);
+
+        lightcolor = c;
+        VectorCopy(direction, lightvec);
+    }
+    else
+    {
+        lightcolor = gcolor;
+        VectorCopy(skyvec, lightvec);
+    }
+
+    *(colorVec *)currententity->cvFloorColor = lightcolor;
+
+    finalLight[0] = lightcolor.r;
+    finalLight[1] = lightcolor.g;
+    finalLight[2] = lightcolor.b;
+
+    add = max(lightcolor.r, lightcolor.g);
+    add = max(add, lightcolor.b);
+    if (add == 0.0f)
+        add = 1.0f;
+
+    VectorScale(lightvec, add, lightvec);
+    total = add;
+
+    for (i = 0; i < MAX_DLIGHTS; i++)
+    {
+        dl = &cl_dlights[i];
+        if (cl[clientId].time <= dl->die)
+        {
+        VectorSubtract(ent->origin, dl->origin, dist);
+        distance = Length(dist);
+        add = dl->radius - distance;
+
+        if (add > 0)
+        {
+            VectorScale(dist, (distance <= 1.0f) ? add : add / distance, dist);
+
+            total += add;
+            VectorAdd(lightvec, dist, lightvec);
+            finalLight[0] += dl->color.r * add / 256.0f;
+            finalLight[1] += dl->color.g * add / 256.0f;
+            finalLight[2] += dl->color.b * add / 256.0f;
+        }
+        }
+    }
+
+    if (ent->model->flags & STUDIO_AMBIENT_LIGHT)
+        scale = max(v_direct.value, 0.6f);
+    else
+        scale = v_direct.value;
+    VectorScale(lightvec, scale, lightvec);
+
+    plight->shadelight = Length(lightvec);
+    plight->ambientlight = total - plight->shadelight;
+
+    add = max(finalLight[0], finalLight[1]);
+    add = max(add, finalLight[2]);
+
+    if (add == 0.0f)
+    {
+        plight->color[0] = 1.0f;
+        plight->color[1] = 1.0f;
+        plight->color[2] = 1.0f;
+    }
+    else
+    {
+        scale = 1.0f / add;
+        plight->color[0] = finalLight[0] * scale;
+        plight->color[1] = finalLight[1] * scale;
+        plight->color[2] = finalLight[2] * scale;
+    }
+
+    if (plight->ambientlight > 128)
+        plight->ambientlight = 128;
+
+    if (plight->ambientlight + plight->shadelight > 255)
+        plight->shadelight = 255 - plight->ambientlight;
+
+    VectorNormalize(lightvec);
+
+    plight->plightvec[0] = lightvec[0];
+    plight->plightvec[1] = lightvec[1];
+    plight->plightvec[2] = lightvec[2];
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002C0A50);
+#endif
 
 #ifdef NON_MATCHING
 void R_StudioEntityLight(alight_t *plight, int clientId)
