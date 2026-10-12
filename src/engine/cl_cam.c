@@ -29,6 +29,18 @@ INCLUDE_RODATA("asm/nonmatchings/engine/cl_cam", D_0038A6A8);
 
 INCLUDE_RODATA("asm/nonmatchings/engine/cl_cam", D_0038A6B0);
 
+void func_00252818(int count)
+{
+    int i;
+
+    for (i = 0; i < count; i++)
+    {
+        D_003ACCE8[i] = 0;
+        D_003991B0[i] = 0;
+        D_003991C0[i] = 0;
+    }
+}
+
 void func_00252868(vec3_t vec, vec3_t ang)
 {
     float forward;

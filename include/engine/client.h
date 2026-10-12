@@ -87,7 +87,7 @@ typedef struct client_state_s
     int num_resources;          /* 0x004 */
     byte pad8[0x208 - 0x8];
     int servercount;            /* 0x208 */
-    byte pad20C[0x210 - 0x20C];
+    int validsequence;          /* 0x20C */
     int parsecount;             /* 0x210 */
     byte pad214[0x224 - 0x214];
     float forwardmove;          /* 0x224: cmd.forwardmove */
