@@ -5,8 +5,11 @@ mx = int(sys.argv[4]) if len(sys.argv) > 4 and sys.argv[4] != '-a' else 200
 lines = spec.split('@@') if '@@' in spec else spec.split('|')
 s = open(src).read()
 import re as _re
-_m = _re.search(r'\n([ \t]*)' + _re.escape(lines[0]) + r'\n', s)
-ind = _m.group(1) if _m else '    '
+ind = '    '
+for _m in _re.finditer(r'\n([ \t]*)' + _re.escape(lines[0]) + r'\n', s):
+    if ''.join(_m.group(1) + '%s\n' % l for l in lines) in s:
+        ind = _m.group(1)
+        break
 blk = ''.join(ind + '%s\n' % l for l in lines)
 assert blk in s, 'bloco não achado'
 obj = 'build/' + src[:-2] + '.o'
