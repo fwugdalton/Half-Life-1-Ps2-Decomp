@@ -193,7 +193,9 @@ typedef struct client_static_s
     netchan_t netchan;          /* 0x0004 */
     float connect_time;         /* 0x73B4 */
     int connect_retry;          /* 0x73B8 */
-    byte unk_73BC[0x73C8 - 0x73BC];
+    int challenge;              /* 0x73BC */
+    byte unk_73C0;              /* 0x73C0 */
+    byte unk_73C1[0x73C8 - 0x73C1];
     int signon;                 /* 0x73C8 */
     char servername[260];       /* 0x73CC */
     qboolean demoplayback;      /* 0x74D0 */

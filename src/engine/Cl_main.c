@@ -117,7 +117,23 @@ int func_0024E2E0(int bResetState, int clientId); /* CL_ButtonBits */
 void func_00253E80(usercmd_t *cmd, int clientId); /* Cam_Track */
 void func_002543B0(usercmd_t *cmd, int clientId); /* Cam_FinishMove */
 void func_00242800(sizebuf_t *buf, usercmd_t *to, usercmd_t *from); /* MSG_WriteDeltaUsercmd */
-byte COM_BlockSequenceCRCByte(byte *base, int length, int sequence);       /* "" */
+byte COM_BlockSequenceCRCByte(byte *base, int length, int sequence);
+qboolean NET_StringToAdr(char *s, netadr_t *a);
+void COM_ExplainDisconnection(qboolean bPrint, char *fmt, ...);
+void func_002504F0(int clientId);
+extern cvar_t D_00331968;       /* cl_resend */
+extern int protocol_version;
+extern int (*D_003997A0)(char *key, int *keysize); /* dados de autenticação */
+extern int (*D_003997D0)(void);  /* protocolo de autenticação */
+char *func_00241CA0(char *in, int size);
+void CRC32_Init(unsigned int *pulCRC);
+qboolean CRC_File(unsigned int *crcvalue, char *pszFileName);
+void func_00244EE0(char *s, char *key, char *value, int maxsize); /* Info_SetValueForKey */
+void func_00250248(int clientId);
+extern char D_00389C18[];       /* "cl_resend" */
+extern char D_0038A110[];       /* "%s" */
+extern char D_0038A118[];       /* "localhost" */
+extern char D_0038A128[];       /* "Bad server address\n" */       /* "" */
 extern char D_003AC9C8[256];    /* szHashedKeyBuffer */
 
 qboolean NET_GetPacket(int sock);
@@ -695,9 +711,132 @@ INCLUDE_RODATA("asm/nonmatchings/engine/Cl_main", D_0038A118);
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Cl_main", D_0038A128);
 
-INCLUDE_ASM("asm/nonmatchings/engine/Cl_main", func_002504F0);
+void func_002504F0(int clientId)
+{
+    netadr_t adr;
+    char data[2048];
+    char szServerName[260];
+    char cdkey[1024];
+    char key[1024];
+    char szModelCRC[32];
+    int keysize;
+    unsigned int crc;
+    unsigned int authprotocol;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Cl_main", func_002507A0);
+    authprotocol = -1;
+
+    strncpy(szServerName, cls[clientId].servername, sizeof(szServerName));
+    if (!strcasecmp(cls[clientId].servername, D_0038A108))
+        sprintf(szServerName, D_0038A110, D_0038A118);
+
+    if (!NET_StringToAdr(szServerName, &adr))
+    {
+        Con_Printf(D_0038A128);
+        cls[clientId].connect_time = -99999.0f;
+        cls[clientId].connect_retry = 0;
+        cls[clientId].state = ca_disconnected;
+        return;
+    }
+
+    if (cls[clientId].unk_73C0 != 1)
+    {
+        if (cls[clientId].unk_73C0 != 2)
+            cls[clientId].unk_73C0 = 2;
+        keysize = strlen(func_002503E0());
+        strcpy(cdkey, func_002503E0());
+    }
+    else
+    {
+        if (!D_003997A0(key, &keysize))
+        {
+            func_00250248(clientId);
+            Con_Printf("Error retrieving connection auth data\n");
+            return;
+        }
+        authprotocol = D_003997D0();
+        strcpy(cdkey, func_00241CA0(key, keysize));
+        keysize *= 2;
+    }
+
+    CRC32_Init(&crc);
+    if (!CRC_File(&crc, "models/player/gordon/gordon.dol"))
+    {
+        func_00250248(clientId);
+        Con_Printf("could not find models/player/gordon/gordon.dol\n");
+        return;
+    }
+
+    sprintf(szModelCRC, "%d", crc);
+    func_00244EE0(cls[clientId].userinfo, "*modelcrc", szModelCRC, MAX_INFO_STRING);
+
+    sprintf(data, "%c%c%c%cconnect %i %i %i %i %i \"%s\" \"%s\"\n", 255, 255, 255, 255, protocol_version,
+            cls[clientId].challenge, cls[clientId].unk_73C0, authprotocol, keysize, cdkey, cls[clientId].userinfo);
+    NET_SendPacket(clientId, strlen(data), data, adr, 2);
+}
+
+void func_002507A0(int clientId)
+{
+    netadr_t adr;
+    char data[2048];
+    char szServerName[260];
+
+    if (cls[clientId].state == ca_disconnected && sv.active)
+    {
+        D_0033451C = 0;
+        cls[clientId].state = ca_connecting;
+        strncpy(cls[clientId].servername, D_0038A118, sizeof(cls[clientId].servername) - 1);
+        cls[clientId].unk_73C0 = 2;
+        func_002504F0(clientId);
+        return;
+    }
+
+    if (cls[clientId].state != ca_connecting)
+        return;
+
+    if (D_00331968.value < 1.5f)
+        Cvar_SetValue(D_00389C18, 1.5f);
+    else if (D_00331968.value > 20.0f)
+        Cvar_SetValue(D_00389C18, 20.0f);
+
+    if (realtime - cls[clientId].connect_time < D_00331968.value)
+        return;
+
+    strncpy(szServerName, cls[clientId].servername, sizeof(szServerName));
+
+    if (!strcasecmp(cls[clientId].servername, D_0038A108))
+        sprintf(szServerName, D_0038A110, D_0038A118);
+
+    if (!NET_StringToAdr(szServerName, &adr))
+    {
+        Con_Printf(D_0038A128);
+        cls[clientId].state = ca_disconnected;
+        return;
+    }
+
+    if (cls[clientId].connect_retry >= 4)
+    {
+        COM_ExplainDisconnection(true, "Connection failed after %i retries.\n", 4);
+        cls[clientId].connect_time = -99999.0f;
+        cls[clientId].connect_retry = 0;
+        cls[clientId].state = ca_disconnected;
+        return;
+    }
+
+    cls[clientId].connect_time = realtime;
+
+    if (strcasecmp(szServerName, D_0038A118))
+    {
+        if (cls[clientId].connect_retry == 0)
+            Con_Printf("Connecting to %s...\n", szServerName);
+        else
+            Con_Printf("Retrying %s...\n", szServerName);
+    }
+
+    cls[clientId].connect_retry++;
+
+    sprintf(data, "%c%c%c%cgetchallenge\n", 255, 255, 255, 255);
+    NET_SendPacket(clientId, strlen(data), data, adr, 2);
+}
 
 void func_00250A98(void)
 {
