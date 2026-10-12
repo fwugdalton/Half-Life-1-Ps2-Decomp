@@ -122,6 +122,9 @@ extern int locallinearlight[3][3];
 float sqrtf(float);
 extern int numlights;
 extern float r_blend;
+extern cvar_t r_glowshellfreq;
+extern int g_NormalIndex[MAXSTUDIOVERTS];
+void tri_Color4ub(unsigned char r, unsigned char g, unsigned char b, unsigned char a);
 
 void func_002C3038(void)
 {
@@ -244,7 +247,66 @@ studiohdr_t *func_002C43A0(model_t *pmodel)
     return (studiohdr_t *)ptexturemodel->cache.data;
 }
 
+#ifdef NON_MATCHING
+void func_002C4460(vec3_t *pstudioverts, float (*pout)[4])
+{
+    int i, j;
+    float scale;
+    byte *pvertbone;
+    vec3_t *pstudionorms;
+    float (*pv)[4];
+    mstudiomesh_t *pmesh;
+    short *ptricmds;
+
+    scale = currententity->renderamt * 0.05f;
+    pstudionorms = (vec3_t *)((byte *)pstudiohdr + psubmodel->normindex);
+    pvertbone = (byte *)pstudiohdr + psubmodel->vertinfoindex;
+
+    for (i = 0; i < psubmodel->numverts; i++)
+        g_NormalIndex[i] = -1;
+
+    for (i = 0; i < pstudiohdr->numbones; i++)
+        chromeage[i] = 0;
+
+    for (j = 0; j < psubmodel->nummesh; j++)
+    {
+        pmesh = (mstudiomesh_t *)((byte *)pstudiohdr + psubmodel->meshindex) + j;
+        ptricmds = (short *)((byte *)pstudiohdr + pmesh->triindex);
+
+        while ((i = *(ptricmds++)))
+        {
+            if (i < 0)
+                i = -i;
+
+            for (; i > 0; i--, ptricmds += 4)
+            {
+                if (g_NormalIndex[ptricmds[0]] < 0)
+                    g_NormalIndex[ptricmds[0]] = ptricmds[1];
+            }
+        }
+    }
+
+    pv = pout;
+    for (i = 0; i < psubmodel->numverts; i++, pstudioverts++, pv++)
+    {
+        vec3_t tmp;
+
+        VectorMA(pstudioverts[0], scale, pstudionorms[g_NormalIndex[i]], tmp);
+        (*pv)[0] = tmp[0] * bonetransform[*pvertbone][0][0] + tmp[1] * bonetransform[*pvertbone][0][1] + tmp[2] * bonetransform[*pvertbone][0][2] + bonetransform[*pvertbone][0][3];
+        (*pv)[1] = tmp[0] * bonetransform[*pvertbone][1][0] + tmp[1] * bonetransform[*pvertbone][1][1] + tmp[2] * bonetransform[*pvertbone][1][2] + bonetransform[*pvertbone][1][3];
+        (*pv)[2] = tmp[0] * bonetransform[*pvertbone][2][0] + tmp[1] * bonetransform[*pvertbone][2][1] + tmp[2] * bonetransform[*pvertbone][2][2] + bonetransform[*pvertbone][2][3];
+        pvertbone++;
+    }
+
+    chrome_origin[0] = cosf(cl[0].time * r_glowshellfreq.value) * 4000.0f;
+    chrome_origin[1] = sinf(cl[0].time * r_glowshellfreq.value) * 4000.0f;
+    chrome_origin[2] = cosf(cl[0].time * r_glowshellfreq.value * 0.33f) * 4000.0f;
+
+    tri_Color4ub(currententity->rendercolor.r, currententity->rendercolor.g, currententity->rendercolor.b, 255);
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/gl_studio", func_002C4460);
+#endif
 
 void func_002C4840(vec3_t in1, float in2[3][4], vec3_t out)
 {
