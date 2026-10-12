@@ -71,6 +71,8 @@ extern int g_ForcedFaceFlags;
 extern struct model_s *cl_shellchrome;
 int tri_SpriteTexture(struct model_s *pSpriteModel, int frame);
 void R_StudioRenderFinal(void);
+void R_FlushStudioCache(void);
+void func_002BE2D0(float *out, int bone, vec3_t in);
 int func_002C2AF0(int bodypart);
 void *Mem_DbgCalloc(int num, int size, const char *file, int line);
 void *COM_LoadFileCached(char *path, cache_user_t *cu, int *pLength);
@@ -158,6 +160,20 @@ void tri_Brightness(float brightness);
 void glBegin(int mode);
 void glEnd(void);
 void glVertex3fv(float *v);
+typedef struct dlight_s
+{
+    vec3_t origin;      /* 0x00 */
+    float radius;       /* 0x0C */
+    color24 color;      /* 0x10 */
+    float die;          /* 0x14 */
+    float decay;        /* 0x18 */
+    float minlight;     /* 0x1C */
+    int key;            /* 0x20 */
+    qboolean dark;      /* 0x24 */
+} dlight_t;
+
+#define MAX_ELIGHTS 64
+extern dlight_t cl_elights[MAX_ELIGHTS];
 extern struct dlight_s *locallight[];
 extern vec3_t lightbonepos[MAXSTUDIOBONES][STUDIO_MAXLIGHTS];
 void QuaternionSlerp(float p[4], float q[4], float t, float qt[4]);
@@ -1814,7 +1830,89 @@ INCLUDE_ASM("asm/nonmatchings/engine/r_studio", R_StudioDrawPlayer);
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002C0A50);
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002C14C8);
+#ifdef NON_MATCHING
+void R_StudioEntityLight(alight_t *plight, int clientId)
+{
+    int i, j, k;
+    float minstrength, strength;
+    dlight_t *dl;
+    vec3_t end;
+    vec3_t dist;
+    float lstrength[STUDIO_MAXLIGHTS];
+    float r2;
+    float d;
+
+    VectorCopy(currententity->origin, end);
+
+    for (i = 0; i < STUDIO_MAXLIGHTS; i++)
+        lstrength[i] = 0;
+
+    numlights = 0;
+    minstrength = 1000000;
+
+    dl = cl_elights;
+    for (i = 0; i < MAX_ELIGHTS; i++, dl++)
+    {
+        if ((dl->die == 0 || cl[clientId].time < dl->die) && dl->radius > 0)
+        {
+            if ((dl->key & 0xFFF) == currententity->index)
+            {
+                int att = (dl->key >> 12) & 0xF;
+
+                if (att == 0)
+                {
+                    VectorCopy(currententity->origin, dl->origin);
+                }
+                else
+                {
+                    VectorCopy(currententity->attachment[att - 1], dl->origin);
+                }
+            }
+
+            VectorSubtract(end, dl->origin, dist);
+            r2 = dl->radius * dl->radius;
+            d = DotProduct(dist, dist);
+            strength = 1.0f;
+            if (d > r2)
+                strength = r2 / d;
+
+            if (strength > 0.004f)
+            {
+                if (numlights < STUDIO_MAXLIGHTS)
+                {
+                    k = numlights;
+                }
+                else
+                {
+                    k = -1;
+                    for (j = 0; j < numlights; j++)
+                    {
+                        if (lstrength[j] < minstrength && lstrength[j] < strength)
+                        {
+                            minstrength = lstrength[j];
+                            k = j;
+                        }
+                    }
+                }
+
+                if (k != -1)
+                {
+                    lstrength[k] = strength;
+                    locallight[k] = dl;
+                    locallightR2[k] = dl->radius * dl->radius;
+                    locallinearlight[k][0] = lineargammatable[dl->color.r * 4];
+                    locallinearlight[k][1] = lineargammatable[dl->color.g * 4];
+                    locallinearlight[k][2] = lineargammatable[dl->color.b * 4];
+                    if (k >= numlights)
+                        numlights = k + 1;
+                }
+            }
+        }
+    }
+}
+#else
+INCLUDE_ASM("asm/nonmatchings/engine/r_studio", R_StudioEntityLight);
+#endif
 
 struct sfx_s *func_002C1800(char *name, int clientId)
 {

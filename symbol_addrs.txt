@@ -1750,3 +1750,5 @@ R_StudioDrawHulls = 0x2BD828; // type:func
 locallightR2 = 0x00510F40; // size:0xC
 locallinearlight = 0x00513F50; // size:0x24
 R_LightLambert = 0x2BE780; // type:func
+cl_elights = 0x00475268; // size:0xA00
+R_StudioEntityLight = 0x2C14C8; // type:func
