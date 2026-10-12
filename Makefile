@@ -95,6 +95,8 @@ $(BUILD_DIR)/src/engine/common.o: CFLAGS += -ffast-math -fmove-all-movables
 $(BUILD_DIR)/src/engine/snd_win_gbx.o: CFLAGS += -fmove-all-movables
 # infblock/infcodes/inflate têm tabelas de salto (.align 4): a .rodata deles começa alinhada em 16
 $(BUILD_DIR)/src/zlib/infblock.o $(BUILD_DIR)/src/zlib/infcodes.o $(BUILD_DIR)/src/zlib/inflate.o: SECTALIGN_C := --set-section-alignment .text=8 --set-section-alignment .data=4 --set-section-alignment .rodata=16
+# a .data do Zutil.c (z_errmsg) começa alinhada em 8
+$(BUILD_DIR)/src/zlib/zutil.o: SECTALIGN_C := --set-section-alignment .text=8 --set-section-alignment .data=8 --set-section-alignment .rodata=8
 # a .rodata do gl_warp começa alinhada em 16 no original
 $(BUILD_DIR)/src/engine/gl_warp.o: SECTALIGN_C := --set-section-alignment .text=8 --set-section-alignment .data=4 --set-section-alignment .rodata=16
 

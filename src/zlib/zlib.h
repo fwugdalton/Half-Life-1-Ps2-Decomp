@@ -103,6 +103,11 @@ typedef z_stream FAR *z_streamp;
 
 #define Z_NULL  0
 
+#define inflateInit(strm) \
+        inflateInit_((strm),                ZLIB_VERSION, sizeof(z_stream))
+#define deflateInit(strm, level) \
+        deflateInit_((strm), (level),       ZLIB_VERSION, sizeof(z_stream))
+
 ZEXTERN int ZEXPORT deflate OF((z_streamp strm, int flush));
 ZEXTERN int ZEXPORT deflateEnd OF((z_streamp strm));
 ZEXTERN int ZEXPORT deflateSetDictionary OF((z_streamp strm,
@@ -122,6 +127,11 @@ ZEXTERN int ZEXPORT deflateInit2_ OF((z_streamp strm, int  level, int  method,
                                       int stream_size));
 ZEXTERN uLong ZEXPORT crc32   OF((uLong crc, const Bytef *buf, uInt len));
 ZEXTERN const uLongf * ZEXPORT get_crc_table    OF((void));
+
+ZEXTERN int ZEXPORT uncompress OF((Bytef *dest,   uLongf *destLen,
+                                   const Bytef *source, uLong sourceLen));
+ZEXTERN const char * ZEXPORT zlibVersion OF((void));
+ZEXTERN const char * ZEXPORT zError OF((int err));
 
 ZEXTERN int ZEXPORT inflate OF((z_streamp strm, int flush));
 ZEXTERN int ZEXPORT inflateEnd OF((z_streamp strm));
