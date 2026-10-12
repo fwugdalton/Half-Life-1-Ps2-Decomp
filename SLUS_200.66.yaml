@@ -125,7 +125,8 @@ segments:
       - [0x1CB508, c, engine/snd_dma]
       - [0x1CE108, c, engine/snd_win_gbx]
       - [0x1CF408, c, engine/HlFileIO]
-      - [0x1CFF88, asm, cod/1CFF88]
+      - [0x1CFF88, c, engine/HlCdFileIO]
+      - [0x1D0520, asm, cod/1D0520]
       - [0x1F5980, textbin, cod/1F5980] # .vutext
       - [0x201B00, data, cod/201B00] # .data
       - [0x231C00, .data, engine/Cmd]
@@ -199,7 +200,8 @@ segments:
       - [0x295BF0, .rodata, engine/snd_dma]
       - [0x2961A0, .rodata, engine/snd_win_gbx]
       - [0x296220, .rodata, engine/HlFileIO]
-      - [0x296340, rodata, cod/296340]
+      - [0x296340, .rodata, engine/HlCdFileIO]
+      - [0x2963E8, rodata, cod/2963E8]
       - [0x298E80, gcc_except_table, cod/298E80] # .gcc_except_table
       - [0x298F80, sdata, cod/298F80] # .sdata
       - { type: sbss, vram: 0x00399000, name: cod/00399000 } # .sbss
