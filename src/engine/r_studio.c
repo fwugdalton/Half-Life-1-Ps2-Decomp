@@ -113,6 +113,14 @@ extern vec3_t r_blightvec[MAXSTUDIOBONES];
 extern int r_colormix[3];
 extern vec3_t r_lightcolor;
 void QuaternionSlerp(float p[4], float q[4], float t, float qt[4]);
+float func_002D7F00(float x);
+
+/* variáveis de QuaternionSlerp (no original ficam na .sbss, fora da pilha) */
+extern float D_003996C4; /* omega */
+extern float D_003996CC; /* cosom */
+extern float D_00399688; /* sinom */
+extern float D_00399680; /* sclp */
+extern float D_003996A0; /* sclq */
 qboolean R_CullBox(vec3_t mins, vec3_t maxs);
 void R_StudioRotateBBox(vec3_t mins, vec3_t maxs, vec3_t angles);
 void R_StudioCalcBoneAdj(float dadt, float *adj, byte *pcontroller1, byte *pcontroller2, byte mouthopen);
@@ -264,7 +272,54 @@ void AngleQuaternion(vec3_t angles, float quaternion[4])
     quaternion[3] = cr * cp * cy + sr * sp * sy;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", QuaternionSlerp);
+void QuaternionSlerp(float p[4], float q[4], float t, float qt[4])
+{
+    int i;
+    float a = 0;
+    float b = 0;
+
+    for (i = 0; i < 4; i++)
+    {
+        a += (p[i] - q[i]) * (p[i] - q[i]);
+        b += (p[i] + q[i]) * (p[i] + q[i]);
+    }
+    if (a > b)
+    {
+        for (i = 0; i < 4; i++)
+            q[i] = -q[i];
+    }
+
+    D_003996CC = p[0] * q[0] + p[1] * q[1] + p[2] * q[2] + p[3] * q[3];
+
+    if ((1.0f + D_003996CC) > 0.000001f)
+    {
+        if ((1.0f - D_003996CC) > 0.000001f)
+        {
+            D_003996C4 = func_002D7F00(D_003996CC);
+            D_00399688 = sinf(D_003996C4);
+            D_00399680 = sinf((1.0f - t) * D_003996C4) / D_00399688;
+            D_003996A0 = sinf(t * D_003996C4) / D_00399688;
+        }
+        else
+        {
+            D_00399680 = 1.0f - t;
+            D_003996A0 = t;
+        }
+        for (i = 0; i < 4; i++)
+            qt[i] = D_00399680 * p[i] + D_003996A0 * q[i];
+    }
+    else
+    {
+        qt[0] = -q[1];
+        qt[1] = q[0];
+        qt[2] = -q[3];
+        qt[3] = q[2];
+        D_00399680 = sinf((1.0f - t) * (0.5f * M_PI));
+        D_003996A0 = sinf(t * (0.5f * M_PI));
+        for (i = 0; i < 3; i++)
+            qt[i] = D_00399680 * p[i] + D_003996A0 * qt[i];
+    }
+}
 
 void QuaternionMatrix(float quaternion[4], float matrix[3][4])
 {
