@@ -2,6 +2,9 @@
 #include "stdarg.h"
 #include "engine/cmd.h"
 #include "engine/cvar.h"
+#include "engine/server.h"
+#include "engine/eiface.h"
+#include "engine/progdefs.h"
 
 /* sistema do PS2: erros, tempo, init do jogo e carga das "DLLs" (sys_dll.c/sys_dll2.c do HL) */
 
@@ -47,7 +50,51 @@ extern int D_0043C1CC;          /* lowshift */
 extern char D_0043B1C8[];
 extern char D_0043B5C8[];
 extern char *D_0053D818[MAX_NUM_ARGVS];
-extern byte D_0053DB38[0x234];
+
+typedef struct modinfo_s
+{
+    qboolean bIsMod;            /* 0x000 */
+    char szInfo[256];           /* 0x004 */
+    char szDL[256];             /* 0x104 */
+    char szHLVersion[32];       /* 0x204 */
+    int version;                /* 0x224 */
+    int size;                   /* 0x228 */
+    qboolean svonly;            /* 0x22C */
+    qboolean cldll;             /* 0x230 */
+} modinfo_t;                    /* 0x234 */
+
+typedef struct functiontable_s
+{
+    unsigned int pFunction;
+    char *pFunctionName;
+} functiontable_t;
+
+typedef struct extensiondll_s
+{
+    int lDLLHandle;
+    functiontable_t *functionTable;
+    int functionCount;
+} extensiondll_t;
+
+#define MAX_EXTENSION_DLL 50
+
+extern modinfo_t D_0053DB38;    /* gmodinfo */
+extern extensiondll_t D_0053D8E0[MAX_EXTENSION_DLL]; /* g_rgextdll */
+extern int D_00334734;          /* g_iextdllMac */
+extern int D_00334544;
+extern int D_00334548;
+extern int D_0033454C;
+extern int D_00334510;
+extern int D_00334514;
+extern int D_00334550;          /* g_engfuncsExportedToDlls */
+
+void Key_SetBinding(int keynum, char *binding);
+int strcmp(const char *, const char *);
+int atoi(const char *);
+void *func_0021D8D0(char *pClassName);
+void func_0027D340(void);
+int func_00144E98(DLL_FUNCTIONS *pFunctionTable, int interfaceVersion); /* GetEntityAPI */
+void func_00180760(void *pengfuncsFromEngine, globalvars_t *pGlobals); /* GiveFnptrsToDll */
 extern char D_0053DDF8[0x40];
 
 /* funções vindas do lançador */
@@ -239,7 +286,7 @@ int func_002C5FC0(char *lpCmdLine, void *membase, int memsize, void **funcs, cha
     char *cmdline;
     quakeparms_t parms;
 
-    memset(D_0053DB38, 0, sizeof(D_0053DB38));
+    memset(&D_0053DB38, 0, sizeof(D_0053DB38));
     strcpy(D_0043B5C8, lpCmdLine);
     cmdline = D_0043B5C8;
     host_initialized = 0;
@@ -350,36 +397,226 @@ INCLUDE_RODATA("asm/nonmatchings/engine/sys_ps2", D_00395580);
 INCLUDE_ASM("asm/nonmatchings/engine/sys_ps2", func_002C5FC0);
 #endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/sys_ps2", func_002C63C0);
+void func_002C63C0(char *unused)
+{
+    Cbuf_AddText("exec config.cfg\n");
+    Cbuf_Execute();
+    Key_SetBinding(27, "cancelselect");
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/sys_ps2", func_002C63F8);
+void func_002C63F8(char *basedir)
+{
+    memset(D_0053DDF8, 0, sizeof(D_0053DDF8));
+    strcpy(D_0053DDF8, basedir);
+    D_00334544 = 0;
+    func_002C63C0(basedir);
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/sys_ps2", func_002C6458);
+void func_002C6458(int x)
+{
+    D_00334510 = x;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/sys_ps2", func_002C6468);
+void func_002C6468(int x)
+{
+    D_00334514 = x;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/sys_ps2", func_002C6478);
+void func_002C6478(qboolean paused)
+{
+    if (paused)
+    {
+        if (!D_0033454C)
+            D_00334548 = sv.paused;
+        sv.paused = 1;
+        D_0033454C = 1;
+    }
+    else
+    {
+        if (D_0033454C)
+            sv.paused = D_00334548;
+        D_0033454C = 0;
+    }
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/sys_ps2", func_002C64D8);
+int func_002C64D8(void)
+{
+    return sv.paused;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/sys_ps2", func_002C64E8);
+void func_002C64E8(void)
+{
+    Con_DPrintf("KB Reset\n");
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/sys_ps2", func_002C6508);
+/* não usada: só sobraram as strings no binário */
+static __inline__ void func_002C64E8_dlls(char *dst)
+{
+    strcpy(dst, "valve/dlls");
+    strcpy(dst, "hl.dll");
+    strcpy(dst, "base.dll");
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/sys_ps2", func_002C6510);
+int func_002C6508(void)
+{
+    return 0;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/sys_ps2", func_002C6548);
+char *func_002C6510(extensiondll_t *pDll, unsigned int function)
+{
+    int i;
 
-INCLUDE_ASM("asm/nonmatchings/engine/sys_ps2", func_002C65D8);
+    for (i = 0; i < pDll->functionCount; i++)
+    {
+        if (pDll->functionTable[i].pFunction == function)
+            return pDll->functionTable[i].pFunctionName;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/sys_ps2", func_002C6668);
+    return NULL;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/sys_ps2", GetEntityInit);
+unsigned int func_002C6548(extensiondll_t *pDll, const char *pName)
+{
+    int i;
 
-INCLUDE_ASM("asm/nonmatchings/engine/sys_ps2", func_002C6718);
+    for (i = 0; i < pDll->functionCount; i++)
+    {
+        if (!strcmp(pName, pDll->functionTable[i].pFunctionName))
+            return pDll->functionTable[i].pFunction;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/sys_ps2", func_002C6738);
+    return 0;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/sys_ps2", func_002C68B0);
+unsigned int func_002C65D8(const char *pName)
+{
+    int i;
+    unsigned int function;
 
-INCLUDE_ASM("asm/nonmatchings/engine/sys_ps2", func_002C6A20);
+    for (i = 0; i < D_00334734; i++)
+    {
+        function = func_002C6548(&D_0053D8E0[i], pName);
+        if (function)
+            return function;
+    }
+
+    Con_Printf("Can't find proc: %s\n", pName);
+    return 0;
+}
+
+char *func_002C6668(unsigned int function)
+{
+    int i;
+    char *pName;
+
+    for (i = 0; i < D_00334734; i++)
+    {
+        pName = func_002C6510(&D_0053D8E0[i], function);
+        if (pName)
+            return pName;
+    }
+
+    Con_Printf("Can't find address: %08lx\n", function);
+    return NULL;
+}
+
+ENTITYINIT GetEntityInit(char *pClassName)
+{
+    return (ENTITYINIT)func_0021D8D0(pClassName);
+}
+
+int func_002C6718(void)
+{
+    return func_002C6508();
+}
+
+void func_002C6738(modinfo_t *pinfo, char *pkey, char *pvalue)
+{
+    if (!strcasecmp(pkey, "url_info"))
+    {
+        pinfo->bIsMod = 1;
+        strcpy(pinfo->szInfo, pvalue);
+    }
+    else if (!strcasecmp(pkey, "url_dl"))
+    {
+        pinfo->bIsMod = 1;
+        strcpy(pinfo->szDL, pvalue);
+    }
+    else if (!strcasecmp(pkey, "version"))
+    {
+        pinfo->bIsMod = 1;
+        pinfo->version = atoi(pvalue);
+    }
+    else if (!strcasecmp(pkey, "size"))
+    {
+        pinfo->bIsMod = 1;
+        pinfo->size = atoi(pvalue);
+    }
+    else if (!strcasecmp(pkey, "svonly"))
+    {
+        pinfo->bIsMod = 1;
+        pinfo->svonly = atoi(pvalue) ? 1 : 0;
+    }
+    else if (!strcasecmp(pkey, "cldll"))
+    {
+        pinfo->bIsMod = 1;
+        pinfo->cldll = atoi(pvalue) ? 1 : 0;
+    }
+    else if (!strcasecmp(pkey, "hlversion"))
+    {
+        strcpy(pinfo->szHLVersion, pvalue);
+    }
+
+    Con_Printf("DLL:  %s - %s\n", pkey, pvalue);
+}
+
+void func_002C6A20(void);
+
+void func_002C68B0(void)
+{
+    func_0027D340();
+
+    D_00334734 = 0;
+    memset(D_0053D8E0, 0, sizeof(D_0053D8E0));
+
+    func_002C6A20();
+
+    if (!func_00144E98(&gEntityInterface, 0x8A))
+    {
+        Sys_Error("Invalid DLL version!");
+        return;
+    }
+
+    Con_Printf("----------------------\n");
+    Con_Printf("Dlls loaded for game:\n%s\n", gEntityInterface.pfnGetGameDescription());
+
+    if (D_0053DB38.bIsMod)
+    {
+        Con_Printf("Modification info:\n");
+        Con_Printf("Site:  %s\n", D_0053DB38.szInfo);
+        Con_Printf("D/L :  %s\n", D_0053DB38.szDL);
+        Con_Printf("Ver.:  %i\n", D_0053DB38.version);
+        Con_Printf("Size:  %.2f MB\n", D_0053DB38.size / (1024.0f * 1024.0f));
+        if (D_0053DB38.svonly)
+            Con_Printf("Server side\n");
+        if (D_0053DB38.cldll)
+            Con_Printf("New client.dll\n");
+    }
+    else
+    {
+        Con_Printf(" -- unmodified game.\n");
+    }
+
+    Con_Printf("----------------------\n");
+}
+
+void func_002C6A20(void)
+{
+    extensiondll_t *pextdll;
+
+    func_00180760(&D_00334550, &gGlobalVariables);
+
+    pextdll = &D_0053D8E0[D_00334734++];
+    memset(pextdll, 0, sizeof(*pextdll));
+    pextdll->lDLLHandle = 1;
+}
