@@ -77,7 +77,7 @@ void func_0025B740(int clientId);
 void func_002537C0(vec3_t viewangles);
 void func_002535F8(vec3_t ang);
 extern qboolean cam_thirdperson;
-extern float D_00331694;            /* chase_active.value */
+extern cvar_t chase_active;
 extern float D_003317AC;            /* cl_pred_fraction.value */
 extern int D_003991B0[2];           /* spec_track */
 extern int D_003991C0[2];           /* autocam */
@@ -1291,7 +1291,7 @@ void func_0024B920(int clientId)
         if ((ent->unk194 & (4 | 8)) && &cl_entities[clientId][j + 1])
             func_00249D98(j, clientId);
 
-        if (!cam_thirdperson && j == cl[clientId].viewentity - 1 && !D_00331694)
+        if (!cam_thirdperson && j == cl[clientId].viewentity - 1 && !chase_active.value)
             continue;
         if (!state->modelindex)
             continue;

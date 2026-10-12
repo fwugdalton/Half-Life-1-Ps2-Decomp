@@ -66,7 +66,7 @@ extern qboolean cam_thirdperson;
 extern cvar_t r_drawentities;
 extern int D_00333290;
 extern float D_00333474;
-extern float D_00331694;
+extern cvar_t chase_active;
 extern int D_00399588;
 int R_StudioDrawModel(int flags, int clientId, int unk);
 extern cvar_t D_003334F8;
@@ -740,7 +740,7 @@ void R_DrawViewModel(int clientId)
     D_00333290 = 1;
     currententity = &cl[clientId].viewent;
 
-    if (!D_00333474 || cam_thirdperson || D_00331694 || D_00399588 || !r_drawentities.value
+    if (!D_00333474 || cam_thirdperson || chase_active.value || D_00399588 || !r_drawentities.value
         || cl[clientId].stats[STAT_HEALTH] <= 0 || !currententity->model
         || cl[clientId].viewentity > cl[clientId].maxclients || cl[clientId].spectator)
     {
@@ -780,7 +780,7 @@ void R_PreDrawViewModel(int clientId)
     currententity = &cl[clientId].viewent;
     D_00333290 = 1;
 
-    if (D_00333474 && !cam_thirdperson && !D_00331694 && !D_00399588 && r_drawentities.value
+    if (D_00333474 && !cam_thirdperson && !chase_active.value && !D_00399588 && r_drawentities.value
         && cl[clientId].stats[STAT_HEALTH] > 0 && currententity->model
         && cl[clientId].viewentity <= cl[clientId].maxclients && !cl[clientId].spectator)
     {
@@ -970,7 +970,7 @@ void R_SetupFrame(int clientId)
             Cvar_Set("r_fullbright", "1");
         if (D_00334E6C)
             Cvar_Set("snd_show", "0");
-        if (D_00331694)
+        if (chase_active.value)
             Cvar_Set("chase_active", "0");
     }
 
