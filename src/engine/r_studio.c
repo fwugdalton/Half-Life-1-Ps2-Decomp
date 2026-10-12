@@ -98,6 +98,7 @@ void Mem_Free(void *p);
 int func_002E4560(const void *a, const void *b, int n);
 int strcasecmp(const char *a, const char *b);
 int abs(int x);
+void Sys_Error(const char *fmt, ...);
 void Con_Printf(const char *fmt, ...);
 void GL_Bind(int texnum);
 
@@ -927,11 +928,14 @@ float R_StudioEstimateInterpolant(int clientId)
     if (r_dointerp && currententity->animtime >= currententity->prevanimtime + 0.01f)
     {
         dadt = (cl[clientId].time - currententity->animtime) * 10.0f;
-        if (!(dadt > 2.0f))
-            return dadt;
-        return 2.0f;
+        if (dadt > 2.0f)
+            return 2.0f;
     }
-    return 1.0f;
+    else
+    {
+        dadt = 1.0f;
+    }
+    return dadt;
 }
 
 void R_StudioCalcRotations(float pos[][3], float q[][4], mstudioseqdesc_t *pseqdesc, mstudioanim_t *panim, float f, int clientId)
@@ -1129,7 +1133,80 @@ studiohdr_t *R_LoadTextures(model_t *pmodel)
     return (studiohdr_t *)ptexturemodel->cache.data;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BED78);
+#define HUE_MAX(a, b) (((a) > (b)) ? (a) : (b))
+#define HUE_MIN(a, b) (((a) < (b)) ? (a) : (b))
+
+void func_002BED78(byte *palSrc, int newHue, int Start, int end)
+{
+    int i;
+    float r, b, g;
+    float maxcol, mincol;
+    float hue, val, sat;
+
+    hue = (float)(newHue * (360.0f / 255.0f));
+
+    for (i = Start; i <= end; i++)
+    {
+        r = palSrc[i * 3 + 0];
+        g = palSrc[i * 3 + 1];
+        b = palSrc[i * 3 + 2];
+
+        maxcol = HUE_MAX(HUE_MAX(r, g), b) / 255.0f;
+        mincol = HUE_MIN(HUE_MIN(r, g), b) / 255.0f;
+
+        val = maxcol;
+        sat = (maxcol - mincol) / maxcol;
+
+        mincol = val * (1.0f - sat);
+
+        if (hue <= 120.0f)
+        {
+            b = mincol;
+            if (hue < 60.0f)
+            {
+                r = val;
+                g = mincol + hue * (val - mincol) / (120.0f - hue);
+            }
+            else
+            {
+                g = val;
+                r = mincol + (120.0f - hue) * (val - mincol) / hue;
+            }
+        }
+        else if (hue <= 240.0f)
+        {
+            r = mincol;
+            if (hue < 180.0f)
+            {
+                g = val;
+                b = mincol + (hue - 120.0f) * (val - mincol) / (240.0f - hue);
+            }
+            else
+            {
+                b = val;
+                g = mincol + (240.0f - hue) * (val - mincol) / (hue - 120.0f);
+            }
+        }
+        else
+        {
+            g = mincol;
+            if (hue < 300.0f)
+            {
+                b = val;
+                r = mincol + (hue - 240.0f) * (val - mincol) / (360.0f - hue);
+            }
+            else
+            {
+                r = val;
+                b = mincol + (360.0f - hue) * (val - mincol) / (hue - 240.0f);
+            }
+        }
+
+        palSrc[i * 3 + 0] = (byte)(r * 255.0f);
+        palSrc[i * 3 + 1] = (byte)(g * 255.0f);
+        palSrc[i * 3 + 2] = (byte)(b * 255.0f);
+    }
+}
 
 void func_002BEF98(void)
 {
@@ -1288,7 +1365,26 @@ struct sfx_s *func_002C1800(char *name, int clientId)
     return NULL;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002C1890);
+void R_StudioCalcAttachments(void)
+{
+    int i;
+    mstudioattachment_t *pattachment;
+
+    if (pstudiohdr->numattachments > 4)
+        Sys_Error("Too many attachments on %s\n", currententity->model->name);
+
+    pattachment = (mstudioattachment_t *)((byte *)pstudiohdr + pstudiohdr->attachmentindex);
+    for (i = 0; i < pstudiohdr->numattachments; i++)
+        VectorTransform(pattachment[i].org, lighttransform[pattachment[i].bone], currententity->attachment[i]);
+
+    if (pstudiohdr->numattachments > 0 && (currententity->unk194 & 0x300))
+    {
+        if (currententity->unk194 & 0x100)
+            VectorCopy(currententity->attachment[pstudiohdr->numattachments - 1], cl[0].viewattachment);
+        if (currententity->unk194 & 0x200)
+            VectorCopy(currententity->attachment[pstudiohdr->numattachments - 1], cl[1].viewattachment);
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002C1A68);
 

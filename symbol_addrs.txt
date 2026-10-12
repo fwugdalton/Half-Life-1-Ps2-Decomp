@@ -1731,3 +1731,4 @@ r_smodels_total = 0x0039969C; // size:0x4
 numlights = 0x0039968C; // size:0x4
 locallight = 0x005353A8; // size:0x18
 lightbonepos = 0x0050FB40; // size:0x1200
+R_StudioCalcAttachments = 0x2C1890; // type:func

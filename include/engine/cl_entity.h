@@ -40,11 +40,13 @@ typedef struct cl_entity_s
     vec3_t angles;              /* 0x90 */
     vec3_t prevorigin;          /* 0x9C */
     vec3_t prevangles;          /* 0xA8 */
-    byte padB4[0xE4 - 0xB4];
+    vec3_t attachment[4];       /* 0xB4 */
     color24 rendercolor;        /* 0xE4 */
     byte padE7[0xF8 - 0xE7];
     entity_state_t baseline;    /* 0xF8 */
-    byte pad18C[0x1A0 - 0x18C];
+    byte pad18C[0x194 - 0x18C];
+    int unk194;                 /* 0x194: bits 0x100/0x200 = viewmodel de qual jogador */
+    byte pad198[0x1A0 - 0x198];
 } cl_entity_t; /* 0x1A0 */
 
 #endif
