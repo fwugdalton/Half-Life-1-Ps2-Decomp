@@ -17,6 +17,7 @@
 - cvt.w.s (.word) logo depois de mfc1 vai em noreorder: o gas poria um nop entre os dois.
 - o ee-as também não preenche o delay slot de um desvio quando a instrução anterior
   precisou do nop do mtc1 (visto em conversão unsigned->float seguida de b).
+- nem quando a penúltima é um cvt.w.s/sqrt.s (.word) cujo resultado a última lê.
 - nem com um acesso volatile (entre "#.set volatile" e "#.set novolatile"; o ee-gcc
   original emitia a diretiva de verdade e o ee-as a respeitava).
 """
@@ -60,6 +61,17 @@ def fp_load_use(load, use):
     """l.s/lwc1 seguido de instrução que lê o mesmo registrador de FPU."""
     m = re.match(r'^\s+(l\.s|lwc1)\s+\$f(\d+),', load)
     return bool(m) and (int(m.group(2)) & ~1) in set(r & ~1 for r in fp_reads(use))
+
+def word_fp_use(word, use):
+    """cvt.w.s/sqrt.s escritos como .word seguidos de instrução que lê o fd:
+    o ee-as conhece a dependência e não move a instrução para o delay slot."""
+    w = re.match(r'^\s+\.word\s+0x([0-9A-Fa-f]{8})', word)
+    if not w:
+        return False
+    w = int(w.group(1), 16)
+    if w & 0xFFE0003F not in (0x46000024, 0x46000004):
+        return False
+    return ((w >> 6) & 31) & ~1 in set(r & ~1 for r in fp_reads(use))
 
 def raw_mtc1(line):
     """li.s/mtc1 escritos à mão, com o mtc1 como .word."""
@@ -157,6 +169,7 @@ for line in lines:
             re.search(r'# u(ld|sd)$', out[prev_real]) or
             (prev_prev is not None and re.match(r'^\s+s[dw][lr]\s', out[prev_prev])) or
             (prev_prev is not None and fp_load_use(out[prev_prev], out[prev_real])) or
+            (prev_prev is not None and word_fp_use(out[prev_prev], out[prev_real])) or
             prev_real in after_nop or prev_real in vol_idx):
         out.append('\t.set\tnoreorder')
         out.append(line)

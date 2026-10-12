@@ -3,10 +3,13 @@
 #include "engine/sound.h"
 #include "engine/cvar.h"
 #include "engine/client.h"
+#include "engine/server.h"
+#include "engine/model.h"
+#include "engine/cl_entity.h"
+#include "engine/mathlib.h"
 
 /* snd_dma.c do HL (versão PS2: três listas de sfx, global/jogo/fase) */
 
-typedef int FileHandle_t;
 
 char *strcpy(char *, const char *);
 void *memset(void *, int, unsigned int);
@@ -35,7 +38,6 @@ extern int D_00465890;          /* num_sfx total */
 extern cvar_t D_00334D40;        /* volume */
 extern cvar_t D_00334D58;
 extern cvar_t D_00334D70;
-extern cvar_t D_00334D88;
 extern cvar_t hisound;
 extern cvar_t loadas8bit;
 extern cvar_t D_00334E00;
@@ -49,6 +51,12 @@ extern sfx_t *D_00465870;       /* known_sfx */
 extern cvar_t D_00334DB8;       /* nosound */
 extern cvar_t D_00334DD0;       /* precache */
 extern int D_0039984C;          /* paintedtime */
+extern cvar_t D_00334D88;       /* stereo? (value em 0x334D94) */
+extern cl_entity_t *cl_entities[2];
+extern vec3_t D_00551760[2];    /* listener_origin por jogador */
+extern vec3_t D_00551778;       /* listener_right */
+extern vec3_t D_005517A0;       /* listener_origin */
+void func_002CA320(channel_t *ch);
 
 char *strstr(const char *, const char *);
 sfxcache_t *S_LoadSound(sfx_t *s, channel_t *ch);
@@ -562,9 +570,169 @@ channel_t *func_002CC3B8(int entnum, int unused, sfx_t *sfx)
 INCLUDE_ASM("asm/nonmatchings/engine/snd_dma", func_002CC3B8);
 #endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/snd_dma", func_002CC510);
+#ifdef NON_MATCHING
+void func_002CC510(channel_t *ch, int clientId)
+{
+    vec_t dot;
+    vec_t dist;
+    vec_t lscale, rscale, scale;
+    vec3_t source_vec;
+    cl_entity_t *pent;
 
+    if (ch->entnum == cl[clientId].viewentity)
+    {
+        ch->rightvol = ch->leftvol = ch->master_vol;
+        func_002CA320(ch);
+        return;
+    }
+
+    if (ch->entnum > 0 && ch->entnum < sv.num_edicts)
+    {
+        pent = &cl_entities[clientId][ch->entnum];
+        if (pent && pent->model)
+        {
+            VectorCopy(pent->origin, ch->origin);
+            if (pent->model->type == mod_brush)
+            {
+                ch->origin[0] = ch->origin[0] + (pent->model->mins[0] + pent->model->maxs[0]) * 0.5f;
+                ch->origin[1] = ch->origin[1] + (pent->model->mins[1] + pent->model->maxs[1]) * 0.5f;
+                ch->origin[2] = ch->origin[2] + (pent->model->mins[2] + pent->model->maxs[2]) * 0.5f;
+            }
+        }
+    }
+
+    VectorSubtract(ch->origin, D_005517A0, source_vec);
+    dist = VectorNormalize(source_vec) * ch->dist_mult;
+    dot = DotProduct(D_00551778, source_vec);
+
+    if (shm->channels == 1)
+    {
+        rscale = 1.0f;
+        lscale = 1.0f;
+    }
+    else
+    {
+        rscale = 1.0f + dot;
+        lscale = 1.0f - dot;
+    }
+
+    if (D_00334D88.value == 1.0f)
+    {
+        scale = (1.0f - dist) * rscale;
+        ch->rightvol = (int)(ch->master_vol * scale);
+        scale = (1.0f - dist) * lscale;
+        ch->leftvol = (int)(ch->master_vol * scale);
+    }
+    else
+    {
+        lscale = (1.0f - dist) * lscale;
+        rscale = (1.0f - dist) * rscale;
+        scale = (lscale + rscale) * 0.5f;
+        ch->rightvol = ch->leftvol = (int)(ch->master_vol * scale);
+    }
+
+    func_002CA320(ch);
+
+    if (ch->rightvol < 0)
+        ch->rightvol = 0;
+    if (ch->leftvol < 0)
+        ch->leftvol = 0;
+}
+#else
+INCLUDE_ASM("asm/nonmatchings/engine/snd_dma", func_002CC510);
+#endif
+
+#ifdef NON_MATCHING
+void func_002CC7A8(channel_t *ch)
+{
+    vec_t dot;
+    vec_t dist;
+    vec_t lscale, rscale;
+    vec_t left, right, left2, right2;
+    vec3_t source_vec;
+    cl_entity_t *pent;
+
+    if (ch->entnum == cl[0].viewentity || ch->entnum == cl[1].viewentity)
+    {
+        ch->rightvol = ch->leftvol = ch->master_vol;
+        func_002CA320(ch);
+        return;
+    }
+
+    if (ch->entnum > 0 && ch->entnum < sv.num_edicts)
+    {
+        pent = &cl_entities[0][ch->entnum];
+        if (pent && pent->model)
+        {
+            VectorCopy(pent->origin, ch->origin);
+            if (pent->model->type == mod_brush)
+            {
+                ch->origin[0] = ch->origin[0] + (pent->model->mins[0] + pent->model->maxs[0]) * 0.5f;
+                ch->origin[1] = ch->origin[1] + (pent->model->mins[1] + pent->model->maxs[1]) * 0.5f;
+                ch->origin[2] = ch->origin[2] + (pent->model->mins[2] + pent->model->maxs[2]) * 0.5f;
+            }
+        }
+    }
+
+    VectorSubtract(ch->origin, D_00551760[0], source_vec);
+    dist = VectorNormalize(source_vec) * ch->dist_mult;
+    dot = DotProduct(D_00551778, source_vec);
+
+    if (shm->channels == 1)
+    {
+        rscale = 1.0f;
+        lscale = 1.0f;
+    }
+    else
+    {
+        lscale = 1.0f - dot;
+        rscale = 1.0f + dot;
+    }
+
+    left = (1.0f - dist) * lscale;
+    right = (1.0f - dist) * rscale;
+
+    VectorSubtract(ch->origin, D_00551760[1], source_vec);
+    dist = VectorNormalize(source_vec) * ch->dist_mult;
+    dot = DotProduct(D_00551778, source_vec);
+
+    if (shm->channels == 1)
+    {
+        rscale = 1.0f;
+        lscale = 1.0f;
+    }
+    else
+    {
+        lscale = 1.0f - dot;
+        rscale = 1.0f + dot;
+    }
+
+    left2 = (1.0f - dist) * lscale;
+    right2 = (1.0f - dist) * rscale;
+
+    left = left2 > left ? left2 : left;
+    right = right2 > right ? right2 : right;
+
+    if (D_00334D88.value == 0.0f)
+    {
+        ch->rightvol = ch->leftvol = (int)(ch->master_vol * ((left + right) * 0.5f));
+    }
+    else
+    {
+        ch->leftvol = (int)(ch->master_vol * left);
+        ch->rightvol = (int)(ch->master_vol * right);
+    }
+
+    func_002CA320(ch);
+
+    if (ch->rightvol < 0)
+        ch->rightvol = 0;
+    if (ch->leftvol < 0)
+        ch->leftvol = 0;
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/snd_dma", func_002CC7A8);
+#endif
 
 INCLUDE_ASM("asm/nonmatchings/engine/snd_dma", func_002CCB10);
 
