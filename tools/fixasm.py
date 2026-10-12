@@ -17,6 +17,8 @@
 - cvt.w.s (.word) logo depois de mfc1 vai em noreorder: o gas poria um nop entre os dois.
 - o ee-as também não preenche o delay slot de um desvio quando a instrução anterior
   precisou do nop do mtc1 (visto em conversão unsigned->float seguida de b).
+- nem com um acesso volatile (entre "#.set volatile" e "#.set novolatile"; o ee-gcc
+  original emitia a diretiva de verdade e o ee-as a respeitava).
 """
 import sys, re
 
@@ -82,8 +84,14 @@ label_at = None
 pending_idx = None
 before = 0
 after_nop = set()   # índices em out de instruções que receberam o nop do mtc1
+volatile = False
+vol_idx = set()     # índices em out de acessos volatile
 for line in lines:
     s = line.strip()
+    if s in ('#.set\tvolatile', '#.set volatile'):
+        volatile = True
+    elif s in ('#.set\tnovolatile', '#.set novolatile'):
+        volatile = False
     if s == '.set\tnoreorder' or s == '.set noreorder':
         reorder = False
     elif s == '.set\treorder' or s == '.set reorder':
@@ -149,7 +157,7 @@ for line in lines:
             re.search(r'# u(ld|sd)$', out[prev_real]) or
             (prev_prev is not None and re.match(r'^\s+s[dw][lr]\s', out[prev_prev])) or
             (prev_prev is not None and fp_load_use(out[prev_prev], out[prev_real])) or
-            prev_real in after_nop):
+            prev_real in after_nop or prev_real in vol_idx):
         out.append('\t.set\tnoreorder')
         out.append(line)
         out.append('\tnop')
@@ -186,6 +194,8 @@ for line in lines:
                 pending_idx = len(out)
         prev_prev = prev_real
         prev_real = len(out)
+        if volatile:
+            vol_idx.add(len(out))
     elif s.endswith(':'):
         if reorder and pending_fpr is not None and label_at is None:
             # se a instrução depois do rótulo ler o registrador, o nop vai antes do rótulo
