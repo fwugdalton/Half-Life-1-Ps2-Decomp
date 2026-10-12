@@ -82,6 +82,15 @@ void func_002C8840(int idelay);
 int func_002C86D8(int idelay, float delay);
 int RandomLong(int lLow, int lHigh);
 int abs(int);
+int Q_strlen(const char *str);
+void Q_strcpy(char *dest, const char *src);
+extern char *D_00551698[32];    /* rgpparseword */
+extern voxword_t D_00465848;     /* voxwordDefault */
+extern unsigned char D_00397D81[]; /* _ctype_ + 1 */
+#define isdigit(c) (D_00397D81[(int)(c)] & 4)
+int Q_atoi(char *str);
+extern char D_00334D00[];       /* voxperiod "_period" */
+extern char D_00334D08[];       /* voxcomma "_comma" */
 void func_001E82E0(void);
 void func_002CB018(void);
 extern cl_entity_t *cl_entities[2];
@@ -1173,17 +1182,250 @@ void func_002CA018(void)
     func_002CB018();
 }
 
+#ifdef NON_MATCHING
+void func_002CA050(char *psz)
+{
+    int i;
+    int fdone = 0;
+    char c;
+
+    memset(D_00551698, 0, sizeof(char *) * 32);
+
+    if (!psz)
+        return;
+
+    i = 0;
+    D_00551698[i++] = psz;
+
+    while (!fdone && i < 32)
+    {
+        c = *psz;
+        while (c && !(c == ' ' || c == '.' || c == ',' || c == '('))
+            c = *(++psz);
+
+        if (c == '(')
+        {
+            c = *(++psz);
+            while (c && c != ')')
+                c = *(++psz);
+
+            if (!c)
+                fdone = 1;
+            else
+                c = *(++psz);
+        }
+
+        if (!fdone)
+        {
+            if (!c)
+            {
+                fdone = 1;
+            }
+            else
+            {
+                if (c == '.' || c == ',')
+                {
+                    if (psz[1] != '\n' && psz[1] != '\r' && psz[1] != 0)
+                    {
+                        if (c == '.')
+                            D_00551698[i++] = D_00334D00;
+                        else
+                            D_00551698[i++] = D_00334D08;
+
+                        if (i >= 32)
+                            break;
+                    }
+                }
+
+                *psz++ = 0;
+
+                c = *psz;
+                while (c && (c == ' ' || c == '.' || c == ','))
+                    c = *(++psz);
+
+                if (!c)
+                    fdone = 1;
+                else
+                    D_00551698[i++] = psz;
+            }
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/snd_mix_gbx", func_002CA050);
+#endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/snd_mix_gbx", func_002CA250);
+char *func_002CA250(char *szpath, char *psz)
+{
+    char c;
+    int cb = 0;
+    char *pszscan = psz + Q_strlen(psz) - 1;
 
-INCLUDE_ASM("asm/nonmatchings/engine/snd_mix_gbx", func_002CA320);
+    c = *pszscan;
+    while (pszscan > psz && c != '/')
+    {
+        c = *(--pszscan);
+        cb++;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/snd_mix_gbx", func_002CA3C8);
+    if (c != '/')
+    {
+        Q_strcpy(szpath, "vox/");
+        return psz;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/snd_mix_gbx", func_002CA698);
+    cb = Q_strlen(psz) - cb;
+    memcpy(szpath, psz, cb);
+    szpath[cb] = 0;
+    return pszscan + 1;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/snd_mix_gbx", func_002CA700);
+void func_002CA320(channel_t *ch)
+{
+    float scale;
+    int vol;
+
+    if (ch->isentence < 0)
+        return;
+
+    vol = D_00544E98[ch->isentence][ch->iword].volume;
+    if (vol == 100)
+        return;
+
+    scale = vol;
+    scale *= 0.01f;
+    if (scale == 1.0f)
+        return;
+
+    ch->rightvol = (int)(ch->rightvol * scale);
+    ch->leftvol = (int)(ch->leftvol * scale);
+}
+
+int func_002CA3C8(char *psz, voxword_t *pvoxword, int fFirst)
+{
+    char *pszsave = psz;
+    char c;
+    char ct;
+    char sznum[8];
+    int i;
+
+    if (fFirst)
+    {
+        D_00465848.pitch = -1;
+        D_00465848.volume = 100;
+        D_00465848.start = 0;
+        D_00465848.end = 100;
+        D_00465848.fKeepCached = 0;
+        D_00465848.timecompress = 0;
+    }
+
+    *pvoxword = D_00465848;
+
+    c = *(psz + Q_strlen(psz) - 1);
+
+    if (c != ')')
+        return 1;
+
+    c = *psz;
+    while (!(c == '(' || c == ')'))
+        c = *(++psz);
+
+    if (c == ')')
+        return 0;
+
+    *psz = 0;
+    ct = *(++psz);
+
+    while (1)
+    {
+        while (ct && !(ct == 'v' || ct == 'p' || ct == 's' || ct == 'e' || ct == 't' || ct == ')'))
+            ct = *(++psz);
+
+        if (ct == ')')
+            break;
+
+        memset(sznum, 0, sizeof(sznum));
+        i = 0;
+
+        c = *(++psz);
+
+        if (!isdigit(c))
+            break;
+
+        while (isdigit(c) && i < sizeof(sznum) - 1)
+        {
+            sznum[i++] = c;
+            c = *(++psz);
+        }
+
+        i = Q_atoi(sznum);
+
+        switch (ct)
+        {
+        case 'v': pvoxword->volume = i; break;
+        case 'p': pvoxword->pitch = i; break;
+        case 's': pvoxword->start = i; break;
+        case 'e': pvoxword->end = i; break;
+        case 't': pvoxword->timecompress = i; break;
+        }
+
+        ct = c;
+    }
+
+    if (Q_strlen(pszsave) == 0)
+    {
+        D_00465848 = *pvoxword;
+        return 0;
+    }
+    else
+        return 1;
+}
+
+int func_002CA698(void)
+{
+    int k;
+
+    for (k = 0; k < 16; k++)
+    {
+        if (!D_00544E98[k][0].sfx)
+            break;
+    }
+
+    if (k < 16)
+        return k;
+
+    Con_DPrintf("Sentence or Pitch shift ignored. > 16 playing!\n");
+    return -1;
+}
+
+void func_002CA700(channel_t *ch, int pitch)
+{
+    voxword_t voxword;
+    int k = func_002CA698();
+
+    if (k >= 0)
+    {
+        voxword.volume = 100;
+        voxword.pitch = 100;
+        voxword.start = 0;
+        voxword.end = 100;
+        voxword.fKeepCached = 1;
+        voxword.samplefrac = 0;
+        voxword.timecompress = 0;
+        voxword.sfx = ch->sfx;
+
+        D_00544E98[k][0] = voxword;
+        D_00544E98[k][1].sfx = NULL;
+        ch->pitch = pitch;
+        ch->isentence = k;
+        ch->iword = 0;
+    }
+    else
+    {
+        ch->pitch = 100;
+        ch->isentence = -1;
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/snd_mix_gbx", func_002CA7E8);
 
