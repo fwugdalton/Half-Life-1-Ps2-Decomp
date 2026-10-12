@@ -130,6 +130,12 @@ void CRC32_Init(unsigned int *pulCRC);
 qboolean CRC_File(unsigned int *crcvalue, char *pszFileName);
 void func_00244EE0(char *s, char *key, char *value, int maxsize); /* Info_SetValueForKey */
 void func_00250248(int clientId);
+void Netchan_Setup(int sock, netchan_t *chan, netadr_t adr);
+void MSG_WriteChar(sizebuf_t *sb, int c);
+void MSG_BeginReading(void);
+int Q_strncasecmp(const char *s1, const char *s2, int n);
+extern int (*D_003990F0)(int l); /* ntohl */
+extern float D_00332F30;        /* pingtime */
 extern char D_00389C18[];       /* "cl_resend" */
 extern char D_0038A110[];       /* "%s" */
 extern char D_0038A118[];       /* "localhost" */
@@ -452,7 +458,126 @@ void func_0024F528(void)
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Cl_main", func_0024F6E8);
+void func_0024F6E8(int clientId)
+{
+    int c;
+    int i;
+    char *s;
+    char data[6];
+
+    MSG_BeginReading();
+    MSG_ReadLong();
+    c = MSG_ReadByte();
+
+    if (c == 'B')
+    {
+        for (i = 0; i < 16; i++)
+            MSG_ReadByte();
+
+        if (cls[clientId].state == ca_connected)
+        {
+            Con_DPrintf("Duplicate connect ack. received.  Ignored.\n");
+            return;
+        }
+
+        Netchan_Setup(clientId, &cls[clientId].netchan, net_from);
+        MSG_WriteChar(&cls[clientId].netchan.message, 4); /* clc_stringcmd */
+        MSG_WriteString(&cls[clientId].netchan.message, "new");
+
+        if (!strcasecmp("loopback", NET_AdrToString(net_from)))
+            Con_DPrintf("Connection accepted.\n");
+        else
+            Con_Printf("Connection accepted by %s\n", NET_AdrToString(net_from));
+
+        cls[clientId].state = ca_connected;
+        cls[clientId].signon = 0;
+        cls[clientId].connect_time = realtime;
+    }
+    else if (c == 'A')
+    {
+        if (cls[clientId].state == ca_disconnected)
+            return;
+
+        for (i = 0; i < 16; i++)
+            MSG_ReadByte();
+
+        cls[clientId].challenge = D_003990F0(MSG_ReadLong());
+        cls[clientId].unk_73C0 = MSG_ReadByte();
+        if (cls[clientId].unk_73C0 == 0xFF)
+            cls[clientId].unk_73C0 = 2;
+
+        if (cls[clientId].unk_73C0 == 1)
+        {
+            Con_Printf("The server requires that you be validated through WON.net.\nCould not obtain WON authentication.\n");
+            func_00250248(clientId);
+            return;
+        }
+
+        func_002504F0(clientId);
+    }
+    else if (c == 'l')
+    {
+        Con_Printf(MSG_ReadString());
+    }
+    else if (c == '8')
+    {
+        if (cls[clientId].state != ca_connecting)
+            return;
+
+        s = MSG_ReadString();
+        Con_Printf(!Q_strncasecmp(s, "BADPASSWORD", 11) ? s + 11 : s);
+
+        COM_ExplainDisconnection(false, "BADPASSWORD");
+        Con_Printf("Invalid server password.\n");
+        CL_Disconnect(clientId);
+    }
+    else if (c == '9')
+    {
+        if (cls[clientId].state != ca_connecting)
+            return;
+
+        COM_ExplainDisconnection(true, MSG_ReadString());
+        CL_Disconnect(clientId);
+    }
+    else if (c == 'i')
+    {
+        data[0] = -1;
+        data[1] = -1;
+        data[2] = -1;
+        data[3] = -1;
+        data[4] = 'j';
+        data[5] = 0;
+        NET_SendPacket(clientId, 6, data, net_from, 2);
+    }
+    else if (c == 'j')
+    {
+        if (D_00332F30 == 0)
+            return;
+
+        Con_Printf("Ping took %.3f ms.\n", (realtime - D_00332F30) * 1000.0f);
+        D_00332F30 = 0;
+    }
+    else if (c == 'h')
+    {
+        func_0024F100();
+    }
+    else if (c == 'd')
+    {
+        func_0024F220();
+    }
+    else if (c == 'f')
+    {
+        func_0024F528();
+    }
+    else if (c == 'y')
+    {
+        func_0024F388();
+    }
+    else
+    {
+        Con_Printf("Unknown command:\n%c\n", c);
+    }
+}
 
 qboolean func_0024FB28(int sock)
 {
