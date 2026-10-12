@@ -2534,7 +2534,87 @@ void func_002B7CA8(int clientId)
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B7CA8);
 #endif
 
+#ifdef NON_MATCHING
+void func_002B7E98(vec3_t org, int random, int density, vec3_t angles, int clientId)
+{
+    int i, j, step, size;
+    particle_t *p;
+    float vel, dist;
+    vec3_t dir, dest, pos, forward, right, up, v1, v2, v3, tmp, tmp2;
+
+    AngleVectors(angles, forward, right, up);
+
+    if (density == 255)
+        step = 318;
+    else
+        step = density * 2;
+    if (step <= 0)
+        step = 1;
+
+    size = density * 3;
+    if (density == 1)
+        size = 2;
+    if (step <= 0)
+        step = 1;
+
+    for (i = -size; i <= size; i += step)
+    {
+        for (j = -size; j <= size; j += step)
+        {
+            if (!D_0039966C)
+                return;
+            p = D_0039966C;
+            D_0039966C = p->next;
+            p->next = D_00399660;
+            D_00399660 = p;
+
+            if (random)
+            {
+                pos[0] = org[0] + RandomFloat(-60, 60);
+                pos[1] = org[1] + RandomFloat(-60, 60);
+                pos[2] = org[2] + RandomFloat(-60, 60);
+                VectorCopy(pos, p->org);
+
+                dest[0] = pos[0] + i + RandomFloat(-500, 500);
+                dest[1] = pos[1] + j + RandomFloat(-500, 500);
+                dest[2] = pos[2] + RandomFloat(-500, 0);
+
+                VectorScale(forward, RandomFloat(0, 500), v1);
+                VectorScale(right, RandomFloat(-500, 500), v2);
+                VectorScale(up, RandomFloat(-500, 500), v3);
+                VectorAdd(v1, v2, tmp);
+                VectorAdd(tmp, v3, tmp2);
+                VectorAdd(tmp2, pos, dest);
+
+                vel = dest[2] / 8;
+                VectorSubtract(dest, p->org, dir);
+            }
+            else
+            {
+                p->org[0] = org[0] + i;
+                p->org[1] = org[1] + j;
+                p->org[2] = org[2] + RandomFloat(-800, 800);
+
+                VectorSubtract(org, p->org, dir);
+                vel = p->org[2] / 8;
+            }
+
+            p->color = 244;
+            p->packedColor = 0;
+            p->type = pt_static;
+
+            dist = VectorNormalize(dir);
+            if (vel < 64)
+                vel = 64;
+            vel += RandomFloat(64, 178);
+            VectorScale(dir, vel, p->vel);
+            p->die = cl[clientId].time + dist / vel;
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B7E98);
+#endif
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_part2", func_002B82F0);
 
