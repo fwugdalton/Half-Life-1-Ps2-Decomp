@@ -15,10 +15,6 @@ extern cvar_t pm_nostucktouch;
 
 void func_00253680(vec3_t in, vec3_t out);
 
-INCLUDE_RODATA("asm/nonmatchings/engine/cl_pred", D_0038A690);
-
-INCLUDE_RODATA("asm/nonmatchings/engine/cl_pred", D_0038A698);
-
 /* CL_PredictMove */
 void func_002524F8(int clientId)
 {
