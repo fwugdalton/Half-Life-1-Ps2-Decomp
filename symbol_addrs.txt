@@ -1739,3 +1739,5 @@ R_StudioChrome = 0x2BEA90; // type:func
 PaletteHueReplace = 0x2BED78; // type:func
 boxpnt = 0x003341D8; // size:0x60
 R_StudioDrawAbsBBox = 0x2BDB30; // type:func
+sv_clienttrace = 0x00332500; // size:0x14
+R_StudioMergeBones = 0x2BD568; // type:func

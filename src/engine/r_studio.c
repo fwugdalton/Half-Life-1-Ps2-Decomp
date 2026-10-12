@@ -8,6 +8,7 @@
 #include "engine/cl_entity.h"
 #include "engine/studio.h"
 #include "engine/server.h"
+#include "engine/progdefs.h"
 
 void *Mod_Extradata(model_t *mod);
 void *Cache_Check(cache_user_t *c);
@@ -128,6 +129,15 @@ extern vec3_t chromeup[MAXSTUDIOBONES];
 extern vec3_t chromeright[MAXSTUDIOBONES];
 extern vec3_t vright;
 extern int numlights;
+extern float D_0041DE40[MAXSTUDIOBONES][3]; /* pos estático de R_StudioMergeBones */
+extern float D_0041E440[MAXSTUDIOBONES][4]; /* q estático de R_StudioMergeBones */
+void func_0025C428(cl_entity_t *ent, float transform[3][4]); /* StudioFxTransform */
+extern cvar_t sv_clienttrace;
+#define FL_CLIENT 8
+#define STUDIO_TRACE_HITBOX 0x200
+hull_t *R_StudioHull(model_t *pModel, float frame, int sequence, vec3_t angles, vec3_t origin, vec3_t size,
+                     byte *pcontroller, byte *pblending, int *pNumHulls);
+hull_t *SV_HullForEntity(edict_t *ent, vec3_t mins, vec3_t maxs, vec3_t offset);
 extern int boxpnt[6][4];
 extern struct model_s *D_003991CC;
 extern int D_00399574, D_0039954C;
@@ -732,7 +742,75 @@ void R_StudioPlayerBlend(mstudioseqdesc_t *pseqdesc, int *pBlend, float *pPitch)
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", SV_HullForStudioModel);
+hull_t *SV_HullForStudioModel(edict_t *pEdict, vec3_t mins, vec3_t maxs, vec3_t offset, int *pNumHulls)
+{
+    qboolean useComplexHull = false;
+    vec3_t size;
+    float factor = 0.5f;
+
+    VectorSubtract(maxs, mins, size);
+    if (VectorCompare(vec3_origin, size))
+    {
+        if (!(gGlobalVariables.trace_flags & 1))
+        {
+            useComplexHull = true;
+            if (pEdict->v.flags & FL_CLIENT)
+            {
+                if (sv_clienttrace.value != 0.0f)
+                {
+                    size[2] = 1.0f;
+                    size[1] = 1.0f;
+                    size[0] = 1.0f;
+                    factor = sv_clienttrace.value * factor;
+                }
+                else
+                {
+                    useComplexHull = false;
+                }
+            }
+        }
+    }
+
+    if ((sv.models[pEdict->v.modelindex]->flags & STUDIO_TRACE_HITBOX) || useComplexHull)
+    {
+        VectorScale(size, factor, size);
+        VectorCopy(vec3_origin, offset);
+
+        if (pEdict->v.flags & FL_CLIENT)
+        {
+            mstudioseqdesc_t *pseqdesc;
+            vec3_t angles;
+            int iBlend;
+            byte blending[2];
+            byte controller[4];
+
+            pstudiohdr = (studiohdr_t *)Mod_Extradata(sv.models[pEdict->v.modelindex]);
+            pseqdesc = (mstudioseqdesc_t *)((byte *)pstudiohdr + pstudiohdr->seqindex) + pEdict->v.sequence;
+
+            VectorCopy(pEdict->v.angles, angles);
+            R_StudioPlayerBlend(pseqdesc, &iBlend, angles);
+
+            blending[0] = iBlend;
+            blending[1] = 0;
+            controller[0] = 0x7F;
+            controller[1] = 0x7F;
+            controller[2] = 0x7F;
+            controller[3] = 0x7F;
+
+            return R_StudioHull(sv.models[pEdict->v.modelindex], pEdict->v.frame, pEdict->v.sequence, angles,
+                                pEdict->v.origin, size, controller, blending, pNumHulls);
+        }
+        else
+        {
+            return R_StudioHull(sv.models[pEdict->v.modelindex], pEdict->v.frame, pEdict->v.sequence,
+                                pEdict->v.angles, pEdict->v.origin, size, pEdict->v.controller,
+                                pEdict->v.blending, pNumHulls);
+        }
+    }
+
+    *pNumHulls = 1;
+    return SV_HullForEntity(pEdict, mins, maxs, offset);
+}
 
 void func_002BB4F8(void) {
 }
@@ -1033,7 +1111,63 @@ void R_StudioSaveBones(void)
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BD568);
+#ifdef NON_MATCHING
+void R_StudioMergeBones(model_t *m_pSubModel, int clientId)
+{
+    int i, j;
+    float f;
+    mstudiobone_t *pbones;
+    mstudioseqdesc_t *pseqdesc;
+    mstudioanim_t *panim;
+    float bonematrix[3][4];
+
+    if (currententity->sequence >= pstudiohdr->numseq)
+        currententity->sequence = 0;
+
+    pseqdesc = (mstudioseqdesc_t *)((byte *)pstudiohdr + pstudiohdr->seqindex) + currententity->sequence;
+
+    f = R_StudioEstimateFrame(pseqdesc, clientId);
+
+    R_StudioCalcRotations(D_0041DE40, D_0041E440, pseqdesc, R_GetAnim(m_pSubModel, pseqdesc), f, clientId);
+
+    pbones = (mstudiobone_t *)((byte *)pstudiohdr + pstudiohdr->boneindex);
+
+    for (i = 0; i < pstudiohdr->numbones; i++)
+    {
+        for (j = 0; j < m_nCachedBones; j++)
+        {
+            if (strcasecmp(pbones[i].name, m_nCachedBoneNames[j]) == 0)
+            {
+                MatrixCopy(m_rgCachedBoneTransform[j], bonetransform[i]);
+                MatrixCopy(m_rgCachedLightTransform[j], lighttransform[i]);
+                break;
+            }
+        }
+        if (j >= m_nCachedBones)
+        {
+            QuaternionMatrix(D_0041E440[i], bonematrix);
+
+            bonematrix[0][3] = D_0041DE40[i][0];
+            bonematrix[1][3] = D_0041DE40[i][1];
+            bonematrix[2][3] = D_0041DE40[i][2];
+
+            if (pbones[i].parent == -1)
+            {
+                R_ConcatTransforms(D_0053CF68, bonematrix, bonetransform[i]);
+                R_ConcatTransforms(D_0053CF68, bonematrix, lighttransform[i]);
+                func_0025C428(currententity, bonetransform[i]);
+            }
+            else
+            {
+                R_ConcatTransforms(bonetransform[pbones[i].parent], bonematrix, bonetransform[i]);
+                R_ConcatTransforms(lighttransform[pbones[i].parent], bonematrix, lighttransform[i]);
+            }
+        }
+    }
+}
+#else
+INCLUDE_ASM("asm/nonmatchings/engine/r_studio", R_StudioMergeBones);
+#endif
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BD828);
 

@@ -4730,7 +4730,7 @@ extern cvar_t D_00332808;
 extern cvar_t D_00332820;
 extern cvar_t D_00332838;
 extern cvar_t D_00332530;
-extern cvar_t D_00332500;
+extern cvar_t sv_clienttrace;
 extern cvar_t sv_zmax;
 extern cvar_t sv_wateramp;
 extern cvar_t sv_skyname;
@@ -4798,7 +4798,7 @@ void SV_Init(void)
     Cvar_RegisterVariable(&D_00332838);
     Cvar_RegisterVariable(&D_00332530);
     Cvar_RegisterVariable(&sv_timeout);
-    Cvar_RegisterVariable(&D_00332500);
+    Cvar_RegisterVariable(&sv_clienttrace);
     Cvar_RegisterVariable(&sv_zmax);
     Cvar_RegisterVariable(&sv_wateramp);
     Cvar_RegisterVariable(&sv_skyname);
