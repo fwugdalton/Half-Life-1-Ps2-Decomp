@@ -105,7 +105,7 @@ typedef struct client_state_s
     byte pad300[0x30C - 0x300];
     vec3_t punchangle;          /* 0x30C */
     vec3_t crosshairangle;      /* 0x318 */
-    byte pad324[0x328 - 0x324];
+    float maxspeed;             /* 0x324 */
     vec3_t simorg;              /* 0x328 */
     vec3_t simvel;              /* 0x334 */
     vec3_t simangles;           /* 0x340 */

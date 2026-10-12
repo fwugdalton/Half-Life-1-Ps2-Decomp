@@ -62,6 +62,7 @@ $(BUILD_DIR)/src/engine/sv_phys.o: CFLAGS += -ffast-math
 $(BUILD_DIR)/src/engine/gl_screen.o: CFLAGS += -ffast-math
 $(BUILD_DIR)/src/engine/cl_tent.o: CFLAGS += -ffast-math
 $(BUILD_DIR)/src/engine/cl_cam.o: CFLAGS += -ffast-math
+$(BUILD_DIR)/src/engine/cl_input.o: CFLAGS += -ffast-math
 $(BUILD_DIR)/src/engine/sv_upld.o: CFLAGS += -ffast-math
 $(BUILD_DIR)/src/engine/sv_user.o: CFLAGS += -ffast-math
 $(BUILD_DIR)/src/engine/tmessage.o: CFLAGS += -ffast-math

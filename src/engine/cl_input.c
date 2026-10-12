@@ -1,6 +1,8 @@
 #include "common.h"
 #include "engine/cvar.h"
 #include "engine/cmd.h"
+#include "engine/mathlib.h"
+#include "engine/client.h"
 
 /* cl_input.c: botões (+/-comando) por jogador local; Cmd_Argv(1) é o clientId. */
 
@@ -49,6 +51,25 @@ extern kbutton_t D_0046EBC8[2];
 extern int D_00399150[2];
 extern float D_0033282C, D_00332844; /* toggle do duck por jogador */
 int func_0024E2E0(int bResetState, int clientId);
+float func_0024DA78(kbutton_t *key);
+extern float host_frametime;
+extern float D_00331774;        /* cl_anglespeedkey.value */
+extern cvar_t D_00331738;       /* cl_yawspeed */
+extern cvar_t D_00331750;       /* cl_pitchspeed */
+extern float D_00331AF4;        /* cl_pitchdown.value */
+extern float D_00331ADC;        /* cl_pitchup.value */
+float anglemod(float a);
+void V_StopPitchDrift(int clientId);
+void func_0024DB18(int clientId);
+extern cvar_t D_00331708;       /* cl_sidespeed */
+extern cvar_t D_003316C0;       /* cl_upspeed */
+extern cvar_t cl_forwardspeed;
+extern cvar_t D_00331720;       /* cl_movespeedkey */
+extern float D_00399148[2];     /* intensidade do analógico lateral */
+extern float D_00399158[2];     /* intensidade do analógico frontal */
+extern int D_003316B8[2];       /* movimento lateral pelo analógico */
+extern int D_003316B0[2];       /* movimento frontal pelo analógico */
+void *memset(void *, int, unsigned int);
 extern int D_00399160[2];       /* in_impulse */
 extern float D_00331824;        /* lookspring.value */
 
@@ -576,9 +597,148 @@ float func_0024DA78(kbutton_t *key)
     return val;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_input", func_0024DB18);
+void func_0024DB18(int clientId)
+{
+    float speed;
+    float up, down;
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_input", func_0024DDF0);
+    if (D_0046E910[clientId].state & 1)
+        speed = host_frametime * D_00331774;
+    else
+        speed = host_frametime;
+
+    if (!(D_0046EA48[clientId].state & 1))
+    {
+        cl[clientId].viewangles[YAW] -= speed * D_00331738.value * func_0024DA78(&D_0046E9E8[clientId]);
+        cl[clientId].viewangles[YAW] += speed * D_00331738.value * func_0024DA78(&D_0046EA78[clientId]);
+        cl[clientId].viewangles[YAW] = anglemod(cl[clientId].viewangles[YAW]);
+    }
+
+    if (D_0046EA00[clientId].state & 1)
+    {
+        V_StopPitchDrift(clientId);
+        cl[clientId].viewangles[PITCH] -= speed * D_00331750.value * func_0024DA78(&D_0046E940[clientId]);
+        cl[clientId].viewangles[PITCH] += speed * D_00331750.value * func_0024DA78(&D_0046E958[clientId]);
+    }
+
+    up = func_0024DA78(&D_0046EB50[clientId]);
+    down = func_0024DA78(&D_0046E928[clientId]);
+
+    cl[clientId].viewangles[PITCH] -= speed * D_00331750.value * up;
+    cl[clientId].viewangles[PITCH] += speed * D_00331750.value * down;
+
+    if (up || down)
+        V_StopPitchDrift(clientId);
+
+    if (cl[clientId].viewangles[PITCH] > D_00331AF4)
+        cl[clientId].viewangles[PITCH] = D_00331AF4;
+    if (cl[clientId].viewangles[PITCH] < -D_00331ADC)
+        cl[clientId].viewangles[PITCH] = -D_00331ADC;
+
+    if (cl[clientId].viewangles[ROLL] > 50)
+        cl[clientId].viewangles[ROLL] = 50;
+    if (cl[clientId].viewangles[ROLL] < -50)
+        cl[clientId].viewangles[ROLL] = -50;
+}
+
+void func_0024DDF0(usercmd_t *cmd, int clientId)
+{
+    float k1, k2;
+    float spd, fmov, fscale;
+
+    if (cls[clientId].signon != 3)
+        return;
+
+    func_0024DB18(clientId);
+
+    memset(cmd, 0, sizeof(*cmd));
+
+    if (D_0046EA48[clientId].state & 1)
+    {
+        cmd->sidemove += D_00331708.value * func_0024DA78(&D_0046E9E8[clientId]);
+        cmd->sidemove -= D_00331708.value * func_0024DA78(&D_0046EA78[clientId]);
+    }
+
+    k1 = func_0024DA78(&D_0046E9D0[clientId]);
+    k2 = func_0024DA78(&D_0046EB08[clientId]);
+    if (k2 != 0)
+    {
+        D_003316B8[clientId] = 1;
+        cmd->sidemove += D_00331708.value * k2 * D_00399148[clientId];
+    }
+    else
+    {
+        D_003316B8[clientId] = 0;
+        cmd->sidemove += D_00331708.value * k1;
+    }
+
+    k1 = func_0024DA78(&D_0046EAA8[clientId]);
+    k2 = func_0024DA78(&D_0046E9B8[clientId]);
+    if (k2 != 0)
+    {
+        D_003316B8[clientId] = 1;
+        cmd->sidemove -= D_00331708.value * k2 * D_00399148[clientId];
+    }
+    else
+    {
+        D_003316B8[clientId] = 0;
+        cmd->sidemove -= D_00331708.value * k1;
+    }
+
+    cmd->upmove += D_003316C0.value * func_0024DA78(&D_0046EBE0[clientId]);
+    cmd->upmove -= D_003316C0.value * func_0024DA78(&D_0046E988[clientId]);
+
+    if (!(D_0046EA00[clientId].state & 1))
+    {
+        k1 = func_0024DA78(&D_0046EA60[clientId]);
+        k2 = func_0024DA78(&D_0046E940[clientId]);
+        if (k2 != 0)
+        {
+            D_003316B0[clientId] = 1;
+            cmd->forwardmove += cl_forwardspeed.value * k2 * D_00399158[clientId];
+        }
+        else
+        {
+            D_003316B0[clientId] = 0;
+            cmd->forwardmove += cl_forwardspeed.value * k1;
+        }
+
+        k1 = func_0024DA78(&D_0046EB68[clientId]);
+        k2 = func_0024DA78(&D_0046E958[clientId]);
+        if (k2 != 0)
+        {
+            D_003316B0[clientId] = 1;
+            cmd->forwardmove -= cl_forwardspeed.value * k2 * D_00399158[clientId];
+        }
+        else
+        {
+            D_003316B0[clientId] = 0;
+            cmd->forwardmove -= cl_forwardspeed.value * k1;
+        }
+    }
+
+    if (D_0046E910[clientId].state & 1)
+    {
+        cmd->forwardmove *= D_00331720.value;
+        cmd->sidemove *= D_00331720.value;
+        cmd->upmove *= D_00331720.value;
+    }
+
+    spd = cl[clientId].maxspeed;
+    if (spd != 0)
+    {
+        fmov = sqrtf(cmd->forwardmove * cmd->forwardmove + cmd->sidemove * cmd->sidemove + cmd->upmove * cmd->upmove);
+        if (fmov > spd)
+        {
+            fscale = spd / fmov;
+            cmd->forwardmove *= fscale;
+            cmd->sidemove *= fscale;
+            cmd->upmove *= fscale;
+        }
+    }
+
+    cmd->lightlevel = cl[clientId].light_level;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/cl_input", func_0024E2E0);
 
