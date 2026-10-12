@@ -133,7 +133,7 @@ typedef struct client_state_s
     byte pad15B4[0x15C4 - 0x15B4];
     player_info_t players[MAX_CLIENTS]; /* 0x15C4 */
     vec3_t viewattachment;      /* 0x211C: último attachment do viewmodel */
-    byte pad2128[0x212C - 0x2128];
+    int unk2128;                /* 0x2128: entidade de câmera (comparada com sv.num_edicts) */
 } client_state_t; /* 0x212C */
 
 extern client_state_t cl[2];
