@@ -52,6 +52,12 @@ typedef struct
 extern bf_write_t D_003AC410;   /* bfwrite */
 extern bf_read_t D_003AC420;    /* bfread */
 void func_00242880(int nValue);  /* MSG_WriteOneBit */
+extern int msg_readcount;
+extern int msg_badread;
+int MSG_ReadBits(int numbits);
+int MSG_ReadByteBits(int numbits);
+int func_00242EB0(void);          /* MSG_ReadOneBit */
+int func_00243120(int numbits);   /* MSG_ReadBitsUInt? */
 #define isupper(c) (D_00397D81[(int)(c)] & 1)
 #define tolower(c) (isupper(c) ? (c) + 32 : (c))
 
@@ -831,19 +837,137 @@ void MSG_WriteBitsShort(short *data, int numbits)
     MSG_WriteBitsUShort(&s, numbits - 1);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_00242C28);
+/* MSG_WriteBitsInt */
+void func_00242C28(int *data, int numbits)
+{
+    unsigned int i;
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_00242C90);
+    if (*data < 0)
+        func_00242880(1);
+    else
+        func_00242880(0);
+    i = abs(*data);
+    MSG_WriteBitsUInt(&i, numbits - 1);
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_00242D60);
+/* MSG_WriteBitAngle */
+void func_00242C90(float fAngle, int numbits)
+{
+    unsigned short s;
+    char c;
+    unsigned int u;
+    unsigned int shift;
+    unsigned int mask;
+    int d;
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", MSG_StartBitReading);
+    shift = 1 << numbits;
+    mask = shift - 1;
+    d = (int)(fAngle * shift) / 360;
+    d &= mask;
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", MSG_EndBitReading);
+    if (numbits > 16)
+    {
+        u = d;
+        MSG_WriteBitsUInt(&u, numbits);
+    }
+    else if (numbits > 8)
+    {
+        s = d;
+        MSG_WriteBitsUShort(&s, numbits);
+    }
+    else
+    {
+        c = d;
+        MSG_WriteBitsUChar(&c, numbits);
+    }
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_00242EB0);
+/* MSG_ReadBitAngle */
+/* MSG_ReadBitAngle */
+float func_00242D60(int numbits)
+{
+    float fReturn;
+    float shift;
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", MSG_ReadByteBits);
+    shift = (float)(1 << numbits);
+
+    if (numbits > 16)
+        fReturn = func_00243120(numbits) * (360.0f / shift);
+    else if (numbits > 8)
+        fReturn = (short)MSG_ReadBits(numbits) * (360.0f / shift);
+    else
+        fReturn = (char)MSG_ReadByteBits(numbits) * (360.0f / shift);
+
+    return fReturn;
+}
+
+void MSG_StartBitReading(sizebuf_t *buf)
+{
+    D_003AC420.nBitFieldReadStartByte = msg_readcount;
+    D_003AC420.nCurInputBit = 0;
+    D_003AC420.nBytesRead = 0;
+    D_003AC420.nMsgReadCount = msg_readcount;
+    D_003AC420.pInByte = &buf->data[msg_readcount];
+    D_003AC420.pbuf = buf;
+    D_003AC420.nMsgReadCount = msg_readcount + 1;
+
+    if (D_003AC420.nMsgReadCount > buf->cursize)
+        msg_badread = 1;
+}
+
+void MSG_EndBitReading(sizebuf_t *buf)
+{
+    if (D_003AC420.nMsgReadCount > buf->cursize)
+        msg_badread = 1;
+
+    D_003AC420.nBitFieldReadStartByte = 0;
+    D_003AC420.nCurInputBit = 0;
+    D_003AC420.nBytesRead = 0;
+    D_003AC420.pInByte = NULL;
+    msg_readcount = D_003AC420.nMsgReadCount;
+    D_003AC420.pbuf = NULL;
+}
+
+/* MSG_ReadOneBit */
+int func_00242EB0(void)
+{
+    int nValue;
+    byte mask;
+    if (msg_badread)
+        return 1;
+
+    if (D_003AC420.nCurInputBit >= 8)
+    {
+        D_003AC420.nMsgReadCount++;
+        D_003AC420.nBytesRead++;
+        D_003AC420.pInByte++;
+        D_003AC420.nCurInputBit = 0;
+    }
+
+    if (D_003AC420.nMsgReadCount > D_003AC420.pbuf->cursize)
+    {
+        msg_badread = 1;
+        return 1;
+    }
+
+    mask = 1 << (7 - D_003AC420.nCurInputBit);
+    nValue = *D_003AC420.pInByte & mask;
+    D_003AC420.nCurInputBit++;
+    return nValue != 0;
+}
+
+int MSG_ReadByteBits(int numbits)
+{
+    byte result;
+
+    result = 0;
+    while (numbits-- > 0)
+    {
+        if (func_00242EB0())
+            result |= 1 << numbits;
+    }
+    return result;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/common", func_00242FC8);
 
