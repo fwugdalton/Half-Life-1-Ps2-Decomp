@@ -70,6 +70,9 @@ extern float D_00399158[2];     /* intensidade do analógico frontal */
 extern int D_003316B8[2];       /* movimento lateral pelo analógico */
 extern int D_003316B0[2];       /* movimento frontal pelo analógico */
 void *memset(void *, int, unsigned int);
+void func_00225860(void *dst, int c, int n); /* Q_memset */
+void func_00246490(void);
+void Cmd_AddCommand(char *cmd_name, xcommand_t function);
 extern int D_00399160[2];       /* in_impulse */
 extern float D_00331824;        /* lookspring.value */
 
@@ -740,7 +743,71 @@ void func_0024DDF0(usercmd_t *cmd, int clientId)
     cmd->lightlevel = cl[clientId].light_level;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_input", func_0024E2E0);
+int func_0024E2E0(int bResetState, int clientId)
+{
+    int bits;
+
+    bits = 0;
+
+    if (D_0046EAD8[clientId].state & 3)
+        bits |= IN_ATTACK;
+    if (D_0046EBC8[clientId].state & 3)
+        bits |= IN_DUCK;
+    if (D_0046EAF0[clientId].state & 3)
+        bits |= IN_JUMP;
+    if (D_0046E940[clientId].state & 3)
+        bits |= IN_FORWARD;
+    if (D_0046EA60[clientId].state & 3)
+        bits |= IN_FORWARD;
+    if (D_0046E958[clientId].state & 3)
+        bits |= IN_BACK;
+    if (D_0046EB68[clientId].state & 3)
+        bits |= IN_BACK;
+    if (D_0046EBB0[clientId].state & 3)
+        bits |= IN_USE;
+    if (D_00399150[clientId])
+        bits |= IN_CANCEL;
+    if (D_0046EA78[clientId].state & 3)
+        bits |= IN_LEFT;
+    if (D_0046E9E8[clientId].state & 3)
+        bits |= IN_RIGHT;
+    if (D_0046E9B8[clientId].state & 3)
+        bits |= IN_MOVELEFT;
+    if (D_0046EAA8[clientId].state & 3)
+        bits |= IN_MOVELEFT;
+    if (D_0046EB08[clientId].state & 3)
+        bits |= IN_MOVERIGHT;
+    if (D_0046E9D0[clientId].state & 3)
+        bits |= IN_MOVERIGHT;
+    if (D_0046EB20[clientId].state & 3)
+        bits |= IN_ATTACK2;
+    if (D_0046EAC0[clientId].state & 3)
+        bits |= IN_RELOAD;
+    if (D_0046EC10[clientId].state & 3)
+        bits |= IN_ALT1;
+    if (D_0046EB80[clientId].state & 3)
+        bits |= IN_SCORE;
+
+    if (bResetState)
+    {
+        D_0046EAD8[clientId].state &= ~2;
+        D_0046EBC8[clientId].state &= ~2;
+        D_0046EAF0[clientId].state &= ~2;
+        D_0046E940[clientId].state &= ~2;
+        D_0046E958[clientId].state &= ~2;
+        D_0046EBB0[clientId].state &= ~2;
+        D_0046EA78[clientId].state &= ~2;
+        D_0046E9E8[clientId].state &= ~2;
+        D_0046E9B8[clientId].state &= ~2;
+        D_0046EB08[clientId].state &= ~2;
+        D_0046EB20[clientId].state &= ~2;
+        D_0046EAC0[clientId].state &= ~2;
+        D_0046EC10[clientId].state &= ~2;
+        D_0046EB80[clientId].state &= ~2;
+    }
+
+    return bits;
+}
 
 void func_0024E670(int bits, int clientId)
 {
@@ -784,4 +851,117 @@ INCLUDE_RODATA("asm/nonmatchings/engine/cl_input", D_003896A8);
 
 INCLUDE_RODATA("asm/nonmatchings/engine/cl_input", D_003896B0);
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_input", func_0024E700);
+void func_0024E700(void)
+{
+    Cmd_AddCommand("+moveup", func_0024CC28);
+    Cmd_AddCommand("-moveup", func_0024CC68);
+    Cmd_AddCommand("+movedown", func_0024CCA8);
+    Cmd_AddCommand("-movedown", func_0024CCE8);
+    Cmd_AddCommand("+left", func_0024CD28);
+    Cmd_AddCommand("-left", func_0024CD68);
+    Cmd_AddCommand("+right", func_0024CDA8);
+    Cmd_AddCommand("-right", func_0024CDE8);
+    Cmd_AddCommand("+forward", func_0024CE28);
+    Cmd_AddCommand("-forward", func_0024CE68);
+    Cmd_AddCommand("+back", func_0024CEA8);
+    Cmd_AddCommand("-back", func_0024CEE8);
+    Cmd_AddCommand("+kbforward", func_0024CF28);
+    Cmd_AddCommand("-kbforward", func_0024CF68);
+    Cmd_AddCommand("+kbback", func_0024CFA8);
+    Cmd_AddCommand("-kbback", func_0024CFE8);
+    Cmd_AddCommand("+lookup", func_0024D028);
+    Cmd_AddCommand("-lookup", func_0024D068);
+    Cmd_AddCommand("+lookdown", func_0024D0A8);
+    Cmd_AddCommand("-lookdown", func_0024D0E8);
+    Cmd_AddCommand("+strafe", func_0024D3A8);
+    Cmd_AddCommand("-strafe", func_0024D3E8);
+    Cmd_AddCommand("+moveleft", func_0024D128);
+    Cmd_AddCommand("-moveleft", func_0024D168);
+    Cmd_AddCommand("+moveright", func_0024D1A8);
+    Cmd_AddCommand("-moveright", func_0024D1E8);
+    Cmd_AddCommand("+kbmoveleft", func_0024D228);
+    Cmd_AddCommand("-kbmoveleft", func_0024D268);
+    Cmd_AddCommand("+kbmoveright", func_0024D2A8);
+    Cmd_AddCommand("-kbmoveright", func_0024D2E8);
+    Cmd_AddCommand("+speed", func_0024D328);
+    Cmd_AddCommand("-speed", func_0024D368);
+    Cmd_AddCommand("tspeed", func_0024D9B8);
+    Cmd_AddCommand("+attack", func_0024D428);
+    Cmd_AddCommand("-attack", func_0024D468);
+    Cmd_AddCommand("+attack2", func_0024D4C8);
+    Cmd_AddCommand("-attack2", func_0024D508);
+    Cmd_AddCommand("+use", func_0024D548);
+    Cmd_AddCommand("-use", func_0024D588);
+    Cmd_AddCommand("+jump", func_0024D5C8);
+    Cmd_AddCommand("-jump", func_0024D608);
+    Cmd_AddCommand("impulse", func_0024D7E0);
+    Cmd_AddCommand("+klook", func_0024C658);
+    Cmd_AddCommand("-klook", func_0024C698);
+    Cmd_AddCommand("+mlook", func_0024C758);
+    Cmd_AddCommand("-mlook", func_0024C798);
+    Cmd_AddCommand("+jlook", func_0024C6D8);
+    Cmd_AddCommand("-jlook", func_0024C718);
+    Cmd_AddCommand("+duck", func_0024D648);
+    Cmd_AddCommand("-duck", func_0024D710);
+    Cmd_AddCommand("tduck", func_0024DA18);
+    Cmd_AddCommand("+reload", func_0024D838);
+    Cmd_AddCommand("-reload", func_0024D878);
+    Cmd_AddCommand("+alt1", func_0024D8B8);
+    Cmd_AddCommand("-alt1", func_0024D8F8);
+    Cmd_AddCommand("+alt2", func_0024D938);
+    Cmd_AddCommand("-alt2", func_0024D978);
+    Cmd_AddCommand("+leftStickYLook", func_0024C828);
+    Cmd_AddCommand("-leftStickYLook", func_0024C868);
+    Cmd_AddCommand("+leftStickXLook", func_0024C8A8);
+    Cmd_AddCommand("-leftStickXLook", func_0024C8E8);
+    Cmd_AddCommand("+rightStickYLook", func_0024C928);
+    Cmd_AddCommand("-rightStickYLook", func_0024C968);
+    Cmd_AddCommand("+rightStickXLook", func_0024C9A8);
+    Cmd_AddCommand("-rightStickXLook", func_0024C9E8);
+    Cmd_AddCommand("+leftStickForwardMove", func_0024CA28);
+    Cmd_AddCommand("-leftStickForwardMove", func_0024CA68);
+    Cmd_AddCommand("+leftStickSideMove", func_0024CAA8);
+    Cmd_AddCommand("-leftStickSideMove", func_0024CAE8);
+    Cmd_AddCommand("+rightStickForwardMove", func_0024CB28);
+    Cmd_AddCommand("-rightStickForwardMove", func_0024CB68);
+    Cmd_AddCommand("+rightStickSideMove", func_0024CBA8);
+    Cmd_AddCommand("-rightStickSideMove", func_0024CBE8);
+    func_00225860(in_leftStickYLook, 0, sizeof(in_leftStickYLook));
+    func_00225860(in_leftStickXLook, 0, sizeof(in_leftStickXLook));
+    func_00225860(in_rightStickYLook, 0, sizeof(in_rightStickYLook));
+    func_00225860(in_rightStickXLook, 0, sizeof(in_rightStickXLook));
+    func_00225860(in_leftStickForwardMove, 0, sizeof(in_leftStickForwardMove));
+    func_00225860(in_leftStickSideMove, 0, sizeof(in_leftStickSideMove));
+    func_00225860(in_rightStickForwardMove, 0, sizeof(in_rightStickForwardMove));
+    func_00225860(in_rightStickSideMove, 0, sizeof(in_rightStickSideMove));
+    func_00225860(in_mlook, 0, sizeof(in_mlook));
+    func_00225860(D_0046EA00, 0, sizeof(D_0046EA00));
+    func_00225860(in_jlook, 0, sizeof(in_jlook));
+    func_00225860(D_0046EA78, 0, sizeof(D_0046EA78));
+    func_00225860(D_0046E9E8, 0, sizeof(D_0046E9E8));
+    func_00225860(D_0046E940, 0, sizeof(D_0046E940));
+    func_00225860(D_0046E958, 0, sizeof(D_0046E958));
+    func_00225860(D_0046EAA8, 0, sizeof(D_0046EAA8));
+    func_00225860(D_0046E9D0, 0, sizeof(D_0046E9D0));
+    func_00225860(D_0046EA60, 0, sizeof(D_0046EA60));
+    func_00225860(D_0046EB68, 0, sizeof(D_0046EB68));
+    func_00225860(D_0046EB50, 0, sizeof(D_0046EB50));
+    func_00225860(D_0046E928, 0, sizeof(D_0046E928));
+    func_00225860(D_0046E9B8, 0, sizeof(D_0046E9B8));
+    func_00225860(D_0046EB08, 0, sizeof(D_0046EB08));
+    func_00225860(D_0046EA48, 0, sizeof(D_0046EA48));
+    func_00225860(D_0046E910, 0, sizeof(D_0046E910));
+    func_00225860(D_0046EBB0, 0, sizeof(D_0046EBB0));
+    func_00225860(D_0046EAF0, 0, sizeof(D_0046EAF0));
+    func_00225860(D_0046EAD8, 0, sizeof(D_0046EAD8));
+    func_00225860(D_0046EB20, 0, sizeof(D_0046EB20));
+    func_00225860(D_0046EBE0, 0, sizeof(D_0046EBE0));
+    func_00225860(D_0046E988, 0, sizeof(D_0046E988));
+    func_00225860(D_0046EC10, 0, sizeof(D_0046EC10));
+    func_00225860(D_0046EB80, 0, sizeof(D_0046EB80));
+    func_00225860(D_0046EBC8, 0, sizeof(D_0046EBC8));
+    func_00225860(D_0046EAC0, 0, sizeof(D_0046EAC0));
+    func_00225860(D_00399160, 0, sizeof(D_00399160));
+    func_00225860(D_00399150, 0, sizeof(D_00399150));
+    func_00246490();
+}
