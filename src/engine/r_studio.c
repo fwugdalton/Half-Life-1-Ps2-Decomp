@@ -96,6 +96,22 @@ int func_002E4560(const void *a, const void *b, int n);
 int strcasecmp(const char *a, const char *b);
 void Con_Printf(const char *fmt, ...);
 void GL_Bind(int texnum);
+
+typedef struct alight_s
+{
+    int ambientlight;           /* 0x00 */
+    int shadelight;             /* 0x04 */
+    vec3_t color;               /* 0x08 */
+    float *plightvec;           /* 0x14 */
+} alight_t;
+
+extern int r_ambientlight;
+extern float r_shadelight;
+extern vec3_t r_plightvec;
+extern vec3_t r_blightvec[MAXSTUDIOBONES];
+extern int r_colormix[3];
+extern vec3_t r_lightcolor;
+void QuaternionSlerp(float p[4], float q[4], float t, float qt[4]);
 qboolean R_CullBox(vec3_t mins, vec3_t maxs);
 void R_StudioRotateBBox(vec3_t mins, vec3_t maxs, vec3_t angles);
 void R_StudioCalcBoneAdj(float dadt, float *adj, byte *pcontroller1, byte *pcontroller2, byte mouthopen);
@@ -247,9 +263,22 @@ void AngleQuaternion(vec3_t angles, float quaternion[4])
     quaternion[3] = cr * cp * cy + sr * sp * sy;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002B9648);
+INCLUDE_ASM("asm/nonmatchings/engine/r_studio", QuaternionSlerp);
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002B98F8);
+void QuaternionMatrix(float quaternion[4], float matrix[3][4])
+{
+    matrix[0][0] = 1.0f - 2.0f * quaternion[1] * quaternion[1] - 2.0f * quaternion[2] * quaternion[2];
+    matrix[1][0] = 2.0f * quaternion[0] * quaternion[1] + 2.0f * quaternion[3] * quaternion[2];
+    matrix[2][0] = 2.0f * quaternion[0] * quaternion[2] - 2.0f * quaternion[3] * quaternion[1];
+
+    matrix[0][1] = 2.0f * quaternion[0] * quaternion[1] - 2.0f * quaternion[3] * quaternion[2];
+    matrix[1][1] = 1.0f - 2.0f * quaternion[0] * quaternion[0] - 2.0f * quaternion[2] * quaternion[2];
+    matrix[2][1] = 2.0f * quaternion[1] * quaternion[2] + 2.0f * quaternion[3] * quaternion[0];
+
+    matrix[0][2] = 2.0f * quaternion[0] * quaternion[2] + 2.0f * quaternion[3] * quaternion[1];
+    matrix[1][2] = 2.0f * quaternion[1] * quaternion[2] - 2.0f * quaternion[3] * quaternion[0];
+    matrix[2][2] = 1.0f - 2.0f * quaternion[0] * quaternion[0] - 2.0f * quaternion[1] * quaternion[1];
+}
 
 INCLUDE_RODATA("asm/nonmatchings/engine/r_studio", D_00394FA0);
 
@@ -261,7 +290,31 @@ INCLUDE_ASM("asm/nonmatchings/engine/r_studio", R_StudioCalcBoneQuaternion);
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", R_StudioCalcBonePosition);
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BA1B8);
+void R_StudioSlerpBones(float q1[][4], float pos1[][3], float q2[][4], float pos2[][3], float s)
+{
+    int i;
+    float q3[4];
+    float s1;
+
+    if (s < 0)
+        s = 0;
+    else if (s > 1.0f)
+        s = 1.0f;
+
+    s1 = 1.0f - s;
+
+    for (i = 0; i < pstudiohdr->numbones; i++)
+    {
+        QuaternionSlerp(q1[i], q2[i], s, q3);
+        q1[i][0] = q3[0];
+        q1[i][1] = q3[1];
+        q1[i][2] = q3[2];
+        q1[i][3] = q3[3];
+        pos1[i][0] = pos1[i][0] * s1 + pos2[i][0] * s;
+        pos1[i][1] = pos1[i][1] * s1 + pos2[i][1] * s;
+        pos1[i][2] = pos1[i][2] * s1 + pos2[i][2] * s;
+    }
+}
 
 
 mstudioanim_t *R_GetAnim(model_t *pmodel, mstudioseqdesc_t *pseqdesc)
@@ -823,7 +876,23 @@ void R_StudioSetupSkin(studiohdr_t *ptexturehdr, int index)
     GL_Bind(STUDIO_TEXNUM(ptexture));
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BF2B0);
+void R_StudioSetupLighting(alight_t *plighting)
+{
+    int i;
+
+    r_ambientlight = plighting->ambientlight;
+    r_shadelight = plighting->shadelight;
+    VectorCopy(plighting->plightvec, r_plightvec);
+
+    for (i = 0; i < pstudiohdr->numbones; i++)
+        VectorIRotate(r_plightvec, lighttransform[i], r_blightvec[i]);
+
+    r_colormix[0] = (int)(plighting->color[0] * 49407.0f) & 0xFF00;
+    r_colormix[1] = (int)(plighting->color[1] * 49407.0f) & 0xFF00;
+    r_colormix[2] = (int)(plighting->color[2] * 49407.0f) & 0xFF00;
+
+    VectorCopy(plighting->color, r_lightcolor);
+}
 
 void R_StudioSetupModel(int bodypart)
 {
