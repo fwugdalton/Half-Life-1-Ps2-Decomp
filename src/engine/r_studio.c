@@ -39,6 +39,9 @@ typedef struct r_studiocache_s
 } r_studiocache_t;              /* 0x44 */
 
 extern r_studiocache_t rgStudioCache[STUDIO_CACHE_SIZE];
+extern hull_t cache_hull[MAXSTUDIOBONES];
+extern mplane_t cache_planes[MAXSTUDIOBONES * 6];
+extern int cache_hull_hitgroup[MAXSTUDIOBONES];
 extern int r_cachecurrent;
 extern int nCurrentHull;
 extern int nCurrentPlane;
@@ -112,6 +115,9 @@ extern vec3_t r_plightvec;
 extern vec3_t r_blightvec[MAXSTUDIOBONES];
 extern int r_colormix[3];
 extern vec3_t r_lightcolor;
+extern cvar_t v_lambert;
+extern int lightgammatable[1024];
+extern int D_00399694;
 void QuaternionSlerp(float p[4], float q[4], float t, float qt[4]);
 float func_002D7F00(float x);
 
@@ -249,7 +255,36 @@ r_studiocache_t *R_CheckStudioCache(model_t *pModel, float frame, int sequence, 
     return NULL;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002B9330);
+void R_AddToStudioCache(float frame, int sequence, vec3_t angles, vec3_t origin, vec3_t size, byte *controller,
+                        byte *pblending, model_t *pModel, hull_t *pHulls, int numhulls)
+{
+    r_studiocache_t *pCache;
+
+    if (nCurrentHull + numhulls >= MAXSTUDIOBONES)
+        R_FlushStudioCache();
+
+    r_cachecurrent++;
+    pCache = &rgStudioCache[r_cachecurrent & STUDIO_CACHEMASK];
+
+    pCache->frame = frame;
+    pCache->sequence = sequence;
+    VectorCopy(angles, pCache->angles);
+    VectorCopy(origin, pCache->origin);
+    VectorCopy(size, pCache->size);
+    memcpy(pCache->controller, controller, 4);
+    memcpy(pCache->blending, pblending, 2);
+    pCache->pModel = pModel;
+    pCache->nStartHull = nCurrentHull;
+    pCache->nStartPlane = nCurrentPlane;
+
+    memcpy(&cache_hull[nCurrentHull], pHulls, numhulls * sizeof(hull_t));
+    memcpy(&cache_planes[nCurrentPlane], studio_planes, numhulls * sizeof(mplane_t) * 6);
+    memcpy(&cache_hull_hitgroup[nCurrentHull], studio_hull_hitgroup, numhulls * sizeof(int));
+
+    pCache->numhulls = numhulls;
+    nCurrentHull += numhulls;
+    nCurrentPlane += numhulls * 6;
+}
 
 void AngleQuaternion(vec3_t angles, float quaternion[4])
 {
@@ -990,7 +1025,53 @@ void func_002BE2D0(float *out, int bone, vec3_t in)
     out[3] = 1.0f;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BE3C0);
+void R_StudioLighting(float *lv, int bone, int flags, vec3_t normal)
+{
+    float illum;
+    float lightcos;
+    float r;
+
+    illum = r_ambientlight;
+
+    if ((flags & STUDIO_NF_FLATSHADE) && D_00399694 != 1)
+    {
+        illum += r_shadelight * 0.8f;
+    }
+    else
+    {
+        if (bone != -1)
+            lightcos = DotProduct(normal, r_blightvec[bone]);
+        else
+            lightcos = DotProduct(normal, r_plightvec);
+
+        if (lightcos > 1.0f)
+            lightcos = 1.0f;
+
+        r = v_lambert.value;
+        if (r >= 1.0f)
+        {
+            lightcos = (lightcos + (r - 1.0f)) / r;
+            illum += r_shadelight;
+            if (lightcos > 0.0f)
+                illum -= r_shadelight * lightcos;
+        }
+        else
+        {
+            lightcos = (r - lightcos) / (r + 1.0f);
+            if (lightcos > 0.0f)
+                illum += r_shadelight * lightcos;
+        }
+
+        if (illum <= 0)
+            illum = 0;
+    }
+
+    if (illum > 255)
+        illum = 255;
+
+    illum = lightgammatable[(int)(illum * 4)];
+    *lv = illum * 0.0006516779f;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BE5A0);
 
