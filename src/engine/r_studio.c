@@ -123,7 +123,20 @@ extern int D_00399694;
 #define STUDIO_MAXLIGHTS 3
 extern int lightbonecache[MAXSTUDIOBONES];
 extern int r_smodels_total;
+extern int chromeage[MAXSTUDIOBONES];
+extern vec3_t chromeup[MAXSTUDIOBONES];
+extern vec3_t chromeright[MAXSTUDIOBONES];
+extern vec3_t vright;
 extern int numlights;
+extern int boxpnt[6][4];
+extern struct model_s *D_003991CC;
+extern int D_00399574, D_0039954C;
+void tri_RenderMode(int mode);
+void tri_Color4f(float r, float g, float b, float a);
+void tri_Brightness(float brightness);
+void glBegin(int mode);
+void glEnd(void);
+void glVertex3fv(float *v);
 extern struct dlight_s *locallight[];
 extern vec3_t lightbonepos[MAXSTUDIOBONES][STUDIO_MAXLIGHTS];
 void QuaternionSlerp(float p[4], float q[4], float t, float qt[4]);
@@ -1024,7 +1037,52 @@ INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BD568);
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BD828);
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BDB30);
+#ifdef NON_MATCHING
+void R_StudioDrawAbsBBox(void)
+{
+    vec3_t tmp;
+    vec3_t p[8];
+    float lv;
+    int i;
+    mstudioseqdesc_t *pseqdesc;
+
+    pseqdesc = (mstudioseqdesc_t *)((byte *)pstudiohdr + pstudiohdr->seqindex) + currententity->sequence;
+
+    tri_RenderMode(5);
+    tri_SpriteTexture(D_003991CC, 0);
+
+    for (i = 0; i < 8; i++)
+    {
+        p[i][0] = (i & 1) ? pseqdesc->bbmin[0] : pseqdesc->bbmax[0];
+        p[i][1] = (i & 2) ? pseqdesc->bbmin[1] : pseqdesc->bbmax[1];
+        p[i][2] = (i & 4) ? pseqdesc->bbmin[2] : pseqdesc->bbmax[2];
+        VectorAdd(p[i], currententity->origin, p[i]);
+    }
+
+    tri_Color4f(0.5f, 0.5f, 1.0f, 1.0f);
+
+    for (i = 0; i < 6; i++)
+    {
+        tmp[0] = tmp[1] = tmp[2] = 0;
+        tmp[i % 3] = (i < 3) ? 1.0f : -1.0f;
+        R_StudioLighting(&lv, -1, 0, tmp);
+        tri_Brightness(lv);
+
+        glBegin(6);
+        D_00399574++;
+        D_0039954C += 4;
+        glVertex3fv(p[boxpnt[i][0]]);
+        glVertex3fv(p[boxpnt[i][1]]);
+        glVertex3fv(p[boxpnt[i][2]]);
+        glVertex3fv(p[boxpnt[i][3]]);
+        glEnd();
+    }
+
+    tri_RenderMode(0);
+}
+#else
+INCLUDE_ASM("asm/nonmatchings/engine/r_studio", R_StudioDrawAbsBBox);
+#endif
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BDDC0);
 
@@ -1110,7 +1168,38 @@ void R_LightStrength(int bone, float *vert, float (*light)[4])
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BE780);
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BEA90);
+void R_StudioChrome(int *pchrome, int bone, vec3_t normal)
+{
+    float n;
+
+    if (chromeage[bone] != r_smodels_total)
+    {
+        vec3_t chromeupvec;
+        vec3_t chromerightvec;
+        vec3_t tmp;
+
+        VectorScale(chrome_origin, -1, tmp);
+        tmp[0] += lighttransform[bone][0][3];
+        tmp[1] += lighttransform[bone][1][3];
+        tmp[2] += lighttransform[bone][2][3];
+        VectorNormalize(tmp);
+        CrossProduct(tmp, vright, chromeupvec);
+        VectorNormalize(chromeupvec);
+        CrossProduct(chromeupvec, tmp, chromerightvec);
+        VectorNormalize(chromerightvec);
+
+        VectorIRotate(chromeupvec, lighttransform[bone], chromeup[bone]);
+        VectorIRotate(chromerightvec, lighttransform[bone], chromeright[bone]);
+
+        chromeage[bone] = r_smodels_total;
+    }
+
+    n = DotProduct(normal, chromeright[bone]);
+    pchrome[0] = (n + 1.0f) * 32768.0f;
+
+    n = DotProduct(normal, chromeup[bone]);
+    pchrome[1] = (n + 1.0f) * 32768.0f;
+}
 
 studiohdr_t *R_LoadTextures(model_t *pmodel)
 {
@@ -1136,7 +1225,7 @@ studiohdr_t *R_LoadTextures(model_t *pmodel)
 #define HUE_MAX(a, b) (((a) > (b)) ? (a) : (b))
 #define HUE_MIN(a, b) (((a) < (b)) ? (a) : (b))
 
-void func_002BED78(byte *palSrc, int newHue, int Start, int end)
+void PaletteHueReplace(byte *palSrc, int newHue, int Start, int end)
 {
     int i;
     float r, b, g;
