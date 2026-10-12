@@ -69,6 +69,18 @@ void func_002B2F08(vec3_t start, vec3_t end, int type, int clientId); /* R_Rocke
 extern int cl_numvisedicts[2];
 extern int cl_parsecountmod[2];
 extern float realtime;
+extern int D_00399198[2];               /* cl_oldnumvisedicts */
+extern cl_entity_t *D_003991A0[2];      /* cl_oldvisedicts */
+extern cl_entity_t *D_00473C58[2][2];   /* cl_visbuffers (ver cl_heap_t no Cl_main.c) */
+float func_00251518(int clientId);      /* CL_LerpPoint */
+void func_0025B740(int clientId);
+void func_002537C0(vec3_t viewangles);
+void func_002535F8(vec3_t ang);
+extern qboolean cam_thirdperson;
+extern float D_00331694;            /* chase_active.value */
+extern float D_003317AC;            /* cl_pred_fraction.value */
+extern int D_003991B0[2];           /* spec_track */
+extern int D_003991C0[2];           /* autocam */
 extern int playerbitcounts[32];
 extern float D_00399498[2];
 extern int D_003994A0;              /* modelindex padrão do jogador */
@@ -1248,10 +1260,220 @@ void func_0024AD40(int clientId)
 INCLUDE_ASM("asm/nonmatchings/engine/cl_ents", func_0024AD40);
 #endif
 
+#ifdef NON_MATCHING
+void func_0024B920(int clientId)
+{
+    int i;
+    int j;
+    int bitset;
+    frame_t *frame;
+    player_state_t *state;
+    cl_entity_t *ent;
+    float frac;
+
+    frac = cl[clientId].lerpfrac;
+    for (i = 0; i < 3; i++)
+        cl[clientId].velocity[i] = cl[clientId].mvelocity[1][i] + frac * (cl[clientId].mvelocity[0][i] - cl[clientId].mvelocity[1][i]);
+
+    frame = &cl[clientId].frames[cl[clientId].parsecount & cl_updatemask[clientId]];
+
+    for (j = 0, state = frame->playerstate; j < 3; j++, state++)
+    {
+        if (state->messagenum != cl[clientId].parsecount)
+            continue;
+        if (cl_numvisedicts[clientId] >= 512)
+            break;
+
+        ent = &cl_visedicts[clientId][cl_numvisedicts[clientId]];
+        *ent = cl_entities[clientId][j + 1];
+        ent->index = j + 1;
+
+        if ((ent->unk194 & (4 | 8)) && &cl_entities[clientId][j + 1])
+            func_00249D98(j, clientId);
+
+        if (!cam_thirdperson && j == cl[clientId].viewentity - 1 && !D_00331694)
+            continue;
+        if (!state->modelindex)
+            continue;
+        if (state->effects & 0x80)
+            continue;
+        if (cl[clientId].spectator && D_003991C0[clientId] == 2 && D_003991B0[clientId] == j)
+            continue;
+
+        cl_numvisedicts[clientId]++;
+        bitset = D_003AC498[clientId][ent->index / 8] & (1 << (ent->index % 8));
+
+        if (D_003317AC < 0)
+            Cvar_Set("cl_pred_fraction", "0.0");
+        else if (D_003317AC > 10)
+            Cvar_Set("cl_pred_fraction", "10.0");
+
+        VectorCopy(state->origin, ent->origin);
+        VectorCopy(ent->origin, ent->prevorigin);
+
+        if (!bitset || (ent->unk194 & 0x20))
+        {
+            ent->prevsequence = ent->sequence;
+            VectorCopy(ent->origin, ent->prevorigin);
+            VectorCopy(ent->angles, ent->prevangles);
+            ent->animtime = ent->prevanimtime = cl[clientId].time;
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/cl_ents", func_0024B920);
+#endif
 
+#ifdef NON_MATCHING
+void func_0024BD88(int clientId)
+{
+    int i;
+    frame_t *frame;
+    cl_packet_entities_t *pak;
+    entity_state_t *state;
+    physent_t *pent;
+    model_t *mod;
+
+    pmove[clientId].physents[0].model = cl[clientId].worldmodel;
+    VectorCopy(vec3_origin, pmove[clientId].physents[0].origin);
+    pmove[clientId].physents[0].info = 0;
+    pmove[clientId].numphysent = 1;
+    pmove[clientId].nummoveent = 0;
+
+    frame = &cl[clientId].frames[cl_parsecountmod[clientId]];
+    pak = &frame->packet_entities;
+
+    for (i = 0; i < pak->num_entities; i++)
+    {
+        state = &pak->entities[i];
+
+        if (!state->modelindex)
+            continue;
+        mod = cl[clientId].model_precache[state->modelindex];
+        if (!mod)
+            continue;
+        if (state->solid == 1)
+            continue;
+        if (state->solid == 0 && state->skin >= -1)
+            continue;
+        if (!mod->hulls[1].firstclipnode && mod->type != 3)
+            continue;
+
+        if (*(int *)&state->skin == 0xFFF0)
+        {
+            pent = &pmove[clientId].moveents[pmove[clientId].nummoveent];
+            pmove[clientId].nummoveent++;
+        }
+        else
+            pent = &pmove[clientId].physents[pmove[clientId].numphysent++];
+
+        if (cl[clientId].model_precache[state->modelindex]->type == 3)
+        {
+            pent->model = NULL;
+            pent->studiomodel = cl[clientId].model_precache[state->modelindex];
+        }
+        else
+        {
+            pent->model = cl[clientId].model_precache[state->modelindex];
+            pent->studiomodel = NULL;
+        }
+
+        pent->info = state->number;
+        VectorCopy(state->origin, pent->origin);
+        VectorCopy(state->angles, pent->angles);
+        VectorCopy(state->mins, pent->mins);
+        VectorCopy(state->maxs, pent->maxs);
+        pent->frame = state->frame;
+        pent->sequence = state->sequence;
+        pent->rendermode = state->rendermode;
+        pent->skin = state->skin;
+        pent->solid = state->solid;
+        memcpy(pent->controller, state->controller, 4);
+        memcpy(pent->blending, state->blending, 2);
+    }
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/cl_ents", func_0024BD88);
+#endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_ents", func_0024C060);
+void func_0024C060(int clientId)
+{
+    int i;
+    cl_entity_t *pent;
 
-INCLUDE_ASM("asm/nonmatchings/engine/cl_ents", func_0024C120);
+    for (i = 0, pent = cl_visedicts[clientId]; i < cl_numvisedicts[clientId]; i++, pent++)
+    {
+        if (pent->aiment && pent->movetype == 12)
+            VectorCopy(cl_entities[clientId][pent->aiment].origin, pent->origin);
+    }
+}
+
+void func_0024C120(int clientId)
+{
+    vec3_t ang1;
+    vec3_t ang2;
+    int i;
+    int j;
+    int index;
+    cl_entity_t *ent;
+    cl_entity_t *cent;
+
+    if (cls[clientId].state != 5)
+    {
+        D_00399198[clientId] = 0;
+        cl_numvisedicts[clientId] = 0;
+        D_00399658[clientId] = 0;
+        memset(D_003AC498, 0, sizeof(D_003AC498));
+        return;
+    }
+
+    if (!cl[clientId].validsequence)
+        return;
+
+    D_00399198[clientId] = cl_numvisedicts[clientId];
+    D_003991A0[clientId] = D_00473C58[clientId][(cls[clientId].netchan.incoming_sequence - 1) & 1];
+    memset(D_003AC498[clientId], 0, sizeof(D_003AC498));
+
+    for (i = 0; i < D_00399198[clientId]; i++)
+    {
+        ent = &D_003991A0[clientId][i];
+        index = ent->index;
+        if (index <= 0)
+            continue;
+
+        D_003AC498[clientId][index / 8] |= 1 << (index % 8);
+        cent = &cl_entities[clientId][index];
+        cent->prevframe = ent->prevframe;
+        if (ent->index > cl[clientId].maxclients)
+            cent->frame = ent->frame;
+        for (j = 0; j < 4; j++)
+            VectorCopy(ent->origin, cent->attachment[j]);
+    }
+
+    cl_numvisedicts[clientId] = 0;
+    D_00399658[clientId] = 0;
+    cl_visedicts[clientId] = D_00473C58[clientId][cls[clientId].netchan.incoming_sequence & 1];
+
+    cl[clientId].lerpfrac = func_00251518(clientId);
+
+    func_0024B920(clientId);
+    func_0024A160(clientId);
+    func_0024C060(clientId);
+    func_0025B740(clientId);
+
+    if (cl[clientId].spectator)
+    {
+        if (D_003991C0[clientId] == 2)
+        {
+            func_002537C0(ang1);
+            VectorCopy(ang1, cl[clientId].viewangles);
+            VectorCopy(ang1, cl[clientId].simangles);
+        }
+        if (D_003991C0[clientId] == 3)
+        {
+            func_002535F8(ang2);
+            VectorCopy(ang2, cl[clientId].viewangles);
+            VectorCopy(ang2, cl[clientId].simangles);
+        }
+    }
+}

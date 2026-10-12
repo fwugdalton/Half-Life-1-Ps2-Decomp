@@ -124,10 +124,12 @@ typedef struct client_state_s
     usercmd_t cmd;              /* 0x214: último comando enviado */
     int stats[MAX_CL_STATS];    /* 0x238 */
     int items;                  /* 0x2B8 */
-    byte pad2BC[0x2DC - 0x2BC];
+    byte pad2BC[0x2C0 - 0x2BC];
+    float lerpfrac;             /* 0x2C0 */
+    byte pad2C4[0x2DC - 0x2C4];
     vec3_t viewangles;          /* 0x2DC */
     vec3_t mvelocity[2];        /* 0x2E8: [0] atual, [1] anterior */
-    byte pad300[0x30C - 0x300];
+    vec3_t velocity;            /* 0x300: interpolada entre mvelocity */
     vec3_t punchangle;          /* 0x30C */
     vec3_t crosshairangle;      /* 0x318 */
     float maxspeed;             /* 0x324 */
