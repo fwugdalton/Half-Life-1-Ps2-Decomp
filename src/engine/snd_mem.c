@@ -1,14 +1,5 @@
 #include "common.h"
-
-typedef struct
-{
-    int rate;
-    int width;
-    int channels;
-    int loopstart;
-    int samples;
-    int dataofs; /* chunk starts this many bytes from file start */
-} wavinfo_t;
+#include "engine/sound.h"
 
 extern byte *data_p;
 extern byte *iff_end;
@@ -24,63 +15,6 @@ int strncmp(const char *s1, const char *s2, unsigned int n);
 void *memset(void *s, int c, unsigned int n);
 void *memcpy(void *d, const void *s, unsigned int n);
 
-typedef struct
-{
-    int length;
-    int loopstart;
-    int speed;
-    int width;
-    int stereo;
-    byte data[1]; /* tamanho variável */
-} sfxcache_t;
-
-typedef struct sfx_s
-{
-    char name[64];
-    int servercount;  /* 0x40 */
-    char streamed;    /* 0x44 */
-    cache_user_t cache; /* 0x48 */
-} sfx_t;
-
-typedef struct
-{
-    sfx_t *sfx; /* 0x00 */
-    byte unk_04[0x40 - 0x04];
-    byte unk_40;
-    byte unk_41;
-    byte unk_42;
-    byte unk_43;
-    byte unk_44[0x4C - 0x44];
-} channel_t;
-
-typedef struct
-{
-    int pos;          /* 0x00 */
-    int len;          /* 0x04 */
-    wavinfo_t info;   /* 0x08 */
-    int unk_20;
-    int unk_24;
-    byte *buffer;     /* 0x28 */
-    int unk_2C;
-    int unk_30;
-    int unk_34;
-    int unk_38;
-    int unk_3C;
-} stream_t;
-
-typedef struct
-{
-    qboolean gamealive;
-    qboolean soundalive;
-    qboolean splitbuffer;
-    int channels;
-    int samples;
-    int submission_chunk;
-    int samplepos;
-    int samplebits;
-    int speed; /* 0x20 */
-} dma_t;
-
 #include "engine/cvar.h"
 
 extern volatile dma_t *shm;
@@ -88,8 +22,6 @@ extern cvar_t hisound;
 extern cvar_t loadas8bit;
 extern short (*LittleShort)(short l);
 extern int com_filesize;
-extern channel_t channels[];
-extern stream_t D_00553DE8[];
 extern int D_00557634;
 
 void *Cache_Check(cache_user_t *c);

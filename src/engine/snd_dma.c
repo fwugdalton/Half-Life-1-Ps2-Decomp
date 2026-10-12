@@ -1,35 +1,10 @@
 #include "common.h"
 #include "engine/cmd.h"
+#include "engine/sound.h"
 #include "engine/cvar.h"
 #include "engine/client.h"
 
 /* snd_dma.c do HL (versão PS2: três listas de sfx, global/jogo/fase) */
-
-typedef struct dma_s
-{
-    qboolean gamealive;         /* 0x00 */
-    qboolean soundalive;        /* 0x04 */
-    qboolean splitbuffer;       /* 0x08 */
-    int channels;               /* 0x0C */
-    int samples;                /* 0x10 */
-    int submission_chunk;       /* 0x14 */
-    int samplepos;              /* 0x18 */
-    int samplebits;             /* 0x1C */
-    int speed;                  /* 0x20 */
-    int dmaspeed;               /* 0x24 */
-    unsigned char *buffer;      /* 0x28 */
-} dma_t;
-
-typedef struct sfx_s
-{
-    char name[64];
-    int servercount;            /* 0x40: 0 = global, 1 = jogo */
-    int unk_44;
-    cache_user_t cache;         /* 0x48 */
-    int unk_4C;
-} sfx_t;                        /* 0x50 */
-
-#define MAX_SFX 512
 
 typedef int FileHandle_t;
 
@@ -61,9 +36,7 @@ extern cvar_t D_00334D40;        /* volume */
 extern cvar_t D_00334D58;
 extern cvar_t D_00334D70;
 extern cvar_t D_00334D88;
-extern cvar_t D_00334DB8;
 extern cvar_t hisound;
-extern cvar_t D_00334DD0;
 extern cvar_t loadas8bit;
 extern cvar_t D_00334E00;
 extern cvar_t D_00334E18;
@@ -73,6 +46,13 @@ extern cvar_t D_00334E60;
 extern cvar_t D_00334E78;
 extern int D_00334D30;          /* snd_initialized */
 extern sfx_t *D_00465870;       /* known_sfx */
+extern cvar_t D_00334DB8;       /* nosound */
+extern cvar_t D_00334DD0;       /* precache */
+extern int D_0039984C;          /* paintedtime */
+
+char *strstr(const char *, const char *);
+sfxcache_t *S_LoadSound(sfx_t *s, channel_t *ch);
+void func_002C7660(channel_t *ch, int clientId);
 
 int strcasecmp(const char *, const char *);
 void func_002CA018(void);
@@ -445,13 +425,142 @@ sfx_t *func_002CBE80(char *name, int *pfInCache)
     return sfx;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/snd_dma", S_PrecacheSound);
+sfx_t *S_PrecacheSound(char *name)
+{
+    sfx_t *sfx;
 
-INCLUDE_ASM("asm/nonmatchings/engine/snd_dma", func_002CC198);
+    if (!D_00334D3C || D_00334DB8.value)
+        return NULL;
 
+    if (name[0] == '*' || name[0] == '!')
+        return func_002CBE80(name, NULL);
+
+    sfx = func_002CBE80(name, NULL);
+    if (!D_00334DD0.value)
+        return sfx;
+
+    S_LoadSound(sfx, NULL);
+    return sfx;
+}
+
+int func_002CC198(sfx_t *sfx)
+{
+    int i;
+
+    for (i = NUM_AMBIENTS; i < D_00399844; i++)
+    {
+        if (channels[i].sfx == sfx)
+            return 1;
+    }
+    return 0;
+}
+
+#ifdef NON_MATCHING
+channel_t *func_002CC1E8(int entnum, int entchannel, sfx_t *sfx, int clientId)
+{
+    int ch_idx;
+    int first_to_die;
+    int life_left;
+    channel_t *target_chan;
+
+    if (entchannel == CHAN_STREAM && func_002CC198(sfx))
+        return NULL;
+
+    first_to_die = -1;
+    life_left = 0x7FFFFFFF;
+
+    for (ch_idx = NUM_AMBIENTS; ch_idx < MAX_DYNAMIC_CHANNELS; ch_idx++)
+    {
+        if (channels[ch_idx].entchannel == CHAN_STREAM && D_00553DE8[ch_idx].buffer)
+        {
+            if (entchannel == CHAN_VOICE)
+                return NULL;
+            continue;
+        }
+
+        if (entchannel != CHAN_AUTO && channels[ch_idx].entnum == entnum &&
+            (channels[ch_idx].entchannel == entchannel || entchannel == -1))
+        {
+            first_to_die = ch_idx;
+            break;
+        }
+
+        if (channels[ch_idx].entnum == cl[clientId].viewentity && entnum != cl[clientId].viewentity &&
+            channels[ch_idx].sfx)
+            continue;
+
+        if (channels[ch_idx].end - D_0039984C < life_left)
+        {
+            if (channels[ch_idx].unk_40 == 1)
+                continue;
+            life_left = channels[ch_idx].end - D_0039984C;
+            first_to_die = ch_idx;
+        }
+    }
+
+    if (first_to_die == -1)
+        return NULL;
+
+    target_chan = &channels[first_to_die];
+    if (target_chan->sfx)
+    {
+        func_002C7660(target_chan, clientId);
+        target_chan->sfx = NULL;
+    }
+    return target_chan;
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/snd_dma", func_002CC1E8);
+#endif
 
+#ifdef NON_MATCHING
+channel_t *func_002CC3B8(int entnum, int unused, sfx_t *sfx)
+{
+    int i;
+    int found;
+    channel_t *ch;
+
+    strstr(sfx->name, "c0a0_tr_gmorn.wav");
+
+    if (sfx->name[0] == '*' && func_002CC198(sfx))
+        return NULL;
+
+    found = 0;
+
+    for (i = MAX_DYNAMIC_CHANNELS; i < D_00399844; i++)
+    {
+        if (channels[i].sfx == sfx && channels[i].entnum == entnum)
+        {
+            found = 1;
+            break;
+        }
+    }
+
+    if (found)
+        return NULL;
+
+    for (i = MAX_DYNAMIC_CHANNELS; i < D_00399844; i++)
+    {
+        if (!channels[i].sfx)
+            break;
+    }
+
+    if (i < D_00399844)
+        return &channels[i];
+
+    if (D_00399844 != MAX_CHANNELS)
+    {
+        ch = &channels[D_00399844];
+        D_00399844++;
+        return ch;
+    }
+
+    Con_DPrintf("total_channels == MAX_CHANNELS\n");
+    return NULL;
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/snd_dma", func_002CC3B8);
+#endif
 
 INCLUDE_ASM("asm/nonmatchings/engine/snd_dma", func_002CC510);
 

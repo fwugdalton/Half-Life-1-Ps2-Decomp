@@ -1,22 +1,8 @@
 #include "common.h"
 #include "engine/cmd.h"
+#include "engine/sound.h"
 
 /* saída de som do PS2 (snd_win.c do HL adaptado: "wave" = blocos enviados ao IOP/SPU2) */
-
-typedef struct dma_s
-{
-    qboolean gamealive;         /* 0x00 */
-    qboolean soundalive;        /* 0x04 */
-    qboolean splitbuffer;       /* 0x08 */
-    int channels;               /* 0x0C */
-    int samples;                /* 0x10 */
-    int submission_chunk;       /* 0x14 */
-    int samplepos;              /* 0x18 */
-    int samplebits;             /* 0x1C */
-    int speed;                  /* 0x20 */
-    int dmaspeed;               /* 0x24 */
-    unsigned char *buffer;      /* 0x28 */
-} dma_t;
 
 typedef struct wavehdr_s
 {
