@@ -57,6 +57,25 @@ extern vec3_t D_00551760[2];    /* listener_origin por jogador */
 extern vec3_t D_00551778;       /* listener_right */
 extern vec3_t D_005517A0;       /* listener_origin */
 void func_002CA320(channel_t *ch);
+void func_002CDA48(int clientId);
+extern int D_00334D28;          /* snd_blocked */
+extern vec3_t D_00553DC8;       /* listener_forward */
+extern vec3_t D_00555DE8;       /* listener_up */
+extern vec3_t D_00553DB0;       /* forward do jogador 0 */
+extern vec3_t D_00551788;       /* right do jogador 0 */
+extern vec3_t D_00551718;       /* up do jogador 0 */
+void func_002CD450(void);
+void func_002CECE0(void);
+mleaf_t *Mod_PointInLeaf(vec_t *p, model_t *model);
+extern float host_frametime;
+extern sfx_t *D_00553DD8[NUM_AMBIENTS]; /* ambient_sfx */
+extern char D_00395F80[];       /* "Warning: pitch shift ignored on stream sound %s\n" */
+extern float D_00334D38;        /* sound_nominal_clip_dist */
+void func_002CA7E8(channel_t *ch, char *name, int clientId);
+void func_002CA700(channel_t *ch, int pitch);
+void func_002CB290(channel_t *ch, sfxcache_t *sc);
+void func_002C9E48(int entnum, int entchannel, int clientId);
+int RandomLong(int lLow, int lHigh);
 
 char *strstr(const char *, const char *);
 sfxcache_t *S_LoadSound(sfx_t *s, channel_t *ch);
@@ -734,27 +753,418 @@ void func_002CC7A8(channel_t *ch)
 INCLUDE_ASM("asm/nonmatchings/engine/snd_dma", func_002CC7A8);
 #endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/snd_dma", func_002CCB10);
+int func_002CCB10(int entnum, int entchannel, sfx_t *sfx, int vol, int pitch, int flags, int clientId)
+{
+    int ch_idx;
+
+    if (sfx->name[0] == '!')
+    {
+        for (ch_idx = NUM_AMBIENTS; ch_idx < D_00399844; ch_idx++)
+        {
+            if (channels[ch_idx].entnum == entnum && channels[ch_idx].entchannel == entchannel
+                && channels[ch_idx].sfx && channels[ch_idx].isentence >= 0)
+            {
+                if (flags & 0x80)
+                    channels[ch_idx].pitch = pitch;
+                if (flags & 0x40)
+                    channels[ch_idx].master_vol = vol;
+                if (flags & 0x20)
+                    func_002C7660(&channels[ch_idx], clientId);
+                return 1;
+            }
+        }
+        return 0;
+    }
+
+    for (ch_idx = NUM_AMBIENTS; ch_idx < D_00399844; ch_idx++)
+    {
+        if (channels[ch_idx].entnum == entnum && channels[ch_idx].entchannel == entchannel
+            && channels[ch_idx].sfx == sfx)
+        {
+            if (flags & 0x80)
+                channels[ch_idx].pitch = pitch;
+            if (flags & 0x40)
+                channels[ch_idx].master_vol = vol;
+            if (flags & 0x20)
+                func_002C7660(&channels[ch_idx], clientId);
+            return 1;
+        }
+    }
+    return 0;
+}
 
 INCLUDE_RODATA("asm/nonmatchings/engine/snd_dma", D_00395F80);
 
-INCLUDE_ASM("asm/nonmatchings/engine/snd_dma", S_StartDynamicSound);
+void S_StartDynamicSound(int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float fvol, float attenuation, int flags, int pitch, int clientId)
+{
+    channel_t *target_chan, *check;
+    sfxcache_t *sc;
+    int vol;
+    int ch_idx;
+    int skip;
+    int fsentence;
+    sfx_t *s;
+    char name[64];
 
+    if (!D_00334D3C)
+        return;
+    if (!sfx)
+        return;
+    if (D_00334DB8.value != 0.0f)
+        return;
+
+    if (sfx->name[0] == '*')
+    {
+        s = func_002CB9A0(sfx->name + 1);
+        if (!s)
+            entchannel = CHAN_STREAM;
+        else
+            sfx = s;
+    }
+
+    if (entchannel == CHAN_STREAM && pitch != 100)
+    {
+        Con_DPrintf(D_00395F80, sfx);
+        pitch = 100;
+    }
+
+    vol = (int)(fvol * 255.0f);
+    if (vol > 255)
+    {
+        Con_DPrintf("S_StartDynamicSound: %s volume > 255", sfx);
+        vol = 255;
+    }
+
+    if (flags & 0xE0)
+    {
+        if (func_002CCB10(entnum, entchannel, sfx, vol, pitch, flags, clientId))
+            return;
+        if (flags & 0x20)
+            return;
+    }
+
+    if (pitch == 0)
+    {
+        Con_DPrintf("Warning: S_StartDynamicSound Ignored, called with pitch 0");
+        return;
+    }
+
+    target_chan = func_002CC1E8(entnum, entchannel, sfx, clientId);
+    if (!target_chan)
+        return;
+
+    fsentence = sfx->name[0] == '!';
+
+    memset(target_chan, 0, sizeof(*target_chan));
+    VectorCopy(origin, target_chan->origin);
+    target_chan->dist_mult = attenuation / D_00334D38;
+    target_chan->master_vol = vol;
+    target_chan->isentence = -1;
+    target_chan->entnum = entnum;
+    target_chan->entchannel = entchannel;
+    target_chan->pitch = pitch;
+
+    if (cl_numlocal >= 2)
+        func_002CC7A8(target_chan);
+    else
+        func_002CC510(target_chan, clientId);
+
+    if (!target_chan->leftvol && !target_chan->rightvol && entchannel != CHAN_STREAM)
+    {
+        target_chan->sfx = NULL;
+        return;
+    }
+
+    if (fsentence)
+    {
+        Q_strcpy(name, sfx->name + 1);
+        func_002CA7E8(target_chan, name, clientId);
+        target_chan->unk_42 = 0;
+        return;
+    }
+
+    sc = S_LoadSound(sfx, target_chan);
+    target_chan->sfx = sfx;
+    if (!sc)
+    {
+        target_chan->sfx = NULL;
+        return;
+    }
+
+    target_chan->pos = 0;
+    target_chan->end = D_0039984C + sc->length;
+
+    if (pitch != 100)
+        func_002CA700(target_chan, pitch);
+    func_002CB290(target_chan, sc);
+    func_002C9E48(entnum, entchannel, clientId);
+
+    check = &channels[NUM_AMBIENTS];
+    for (ch_idx = NUM_AMBIENTS; ch_idx < NUM_AMBIENTS + 8; ch_idx++, check++)
+    {
+        if (check == target_chan)
+            continue;
+        if (check->sfx == sfx && !check->pos)
+        {
+            skip = RandomLong(0, (int)(shm->speed * 0.1f));
+            if (skip >= target_chan->end)
+                skip = target_chan->end - 1;
+            target_chan->pos += skip;
+            target_chan->end -= skip;
+            break;
+        }
+    }
+}
+
+#ifdef NON_MATCHING
+void S_StartStaticSound(int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float fvol, float attenuation, int flags, int pitch, int clientId)
+{
+    channel_t *ss;
+    sfxcache_t *sc;
+    int vol;
+    char name[64];
+
+    if (!sfx)
+        return;
+
+    if (sfx->name[0] == '*')
+        entchannel = CHAN_STREAM;
+
+    if (entchannel == CHAN_STREAM && pitch != 100)
+    {
+        Con_DPrintf(D_00395F80, sfx);
+        pitch = 100;
+    }
+
+    vol = (int)(fvol * 255.0f);
+    if (vol > 255)
+    {
+        Con_DPrintf("S_StartStaticSound: %s volume > 255", sfx);
+        vol = 255;
+    }
+
+    if (flags & 0xE0)
+    {
+        if (func_002CCB10(entnum, entchannel, sfx, vol, pitch, flags, clientId))
+            return;
+        if (flags & 0x20)
+            return;
+    }
+
+    if (pitch == 0)
+    {
+        Con_DPrintf("Warning: S_StartStaticSound Ignored, called with pitch 0");
+        return;
+    }
+
+    ss = func_002CC3B8(entnum, entchannel, sfx);
+    if (!ss)
+        return;
+
+    if (sfx->name[0] == '!')
+    {
+        Q_strcpy(name, sfx->name + 1);
+        func_002CA7E8(ss, name, clientId);
+        ss->unk_42 = 1;
+        VectorCopy(origin, ss->origin);
+        ss->entchannel = entchannel;
+        ss->master_vol = vol;
+        ss->dist_mult = attenuation / D_00334D38;
+        ss->pitch = pitch;
+        ss->entnum = entnum;
+        ss->pos = 0;
+        return;
+    }
+
+    sc = S_LoadSound(sfx, ss);
+    ss->sfx = sfx;
+    ss->isentence = -1;
+    if (!sc)
+    {
+        ss->sfx = NULL;
+        return;
+    }
+
+    VectorCopy(origin, ss->origin);
+    ss->master_vol = vol;
+    ss->dist_mult = attenuation / D_00334D38;
+    ss->pos = 0;
+    ss->end = D_0039984C + sc->length;
+    ss->entnum = entnum;
+    ss->entchannel = entchannel;
+    ss->pitch = pitch;
+
+    if (pitch != 100)
+        func_002CA700(ss, pitch);
+    func_002CB290(ss, sc);
+
+    if (cl_numlocal >= 2)
+        func_002CC7A8(ss);
+    else
+        func_002CC510(ss, clientId);
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/snd_dma", S_StartStaticSound);
+#endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/snd_dma", func_002CD280);
+void func_002CD280(int entnum, int entchannel, int clientId)
+{
+    int i;
 
-INCLUDE_ASM("asm/nonmatchings/engine/snd_dma", func_002CD340);
+    for (i = NUM_AMBIENTS; i < D_00399844; i++)
+    {
+        if (channels[i].entnum == entnum && channels[i].entchannel == entchannel)
+            func_002C7660(&channels[i], clientId);
+    }
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/snd_dma", func_002CD3F8);
+void func_002CD340(int clear, int clientId)
+{
+    int i;
 
-INCLUDE_ASM("asm/nonmatchings/engine/snd_dma", func_002CD450);
+    if (!D_00334D3C)
+        return;
 
-INCLUDE_ASM("asm/nonmatchings/engine/snd_dma", func_002CD4D0);
+    D_00399844 = NUM_AMBIENTS + 8;
 
-INCLUDE_ASM("asm/nonmatchings/engine/snd_dma", S_Update);
+    for (i = 0; i < MAX_CHANNELS; i++)
+    {
+        if (channels[i].sfx)
+            func_002C7660(&channels[i], clientId);
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/snd_dma", func_002CD788);
+    memset(channels, 0, sizeof(channels));
+    func_002C9C10();
+
+    if (clear)
+        func_002CD450();
+}
+
+void func_002CD3F8(void)
+{
+    int i;
+
+    for (i = 0; i < cl_numlocal; i++)
+        func_002CD340(1, i);
+}
+
+void func_002CD450(void)
+{
+    int clear;
+
+    if (!D_00334D3C || !shm || !shm->buffer)
+        return;
+
+    if (shm->samplebits == 8)
+        clear = 0x80;
+    else
+        clear = 0;
+
+    memset(shm->buffer, clear, shm->samples * shm->samplebits / 8);
+    func_002CECE0();
+}
+
+void func_002CD4D0(int clientId)
+{
+    mleaf_t *l;
+    float vol;
+    int ambient;
+    channel_t *chan;
+
+    if (!D_00334D2C)
+        return;
+
+    if (!cl[clientId].worldmodel)
+        return;
+
+    l = Mod_PointInLeaf(D_005517A0, cl[clientId].worldmodel);
+    if (!l || !D_00334E18.value)
+    {
+        for (ambient = 0; ambient < NUM_AMBIENTS; ambient++)
+            channels[ambient].sfx = NULL;
+        return;
+    }
+
+    for (ambient = 0; ambient < NUM_AMBIENTS; ambient++)
+    {
+        chan = &channels[ambient];
+        chan->sfx = D_00553DD8[ambient];
+
+        vol = 0;
+
+        if (chan->master_vol < vol)
+        {
+            chan->master_vol += host_frametime * D_00334E30.value;
+            if (chan->master_vol > vol)
+                chan->master_vol = vol;
+        }
+        else if (chan->master_vol > vol)
+        {
+            chan->master_vol -= host_frametime * D_00334E30.value;
+            if (chan->master_vol < vol)
+                chan->master_vol = vol;
+        }
+
+        chan->leftvol = chan->rightvol = chan->master_vol;
+    }
+}
+
+void S_Update(vec3_t origin, vec3_t forward, vec3_t right, vec3_t up, int clientId)
+{
+    int i;
+    channel_t *ch;
+
+    if (clientId == 1)
+        return;
+    if (!D_00334D3C)
+        return;
+    if (D_00334D28 > 0)
+        return;
+
+    VectorCopy(origin, D_005517A0);
+    VectorCopy(forward, D_00553DC8);
+    VectorCopy(right, D_00551778);
+    VectorCopy(up, D_00555DE8);
+
+    func_002CD4D0(clientId);
+
+    ch = &channels[NUM_AMBIENTS];
+    for (i = NUM_AMBIENTS; i < D_00399844; i++, ch++)
+    {
+        if (!ch->sfx)
+            continue;
+        func_002CC510(ch, clientId);
+    }
+
+    func_002CDA48(clientId);
+}
+
+void func_002CD788(void)
+{
+    int i;
+    channel_t *ch;
+
+    if (!D_00334D3C)
+        return;
+    if (D_00334D28 > 0)
+        return;
+
+    VectorCopy(D_00551760[0], D_005517A0);
+    VectorCopy(D_00553DB0, D_00553DC8);
+    VectorCopy(D_00551788, D_00551778);
+    VectorCopy(D_00551718, D_00555DE8);
+
+    func_002CD4D0(0);
+
+    ch = &channels[NUM_AMBIENTS];
+    for (i = NUM_AMBIENTS; i < D_00399844; i++, ch++)
+    {
+        if (ch->sfx)
+            func_002CC7A8(ch);
+    }
+
+    func_002CDA48(0);
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/snd_dma", func_002CD8C8);
 
