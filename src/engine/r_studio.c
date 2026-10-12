@@ -61,6 +61,13 @@ extern float D_0053CF68[3][4];
 extern mstudiobodyparts_t *pbodypart;
 extern mstudiomodel_t *psubmodel;
 
+extern int m_nCachedBones;
+extern char m_nCachedBoneNames[MAXSTUDIOBONES][32];
+extern float m_rgCachedBoneTransform[MAXSTUDIOBONES][3][4];
+extern float lighttransform[MAXSTUDIOBONES][3][4];
+extern float m_rgCachedLightTransform[MAXSTUDIOBONES][3][4];
+void MatrixCopy(float in[3][4], float out[3][4]);
+
 void SV_StudioSetupBones(model_t *pModel, float frame, int sequence, vec3_t angles, vec3_t origin,
                          byte *pcontroller, byte *pblending, int iBone);
 void *func_00244928(char *name, int *pLength);
@@ -155,7 +162,26 @@ INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002B91D8);
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002B9330);
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002B9538);
+void AngleQuaternion(vec3_t angles, float quaternion[4])
+{
+    float angle;
+    float sr, sp, sy, cr, cp, cy;
+
+    angle = angles[2] * 0.5f;
+    sy = sinf(angle);
+    cy = cosf(angle);
+    angle = angles[1] * 0.5f;
+    sp = sinf(angle);
+    cp = cosf(angle);
+    angle = angles[0] * 0.5f;
+    sr = sinf(angle);
+    cr = cosf(angle);
+
+    quaternion[0] = sr * cp * cy - cr * sp * sy;
+    quaternion[1] = cr * sp * cy + sr * cp * sy;
+    quaternion[2] = cr * cp * sy - sr * sp * cy;
+    quaternion[3] = cr * cp * cy + sr * sp * sy;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002B9648);
 
@@ -507,12 +533,26 @@ INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BCA88);
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BCBE8);
 
-void MatrixCopy(matrix3x4_t *in, matrix3x4_t *out)
+void MatrixCopy(float in[3][4], float out[3][4])
 {
-    *out = *in;
+    *(matrix3x4_t *)out = *(matrix3x4_t *)in;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BD468);
+void R_StudioSaveBones(void)
+{
+    int i;
+    mstudiobone_t *pbones;
+
+    pbones = (mstudiobone_t *)((byte *)pstudiohdr + pstudiohdr->boneindex);
+    m_nCachedBones = pstudiohdr->numbones;
+
+    for (i = 0; i < pstudiohdr->numbones; i++)
+    {
+        strcpy(m_nCachedBoneNames[i], pbones[i].name);
+        MatrixCopy(bonetransform[i], m_rgCachedBoneTransform[i]);
+        MatrixCopy(lighttransform[i], m_rgCachedLightTransform[i]);
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BD568);
 
@@ -522,7 +562,13 @@ INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BDB30);
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BDDC0);
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BE2D0);
+void func_002BE2D0(float *out, int bone, vec3_t in)
+{
+    out[0] = DotProduct(in, bonetransform[bone][0]) + bonetransform[bone][0][3];
+    out[1] = DotProduct(in, bonetransform[bone][1]) + bonetransform[bone][1][3];
+    out[2] = DotProduct(in, bonetransform[bone][2]) + bonetransform[bone][2][3];
+    out[3] = 1.0f;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BE3C0);
 
