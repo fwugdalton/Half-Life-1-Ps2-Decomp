@@ -39,6 +39,11 @@ typedef struct
 } dlight_t;
 
 extern dlight_t cl_dlights[MAX_DLIGHTS];
+#define MAX_ELIGHTS 64
+extern dlight_t cl_elights[MAX_ELIGHTS];
+extern int D_003995AC;
+extern cvar_t D_003317E8;       /* cl_nolerp */
+extern float D_00334764;
 
 qboolean NET_GetPacket(int sock);
 void CL_Disconnect(int clientId);
@@ -397,14 +402,139 @@ void func_00251040(void)
     Con_Printf("View entity set to %i\n", i);
 }
 
-void func_002510C8(void) {
+void func_002510C8(int i)
+{
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Cl_main", func_002510D0);
+dlight_t *func_002510D0(int key)
+{
+    int i;
+    dlight_t *dl;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Cl_main", func_00251250);
+    if (key)
+    {
+        dl = cl_dlights;
+        for (i = 0; i < MAX_DLIGHTS; i++, dl++)
+        {
+            if (dl->key == key)
+            {
+                memset(dl, 0, sizeof(*dl));
+                dl->key = key;
+                D_003995B4 |= 1 << i;
+                D_003995AC |= 1 << i;
+                return dl;
+            }
+        }
+    }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Cl_main", func_00251330);
+    dl = cl_dlights;
+    for (i = 0; i < MAX_DLIGHTS; i++, dl++)
+    {
+        if (dl->die < cl[0].time)
+        {
+            memset(dl, 0, sizeof(*dl));
+            dl->key = key;
+            D_003995B4 |= 1 << i;
+            D_003995AC |= 1 << i;
+            return dl;
+        }
+    }
+
+    dl = &cl_dlights[0];
+    memset(dl, 0, sizeof(*dl));
+    dl->key = key;
+    D_003995B4 |= 1;
+    D_003995AC |= 1;
+    return dl;
+}
+
+dlight_t *func_00251250(int key)
+{
+    int i;
+    dlight_t *dl;
+
+    if (key)
+    {
+        dl = cl_elights;
+        for (i = 0; i < MAX_ELIGHTS; i++, dl++)
+        {
+            if (dl->key == key)
+            {
+                memset(dl, 0, sizeof(*dl));
+                dl->key = key;
+                return dl;
+            }
+        }
+    }
+
+    dl = cl_elights;
+    for (i = 0; i < MAX_ELIGHTS; i++, dl++)
+    {
+        if ((dl->radius <= 0 || dl->die != 0) && dl->die < cl[0].time)
+        {
+            memset(dl, 0, sizeof(*dl));
+            dl->key = key;
+            return dl;
+        }
+    }
+
+    dl = &cl_elights[0];
+    memset(dl, 0, sizeof(*dl));
+    dl->key = key;
+    return dl;
+}
+
+void func_00251330(void)
+{
+    int i;
+    dlight_t *dl;
+    float time;
+
+    time = cl[0].time - cl[0].oldtime;
+
+    D_003995B4 = 0;
+    D_003995AC = 0;
+
+    dl = cl_dlights;
+    for (i = 0; i < MAX_DLIGHTS; i++, dl++)
+    {
+        if (!dl->radius)
+            continue;
+
+        if (dl->die && dl->die < cl[0].time)
+        {
+            D_003995B4 |= 1 << i;
+            dl->radius = 0;
+        }
+        else if (dl->decay)
+        {
+            D_003995B4 |= 1 << i;
+            dl->radius -= time * dl->decay;
+            if (dl->radius < 0)
+                dl->radius = 0;
+        }
+
+        if (dl->radius)
+            D_003995AC |= 1 << i;
+    }
+
+    dl = cl_elights;
+    for (i = 0; i < MAX_ELIGHTS; i++, dl++)
+    {
+        if (!dl->radius)
+            continue;
+
+        if (dl->die && dl->die < cl[0].time)
+        {
+            dl->radius = 0;
+            continue;
+        }
+
+        dl->radius -= time * dl->decay;
+        if (dl->radius < 0)
+            dl->radius = 0;
+    }
+}
 
 void func_002514D0(dlight_t *dl)
 {
@@ -415,7 +545,48 @@ void func_002514D0(dlight_t *dl)
         D_003995B4 |= 1 << i;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Cl_main", func_00251518);
+float func_00251518(int clientId)
+{
+    float f, frac;
+
+    f = cl[clientId].mtime[0] - cl[clientId].mtime[1];
+
+    if (!f || D_003317E8.value || (sv.active && !D_00334764))
+    {
+        cl[clientId].time = cl[clientId].mtime[0];
+        return 1;
+    }
+
+    if (f > 0.1f)
+    {
+        cl[clientId].mtime[1] = cl[clientId].mtime[0] - 0.1f;
+        f = 0.1f;
+    }
+
+    frac = (cl[clientId].time - cl[clientId].mtime[1]) / f;
+    if (frac < 0)
+    {
+        if (frac < -0.01f)
+        {
+            func_002510C8(1);
+            cl[clientId].time = cl[clientId].mtime[1];
+        }
+        frac = 0;
+    }
+    else if (frac > 1)
+    {
+        if (frac > 1.01f)
+        {
+            func_002510C8(2);
+            cl[clientId].time = cl[clientId].mtime[0];
+        }
+        frac = 1;
+    }
+    else
+        func_002510C8(0);
+
+    return frac;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/Cl_main", func_00251710);
 
