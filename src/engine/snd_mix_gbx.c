@@ -136,6 +136,15 @@ extern portable_samplepair_t D_003347B8; /* paintprev */
 extern int D_00549698[32][256];  /* snd_scaletable */
 void func_002C9C98(channel_t *ch, sfx_t *sfx);
 void func_002CB290(channel_t *ch, sfxcache_t *sc);
+extern int D_0039982C;
+extern char *rgpszrawsentence[];
+char *func_002CB1E8(char *pSentenceName, int *psentencenum);
+void Q_strcat(char *dest, const char *src);
+sfx_t *func_002CBE80(char *name, int *pfInCache);
+extern char *D_00334D24;
+extern char D_00334D10[];      /* "sound/sentences.txt" */
+extern int com_filesize;
+void *func_00244928(char *name, int *pLength);
 sfxcache_t *S_LoadSound(sfx_t *s, channel_t *ch);
 void Cache_Free(cache_user_t *c);
 char *strcpy(char *, const char *);
@@ -1427,12 +1436,383 @@ void func_002CA700(channel_t *ch, int pitch)
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/snd_mix_gbx", func_002CA7E8);
+sfxcache_t *func_002CA7E8(channel_t *pchan, char *pszin, int clientId)
+{
+    char buffer[512];
+    char pathbuffer[64];
+    char szpath[32];
+    voxword_t rgvoxword[32];
+    char name[256];
+    int lba;
+    int size;
+    int i, j, k, cword;
+    sfxcache_t *sc;
+    char *psz;
 
+    if (!pszin)
+        return NULL;
+
+    memset(rgvoxword, 0, sizeof(voxword_t) * 32);
+    memset(buffer, 0, sizeof(buffer));
+
+    psz = func_002CB1E8(pszin, NULL);
+
+    if (!psz)
+    {
+        Con_DPrintf("VOX_LoadSound: no sentence named %s\n", pszin);
+        return NULL;
+    }
+
+    psz = func_002CA250(szpath, psz);
+
+    if (Q_strlen(psz) > sizeof(buffer) - 1)
+    {
+        Con_DPrintf("VOX_LoadSound: sentence is too long %s\n", psz);
+        return NULL;
+    }
+
+    Q_strcpy(buffer, psz);
+    psz = buffer;
+
+    func_002CA050(psz);
+
+    i = 0;
+    cword = 0;
+    while (D_00551698[i])
+    {
+        if (func_002CA3C8(D_00551698[i], &rgvoxword[cword], i == 0))
+        {
+            Q_strcpy(pathbuffer, szpath);
+            Q_strcat(pathbuffer, D_00551698[i]);
+            Q_strcat(pathbuffer, ".wav");
+
+            rgvoxword[cword].sfx = func_002CBE80(pathbuffer, &rgvoxword[cword].fKeepCached);
+            cword++;
+        }
+        i++;
+    }
+
+    k = func_002CA698();
+    if (k < 0)
+        return NULL;
+
+    j = 0;
+    while (rgvoxword[j].sfx != NULL)
+    {
+        D_00544E98[k][j] = rgvoxword[j];
+        j++;
+    }
+    D_00544E98[k][j].sfx = NULL;
+
+    pchan->isentence = k;
+    pchan->iword = 0;
+    pchan->sfx = D_00544E98[k][0].sfx;
+
+    if (pchan->sfx->servercount == 2)
+    {
+        memcpy(name, D_00395968, 7);
+        strcat(name, pchan->sfx->name);
+        sc = NULL;
+        func_002CFF88(name, &pchan->unk_44, &lba, &size);
+        if (size > 0)
+        {
+            pchan->unk_40 = 1;
+            pchan->unk_48 = func_00225D48(size << 11, 0x40, D_00395970, 2923);
+            pchan->unk_41 = func_002388A0(lba, size, pchan->unk_48, pchan->unk_48);
+        }
+        else
+            func_002C7660(pchan, clientId);
+    }
+    else
+    {
+        sc = S_LoadSound(rgvoxword[0].sfx, NULL);
+        if (!sc)
+            func_002C7660(pchan, clientId);
+    }
+    return sc;
+}
+
+/* VOX_MixChannelPitch: só o lui da string do Con_DPrintf usa v0 no original (a0 no nosso) */
+#ifdef NON_MATCHING
+int func_002CAB28(channel_t *ch, sfxcache_t *sc, int count, int pitch, int timecompress, int offset)
+{
+    int data;
+    int *lscale, *rscale;
+    unsigned char *sfx;
+    int i;
+    int pos;
+    int samplefrac;
+    int fracstep;
+    float fpitch;
+    int cb;
+    int cblock;
+    int cbcompress;
+    int skip;
+    int j;
+    int k;
+    int sample;
+    int cdata;
+    portable_samplepair_t *paintbuffer;
+
+    paintbuffer = &D_00542D70[offset];
+
+    if (ch->isentence < 0)
+        return 0;
+
+    fpitch = (float)pitch / 100;
+
+    if (ch->leftvol > 255)
+        ch->leftvol = 255;
+    if (ch->rightvol > 255)
+        ch->rightvol = 255;
+
+    fracstep = fpitch * 256;
+    lscale = D_00549698[ch->leftvol >> 3];
+    rscale = D_00549698[ch->rightvol >> 3];
+    sfx = sc->data;
+
+    samplefrac = D_00544E98[ch->isentence][ch->iword].samplefrac;
+    pos = samplefrac >> 8;
+    cb = D_00544E98[ch->isentence][ch->iword].cbtrim;
+    samplefrac += fracstep;
+
+    if (!timecompress)
+    {
+        for (i = 0; i < count && pos < cb; i++)
+        {
+            data = sfx[pos];
+            paintbuffer[i].left += lscale[data];
+            paintbuffer[i].right += rscale[data];
+            pos = samplefrac >> 8;
+            samplefrac += fracstep;
+        }
+    }
+    else
+    {
+        cblock = cb / 8;
+        cbcompress = (cblock * timecompress) / 100;
+        skip = 0;
+
+        i = 0;
+        while (i < count && pos < cb)
+        {
+            j = pos % cblock;
+
+            if (pos < cbcompress || j >= cbcompress)
+            {
+                skip = cblock - j;
+            }
+            else
+            {
+                for (k = 0; i < count && pos < cb && k < 255 && (data = sfx[pos]) >= 3; k++)
+                {
+                    paintbuffer[i].left += lscale[data];
+                    paintbuffer[i].right += rscale[data];
+                    pos = samplefrac >> 8;
+                    samplefrac += fracstep;
+                    i++;
+                }
+
+                if (i > 512)
+                    Con_DPrintf("timecompress scan forward: overwrote paintbuffer!");
+
+                if (pos >= cb || i >= count)
+                    break;
+
+                while (1)
+                {
+                    j = pos % cblock;
+                    if (j < cbcompress)
+                    {
+                        pos += cbcompress - j;
+                        samplefrac += (cbcompress - j) << 8;
+                    }
+
+                    for (k = 0; pos < cb && k < 255 && (sample = sfx[pos]) >= 3; k++)
+                    {
+                        pos = samplefrac >> 8;
+                        samplefrac += fracstep;
+                    }
+
+                    if (pos >= cb)
+                        break;
+
+                    j = pos % cblock;
+                    if (j >= cbcompress)
+                    {
+                        skip = cblock - j;
+                        break;
+                    }
+                }
+            }
+
+            cdata = (skip << 8) / fracstep;
+            if (i + cdata > count)
+                cdata = count - i;
+            if (cdata == 0)
+                cdata = 1;
+
+            for (k = 0; i < count && k < cdata && pos < cb; k++)
+            {
+                data = sfx[pos];
+                paintbuffer[i].left += lscale[data];
+                paintbuffer[i].right += rscale[data];
+                pos = samplefrac >> 8;
+                samplefrac += fracstep;
+                i++;
+            }
+        }
+    }
+
+    D_00544E98[ch->isentence][ch->iword].samplefrac = samplefrac;
+    ch->end += i - ((samplefrac >> 8) - ch->pos);
+    ch->pos = samplefrac >> 8;
+    return pos >= cb;
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/snd_mix_gbx", func_002CAB28);
+#endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/snd_mix_gbx", func_002CB018);
+void func_002CB018(void)
+{
+    char *pch;
+    char *pchlast;
+    char c;
+    int n;
 
-INCLUDE_ASM("asm/nonmatchings/engine/snd_mix_gbx", func_002CB1E8);
+    memset(rgpszrawsentence, 0, sizeof(char *) * 0x600);
 
+    if (D_00334D24)
+    {
+        Mem_Free(D_00334D24);
+        D_00334D24 = NULL;
+    }
+
+    D_00334D24 = func_00244928(D_00334D10, NULL);
+    pch = D_00334D24;
+    pchlast = pch + com_filesize;
+
+    if (!pch)
+    {
+        Con_DPrintf("Couldn't load %s\n", D_00334D10);
+        return;
+    }
+
+    n = 0;
+
+    while (pch < pchlast)
+    {
+        c = *pch;
+        while (pch < pchlast && (c == '\n' || c == '\r' || c == '\t' || c == ' '))
+            c = *(++pch);
+
+        if (*pch != '/')
+        {
+            rgpszrawsentence[n++] = pch;
+
+            c = *pch;
+            while (pch < pchlast && c != ' ')
+                c = *(++pch);
+
+            if (pch < pchlast)
+                *pch++ = 0;
+        }
+
+        c = *pch;
+        while (pch < pchlast && c != '\n' && c != '\r')
+            c = *(++pch);
+
+        if (pch < pchlast)
+            *pch++ = 0;
+
+        if (n >= 0x600)
+            break;
+    }
+
+    D_0039982C = n;
+}
+
+char *func_002CB1E8(char *pSentenceName, int *psentencenum)
+{
+    int i;
+
+    for (i = 0; i < D_0039982C; i++)
+    {
+        if (!Q_strcasecmp(pSentenceName, rgpszrawsentence[i]))
+        {
+            if (psentencenum)
+                *psentencenum = i;
+            return rgpszrawsentence[i] + Q_strlen(rgpszrawsentence[i]) + 1;
+        }
+    }
+    return NULL;
+}
+
+#ifdef NON_MATCHING
+void func_002CB290(channel_t *ch, sfxcache_t *sc)
+{
+    float sstart;
+    float send;
+    int i;
+    int srcsample;
+    int skiplen;
+    voxword_t *pvoxword;
+    signed char *pdata;
+    int length;
+
+    if (ch->isentence < 0)
+        return;
+
+    pvoxword = &D_00544E98[ch->isentence][ch->iword];
+    send = pvoxword->end;
+    pvoxword->cbtrim = sc->length;
+    sstart = pvoxword->start;
+
+    if (sstart >= send)
+        return;
+
+    if (sstart > 0 && sstart < 100)
+    {
+        length = sc->length;
+        pdata = (signed char *)sc->data;
+        skiplen = length * (sstart / 100);
+        ch->pos += skiplen;
+        srcsample = ch->pos;
+
+        for (i = 0; srcsample < length && i < 255; i++)
+        {
+            if (pdata[srcsample] >= -2 && pdata[srcsample] <= 2)
+            {
+                ch->pos = srcsample;
+                ch->end -= skiplen + i;
+                break;
+            }
+            srcsample++;
+        }
+
+        if (pvoxword->pitch != 100)
+            pvoxword->samplefrac += ch->pos << 8;
+    }
+
+    if (send > 0 && send < 100)
+    {
+        pdata = (signed char *)sc->data;
+        skiplen = sc->length * ((100 - send) / 100);
+        ch->end -= skiplen;
+        srcsample = sc->length - skiplen;
+
+        for (i = 0; ch->pos < srcsample && i < 255; i++)
+        {
+            if (pdata[srcsample] >= -2 && pdata[srcsample] <= 2)
+            {
+                ch->end -= i;
+                pvoxword->cbtrim -= i + skiplen;
+                break;
+            }
+            srcsample--;
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/snd_mix_gbx", func_002CB290);
+#endif
