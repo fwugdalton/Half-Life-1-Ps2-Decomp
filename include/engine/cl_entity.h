@@ -23,7 +23,7 @@ typedef struct cl_entity_s
     int movetype;               /* 0x1C */
     int body;                   /* 0x20: body do viewmodel (svc_weaponanim) */
     int sequence;               /* 0x24 */
-    byte pad28[0x2C - 0x28];
+    int prevsequence;           /* 0x28 */
     int index;                  /* 0x2C */
     int colormap;               /* 0x30 */
     int skin;                   /* 0x34 */
@@ -41,8 +41,8 @@ typedef struct cl_entity_s
     float scale;                /* 0x6C */
     byte pad70[0x74 - 0x70];
     float prevanimtime;         /* 0x74 */
-    byte pad78[0x7C - 0x78];
-    float unk7C;                /* 0x7C: comparado com animtime nos eventos */
+    float prevframe;            /* 0x78 */
+    float sequencetime;         /* 0x7C */
     byte pad80[0x84 - 0x80];
     vec3_t origin;              /* 0x84 */
     vec3_t angles;              /* 0x90 */

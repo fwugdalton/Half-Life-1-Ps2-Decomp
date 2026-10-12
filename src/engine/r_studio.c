@@ -1450,7 +1450,146 @@ float R_StudioEstimateFrame(mstudioseqdesc_t *pseqdesc, int clientId)
     return f;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/r_studio", func_002BCBE8);
+/* pos/q estáticos de R_StudioSetupBones */
+extern float D_00419840[MAXSTUDIOBONES][3];
+extern float D_00419E40[MAXSTUDIOBONES][4];
+extern float D_0041A640[MAXSTUDIOBONES][3];
+extern float D_0041AC40[MAXSTUDIOBONES][4];
+extern float D_0041B440[MAXSTUDIOBONES][3];
+extern float D_0041BA40[MAXSTUDIOBONES][4];
+extern float D_0041C240[MAXSTUDIOBONES][3];
+extern float D_0041C840[MAXSTUDIOBONES][4];
+extern float D_0041D040[MAXSTUDIOBONES][3];
+extern float D_0041D640[MAXSTUDIOBONES][4];
+
+void func_002BCBE8(int clientId)
+{
+    int i;
+    float f;
+    mstudiobone_t *pbones;
+    mstudioseqdesc_t *pseqdesc;
+    mstudioanim_t *panim;
+    float bonematrix[3][4];
+
+    if (currententity->sequence >= pstudiohdr->numseq)
+        currententity->sequence = 0;
+
+    pseqdesc = (mstudioseqdesc_t *)((byte *)pstudiohdr + pstudiohdr->seqindex) + currententity->sequence;
+
+    f = R_StudioEstimateFrame(pseqdesc, clientId);
+
+    panim = R_GetAnim((model_t *)D_0039967C, pseqdesc);
+    R_StudioCalcRotations(D_00419840, D_00419E40, pseqdesc, panim, f, clientId);
+
+    if (pseqdesc->numblends > 1)
+    {
+        float s;
+        float dadt;
+
+        panim += pstudiohdr->numbones;
+        R_StudioCalcRotations(D_0041A640, D_0041AC40, pseqdesc, panim, f, clientId);
+
+        dadt = R_StudioEstimateInterpolant(clientId);
+        s = (currententity->blending[0] * dadt + currententity->prevblending[0] * (1.0f - dadt)) * (1.0f / 255.0f);
+
+        R_StudioSlerpBones(D_00419E40, D_00419840, D_0041AC40, D_0041A640, s);
+
+        if (pseqdesc->numblends == 4)
+        {
+            panim += pstudiohdr->numbones;
+            R_StudioCalcRotations(D_0041B440, D_0041BA40, pseqdesc, panim, f, clientId);
+
+            panim += pstudiohdr->numbones;
+            R_StudioCalcRotations(D_0041C240, D_0041C840, pseqdesc, panim, f, clientId);
+
+            s = (currententity->blending[0] * dadt + currententity->prevblending[0] * (1.0f - dadt)) * (1.0f / 255.0f);
+            R_StudioSlerpBones(D_0041BA40, D_0041B440, D_0041C840, D_0041C240, s);
+
+            s = (currententity->blending[1] * dadt + currententity->prevblending[1] * (1.0f - dadt)) * (1.0f / 255.0f);
+            R_StudioSlerpBones(D_00419E40, D_00419840, D_0041BA40, D_0041B440, s);
+        }
+    }
+
+    if (r_dointerp && currententity->sequencetime != 0.0f &&
+        (currententity->sequencetime + 0.2f > cl[clientId].time) &&
+        (currententity->prevsequence < pstudiohdr->numseq))
+    {
+        float s;
+
+        pseqdesc = (mstudioseqdesc_t *)((byte *)pstudiohdr + pstudiohdr->seqindex) + currententity->prevsequence;
+        panim = R_GetAnim((model_t *)D_0039967C, pseqdesc);
+        R_StudioCalcRotations(D_0041D040, D_0041D640, pseqdesc, panim, currententity->prevframe, clientId);
+
+        if (pseqdesc->numblends > 1)
+        {
+            panim += pstudiohdr->numbones;
+            R_StudioCalcRotations(D_0041A640, D_0041AC40, pseqdesc, panim, f, clientId);
+
+            s = currententity->prevseqblending[0] * (1.0f / 255.0f);
+            R_StudioSlerpBones(D_0041D640, D_0041D040, D_0041AC40, D_0041A640, s);
+
+            if (pseqdesc->numblends == 4)
+            {
+                panim += pstudiohdr->numbones;
+                R_StudioCalcRotations(D_0041B440, D_0041BA40, pseqdesc, panim, f, clientId);
+
+                panim += pstudiohdr->numbones;
+                R_StudioCalcRotations(D_0041C240, D_0041C840, pseqdesc, panim, f, clientId);
+
+                s = currententity->prevseqblending[0] * (1.0f / 255.0f);
+                R_StudioSlerpBones(D_0041BA40, D_0041B440, D_0041C840, D_0041C240, s);
+
+                s = currententity->prevseqblending[1] * (1.0f / 255.0f);
+                R_StudioSlerpBones(D_0041D640, D_0041D040, D_0041BA40, D_0041B440, s);
+            }
+        }
+
+        s = 1.0f - (cl[clientId].time - currententity->sequencetime) * 5.0f;
+        R_StudioSlerpBones(D_00419E40, D_00419840, D_0041D640, D_0041D040, s);
+    }
+    else
+    {
+        currententity->prevframe = f;
+    }
+
+    pbones = (mstudiobone_t *)((byte *)pstudiohdr + pstudiohdr->boneindex);
+
+    if (m_pPlayerInfo && m_pPlayerInfo->gaitsequence != 0)
+    {
+        pseqdesc = (mstudioseqdesc_t *)((byte *)pstudiohdr + pstudiohdr->seqindex) + m_pPlayerInfo->gaitsequence;
+        panim = R_GetAnim((model_t *)D_0039967C, pseqdesc);
+        R_StudioCalcRotations(D_0041A640, D_0041AC40, pseqdesc, panim, m_pPlayerInfo->gaitframe, clientId);
+
+        for (i = 0; i < pstudiohdr->numbones; i++)
+        {
+            if (strcmp(pbones[i].name, "Bip01 Spine") == 0)
+                break;
+            memcpy(D_00419840[i], D_0041A640[i], sizeof(D_00419840[i]));
+            memcpy(D_00419E40[i], D_0041AC40[i], sizeof(D_00419E40[i]));
+        }
+    }
+
+    for (i = 0; i < pstudiohdr->numbones; i++)
+    {
+        QuaternionMatrix(D_00419E40[i], bonematrix);
+
+        bonematrix[0][3] = D_00419840[i][0];
+        bonematrix[1][3] = D_00419840[i][1];
+        bonematrix[2][3] = D_00419840[i][2];
+
+        if (pbones[i].parent == -1)
+        {
+            R_ConcatTransforms(D_0053CF68, bonematrix, bonetransform[i]);
+            R_ConcatTransforms(D_0053CF68, bonematrix, lighttransform[i]);
+            func_0025C428(currententity, bonetransform[i]);
+        }
+        else
+        {
+            R_ConcatTransforms(bonetransform[pbones[i].parent], bonematrix, bonetransform[i]);
+            R_ConcatTransforms(lighttransform[pbones[i].parent], bonematrix, lighttransform[i]);
+        }
+    }
+}
 
 void MatrixCopy(float in[3][4], float out[3][4])
 {
@@ -2450,7 +2589,7 @@ void R_StudioClientEvents(int clientId)
     flEnd = R_StudioEstimateFrame(pseqdesc, clientId);
     flStart = flEnd - (D_0041EC40[clientId] - D_0041EC48[clientId]) * currententity->framerate * pseqdesc->fps;
 
-    if (currententity->unk7C == currententity->animtime)
+    if (currententity->sequencetime == currententity->animtime)
     {
         if (!(pseqdesc->flags & STUDIO_LOOPING))
             flStart = -0.01f;
