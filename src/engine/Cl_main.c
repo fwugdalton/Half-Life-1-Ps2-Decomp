@@ -14,6 +14,8 @@ extern int D_00399168;          /* gravando filme */
 extern cl_entity_t *cl_entities[2];
 extern int D_0053D1D4;
 extern int D_0033451C;
+extern char D_0038A068[];       /* "engine/Cl_main.c" (também usada pelo CL_Init) */
+extern char D_0038A080[];       /* "Unable to allocate %i client frames" */
 extern char D_0038A108[];       /* "local" (também usada por funções em asm) */
 extern int msg_buckets[64];
 extern int total_data[64];
@@ -44,6 +46,16 @@ extern dlight_t cl_elights[MAX_ELIGHTS];
 extern int D_003995AC;
 extern cvar_t D_003317E8;       /* cl_nolerp */
 extern float D_00334764;
+#define MAX_EFRAGS 640
+extern efrag_t D_0046EC58[2][MAX_EFRAGS];
+#define cl_efrags D_0046EC58
+extern int cl_updatebackup[2];
+extern byte cl_lightstyle[0x1100];
+void Host_ClearMemory(qboolean bQuiet);
+void func_0024FE00(int clientId);
+void func_0025AEA8(int clientId);
+void func_00251CA8(void);
+extern float realtime;
 
 qboolean NET_GetPacket(int sock);
 void CL_Disconnect(int clientId);
@@ -63,7 +75,40 @@ void SCR_EndLoadingPlaque(void);
 void MSG_WriteString(sizebuf_t *sb, const char *s);
 int DispatchDirectUserMsg(const char *pszName, int iSize, void *pBuf, int clientId);
 
+#ifdef NON_MATCHING
+void func_0024EFB8(int clientId)
+{
+    float fadePercent;
+    float elapsed;
+
+    cls[clientId].soundfade.nClientSoundFadePercent = 0;
+
+    if (realtime >= cls[clientId].soundfade.soundFadeStartTime +
+                    (cls[clientId].soundfade.soundFadeOutTime + cls[clientId].soundfade.soundFadeInTime +
+                     cls[clientId].soundfade.soundFadeHoldTime))
+        return;
+
+    elapsed = realtime - cls[clientId].soundfade.soundFadeStartTime;
+
+    if (cls[clientId].soundfade.soundFadeOutTime && elapsed < cls[clientId].soundfade.soundFadeOutTime)
+    {
+        fadePercent = elapsed / cls[clientId].soundfade.soundFadeOutTime;
+        cls[clientId].soundfade.nClientSoundFadePercent = cls[clientId].soundfade.nStartPercent * fadePercent;
+        return;
+    }
+
+    if (elapsed < cls[clientId].soundfade.soundFadeOutTime + cls[clientId].soundfade.soundFadeHoldTime)
+    {
+        cls[clientId].soundfade.nClientSoundFadePercent = cls[clientId].soundfade.nStartPercent;
+        return;
+    }
+
+    fadePercent = 1.0f - (elapsed - (cls[clientId].soundfade.soundFadeOutTime + cls[clientId].soundfade.soundFadeHoldTime)) / cls[clientId].soundfade.soundFadeOutTime;
+    cls[clientId].soundfade.nClientSoundFadePercent = cls[clientId].soundfade.nStartPercent * fadePercent;
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/Cl_main", func_0024EFB8);
+#endif
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Cl_main", D_00389A80);
 
@@ -197,9 +242,63 @@ void func_0024FDE0(void)
     ((customization_t *)cl[0].players[cl[0].playernum].customdata)->pNext = NULL;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Cl_main", func_0024FE00);
+void func_0024FE00(int clientId)
+{
+    int i;
+    frame_t *frame;
+    cl_packet_entities_t *pack;
 
-INCLUDE_ASM("asm/nonmatchings/engine/Cl_main", func_0024FF90);
+    if (cl[clientId].frames)
+    {
+        for (i = 0; i < cl_updatebackup[clientId]; i++)
+        {
+            frame = &cl[clientId].frames[i];
+            pack = &frame->packet_entities;
+            if (pack->entities)
+                Mem_Free(pack->entities);
+            pack->entities = NULL;
+            frame->packet_entities.num_entities = 0;
+        }
+    }
+
+    if (cl[clientId].frames)
+        Mem_Free(cl[clientId].frames);
+    cl[clientId].frames = NULL;
+
+    memset(&cl[clientId], 0, sizeof(client_state_t));
+
+    cl[clientId].frames = Mem_DbgMalloc(cl_updatebackup[clientId] * sizeof(frame_t), D_0038A068, 841);
+    if (!cl[clientId].frames)
+        Sys_Error(D_0038A080, cl_updatebackup);
+    memset(cl[clientId].frames, 0, cl_updatebackup[clientId] * sizeof(frame_t));
+
+    func_00251CA8();
+}
+
+void func_0024FF90(qboolean bQuiet, int clientId)
+{
+    int i;
+
+    if (!sv.active)
+        Host_ClearMemory(bQuiet);
+
+    func_0024FE00(clientId);
+    SZ_Clear(&cls[clientId].netchan.message);
+
+    memset(cl_efrags, 0, sizeof(cl_efrags));
+    memset(cl_dlights, 0, sizeof(cl_dlights));
+    memset(cl_elights, 0, sizeof(cl_elights));
+    memset(cl_lightstyle, 0, sizeof(cl_lightstyle));
+
+    func_0025AEA8(clientId);
+
+    cl[clientId].free_efrags = cl_efrags[clientId];
+    for (i = 0; i < MAX_EFRAGS - 1; i++)
+        cl[clientId].free_efrags[i].entnext = &cl[clientId].free_efrags[i + 1];
+    cl[clientId].free_efrags[i].entnext = NULL;
+}
+
+
 
 INCLUDE_RODATA("asm/nonmatchings/engine/Cl_main", D_0038A068);
 
@@ -227,7 +326,24 @@ void func_00250280(void)
         Host_ShutdownServer(false);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/Cl_main", func_002502D8);
+void func_002502D8(int clientId)
+{
+    int i;
+    cl_packet_entities_t *pack;
+
+    if (cl[clientId].frames)
+    {
+        for (i = 0; i < cl_updatebackup[clientId]; i++)
+        {
+            pack = &cl[clientId].frames[i].packet_entities;
+            if (pack->entities)
+                Mem_Free(pack->entities);
+            pack->entities = NULL;
+        }
+        Mem_Free(cl[clientId].frames);
+    }
+    cl[clientId].frames = NULL;
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/Cl_main", func_002503E0);
 

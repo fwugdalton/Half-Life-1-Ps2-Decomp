@@ -39,6 +39,12 @@ typedef struct player_state_s
     byte padCC[0xF8 - 0xCC];
 } player_state_t; /* 0xF8 */
 
+typedef struct
+{
+    int num_entities;
+    void *entities;
+} cl_packet_entities_t;
+
 /* frame_t do PS2 (0x330), cl.frames[cl_updatebackup] */
 typedef struct frame_s
 {
@@ -48,7 +54,7 @@ typedef struct frame_s
     float receivedtime;         /* 0x2C */
     byte pad30[0x34 - 0x30];
     player_state_t playerstate[3]; /* 0x34 (MAX_CLIENTS) */
-    byte pad31C[0x324 - 0x31C];
+    cl_packet_entities_t packet_entities; /* 0x31C */
     short unk_324;              /* 0x324 */
     short unk_326;              /* 0x326 */
     short unk_328;              /* 0x328 */
