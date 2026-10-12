@@ -99,7 +99,7 @@ segments:
       - [0x16F8E8, c, engine/pmovetst]
       - [0x1722D8, c, engine/pr_cmds]
       - [0x176A88, c, engine/pr_edict]
-      - [0x177B58, asm, cod/177B58]
+      - [0x177B58, c, engine/unk_277B58]
       - [0x177EB8, c, engine/r_trans]
       - [0x1798A0, c, engine/snd_mem]
       - [0x17A6B8, c, engine/sv_main]
