@@ -1,5 +1,6 @@
 #include "common.h"
 #include <stdarg.h>
+#include "engine/pmove.h"
 #include "engine/cmd.h"
 #include "engine/server.h"
 
@@ -15,6 +16,42 @@ extern char D_003A9E10[1024];    /* COM_ExplainDisconnection: string */
 extern char D_0053D718[256];     /* gszDisconnectReason */
 extern qboolean D_0033451C;     /* gfExtendedError */
 extern char D_00388B40[];       /* "%s" */
+extern char D_00388B48[];       /* "" */
+extern int (*LittleLong)(int l);
+void *func_00243DC8(sizebuf_t *buf, int length); /* SZ_GetSpace */
+void MSG_WriteShort(sizebuf_t *sb, int c);
+void MSG_WriteFloat(sizebuf_t *sb, float f);
+void MSG_WriteAngle(sizebuf_t *sb, float f);
+void MSG_WriteHangle(sizebuf_t *sb, float f);
+void MSG_StartBitWriting(sizebuf_t *buf);
+void MSG_EndBitWriting(sizebuf_t *buf);
+void MSG_WriteBitsUChar(byte *data, int numbits);
+void MSG_WriteBitsUShort(unsigned short *data, int numbits);
+void MSG_WriteBitsShort(short *data, int numbits);
+void MSG_WriteBitsUInt(unsigned int *data, int numbits);
+int abs(int);
+extern int protocol_version;
+
+typedef struct
+{
+    int nCurOutputBit;          /* 0x0 */
+    byte *pOutByte;             /* 0x4 */
+    sizebuf_t *pbuf;            /* 0x8 */
+} bf_write_t;
+
+typedef struct
+{
+    int nMsgReadCount;          /* 0x00 */
+    sizebuf_t *pbuf;            /* 0x04 */
+    int nBitFieldReadStartByte; /* 0x08 */
+    int nBytesRead;             /* 0x0C */
+    int nCurInputBit;           /* 0x10 */
+    byte *pInByte;              /* 0x14 */
+} bf_read_t;
+
+extern bf_write_t D_003AC410;   /* bfwrite */
+extern bf_read_t D_003AC420;    /* bfread */
+void func_00242880(int nValue);  /* MSG_WriteOneBit */
 #define isupper(c) (D_00397D81[(int)(c)] & 1)
 #define tolower(c) (isupper(c) ? (c) + 32 : (c))
 
@@ -436,53 +473,363 @@ float func_00241EB8(float f)
     return f;
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", MSG_WriteChar);
+void MSG_WriteChar(sizebuf_t *sb, int c)
+{
+    byte *buf;
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", MSG_WriteByte);
+    buf = func_00243DC8(sb, 1);
+    buf[0] = c;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", MSG_WriteShort);
+void MSG_WriteByte(sizebuf_t *sb, int c)
+{
+    byte *buf;
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", MSG_WriteWord);
+    buf = func_00243DC8(sb, 1);
+    buf[0] = c;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", MSG_WriteLong);
+void MSG_WriteShort(sizebuf_t *sb, int c)
+{
+    byte *buf;
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", MSG_WriteFloat);
+    buf = func_00243DC8(sb, 2);
+    buf[0] = c & 0xff;
+    buf[1] = c >> 8;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", MSG_WriteString);
+void MSG_WriteWord(sizebuf_t *sb, int c)
+{
+    byte *buf;
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", MSG_WriteBuf);
+    buf = func_00243DC8(sb, 2);
+    buf[0] = c & 0xff;
+    buf[1] = (c >> 8) & 0xff;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", MSG_WriteCoord);
+void MSG_WriteLong(sizebuf_t *sb, int c)
+{
+    byte *buf;
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", MSG_WriteAngle);
+    buf = func_00243DC8(sb, 4);
+    buf[0] = c & 0xff;
+    buf[1] = (c >> 8) & 0xff;
+    buf[2] = (c >> 16) & 0xff;
+    buf[3] = c >> 24;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", MSG_WriteHangle);
+void MSG_WriteFloat(sizebuf_t *sb, float f)
+{
+    union
+    {
+        float f;
+        int l;
+    } dat;
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_00242150);
+    dat.f = f;
+    dat.l = LittleLong(dat.l);
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_00242320);
+    SZ_Write(sb, &dat.l, 4);
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_00242508);
+void MSG_WriteString(sizebuf_t *sb, const char *s)
+{
+    if (!s)
+        SZ_Write(sb, D_00388B48, 1);
+    else
+        SZ_Write(sb, s, Q_strlen(s) + 1);
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_00242800);
+void MSG_WriteBuf(sizebuf_t *sb, int iSize, void *buf)
+{
+    if (!buf)
+        return;
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_00242840);
+    SZ_Write(sb, buf, iSize);
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_00242880);
+void MSG_WriteCoord(sizebuf_t *sb, float f)
+{
+    MSG_WriteShort(sb, (int)(f * 8));
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", MSG_StartBitWriting);
+void MSG_WriteAngle(sizebuf_t *sb, float f)
+{
+    MSG_WriteByte(sb, (int)(f * 256 / 360) & 255);
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", MSG_EndBitWriting);
+void MSG_WriteHangle(sizebuf_t *sb, float f)
+{
+    MSG_WriteShort(sb, (int)(f * 65536 / 360) & 65535);
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", MSG_WriteBitsUChar);
+/* MSG_WriteDeltaUsercmd */
+void func_00242150(sizebuf_t *buf, usercmd_t *to, usercmd_t *from)
+{
+    int bits;
+    int i;
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", MSG_WriteBitsUShort);
+    bits = 0;
+    for (i = 0; i < 3; i++)
+        if (to->viewangles[i] != from->viewangles[i])
+            bits |= 1 << i;
+    if (to->forwardmove != from->forwardmove)
+        bits |= 8;
+    if (to->sidemove != from->sidemove)
+        bits |= 0x10;
+    if (to->upmove != from->upmove)
+        bits |= 0x20;
+    if (to->buttons != from->buttons)
+        bits |= 0x40;
+    if (to->impulse != from->impulse)
+        bits |= 0x80;
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", MSG_WriteBitsUInt);
+    MSG_WriteByte(buf, bits);
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_00242B58);
+    if (bits & 1)
+        MSG_WriteHangle(buf, to->viewangles[0]);
+    if (bits & 2)
+        MSG_WriteHangle(buf, to->viewangles[1]);
+    if (bits & 4)
+        MSG_WriteAngle(buf, to->viewangles[2]);
+    if (bits & 8)
+        MSG_WriteFloat(buf, to->forwardmove);
+    if (bits & 0x10)
+        MSG_WriteFloat(buf, to->sidemove);
+    if (bits & 0x20)
+        MSG_WriteFloat(buf, to->upmove);
+    if (bits & 0x40)
+        MSG_WriteShort(buf, to->buttons);
+    if (bits & 0x80)
+        MSG_WriteByte(buf, to->impulse);
+    MSG_WriteByte(buf, to->lightlevel);
+    MSG_WriteByte(buf, to->msec);
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", MSG_WriteBitsShort);
+/* MSG_WriteDeltaUsercmd com movimentos em short */
+void func_00242320(sizebuf_t *buf, usercmd_t *to, usercmd_t *from)
+{
+    int bits;
+    int i;
+
+    bits = 0;
+    for (i = 0; i < 3; i++)
+        if (to->viewangles[i] != from->viewangles[i])
+            bits |= 1 << i;
+    if (to->forwardmove != from->forwardmove)
+        bits |= 8;
+    if (to->sidemove != from->sidemove)
+        bits |= 0x10;
+    if (to->upmove != from->upmove)
+        bits |= 0x20;
+    if (to->buttons != from->buttons)
+        bits |= 0x40;
+    if (to->impulse != from->impulse)
+        bits |= 0x80;
+
+    MSG_WriteByte(buf, bits);
+
+    if (bits & 1)
+        MSG_WriteHangle(buf, to->viewangles[0]);
+    if (bits & 2)
+        MSG_WriteHangle(buf, to->viewangles[1]);
+    if (bits & 4)
+        MSG_WriteAngle(buf, to->viewangles[2]);
+    if (bits & 8)
+        MSG_WriteShort(buf, (int)to->forwardmove);
+    if (bits & 0x10)
+        MSG_WriteShort(buf, (int)to->sidemove);
+    if (bits & 0x20)
+        MSG_WriteShort(buf, (int)to->upmove);
+    if (bits & 0x40)
+        MSG_WriteShort(buf, to->buttons);
+    if (bits & 0x80)
+        MSG_WriteByte(buf, to->impulse);
+    MSG_WriteByte(buf, to->lightlevel);
+    MSG_WriteByte(buf, to->msec);
+}
+
+/* MSG_WriteDeltaUsercmd em bits */
+void func_00242508(usercmd_t *to, usercmd_t *from)
+{
+    byte bits;
+    unsigned short us;
+    byte uc;
+    short s;
+    int i;
+
+    bits = 0;
+    for (i = 0; i < 3; i++)
+        if (to->viewangles[i] != from->viewangles[i])
+            bits |= 1 << i;
+    if (to->forwardmove != from->forwardmove)
+        bits |= 8;
+    if (to->sidemove != from->sidemove)
+        bits |= 0x10;
+    if (to->upmove != from->upmove)
+        bits |= 0x20;
+    if (to->buttons != from->buttons)
+        bits |= 0x40;
+    if (to->impulse != from->impulse)
+        bits |= 0x80;
+
+    MSG_WriteBitsUChar(&bits, 8);
+
+    if (bits & 1)
+    {
+        us = (int)(to->viewangles[0] * 1024 / 360) & 1023;
+        MSG_WriteBitsUShort(&us, 10);
+    }
+    if (bits & 2)
+    {
+        us = (int)(to->viewangles[1] * 1024 / 360) & 1023;
+        MSG_WriteBitsUShort(&us, 10);
+    }
+    if (bits & 4)
+    {
+        uc = (int)(to->viewangles[2] * 64 / 360) & 63;
+        MSG_WriteBitsUChar(&uc, 6);
+    }
+    if (bits & 8)
+    {
+        s = (int)(to->forwardmove / 4);
+        MSG_WriteBitsShort(&s, 8);
+    }
+    if (bits & 0x10)
+    {
+        s = (int)(to->sidemove / 4);
+        MSG_WriteBitsShort(&s, 8);
+    }
+    if (bits & 0x20)
+    {
+        s = (int)(to->upmove / 4);
+        MSG_WriteBitsShort(&s, 8);
+    }
+    if (bits & 0x40)
+    {
+        us = to->buttons;
+        MSG_WriteBitsUShort(&us, 16);
+    }
+    if (bits & 0x80)
+        MSG_WriteBitsUChar(&to->impulse, 8);
+    uc = to->lightlevel >> 2;
+    MSG_WriteBitsUChar(&uc, 6);
+    uc = to->msec;
+    MSG_WriteBitsUChar(&uc, 8);
+}
+
+/* MSG_WriteUsercmd */
+void func_00242800(sizebuf_t *buf, usercmd_t *to, usercmd_t *from)
+{
+    if (protocol_version == 35)
+        func_00242150(buf, to, from);
+    else
+        func_00242320(buf, to, from);
+}
+
+/* COM_BitOpsInit */
+void func_00242840(void)
+{
+    memset(&D_003AC410, 0, sizeof(D_003AC410));
+    memset(&D_003AC420, 0, sizeof(D_003AC420));
+}
+
+/* MSG_WriteOneBit */
+void func_00242880(int nValue)
+{
+    int iShift;
+
+    if (!D_003AC410.pbuf->overflowed)
+    {
+        if (D_003AC410.nCurOutputBit >= 8)
+        {
+            func_00243DC8(D_003AC410.pbuf, 1);
+            D_003AC410.nCurOutputBit = 0;
+            D_003AC410.pOutByte++;
+        }
+
+        if (!D_003AC410.pbuf->overflowed)
+        {
+            iShift = 7 - D_003AC410.nCurOutputBit;
+            if (nValue)
+                *D_003AC410.pOutByte |= 1 << iShift;
+            else
+                *D_003AC410.pOutByte &= ~(1 << iShift);
+
+            D_003AC410.nCurOutputBit++;
+        }
+    }
+}
+
+void MSG_StartBitWriting(sizebuf_t *buf)
+{
+    D_003AC410.nCurOutputBit = 0;
+    D_003AC410.pOutByte = &buf->data[buf->cursize];
+    D_003AC410.pbuf = buf;
+}
+
+void MSG_EndBitWriting(sizebuf_t *buf)
+{
+    int i;
+    int nBitsLeft;
+    byte mask;
+
+    if (!D_003AC410.pbuf->overflowed)
+    {
+        mask = 0xFF;
+        nBitsLeft = 8 - D_003AC410.nCurOutputBit;
+        for (i = 0; i < nBitsLeft; i++)
+            mask &= ~(1 << i);
+        *D_003AC410.pOutByte &= mask;
+        func_00243DC8(D_003AC410.pbuf, 1);
+        D_003AC410.nCurOutputBit = 0;
+        D_003AC410.pOutByte = NULL;
+        D_003AC410.pbuf = NULL;
+    }
+}
+
+void MSG_WriteBitsUChar(byte *data, int numbits)
+{
+    while (numbits-- > 0)
+        func_00242880(*data & (1 << numbits));
+}
+
+void MSG_WriteBitsUShort(unsigned short *data, int numbits)
+{
+    while (numbits-- > 0)
+        func_00242880(*data & (1 << numbits));
+}
+
+void MSG_WriteBitsUInt(unsigned int *data, int numbits)
+{
+    while (numbits-- > 0)
+        func_00242880(*data & (1 << numbits));
+}
+
+/* MSG_WriteBitsChar */
+void func_00242B58(char *data, int numbits)
+{
+    byte b;
+
+    if (*data < 0)
+        func_00242880(1);
+    else
+        func_00242880(0);
+    b = abs(*data);
+    MSG_WriteBitsUChar(&b, numbits - 1);
+}
+
+void MSG_WriteBitsShort(short *data, int numbits)
+{
+    unsigned short s;
+
+    if (*data < 0)
+        func_00242880(1);
+    else
+        func_00242880(0);
+    s = abs(*data);
+    MSG_WriteBitsUShort(&s, numbits - 1);
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/common", func_00242C28);
 
