@@ -85,6 +85,8 @@ typedef struct
     int unk18;
 } studiobatch_t;
 extern studiobatch_t D_00439500;
+studiobatch_t *func_002C3A80(int count, int texnum);
+void func_002C3C90(void);
 
 #define STUDIO_BATCHVERTS 74
 extern float D_00439580[2][STUDIO_BATCHVERTS][4];
@@ -133,6 +135,28 @@ extern int D_00399694;
 extern float *D_003996BC;
 extern int D_0052F778[MAXSTUDIOVERTS][2];
 #define kRenderTransAdd 5
+typedef int u_long128 __attribute__((mode(TI)));
+extern int D_0033102C;
+extern int D_0039967C;
+extern int D_00399568;
+extern float *D_003996B4;
+extern int cl_numlocal;
+extern float sprite_color[4];
+extern float D_003342B0[4];
+extern float D_003342C0[4];
+extern float D_003342D0[4];
+extern float D_003342E0[4];
+extern int lightbonecache[MAXSTUDIOBONES];
+extern struct dlight_s *locallight[];
+extern vec3_t lightbonepos[MAXSTUDIOBONES][3];
+extern float D_00515778[2048][3][4];
+#define kRenderFxGlowShell 19
+studiobatch_t *func_002C3A80(int count, int texnum);
+void func_002C3C90(void);
+studiohdr_t *func_002C43A0(model_t *pmodel);
+void func_002C4460(vec3_t *pstudioverts, float (*pout)[4]);
+void func_002C3CE0(mstudiotexture_t *ptexture, short *pskinref, mstudiomesh_t *pmesh, vec3_t *pstudionorms, byte *pnormbone);
+void func_002C4B00(float (*light)[4], float *normal, float *src, float *lambert);
 void func_002C48D8(int *pchrome, int bone, vec3_t normal);
 void func_002C4840(vec3_t in1, float in2[3][4], vec3_t out);
 extern cvar_t r_glowshellfreq;
@@ -150,7 +174,266 @@ void func_002C3038(void)
     D_00439500.unk0C = 0;
 }
 
+#ifdef NON_MATCHING
+void func_002C3070(void)
+{
+    int i, j, k;
+    byte *pvertbone;
+    byte *pnormbone;
+    vec3_t *pstudioverts;
+    vec3_t *pstudionorms;
+    studiohdr_t *ptexturehdr;
+    mstudiotexture_t *ptexture;
+    short *pskinref;
+    mstudiomesh_t *pmesh;
+    short *ptricmds;
+    int flags;
+    int bone;
+    int texnum;
+    studiobatch_t *batch;
+    u_long128 *pverts;
+    u_long128 *pcolors;
+    float *ptc;
+    float lambert[4] __attribute__((aligned(16)));
+    float tmp[4] __attribute__((aligned(16)));
+
+    pvertbone = (byte *)pstudiohdr + psubmodel->vertinfoindex;
+    pnormbone = (byte *)pstudiohdr + psubmodel->norminfoindex;
+
+    D_0033102C = 1;
+    ptexturehdr = func_002C43A0((model_t *)D_0039967C);
+
+    pstudionorms = (vec3_t *)((byte *)pstudiohdr + psubmodel->normindex);
+    ptexture = (mstudiotexture_t *)((byte *)ptexturehdr + ptexturehdr->textureindex);
+    pmesh = (mstudiomesh_t *)((byte *)pstudiohdr + psubmodel->meshindex);
+    pstudioverts = (vec3_t *)((byte *)pstudiohdr + psubmodel->vertindex);
+    pskinref = (short *)((byte *)ptexturehdr + ptexturehdr->skinindex);
+
+    if (currententity->skin != 0 && currententity->skin < ptexturehdr->numskinfamilies)
+        pskinref += currententity->skin * ptexturehdr->numskinref;
+
+    if (currententity->renderfx == kRenderFxGlowShell)
+    {
+        func_002C4460(pstudioverts, (float (*)[4])D_003996B4);
+    }
+    else
+    {
+        float *pv = D_003996B4;
+
+        for (i = 0; i < psubmodel->numverts; i++, pv += 4)
+        {
+            tmp[0] = pstudioverts[i][0];
+            tmp[1] = pstudioverts[i][1];
+            tmp[3] = 1.0f;
+            tmp[2] = pstudioverts[i][2];
+            __asm__ __volatile__(
+                "vmulx.xyzw $vf1, $vf0, $vf0x\n"
+                "vadd.xyzw $vf1, $vf1, $vf0\n"
+                "lqc2 $vf4, 0x0(%0)\n"
+                "lqc2 $vf5, 0x0(%1)\n"
+                "vmul.xyzw $vf5, $vf4, $vf5\n"
+                "vaddy.x $vf5, $vf5, $vf5y\n"
+                "vaddz.x $vf5, $vf5, $vf5z\n"
+                "vaddw.x $vf5, $vf5, $vf5w\n"
+                "vaddx.x $vf1, $vf0, $vf5x\n"
+                "lqc2 $vf5, 0x10(%1)\n"
+                "vmul.xyzw $vf5, $vf4, $vf5\n"
+                "vaddy.x $vf5, $vf5, $vf5y\n"
+                "vaddz.x $vf5, $vf5, $vf5z\n"
+                "vaddw.x $vf5, $vf5, $vf5w\n"
+                "vaddx.y $vf1, $vf0, $vf5x\n"
+                "lqc2 $vf5, 0x20(%1)\n"
+                "vmul.xyzw $vf5, $vf4, $vf5\n"
+                "vaddy.x $vf5, $vf5, $vf5y\n"
+                "vaddz.x $vf5, $vf5, $vf5z\n"
+                "vaddw.x $vf5, $vf5, $vf5w\n"
+                "vaddx.z $vf1, $vf0, $vf5x\n"
+                "sqc2 $vf1, 0x0(%2)\n"
+                : : "r"(tmp), "r"(bonetransform[pvertbone[i]]), "r"(pv) : "memory");
+        }
+    }
+
+    pvertbone = (byte *)pstudiohdr + psubmodel->vertinfoindex;
+    pstudioverts = (vec3_t *)((byte *)pstudiohdr + psubmodel->vertindex);
+
+    for (i = 0; i < psubmodel->numverts; i++, pstudioverts++)
+    {
+        bone = *pvertbone++;
+
+        if (lightbonecache[bone] != r_smodels_total)
+        {
+            if (numlights > 0 && cl_numlocal == 1)
+            {
+                for (j = 0; j < numlights; j++)
+                {
+                    tmp[0] = ((float *)locallight[j])[0] - lighttransform[bone][0][3];
+                    tmp[1] = ((float *)locallight[j])[1] - lighttransform[bone][1][3];
+                    tmp[2] = ((float *)locallight[j])[2] - lighttransform[bone][2][3];
+                    lightbonepos[bone][j][0] = tmp[0] * lighttransform[bone][0][0] + tmp[1] * lighttransform[bone][1][0] + tmp[2] * lighttransform[bone][2][0];
+                    lightbonepos[bone][j][1] = tmp[0] * lighttransform[bone][0][1] + tmp[1] * lighttransform[bone][1][1] + tmp[2] * lighttransform[bone][2][1];
+                    lightbonepos[bone][j][2] = tmp[0] * lighttransform[bone][0][2] + tmp[1] * lighttransform[bone][1][2] + tmp[2] * lighttransform[bone][2][2];
+                }
+            }
+            lightbonecache[bone] = r_smodels_total;
+        }
+
+        if (cl_numlocal == 1)
+        {
+            for (j = 0; j < numlights; j++)
+            {
+                D_00515778[i][j][0] = pstudioverts[0][0] - lightbonepos[bone][j][0];
+                D_00515778[i][j][1] = pstudioverts[0][1] - lightbonepos[bone][j][1];
+                D_00515778[i][j][2] = pstudioverts[0][2] - lightbonepos[bone][j][2];
+                D_00515778[i][j][3] = 0;
+            }
+        }
+    }
+
+    func_002C3CE0(ptexture, pskinref, pmesh, pstudionorms, pnormbone);
+
+    pstudionorms = (vec3_t *)((byte *)pstudiohdr + psubmodel->normindex);
+
+    for (j = 0; j < psubmodel->nummesh; j++)
+    {
+        pmesh = (mstudiomesh_t *)((byte *)pstudiohdr + psubmodel->meshindex) + j;
+        ptricmds = (short *)((byte *)pstudiohdr + pmesh->triindex);
+
+        D_00399568 += pmesh->numtris;
+
+        flags = ptexture[pskinref[pmesh->skinref]].flags | g_ForcedFaceFlags;
+
+        tmp[0] = 1.0f / ptexture[pskinref[pmesh->skinref]].width;
+        tmp[1] = 1.0f / ptexture[pskinref[pmesh->skinref]].height;
+        tmp[2] = 1.0f;
+        tmp[3] = 1.0f;
+
+        texnum = 0;
+        if (!(g_ForcedFaceFlags & STUDIO_NF_CHROME))
+            texnum = *(int *)&((mstudiotexture_t *)((byte *)ptexturehdr + ptexturehdr->textureindex))[pskinref[pmesh->skinref]].name[0x3C];
+
+        if (flags & STUDIO_NF_CHROME)
+        {
+            tmp[1] *= (1.0f / 1024.0f);
+            tmp[0] *= (1.0f / 1024.0f);
+
+            if (g_ForcedFaceFlags & STUDIO_NF_CHROME)
+            {
+                while ((i = *(ptricmds++)))
+                {
+                    batch = func_002C3A80(i, texnum);
+                    if (i < 0)
+                        i = -i;
+
+                    pverts = (u_long128 *)batch->unk10;
+                    pcolors = (u_long128 *)batch->unk14;
+                    ptc = (float *)batch->unk18;
+
+                    for (; i > 0; i--, ptricmds += 4, ptc += 4)
+                    {
+                        *pverts++ = ((u_long128 *)D_003996B4)[ptricmds[0]];
+                        *pcolors++ = *(u_long128 *)sprite_color;
+                        D_003342B0[0] = D_0052F778[g_NormalIndex[ptricmds[0]]][0];
+                        D_003342B0[1] = D_0052F778[g_NormalIndex[ptricmds[0]]][1];
+                        __asm__ __volatile__(
+                            "lqc2 $vf4, 0x0(%0)\n"
+                            "lqc2 $vf5, 0x0(%1)\n"
+                            "vmul.xyzw $vf5, $vf4, $vf5\n"
+                            "sqc2 $vf5, 0x0(%2)\n"
+                            : : "r"(D_003342B0), "r"(tmp), "r"(ptc) : "memory");
+                    }
+                }
+            }
+            else
+            {
+                while ((i = *(ptricmds++)))
+                {
+                    batch = func_002C3A80(i, texnum);
+                    if (i < 0)
+                        i = -i;
+
+                    pverts = (u_long128 *)batch->unk10;
+                    pcolors = (u_long128 *)batch->unk14;
+                    ptc = (float *)batch->unk18;
+
+                    for (; i > 0; i--, ptricmds += 4, ptc += 4)
+                    {
+                        *pverts++ = ((u_long128 *)D_003996B4)[ptricmds[0]];
+                        *pcolors++ = ((u_long128 *)D_003996BC)[ptricmds[1]];
+                        D_003342C0[0] = D_0052F778[ptricmds[1]][0];
+                        D_003342C0[1] = D_0052F778[ptricmds[1]][1];
+                        __asm__ __volatile__(
+                            "lqc2 $vf4, 0x0(%0)\n"
+                            "lqc2 $vf5, 0x0(%1)\n"
+                            "vmul.xyzw $vf5, $vf4, $vf5\n"
+                            "sqc2 $vf5, 0x0(%2)\n"
+                            : : "r"(D_003342C0), "r"(tmp), "r"(ptc) : "memory");
+                    }
+                }
+            }
+        }
+        else if (numlights > 0 && cl_numlocal == 1)
+        {
+            while ((i = *(ptricmds++)))
+            {
+                batch = func_002C3A80(i, texnum);
+                if (i < 0)
+                    i = -i;
+
+                pverts = (u_long128 *)batch->unk10;
+                pcolors = (u_long128 *)batch->unk14;
+                ptc = (float *)batch->unk18;
+
+                for (; i > 0; i--, ptricmds += 4, ptc += 4)
+                {
+                    *pverts++ = ((u_long128 *)D_003996B4)[ptricmds[0]];
+                    func_002C4B00(D_00515778[ptricmds[0]], pstudionorms[ptricmds[1]], &D_003996BC[ptricmds[1] * 4], lambert);
+                    *pcolors++ = *(u_long128 *)lambert;
+                    D_003342D0[0] = ptricmds[2];
+                    D_003342D0[1] = ptricmds[3];
+                    __asm__ __volatile__(
+                        "lqc2 $vf4, 0x0(%0)\n"
+                        "lqc2 $vf5, 0x0(%1)\n"
+                        "vmul.xyzw $vf5, $vf4, $vf5\n"
+                        "sqc2 $vf5, 0x0(%2)\n"
+                        : : "r"(D_003342D0), "r"(tmp), "r"(ptc) : "memory");
+                }
+            }
+        }
+        else
+        {
+            while ((i = *(ptricmds++)))
+            {
+                batch = func_002C3A80(i, texnum);
+                if (i < 0)
+                    i = -i;
+
+                pverts = (u_long128 *)batch->unk10;
+                pcolors = (u_long128 *)batch->unk14;
+                ptc = (float *)batch->unk18;
+
+                for (; i > 0; i--, ptricmds += 4, ptc += 4)
+                {
+                    *pverts++ = ((u_long128 *)D_003996B4)[ptricmds[0]];
+                    *pcolors++ = ((u_long128 *)D_003996BC)[ptricmds[1]];
+                    D_003342E0[0] = ptricmds[2];
+                    D_003342E0[1] = ptricmds[3];
+                    __asm__ __volatile__(
+                        "lqc2 $vf4, 0x0(%0)\n"
+                        "lqc2 $vf5, 0x0(%1)\n"
+                        "vmul.xyzw $vf5, $vf4, $vf5\n"
+                        "sqc2 $vf5, 0x0(%2)\n"
+                        : : "r"(D_003342E0), "r"(tmp), "r"(ptc) : "memory");
+                }
+            }
+        }
+    }
+
+    func_002C3C90();
+    D_0033102C = 0;
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/gl_studio", func_002C3070);
+#endif
 
 #ifdef NON_MATCHING
 studiobatch_t *func_002C3A80(int count, int texnum)
