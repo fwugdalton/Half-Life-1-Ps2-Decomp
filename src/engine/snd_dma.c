@@ -57,6 +57,30 @@ extern vec3_t D_00551760[2];    /* listener_origin por jogador */
 extern vec3_t D_00551778;       /* listener_right */
 extern vec3_t D_005517A0;       /* listener_origin */
 void func_002CA320(channel_t *ch);
+typedef struct
+{
+    int left;
+    int right;
+} portable_samplepair_t;
+extern portable_samplepair_t D_00542D70[]; /* paintbuffer */
+extern char *rgpszrawsentence[];
+extern int D_0039982C;          /* cszrawsentences */
+extern int D_00334E98;          /* hash do S_Say */
+extern int D_00557634;          /* fakedma/precaching */
+unsigned long func_00229B88(void);
+void func_002C99B0(int count, int, int, int); /* SX_RoomFX */
+char *func_002416A8(char *s, char c); /* Q_strrchr */
+float Q_atof(char *str);
+extern int D_00334E90;          /* hash do play */
+extern int D_00334E94;          /* hash do playvol */
+extern int D_00334E8C;          /* buffers */
+extern int D_0046586C;          /* oldsamplepos */
+extern int D_00399848;          /* soundtime */
+int func_002E0F18(float f);
+void func_002C5A30(void);
+void func_0021C520(void);
+void func_002C7FF8(int endtime, int clientId);
+void func_002CE380(void);
 void func_002CDA48(int clientId);
 extern int D_00334D28;          /* snd_blocked */
 extern vec3_t D_00553DC8;       /* listener_forward */
@@ -1166,22 +1190,222 @@ void func_002CD788(void)
     func_002CDA48(0);
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/snd_dma", func_002CD8C8);
+void func_002CD8C8(void)
+{
+    int samplepos;
+    int fullsamples;
+    int i;
 
-INCLUDE_ASM("asm/nonmatchings/engine/snd_dma", func_002CD9F8);
+    fullsamples = shm->samples / shm->channels;
 
+    samplepos = func_002CE338();
+    if (samplepos < D_0046586C)
+    {
+        D_00334E8C++;
+
+        if (D_0039984C > 0x40000000)
+        {
+            D_00334E8C = 0;
+            D_0039984C = fullsamples;
+            for (i = 0; i < cl_numlocal; i++)
+                func_002CD340(1, i);
+        }
+    }
+    D_0046586C = samplepos;
+
+    D_00399848 = D_00334E8C * fullsamples + samplepos / shm->channels;
+}
+
+void func_002CD9F8(int clientId)
+{
+    func_002C5A30();
+    func_0021C520();
+
+    if (D_00334E48.value)
+        return;
+
+    func_002CDA48(clientId);
+}
+
+#ifdef NON_MATCHING
+void func_002CDA48(int clientId)
+{
+    int endtime;
+    int samps;
+    int cid;
+
+    cid = 0;
+    if (clientId != 1)
+        cid = clientId;
+
+    if (!D_00334D3C || D_00334D28 > 0)
+        return;
+
+    func_002CD8C8();
+
+    endtime = func_002E0F18(D_00399848 + D_00334E78.value * shm->dmaspeed);
+
+    samps = shm->samples >> (shm->channels - 1);
+    if (endtime - D_00399848 > samps)
+        endtime = D_00399848 + samps;
+
+    func_002C7FF8((unsigned int)endtime >> 1, cid);
+
+    func_002CE380();
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/engine/snd_dma", func_002CDA48);
+#endif
 
-INCLUDE_ASM("asm/nonmatchings/engine/snd_dma", func_002CDB18);
+void func_002CDB18(void)
+{
+    int i;
+    char name[256];
+    sfx_t *sfx;
 
-INCLUDE_ASM("asm/nonmatchings/engine/snd_dma", func_002CDC20);
+    i = 1;
+    while (i < Cmd_Argc())
+    {
+        if (!func_002416A8(Cmd_Argv(i), '.'))
+        {
+            Q_strcpy(name, Cmd_Argv(i));
+            Q_strcat(name, ".wav");
+        }
+        else
+            Q_strcpy(name, Cmd_Argv(i));
+        sfx = S_PrecacheSound(name);
+        S_StartDynamicSound(D_00334E90++, 0, sfx, D_005517A0, 1.0f, 1.0f, 0, 100, 0);
+        i++;
+    }
+}
 
-INCLUDE_RODATA("asm/nonmatchings/engine/snd_dma", D_00396088);
+void func_002CDC20(void)
+{
+    int i;
+    float vol;
+    char name[256];
+    sfx_t *sfx;
 
-INCLUDE_ASM("asm/nonmatchings/engine/snd_dma", func_002CDD38);
+    i = 1;
+    while (i < Cmd_Argc())
+    {
+        if (!func_002416A8(Cmd_Argv(i), '.'))
+        {
+            Q_strcpy(name, Cmd_Argv(i));
+            Q_strcat(name, ".wav");
+        }
+        else
+            Q_strcpy(name, Cmd_Argv(i));
+        sfx = S_PrecacheSound(name);
+        vol = Q_atof(Cmd_Argv(i + 1));
+        S_StartDynamicSound(D_00334E94++, 0, sfx, D_005517A0, vol, 1.0f, 0, 100, 0);
+        i += 2;
+    }
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/snd_dma", func_002CDDD8);
 
-INCLUDE_ASM("asm/nonmatchings/engine/snd_dma", S_BeginPrecaching);
+void func_002CDD38(char *sound)
+{
+    sfx_t *sfx;
 
-INCLUDE_ASM("asm/nonmatchings/engine/snd_dma", S_EndPrecaching);
+    if (D_00334DB8.value)
+        return;
+    if (!D_00334D3C)
+        return;
+
+    sfx = S_PrecacheSound(sound);
+    if (!sfx)
+    {
+        Con_Printf("S_LocalSound: can't cache %s\n", sound);
+        return;
+    }
+    S_StartDynamicSound(cl[0].viewentity, -1, sfx, vec3_origin, 1.0f, 1.0f, 0, 100, 0);
+}
+
+void func_002CDDD8(void)
+{
+    sfx_t *sfx;
+    char sound[256];
+    int i;
+
+    if (D_00334DB8.value)
+        return;
+    if (!D_00334D3C)
+        return;
+
+    Q_strcpy(sound, Cmd_Argv(1));
+
+    if (!Q_strcmp(sound, "dsp"))
+    {
+        unsigned int start;
+
+        for (i = 0; i < 512; i++)
+        {
+            D_00542D70[i].left = RandomLong(0, 2999);
+            D_00542D70[i].right = RandomLong(0, 2999);
+        }
+
+        Con_Printf("Start profiling 10,000 calls to DSP\n");
+        start = func_00229B88();
+        for (i = 0; i < 10000; i++)
+            func_002C99B0(512, 1, 1, 0);
+        Con_Printf("%d milliseconds \n", func_00229B88() - start);
+        return;
+    }
+
+    if (!Q_strcmp(sound, "paint"))
+    {
+        unsigned int start;
+        int ptime;
+
+        ptime = D_0039984C;
+        Con_Printf("Start profiling S_PaintChannels\n");
+        sfx = S_PrecacheSound("ambience/labdrone1.wav");
+        S_StartDynamicSound(D_00334E98++, 0, sfx, D_005517A0, 1.0f, 1.0f, 0, 100, 0);
+        start = func_00229B88();
+        func_002C7FF8(D_0039984C + 512 * 10000, 0);
+        Con_Printf("%d milliseconds \n", func_00229B88() - start);
+        D_0039984C = ptime;
+        return;
+    }
+
+    if (sound[0] != '!')
+    {
+        Q_strcpy(sound, "xxtestxx ");
+        Q_strcat(sound, Cmd_Argv(1));
+        rgpszrawsentence[D_0039982C] = sound;
+        sound[8] = 0;
+        D_0039982C++;
+
+        sfx = S_PrecacheSound("!xxtestxx");
+        if (!sfx)
+        {
+            Con_Printf("S_Say: can't cache %s\n", sound);
+            return;
+        }
+        S_StartDynamicSound(cl[0].viewentity, -1, sfx, vec3_origin, 1.0f, 1.0f, 0, 100, 0);
+
+        D_0039982C--;
+        rgpszrawsentence[D_0039982C] = NULL;
+    }
+    else
+    {
+        sfx = func_002CBE80(sound, NULL);
+        if (!sfx)
+        {
+            Con_Printf("S_Say: can't find sentence name %s\n", sound);
+            return;
+        }
+        S_StartDynamicSound(cl[0].viewentity, -1, sfx, vec3_origin, 1.0f, 1.0f, 0, 100, 0);
+    }
+}
+
+void S_BeginPrecaching(void)
+{
+    D_00557634 = 1;
+}
+
+void S_EndPrecaching(void)
+{
+    D_00557634 = 0;
+}
