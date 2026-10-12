@@ -37,6 +37,14 @@ void func_002CF500(void);       /* COM_Path_f */
 void func_002CF8B0(void);       /* COM_InitFilesystem */
 void Cvar_RegisterVariable(cvar_t *variable);
 void Cmd_AddCommand(char *cmd_name, xcommand_t function);
+extern char D_003AB210[1024];   /* va: string */
+extern char D_003AB610[1024];   /* vstr: string */
+extern char com_gamedir[];
+char *strcpy(char *, const char *);
+void *FS_Open(char *name, char *mode);
+void FS_Close(void *f);
+int func_00222500(void *f, char *fmt, ...); /* FS_FPrintf */
+void *COM_LoadFile(char *path, int usehunk, int *pLength);
 extern int (*LittleLong)(int l);
 void *func_00243DC8(sizebuf_t *buf, int length); /* SZ_GetSpace */
 void MSG_WriteShort(sizebuf_t *sb, int c);
@@ -1680,24 +1688,87 @@ void COM_Init(char *basedir)
     func_00244418();
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", va);
+char *va(char *format, ...)
+{
+    va_list argptr;
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_002447B8);
+    va_start(argptr, format);
+    vsprintf(D_003AB210, format, argptr);
+    va_end(argptr);
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_00244848);
+    return D_003AB210;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_00244880);
+/* vstr */
+char *func_002447B8(float *v)
+{
+    sprintf(D_003AB610, "%.2f %.2f %.2f", v[0], v[1], v[2]);
+    return D_003AB610;
+}
+
+/* memsearch */
+int func_00244848(byte *start, int count, int search)
+{
+    int i;
+
+    for (i = 0; i < count; i++)
+        if (start[i] == search)
+            return i;
+    return -1;
+}
+
+/* COM_Log */
+void func_00244880(char *pszFile, char *fmt, ...)
+{
+    va_list argptr;
+    char string[1024];
+    void *fp;
+    char *pfilename;
+
+    if (!pszFile)
+        pfilename = "c:\\hllog.txt";
+    else
+        pfilename = pszFile;
+
+    va_start(argptr, fmt);
+    vsprintf(string, fmt, argptr);
+    va_end(argptr);
+
+    fp = FS_Open(pfilename, "a+t");
+    if (fp)
+    {
+        func_00222500(fp, D_00388B40, string);
+        FS_Close(fp);
+    }
+}
 
 void COM_ClearCustomizationList(void) {
 }
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_00244920);
+/* COM_CreateCustomization */
+int func_00244920(void)
+{
+    return 1;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_00244928);
+/* COM_LoadFileForMe */
+void *func_00244928(char *filename, int *pLength)
+{
+    return COM_LoadFile(filename, 5, pLength);
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_00244948);
+/* COM_CompareFileTime */
+int func_00244948(void)
+{
+    return 0;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/common", func_00244950);
+/* COM_GetGameDir */
+void func_00244950(char *szGameDir)
+{
+    if (szGameDir)
+        strcpy(szGameDir, com_gamedir);
+}
 
 INCLUDE_ASM("asm/nonmatchings/engine/common", Info_ValueForKey);
 
