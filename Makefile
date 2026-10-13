@@ -18,7 +18,8 @@ FIX_ASM   := $(PYTHON) tools/fixasm.py
 
 S_FILES   := $(shell find asm -name '*.s' -not -path 'asm/nonmatchings/*')
 C_FILES   := $(shell find src -name '*.c')
-O_FILES   := $(S_FILES:%.s=$(BUILD_DIR)/%.o) $(C_FILES:%.c=$(BUILD_DIR)/%.o)
+CXX_FILES := $(shell find src -name '*.cpp')
+O_FILES   := $(S_FILES:%.s=$(BUILD_DIR)/%.o) $(C_FILES:%.c=$(BUILD_DIR)/%.o) $(CXX_FILES:%.cpp=$(BUILD_DIR)/%.o)
 
 ELF       := $(BUILD_DIR)/$(BASENAME).elf
 ROM       := $(BUILD_DIR)/$(BASENAME).rom
@@ -101,6 +102,14 @@ $(BUILD_DIR)/src/zlib/zutil.o: SECTALIGN_C := --set-section-alignment .text=8 --
 $(BUILD_DIR)/src/engine/gl_warp.o: SECTALIGN_C := --set-section-alignment .text=8 --set-section-alignment .data=4 --set-section-alignment .rodata=16
 
 $(BUILD_DIR)/src/%.o: src/%.c $(shell find include -name "*.h")
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -S -o $(BUILD_DIR)/src/$*.s0 $<
+	$(FIX_ASM) $(BUILD_DIR)/src/$*.s0 $(BUILD_DIR)/src/$*.s
+	$(AS) $(ASFLAGS) -o $@ $(BUILD_DIR)/src/$*.s
+	$(OBJCOPY) $(SECTALIGN_C) $@
+
+# código C++ da Gearbox (Gbx/*.cpp): o mesmo ee-gcc chama o cc1plus
+$(BUILD_DIR)/src/%.o: src/%.cpp $(shell find include -name "*.h")
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -S -o $(BUILD_DIR)/src/$*.s0 $<
 	$(FIX_ASM) $(BUILD_DIR)/src/$*.s0 $(BUILD_DIR)/src/$*.s
