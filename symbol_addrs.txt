@@ -1873,3 +1873,7 @@ Init__15KeyStateManagerUi = 0x00229D28; // type:func
 Shutdown__15KeyStateManager = 0x00229DB0; // type:func
 SetData__15KeyStateManagerUii = 0x00229DE0; // type:func
 __builtin_delete = 0x00225A38; // type:func
+Press__15KeyStateManagerUi = 0x00229DF8; // type:func
+Update__15KeyStateManager = 0x00229E60; // type:func
+Dispatch__15KeyStateManager = 0x00229EB0; // type:func
+AnyDown__15KeyStateManager = 0x00229FB0; // type:func
