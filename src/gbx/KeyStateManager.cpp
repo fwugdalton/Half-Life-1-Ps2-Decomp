@@ -37,6 +37,17 @@ public:
     unsigned char m_initialized;
 };
 
+/* versão para os botões do mouse USB (5 botões) */
+class MouseStateManager : public KeyStateManager {
+public:
+    MouseStateManager();
+    ~MouseStateManager();
+    void Press(unsigned int key);
+    void Release(unsigned int key);
+    void Clear();
+    void Dispatch();
+};
+
 KeyStateManager::KeyStateManager()
 {
     m_initialized = 0;
@@ -148,17 +159,94 @@ int KeyStateManager::AnyDown()
     return down;
 }
 
-INCLUDE_ASM("asm/nonmatchings/gbx/KeyStateManager", func_0022A000);
+MouseStateManager::MouseStateManager()
+{
+}
 
-INCLUDE_ASM("asm/nonmatchings/gbx/KeyStateManager", func_0022A028);
+MouseStateManager::~MouseStateManager()
+{
+}
 
-INCLUDE_ASM("asm/nonmatchings/gbx/KeyStateManager", func_0022A048);
+void MouseStateManager::Press(unsigned int key)
+{
+    switch (m_states[key].state) {
+    case KEY_UP:
+        m_states[key].state = KEY_PRESSED;
+        break;
+    case KEY_PRESSED:
+        m_states[key].state = KEY_PRESSED;
+        break;
+    case KEY_DOWN:
+        m_states[key].state = KEY_RELEASED;
+        break;
+    case KEY_RELEASED:
+        m_states[key].state = KEY_RELEASED;
+        break;
+    }
+}
 
-INCLUDE_ASM("asm/nonmatchings/gbx/KeyStateManager", func_0022A0B0);
+#ifdef NON_MATCHING
+/* só a ordem do último sw/jr (o original não preenche o delay slot do case KEY_DOWN) */
+void MouseStateManager::Release(unsigned int key)
+{
+    switch (m_states[key].state) {
+    case KEY_UP:
+        break;
+    case KEY_PRESSED:
+        m_states[key].state = KEY_DOWN;
+        break;
+    case KEY_DOWN:
+        m_states[key].state = KEY_DOWN;
+        break;
+    case KEY_RELEASED:
+        m_states[key].state = KEY_DOWN;
+        break;
+    }
+}
+#else
+INCLUDE_ASM("asm/nonmatchings/gbx/KeyStateManager", Release__17MouseStateManagerUi);
+#endif
 
-INCLUDE_ASM("asm/nonmatchings/gbx/KeyStateManager", func_0022A108);
+void MouseStateManager::Clear()
+{
+    unsigned int i;
 
-INCLUDE_ASM("asm/nonmatchings/gbx/KeyStateManager", func_0022A1A0);
+    for (i = 0; i < m_count; i++) {
+        switch (m_states[i].state) {
+        case KEY_UP:
+            break;
+        case KEY_PRESSED:
+        case KEY_DOWN:
+        case KEY_RELEASED:
+            m_states[i].state = KEY_UP;
+            D_00399084(m_states[i].data, 0);
+            break;
+        }
+    }
+}
+
+void MouseStateManager::Dispatch()
+{
+    unsigned int i;
+
+    for (i = 0; i < m_count; i++) {
+        switch (m_states[i].state) {
+        case KEY_UP:
+            break;
+        case KEY_PRESSED:
+            m_states[i].state = KEY_RELEASED;
+            D_00399084(m_states[i].data, 1);
+            break;
+        case KEY_DOWN:
+            m_states[i].state = KEY_UP;
+            D_00399084(m_states[i].data, 0);
+            break;
+        case KEY_RELEASED:
+            m_states[i].state = KEY_RELEASED;
+            break;
+        }
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/gbx/KeyStateManager", func_0022A280);
 
