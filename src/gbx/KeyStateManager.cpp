@@ -49,8 +49,8 @@ public:
 };
 
 extern "C" {
-extern KeyStateManager *D_003281F8;
-extern unsigned long D_00328200;
+KeyStateManager *D_003281F8 = 0;
+unsigned long D_00328200 = 0;
 void func_0022A4C0(void);
 }
 
