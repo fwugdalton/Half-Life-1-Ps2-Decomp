@@ -1845,6 +1845,7 @@ z_errmsg = 0x003289D8; // type:u32
 _dist_code = 0x00388020; // type:u8
 _length_code = 0x00388220; // type:u8
 __umoddi3 = 0x002DEAE8; // type:func
+__udivdi3 = 0x002DE518; // type:func
 tr_static_init = 0x00232740; // type:func
 init_block = 0x002327C0; // type:func
 pqdownheap = 0x00232830; // type:func
