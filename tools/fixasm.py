@@ -18,6 +18,8 @@
 - o ee-as também não preenche o delay slot de um desvio quando a instrução anterior
   precisou do nop do mtc1 (visto em conversão unsigned->float seguida de b).
 - nem quando a penúltima é um cvt.w.s/sqrt.s (.word) cujo resultado a última lê.
+- nem quando a última instrução é um deslocamento de 64 bits >= 32 (dsll/dsra/dsrl
+  com 32..63 é macro no ee-as, que não vai para o delay slot).
 - nem com um acesso volatile (entre "#.set volatile" e "#.set novolatile"; o ee-gcc
   original emitia a diretiva de verdade e o ee-as a respeitava).
 """
@@ -183,6 +185,7 @@ for line in lines:
     if reorder and BRANCH.match(line) and prev_real is not None and (
             re.match(r'^\s+(mf(lo|hi)|u(ld|sd|lw|sw|lh|lhu|sh))\s', out[prev_real]) or
             re.search(r'# u(ld|sd)$', out[prev_real]) or
+            re.match(r'^\s+ds(ll|ra|rl)\s+\$\w+,\s*\$\w+,\s*(3[2-9]|[4-6]\d)\s*$', out[prev_real]) or
             (prev_prev is not None and re.match(r'^\s+s[dw][lr]\s', out[prev_prev])) or
             (prev_prev is not None and fp_load_use(out[prev_prev], out[prev_real])) or
             (prev_prev is not None and word_fp_use(out[prev_prev], out[prev_real])) or
