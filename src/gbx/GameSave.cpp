@@ -16,12 +16,21 @@ unsigned int D_0032830C = 0;
 
 typedef struct client_textmessage_s client_textmessage_t;
 
+struct GameSaveEntry {
+    int used;
+    int size;
+    char unk08[0x70];
+    int chapter;
+    char unk7C[0x50];
+    char name[0x50];
+};
+
 struct GameSaveState {
     int card;
     int status;
     int numSaves;
     int unk0C;
-    void *saves;
+    GameSaveEntry *saves;
     int unk14;
     int unk18;
     void *unk1C;
@@ -48,6 +57,11 @@ client_textmessage_t *func_0028BDE8(const char *name);
 void func_00299420(char *comment);
 int SaveGameSlot(char *name, char *comment);
 void func_0010F5F0(void *ctx, const char *key, const char *value);
+void *func_0010F5E8(void *ctx);
+void *func_00107EE0(void *obj, const char *name);
+float func_00107000(void *var);
+int func_0022B8C0(const char *name);
+int func_0022D390(int size);
 void Pak_Init(pakfile_t *pak);
 void Pak_Open(pakfile_t *pak, const char *path);
 void Pak_Close(pakfile_t *pak, const char *path);
@@ -209,21 +223,66 @@ void func_0022ECC0(void) {
     D_0032830C++;
 }
 
-INCLUDE_ASM("asm/nonmatchings/gbx/GameSave", func_0022EDE8);
+void func_0022EDE8(int first, int count) {
+    char key[0x70];
+    char num[0x10];
+    int n;
+    int i;
+    int idx;
 
-INCLUDE_ASM("asm/nonmatchings/gbx/GameSave", func_0022F070);
+    n = (int)func_00107000(func_00107EE0(func_0010F5E8(D_00301CC0), "NumSavePositions"));
+    for (i = 0; i < n; i++) {
+        func_00228EE0(key, "Save%dName", i + 1);
+        idx = first + (i + 1 - count);
+        if (idx >= 0 && idx < D_003A76D8.numSaves) {
+            func_0010F5F0(D_00301CC0, key, D_003A76D8.saves[idx].name);
+            if (i == count - 1) {
+                func_00228EE0(num, "%d", D_003A76D8.saves[idx].chapter);
+                func_0010F5F0(D_00301CC0, "ChapterNumber", num);
+            }
+            if (D_003A76D8.saves[idx].used == 0) {
+                func_00228EE0(num, "%d", i + 1);
+                func_0010F5F0(D_00301CC0, "EmptySlot", num);
+            }
+        } else {
+            func_0010F5F0(D_00301CC0, key, "");
+        }
+    }
+    if (n < D_003A76D8.numSaves) {
+        if (first + 1 == count) {
+            func_0010F5F0(D_00301CC0, "DrawUpArrow", "0.0");
+        } else {
+            func_0010F5F0(D_00301CC0, "DrawUpArrow", "1.0");
+        }
+        if (first + (n - count) == D_003A76D8.numSaves - 1) {
+            func_0010F5F0(D_00301CC0, "DrawDownArrow", "0.0");
+        } else {
+            func_0010F5F0(D_00301CC0, "DrawDownArrow", "1.0");
+        }
+    } else {
+        func_0010F5F0(D_00301CC0, "DrawUpArrow", "0.0");
+        func_0010F5F0(D_00301CC0, "DrawDownArrow", "0.0");
+    }
+}
 
-INCLUDE_ASM("asm/nonmatchings/gbx/GameSave", func_0022F0E8);
+int func_0022F070(int idx) {
+    int used;
+    int need;
 
-INCLUDE_RODATA("asm/nonmatchings/gbx/GameSave", D_00387540);
+    used = D_003A76D8.saves[idx].used;
+    if (used != 1) {
+        return 1;
+    }
+    need = D_003A76D8.saves[idx].size + D_003A76D8.unk20;
+    if (func_0022D390(func_0022B8C0("TempMCSave.sav")) >= need) {
+        used = 0;
+    }
+    return used;
+}
 
-INCLUDE_RODATA("asm/nonmatchings/gbx/GameSave", D_00387548);
-
-INCLUDE_RODATA("asm/nonmatchings/gbx/GameSave", D_00387558);
-
-INCLUDE_RODATA("asm/nonmatchings/gbx/GameSave", D_00387560);
-
-INCLUDE_RODATA("asm/nonmatchings/gbx/GameSave", D_00387568);
+int func_0022F0E8(int idx) {
+    return D_003A76D8.saves[idx].used == 1;
+}
 
 INCLUDE_ASM("asm/nonmatchings/gbx/GameSave", func_0022F110);
 
