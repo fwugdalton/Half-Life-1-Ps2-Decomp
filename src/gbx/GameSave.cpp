@@ -18,7 +18,8 @@ typedef struct client_textmessage_s client_textmessage_t;
 
 /* cabeçalho de 0x5C bytes no início de cada save */
 struct GameSaveHeader {
-    char unk00[8];
+    int unk00;
+    char unk04[4];
     int chapter;
     char unk0C[0x50];
 };
@@ -39,6 +40,11 @@ struct GameSaveGroup {
     char dir[0x20];
     int unk28;
     int refs;
+};
+
+/* objeto de 0x20 bytes montado durante a gravação (funções 0x230F80..0x2311D0) */
+struct GameSaveTask {
+    char pad[0x20];
 };
 
 struct GameSaveState {
@@ -89,6 +95,30 @@ void func_002305B8(GameSaveState *s, int n);
 extern char D_00328250[16];
 extern const char D_003874A0[];
 extern const char D_00387618[];
+extern const char D_00387610[];
+extern const char D_00387620[];
+extern const char D_003875A0[];
+extern const char D_003875B0[];
+void Pak_Load(pakfile_t *pak, const char *path);
+void func_00235198(pakfile_t *pak);
+int func_0022C7E0(int card, const char *dir);
+int func_0022CB50(int card, const char *name, const char *newname);
+int func_0022E6A0(int card, const char *dir);
+int func_0022F630(int card, const char *name, const void *header);
+int func_0022F740(int card, const char *dir, pakfile_t *pak);
+void func_002307D8(GameSaveHeader *hdr);
+void func_00230F80(GameSaveTask *t);
+void func_00230F90(GameSaveTask *t, int mode);
+void func_00230FB8(GameSaveTask *t, pakfile_t *pak);
+void func_00231070(GameSaveTask *t, int n);
+void func_002311D0(GameSaveTask *t);
+int func_0022D6D8(int card, const char *name, int *size);
+void func_0022AFD0(const char *name, int size);
+int func_0022B9D8(void *f, int fd, int size);
+int func_0022E838(void);
+int func_0022D3B8(void);
+int func_00230410(GameSaveGroup *g, GameSaveState *s);
+int func_002304C8(GameSaveState *s);
 int func_00228C48(const char *a, const char *b);
 int func_00228DC0(const char *s);
 float powf(float x, float y);
@@ -342,7 +372,73 @@ int func_0022F0E8(int idx) {
     return D_003A76D8.saves[idx].used == 1;
 }
 
+#ifdef NON_MATCHING
+/* ordem de agendamento e alocação de registradores diferentes */
+int func_0022F110(int idx) {
+    pakfile_t pak;
+    GameSaveTask task;
+    char path[0x50];
+    int ret;
+    GameSaveEntry *e;
+    GameSaveGroup *g;
+    int ok;
+    int r;
+
+    e = &D_003A76D8.saves[idx];
+    g = &D_003A76D8.groups[e->group];
+    D_003282A0[0] = 1;
+    ret = 0;
+    func_002307D8(&e->hdr);
+    ok = 1;
+    if (e->used == 1) {
+        ok = 0;
+        if (func_0022CA78(D_003A76D8.card, e->dir) == 0) {
+            e->used = 0;
+            ok = 1;
+            g->refs--;
+        }
+    }
+    if (ok == 1) {
+        if (g->loaded == 0) {
+            r = 0;
+            Pak_Init(&pak);
+            pak.inMemory = ok;
+            Pak_Load(&pak, "ICONS\\CGMESAVE.PAK;1");
+            if (func_0022C7E0(D_003A76D8.card, g->dir) == 0) {
+                func_00230F80(&task);
+                func_00230FB8(&task, &pak);
+                func_00231070(&task, g->unk28);
+                g->loaded = ok;
+                r = func_0022F740(D_003A76D8.card, g->dir, &pak);
+                if (r == ok) {
+                    r = func_0022E6A0(D_003A76D8.card, g->dir);
+                }
+                func_002311D0(&task);
+                func_00230F90(&task, 2);
+            }
+            func_00235198(&pak);
+        } else {
+            r = 1;
+        }
+        if (r == 1) {
+            func_00228EE0(path, D_00387590, g->dir, D_00387598, D_003875A0);
+            if (func_0022CB50(D_003A76D8.card, path, D_003875B0) == 0) {
+                ok = func_0022F630(D_003A76D8.card, e->dir, &e->hdr);
+                if (ok == r) {
+                    func_00228EE0(path, D_00387590, g->dir, D_00387598, D_003875B0);
+                    if (func_0022CB50(D_003A76D8.card, path, D_003875A0) != 0) {
+                        ok = 0;
+                    }
+                    ret = ok;
+                }
+            }
+        }
+    }
+    return ret;
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/gbx/GameSave", func_0022F110);
+#endif
 
 INCLUDE_RODATA("asm/nonmatchings/gbx/GameSave", D_00387590);
 
@@ -352,7 +448,46 @@ INCLUDE_RODATA("asm/nonmatchings/gbx/GameSave", D_003875A0);
 
 INCLUDE_RODATA("asm/nonmatchings/gbx/GameSave", D_003875B0);
 
+#ifdef NON_MATCHING
+/* o original mantém r em s4 e faz ret = r; aqui o gcc propaga a constante 1 */
+int func_0022F360(int idx) {
+    GameSaveHeader hdr;
+    char path[0x70];
+    int size;
+    int fd;
+    int n;
+    GameSaveEntry *e;
+    void *f;
+    int ret;
+    int r;
+
+    e = &D_003A76D8.saves[idx];
+    ret = 0;
+    r = func_0022D6D8(D_003A76D8.card, e->dir, &size);
+    if (r == 1) {
+        if (func_0022C8B0(D_003A76D8.card, e->dir, 0, 0, &fd) == 0) {
+            if (func_0022CC20(fd, &hdr, 0x5C, &n) == 0 && n == 0x5C) {
+                func_00228EE0(path, D_003874A0, func_0022E958(), "LoadGame.sav");
+                if (func_0022B6D0(path) == 0) {
+                    func_0022AFD0(path, e->size);
+                }
+                ret = r;
+                f = func_0022B118(path, "wb");
+                if (func_0022B9D8(f, fd, size - 0x5C) != 1) {
+                    ret = 0;
+                }
+                func_0022B238(f);
+            }
+            if (func_0022C9F0(fd) != 0) {
+                ret = 0;
+            }
+        }
+    }
+    return ret;
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/gbx/GameSave", func_0022F360);
+#endif
 
 #ifdef NON_MATCHING
 /* registradores: o original guarda a constante 1 em s2 e reusa s0 para g->dir */
@@ -495,7 +630,85 @@ void func_0022F8D0(GameSaveState *s) {
 INCLUDE_ASM("asm/nonmatchings/gbx/GameSave", func_0022F8D0);
 #endif
 
+#ifdef NON_MATCHING
+/* fluxo equivalente; o original iça os endereços de "save" e ".sav" para s8/s7 e usa outros registradores */
+void func_0022F9D8(GameSaveState *s) {
+    char buf[0x10];
+    int found;
+    int i;
+    int need;
+    int n;
+
+    found = 0;
+    for (i = 0; i < s->unk14; i++) {
+        if (s->groups[i].unk04 == 1 && s->groups[i].refs < 13) {
+            found = 1;
+            need = func_0022D390(func_0022B8C0("TempMCSave.sav") + 0x50);
+            sprintf(buf, "%d", 400);
+            func_0010F5F0(D_00301CC0, "SpaceRequired", buf);
+            if (need < func_0022C680(s->card)) {
+                n = func_00230410(&s->groups[i], s);
+                func_00230618(s, 1);
+                func_00228EE0(s->saves[s->numSaves].dir, "%s%s%s%d%s", s->groups[i].dir, D_00387598, D_00387600, n, D_00387608);
+                func_00228EE0(s->saves[s->numSaves].unk0C, D_00387610, D_00387600, n, D_00387608);
+                s->saves[s->numSaves].group = i;
+                s->saves[s->numSaves].size = 0;
+                s->saves[s->numSaves].used = 0;
+                s->saves[s->numSaves].hdr.unk00 = 99999;
+                s->saves[s->numSaves].hdr.unk04[0] = 'c';
+                s->saves[s->numSaves].hdr.unk04[1] = 'c';
+                s->saves[s->numSaves].hdr.unk04[2] = 'c';
+                s->saves[s->numSaves].hdr.unk04[3] = 'c';
+                s->saves[s->numSaves].hdr.chapter = 0;
+                func_00228CF0(s->saves[s->numSaves].name, D_003282A8);
+                s->numSaves++;
+            }
+        }
+    }
+    if (found == 0) {
+        int total;
+        int base;
+        int j;
+
+        total = 0;
+        j = 0;
+        base = func_0022B8C0("TempMCSave.sav") + 0x50;
+        for (; j < D_003A7700.count; j++) {
+            total += func_0022D390(D_003A7700.lumps[j].size);
+        }
+        total += func_0022D390(base);
+        total += func_0022E838();
+        total += func_0022D3B8();
+        sprintf(buf, "%d", 400);
+        func_0010F5F0(D_00301CC0, "SpaceRequired", buf);
+        if (total < func_0022C680(s->card)) {
+            n = func_002304C8(s);
+            func_002305B8(s, 1);
+            func_00228EE0(s->groups[s->unk14].dir, D_00387618, D_00328250, D_003A76D0, n);
+            s->groups[s->unk14].refs = 0;
+            s->groups[s->unk14].loaded = 0;
+            s->groups[s->unk14].unk28 = n;
+            s->unk14++;
+            func_00230618(s, 1);
+            func_00228EE0(s->saves[s->numSaves].dir, D_00387620, D_00328250, D_003A76D0, n, D_00387598, D_00387600, 0, D_00387608);
+            func_00228EE0(s->saves[s->numSaves].unk0C, D_00387610, D_00387600, 0, D_00387608);
+            s->saves[s->numSaves].group = s->unk14 - 1;
+            s->saves[s->numSaves].size = 0;
+            s->saves[s->numSaves].used = 0;
+            s->saves[s->numSaves].hdr.unk00 = 99999;
+            s->saves[s->numSaves].hdr.unk04[0] = 'c';
+            s->saves[s->numSaves].hdr.unk04[1] = 'c';
+            s->saves[s->numSaves].hdr.unk04[2] = 'c';
+            s->saves[s->numSaves].hdr.unk04[3] = 'c';
+            s->saves[s->numSaves].hdr.chapter = 0;
+            func_00228CF0(s->saves[s->numSaves].name, D_003282A8);
+            s->numSaves++;
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/gbx/GameSave", func_0022F9D8);
+#endif
 
 #ifdef NON_MATCHING
 /* alocação de registradores (ret em s20) e o retorno duplicado no fim */
