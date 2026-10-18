@@ -19,10 +19,21 @@ typedef struct client_textmessage_s client_textmessage_t;
 struct GameSaveEntry {
     int used;
     int size;
-    char unk08[0x70];
+    int group;
+    char unk0C[0x20];
+    char dir[0x44];
+    char unk70[8];
     int chapter;
     char unk7C[0x50];
     char name[0x50];
+};
+
+struct GameSaveGroup {
+    int loaded;
+    int unk04;
+    char dir[0x20];
+    int unk28;
+    int refs;
 };
 
 struct GameSaveState {
@@ -33,7 +44,7 @@ struct GameSaveState {
     GameSaveEntry *saves;
     int unk14;
     int unk18;
-    void *unk1C;
+    GameSaveGroup *groups;
     int unk20;
     int unk24;
 };
@@ -63,6 +74,16 @@ float func_00107000(void *var);
 int func_0022B8C0(const char *name);
 int func_0022D390(int size);
 void Pak_Init(pakfile_t *pak);
+int func_0022C6A0(int card);
+int func_0022C8B0(int card, const char *name, int create, int mode, int *fd);
+int func_0022C9F0(int fd);
+int func_0022CA78(int card, const char *name);
+int func_0022CCC0(int fd, const void *buf, int size, int *written);
+int func_0022E758(int card, const char *dir);
+int func_0022F820(int card, const char *dir, pakfile_t *pak);
+void *func_0022B118(const char *name, const char *mode);
+void *func_0022BF38(void *f);
+void func_0022B238(void *f);
 void Pak_Open(pakfile_t *pak, const char *path);
 void Pak_Close(pakfile_t *pak, const char *path);
 
@@ -93,7 +114,7 @@ void func_0022E860(void) {
     D_003A76D8.saves = 0;
     D_003A76D8.unk18 = 0;
     D_003A76D8.unk14 = 0;
-    D_003A76D8.unk1C = 0;
+    D_003A76D8.groups = 0;
     D_003A76D8.unk20 = 0;
 }
 
@@ -106,10 +127,10 @@ void func_0022E8D0(void) {
     D_003A76D8.saves = 0;
     D_003A76D8.unk18 = 0;
     D_003A76D8.unk14 = 0;
-    if (D_003A76D8.unk1C != 0) {
-        Mem_Free(D_003A76D8.unk1C);
+    if (D_003A76D8.groups != 0) {
+        Mem_Free(D_003A76D8.groups);
     }
-    D_003A76D8.unk1C = 0;
+    D_003A76D8.groups = 0;
 }
 
 void func_0022E930(const char *name) {
@@ -296,13 +317,74 @@ INCLUDE_RODATA("asm/nonmatchings/gbx/GameSave", D_003875B0);
 
 INCLUDE_ASM("asm/nonmatchings/gbx/GameSave", func_0022F360);
 
+#ifdef NON_MATCHING
+/* registradores: o original guarda a constante 1 em s2 e reusa s0 para g->dir */
+int func_0022F4B0(int idx) {
+    GameSaveEntry *e;
+    GameSaveGroup *g;
+    int ret;
+    int r;
+
+    e = &D_003A76D8.saves[idx];
+    g = &D_003A76D8.groups[e->group];
+    ret = 0;
+    if (func_0022CA78(D_003A76D8.card, e->dir) == 0) {
+        if (--g->refs == 0) {
+            if (func_0022F820(D_003A76D8.card, g->dir, &D_003A7700) == 1) {
+                r = func_0022E758(D_003A76D8.card, g->dir);
+                if (r == 1) {
+                    if (func_0022CA78(D_003A76D8.card, g->dir) == 0) {
+                        ret = r;
+                    }
+                }
+            }
+        } else {
+            ret = 1;
+        }
+    }
+    return ret;
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/gbx/GameSave", func_0022F4B0);
+#endif
 
-INCLUDE_ASM("asm/nonmatchings/gbx/GameSave", func_0022F598);
+int func_0022F598(void) {
+    int card;
+    int i;
+    int ret;
 
-INCLUDE_ASM("asm/nonmatchings/gbx/GameSave", func_0022F600);
+    ret = 0;
+    card = func_002307A8();
+    for (i = 0; i < 5; i++) { if (func_0022C6A0(card) == 0) { ret = 1; break; } ret = 0; }
+    return ret;
+}
 
-INCLUDE_ASM("asm/nonmatchings/gbx/GameSave", func_0022F630);
+int func_0022F600(void) {
+    return func_0022C598(D_003A76D8.card) != 1;
+}
+
+int func_0022F630(int card, const char *name, const void *header) {
+    int fd;
+    int n;
+    int size;
+    void *f;
+    void *buf;
+    int ret;
+
+    ret = 0;
+    size = func_0022B8C0("TempMCSave.sav");
+    f = func_0022B118("TempMCSave.sav", "r");
+    buf = func_0022BF38(f);
+    func_0022B238(f);
+    if (func_0022C8B0(card, name, 1, 1, &fd) == 0) {
+        if (func_0022CCC0(fd, header, 0x5C, &n) == 0 && n == 0x5C &&
+            func_0022CCC0(fd, buf, size, &n) == 0) {
+            ret = n == size;
+        }
+        func_0022C9F0(fd);
+    }
+    return ret;
+}
 
 INCLUDE_ASM("asm/nonmatchings/gbx/GameSave", func_0022F740);
 
