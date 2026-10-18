@@ -54,6 +54,7 @@ $(BUILD_DIR)/%.o: %.s
 $(BUILD_DIR)/src/zlib/%.o: CFLAGS += -fno-strict-aliasing
 $(BUILD_DIR)/src/zlib/adler32.o: CFLAGS += -fmove-all-movables
 $(BUILD_DIR)/src/gbx/SystemSaveInitialize.o: CFLAGS += -fmove-all-movables
+$(BUILD_DIR)/src/gbx/MemCardSlot.o: CFLAGS += -fmove-all-movables
 
 # mathlib.c foi compilado com -ffast-math (sqrt.s direto, sem o teste de errno)
 $(BUILD_DIR)/src/engine/mathlib.o: CFLAGS += -ffast-math
