@@ -16,15 +16,20 @@ unsigned int D_0032830C = 0;
 
 typedef struct client_textmessage_s client_textmessage_t;
 
+/* cabeçalho de 0x5C bytes no início de cada save */
+struct GameSaveHeader {
+    char unk00[8];
+    int chapter;
+    char unk0C[0x50];
+};
+
 struct GameSaveEntry {
     int used;
     int size;
     int group;
     char unk0C[0x20];
     char dir[0x44];
-    char unk70[8];
-    int chapter;
-    char unk7C[0x50];
+    GameSaveHeader hdr;
     char name[0x50];
 };
 
@@ -62,7 +67,7 @@ int func_0022C598(int card);
 int func_0022D688(int card);
 void func_0022F8D0(GameSaveState *s);
 void func_0022F9D8(GameSaveState *s);
-int func_002307A8(void);
+int func_002307A8(int slot);
 void func_00230BD0(GameSaveState *s);
 client_textmessage_t *func_0028BDE8(const char *name);
 void func_00299420(char *comment);
@@ -82,6 +87,21 @@ void func_0022D260(int handle);
 int func_0022D600(int card, const char *dir, int *err);
 void func_002305B8(GameSaveState *s, int n);
 extern char D_00328250[16];
+extern const char D_003874A0[];
+extern const char D_00387618[];
+int func_00228C48(const char *a, const char *b);
+int func_00228DC0(const char *s);
+float powf(float x, float y);
+void *func_002260D0(void *ptr, int size, const char *file, int line);
+int func_00230678(GameSaveState *s, const char *name);
+int func_00230710(GameSaveState *s, const char *name);
+extern const char D_00387600[];
+extern const char D_00387608[];
+extern const char D_00387630[];
+int func_0022CC20(int fd, void *buf, int size, int *read);
+int func_0022D280(int card, const char *name, int *size);
+void func_00230618(GameSaveState *s, int n);
+void func_002309F0(GameSaveHeader *hdr, char *out);
 int func_0022C638(int card);
 int func_0022C668(int card);
 int func_0022C680(int card);
@@ -189,13 +209,13 @@ void func_0022EA30(void) {
     }
 }
 
-int func_0022EAE0(void) {
+int func_0022EAE0(int slot) {
     char buf[0x10];
 
     D_003A76D8.numSaves = 0;
     D_003A76D8.unk14 = 0;
     D_003A76D8.unk20 = 0;
-    D_003A76D8.card = func_002307A8();
+    D_003A76D8.card = func_002307A8(slot);
     D_003A76D8.status = 0;
     func_0022F8D0(&D_003A76D8);
     if (D_003A76D8.status == 3) {
@@ -210,12 +230,12 @@ int func_0022EAE0(void) {
     return D_003A76D8.status;
 }
 
-int func_0022EBA0(void) {
+int func_0022EBA0(int slot) {
     char buf[0x10];
 
     D_003A76D8.numSaves = 0;
     D_003A76D8.unk14 = 0;
-    D_003A76D8.card = func_002307A8();
+    D_003A76D8.card = func_002307A8(slot);
     D_003A76D8.status = 0;
     func_0022F8D0(&D_003A76D8);
     if (D_003A76D8.status == 3) {
@@ -275,7 +295,7 @@ void func_0022EDE8(int first, int count) {
         if (idx >= 0 && idx < D_003A76D8.numSaves) {
             func_0010F5F0(D_00301CC0, key, D_003A76D8.saves[idx].name);
             if (i == count - 1) {
-                func_00228EE0(num, "%d", D_003A76D8.saves[idx].chapter);
+                func_00228EE0(num, "%d", D_003A76D8.saves[idx].hdr.chapter);
                 func_0010F5F0(D_00301CC0, "ChapterNumber", num);
             }
             if (D_003A76D8.saves[idx].used == 0) {
@@ -365,13 +385,13 @@ int func_0022F4B0(int idx) {
 INCLUDE_ASM("asm/nonmatchings/gbx/GameSave", func_0022F4B0);
 #endif
 
-int func_0022F598(void) {
+int func_0022F598(int slot) {
     int card;
     int i;
     int ret;
 
     ret = 0;
-    card = func_002307A8();
+    card = func_002307A8(slot);
     for (i = 0; i < 5; i++) { if (func_0022C6A0(card) == 0) { ret = 1; break; } ret = 0; }
     return ret;
 }
@@ -536,7 +556,83 @@ int func_002300D8(GameSaveState *s) {
     return 1;
 }
 
+#ifdef NON_MATCHING
+/* fluxo equivalente; o original guarda o offset do grupo na pilha (0x84) e ordena os blocos de outro jeito */
+int func_00230178(GameSaveState *s) {
+    char pattern[0x50];
+    char name[0x20];
+    int handle;
+    int size;
+    int fd;
+    int n;
+    int found;
+    GameSaveEntry *e;
+    int i;
+    int ret;
+
+    ret = 1;
+    s->numSaves = 0;
+    for (i = 0; i < s->unk14; i++) {
+        if (s->groups[i].unk04 == 1) {
+            strcpy(pattern, s->groups[i].dir);
+            strcat(pattern, D_00387598);
+            strcat(pattern, D_00387600);
+            strcat(pattern, D_00387630);
+            strcat(pattern, D_00387608);
+            if (func_0022CF08(s->card, pattern, &handle, name) != 0) {
+                ret = 0;
+                break;
+            }
+            if (handle != -1) {
+                do {
+                    func_00230618(s, 5);
+                    e = &s->saves[s->numSaves];
+                    strcpy(e->dir, s->groups[i].dir);
+                    strcat(e->dir, D_00387598);
+                    strcat(e->dir, name);
+                    strcpy(e->unk0C, name);
+                    e->used = 1;
+                    if (func_0022D280(s->card, e->dir, &size) != 0) {
+                        ret = 0;
+                    } else {
+                        e->group = i;
+                        e->size = func_0022D390(size);
+                        if (func_0022C8B0(s->card, e->dir, 0, 0, &fd) != 0) {
+                            ret = 0;
+                        } else {
+                            if (func_0022CC20(fd, &e->hdr, 0x5C, &n) != 0) {
+                                ret = 0;
+                            } else {
+                                func_002309F0(&e->hdr, e->name);
+                                s->groups[i].refs++;
+                                s->numSaves++;
+                            }
+                            if (func_0022C9F0(fd) != 0) {
+                                ret = 0;
+                            }
+                        }
+                    }
+                    if (ret == 1) {
+                        if (func_0022D0F8(handle, &found, name) != 0) {
+                            ret = 0;
+                        } else if (found == 0) {
+                            func_0022D260(handle);
+                            handle = -1;
+                        }
+                    }
+                } while (ret != 0 && handle != -1);
+            }
+            if (ret == 0) {
+                func_0022D260(handle);
+                return ret;
+            }
+        }
+    }
+    return ret;
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/gbx/GameSave", func_00230178);
+#endif
 
 INCLUDE_RODATA("asm/nonmatchings/gbx/GameSave", D_00387600);
 
@@ -550,19 +646,92 @@ INCLUDE_RODATA("asm/nonmatchings/gbx/GameSave", D_00387620);
 
 INCLUDE_RODATA("asm/nonmatchings/gbx/GameSave", D_00387630);
 
-INCLUDE_ASM("asm/nonmatchings/gbx/GameSave", func_00230410);
+int func_00230410(GameSaveGroup *g, GameSaveState *s) {
+    char prefix[0x50];
+    char name[0x50];
+    int i;
 
-INCLUDE_ASM("asm/nonmatchings/gbx/GameSave", func_002304C8);
+    strcpy(prefix, g->dir);
+    strcat(prefix, D_00387598);
+    for (i = 0; i < 13; i++) {
+        sprintf(name, "%s%s%d%s", prefix, D_00387600, i, D_00387608);
+        if (func_00230678(s, name) == 0) {
+            break;
+        }
+    }
+    return i;
+}
 
-INCLUDE_ASM("asm/nonmatchings/gbx/GameSave", func_002305B8);
+int func_002304C8(GameSaveState *s) {
+    char prefix[0x20];
+    char name[0x20];
+    int max;
+    int i;
 
-INCLUDE_ASM("asm/nonmatchings/gbx/GameSave", func_00230618);
+    i = 0;
+    max = 8 - func_00228DC0(D_003A76D0);
+    max = (int)powf(10.0f, (float)max);
+    sprintf(prefix, D_003874A0, D_00328250, D_003A76D0);
+    max--;
+    for (; i < max; i++) {
+        sprintf(name, D_00387618, D_00328250, D_003A76D0, i);
+        if (func_00230710(s, name) == 0) {
+            break;
+        }
+    }
+    return i;
+}
 
-INCLUDE_ASM("asm/nonmatchings/gbx/GameSave", func_00230678);
+void func_002305B8(GameSaveState *s, int n) {
+    if (s->unk14 == s->unk18) {
+        s->unk18 = s->unk14 + n;
+        s->groups = (GameSaveGroup *)func_002260D0(s->groups, s->unk18 * sizeof(GameSaveGroup), "Gbx/GameSave.cpp", 0x546);
+    }
+}
 
-INCLUDE_ASM("asm/nonmatchings/gbx/GameSave", func_00230710);
+void func_00230618(GameSaveState *s, int n) {
+    if (s->numSaves == s->unk0C) {
+        s->unk0C = s->numSaves + n;
+        s->saves = (GameSaveEntry *)func_002260D0(s->saves, s->unk0C * sizeof(GameSaveEntry), "Gbx/GameSave.cpp", 0x556);
+    }
+}
 
-INCLUDE_ASM("asm/nonmatchings/gbx/GameSave", func_002307A8);
+int func_00230678(GameSaveState *s, const char *name) {
+    int i;
+    int found;
 
-INCLUDE_RODATA("asm/nonmatchings/gbx/GameSave", D_00387648);
+    found = 0;
+    for (i = 0; i < s->numSaves; i++) {
+        if (func_00228C48(s->saves[i].dir, name) == 1) {
+            found = 1;
+            break;
+        }
+    }
+    return found;
+}
+
+int func_00230710(GameSaveState *s, const char *name) {
+    int i;
+    int found;
+
+    found = 0;
+    for (i = 0; i < s->unk14; i++) {
+        if (func_00228C48(s->groups[i].dir, name) == 1) {
+            found = 1;
+            break;
+        }
+    }
+    return found;
+}
+
+int func_002307A8(int slot) {
+    switch (slot) {
+    case 1:
+        return 0;
+    case 2:
+        return 1;
+    }
+    return 1;
+}
+
 }
