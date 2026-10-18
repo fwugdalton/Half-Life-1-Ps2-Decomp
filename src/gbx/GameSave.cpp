@@ -74,6 +74,15 @@ float func_00107000(void *var);
 int func_0022B8C0(const char *name);
 int func_0022D390(int size);
 void Pak_Init(pakfile_t *pak);
+int func_0022C638(int card);
+int func_0022C668(int card);
+int func_0022C680(int card);
+int func_0022D6F8(int card, const char *name, int size, const void *buf);
+int func_0022FF50(GameSaveState *s);
+int func_002300D8(GameSaveState *s);
+int func_00230178(GameSaveState *s);
+extern const char D_00387590[];
+extern const char D_00387598[];
 int func_0022C6A0(int card);
 int func_0022C8B0(int card, const char *name, int create, int mode, int *fd);
 int func_0022C9F0(int fd);
@@ -386,11 +395,77 @@ int func_0022F630(int card, const char *name, const void *header) {
     return ret;
 }
 
-INCLUDE_ASM("asm/nonmatchings/gbx/GameSave", func_0022F740);
+int func_0022F740(int card, const char *dir, pakfile_t *pak) {
+    char path[0x50];
+    int i;
+    int ret;
 
-INCLUDE_ASM("asm/nonmatchings/gbx/GameSave", func_0022F820);
+    ret = 1;
+    for (i = 0; i < pak->count; i++) {
+        func_00228EE0(path, D_00387590, dir, D_00387598, pak->lumps[i].name);
+        if (func_0022D6F8(card, path, pak->lumps[i].size, pak->data + pak->lumps[i].filepos) == 0) {
+            ret = 0;
+            break;
+        }
+    }
+    return ret;
+}
 
+int func_0022F820(int card, const char *dir, pakfile_t *pak) {
+    char path[0x50];
+    int i;
+    int ret;
+
+    ret = 1;
+    for (i = 0; i < pak->count; i++) {
+        func_00228EE0(path, D_00387590, dir, D_00387598, pak->lumps[i].name);
+        if (func_0022CA78(card, path) != 0) {
+            ret = 0;
+            break;
+        }
+    }
+    return ret;
+}
+
+#ifdef NON_MATCHING
+/* o original materializa a constante 1 em três registradores diferentes (s18, s19, s17) */
+void func_0022F8D0(GameSaveState *s) {
+    int i;
+    int r;
+    int t;
+
+    for (i = 0; i < 5; i++) {
+        func_0022C510(s->card);
+        r = func_0022C638(s->card);
+        if (r == 1) {
+            t = func_0022D688(s->card);
+            if (t == r) {
+                if (func_0022C668(s->card) == 0) {
+                    s->unk20 = func_0022C680(s->card);
+                    if (func_0022FF50(s) != 1) {
+                        s->status = 6;
+                    } else if (func_002300D8(s) != 1) {
+                        s->status = 6;
+                    } else if (func_00230178(s) != 1) {
+                        s->status = 6;
+                    } else {
+                        s->status = 3;
+                    }
+                    break;
+                } else {
+                    s->status = t;
+                }
+            } else {
+                s->status = 2;
+            }
+        } else {
+            s->status = 2;
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/gbx/GameSave", func_0022F8D0);
+#endif
 
 INCLUDE_ASM("asm/nonmatchings/gbx/GameSave", func_0022F9D8);
 
