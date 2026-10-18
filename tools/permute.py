@@ -12,7 +12,7 @@ for _m in _re.finditer(r'\n([ \t]*)' + _re.escape(lines[0]) + r'\n', s):
         break
 blk = ''.join(ind + '%s\n' % l for l in lines)
 assert blk in s, 'bloco não achado'
-obj = 'build/' + src[:-2] + '.o'
+obj = "build/" + src.rsplit(".", 1)[0] + ".o"
 perms = list(itertools.permutations(lines))
 random.seed(1); random.shuffle(perms)
 best = None
