@@ -74,6 +74,14 @@ float func_00107000(void *var);
 int func_0022B8C0(const char *name);
 int func_0022D390(int size);
 void Pak_Init(pakfile_t *pak);
+char *strcpy(char *dst, const char *src);
+char *strcat(char *dst, const char *src);
+int func_0022CF08(int card, const char *pattern, int *handle, char *name);
+int func_0022D0F8(int handle, int *found, char *name);
+void func_0022D260(int handle);
+int func_0022D600(int card, const char *dir, int *err);
+void func_002305B8(GameSaveState *s, int n);
+extern char D_00328250[16];
 int func_0022C638(int card);
 int func_0022C668(int card);
 int func_0022C680(int card);
@@ -469,9 +477,64 @@ INCLUDE_ASM("asm/nonmatchings/gbx/GameSave", func_0022F8D0);
 
 INCLUDE_ASM("asm/nonmatchings/gbx/GameSave", func_0022F9D8);
 
-INCLUDE_ASM("asm/nonmatchings/gbx/GameSave", func_0022FF50);
+#ifdef NON_MATCHING
+/* alocação de registradores (ret em s20) e o retorno duplicado no fim */
+int func_0022FF50(GameSaveState *s) {
+    char pattern[0x50];
+    char name[0x20];
+    int handle;
+    int found;
+    int ret;
 
-INCLUDE_ASM("asm/nonmatchings/gbx/GameSave", func_002300D8);
+    strcpy(pattern, D_00328250);
+    strcat(pattern, D_003A76D0);
+    strcat(pattern, "*");
+    s->unk14 = 0;
+    ret = func_0022CF08(s->card, pattern, &handle, name);
+    if (ret == 0) {
+        ret = 1;
+        if (handle != -1) {
+            do {
+                func_002305B8(s, 5);
+                strcpy(s->groups[s->unk14].dir, name);
+                s->groups[s->unk14].refs = 0;
+                s->groups[s->unk14].loaded = 1;
+                s->groups[s->unk14].unk04 = 0;
+                s->unk14++;
+                if (func_0022D0F8(handle, &found, name) == 0) {
+                    if (found == 0) {
+                        func_0022D260(handle);
+                        ret = 1;
+                        handle = -1;
+                    }
+                } else {
+                    func_0022D260(handle);
+                    ret = 0;
+                }
+            } while (handle != -1);
+        }
+    }
+    return ret;
+}
+#else
+INCLUDE_ASM("asm/nonmatchings/gbx/GameSave", func_0022FF50);
+#endif
+
+int func_002300D8(GameSaveState *s) {
+    int err;
+    int i;
+    int r;
+
+    for (i = 0; i < s->unk14; i++) {
+        r = func_0022D600(s->card, s->groups[i].dir, &err);
+        if (r == 1) {
+            s->groups[i].unk04 = r;
+        } else {
+            s->groups[i].unk04 = 0;
+        }
+    }
+    return 1;
+}
 
 INCLUDE_ASM("asm/nonmatchings/gbx/GameSave", func_00230178);
 
