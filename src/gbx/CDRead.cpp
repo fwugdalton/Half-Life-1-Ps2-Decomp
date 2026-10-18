@@ -680,4 +680,12 @@ int func_002380B8(void) {
     D_00328B24 = state;
     return ret;
 }
+
+/* espera o disco ficar pronto */
+void func_002382E8(void) {
+    func_00238098();
+    while (func_002380B8() != 3) {
+    }
+    func_002380A8();
+}
 }
