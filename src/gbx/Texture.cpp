@@ -29,6 +29,21 @@ extern int D_0032F264;          /* contexto do GS */
 extern unsigned short D_0032F1F4; /* FBP do buffer de desenho */
 extern short D_0032F1F6;        /* PSM do buffer */
 extern short D_0032F1F8;        /* FBW do buffer */
+extern short D_0032F1FA;        /* ZBP */
+extern short D_0032F1FC;        /* PSM do Z */
+extern int D_0032F208;          /* GL_ALPHA_TEST */
+extern int D_0032F20C;
+extern int D_0032F210;
+extern int D_0032F220;
+extern int D_0032F224;
+extern int D_0032F228;          /* ALPHA do GS: A, B, C, D e FIX */
+extern int D_0032F22C;
+extern int D_0032F230;
+extern int D_0032F234;
+extern int D_0032F238;
+extern int D_0032F244;          /* cor da névoa */
+extern int D_0032F248;
+extern int D_0032F24C;
 extern int D_003A9CB8;          /* início da área de texturas na VRAM */
 extern int D_003A9CC0[44];      /* registradores do GS guardados */
 extern GLTexture *D_003313D4;
@@ -485,7 +500,111 @@ qword *func_0023FC60(qword *p, int tbp, int tbw, int psm, int tw, int th, int cb
 INCLUDE_ASM("asm/nonmatchings/gbx/Texture", func_0023FC60);
 #endif
 
+#ifdef NON_MATCHING /* agendamento dos stores do pacote */
+qword *func_0023FE10(qword *p, int tbp, int tbw, int psm, int tw, int th, int cbp, int cld,
+                     int mmin, int mmag, int mxl, int l, int k, int *mipbp, int *mipbw, int eop) {
+    int ctx;
+    int *c;
+    int change;
+    int n;
+    unsigned long *q;
+
+    c = &D_003A9CC0[D_0032F264 * 22];
+    q = (unsigned long *)(p + 1);
+    change = 0;
+    if (tbp != c[13] || tbw != c[14] || psm != c[15] || tw != c[16] || th != c[17] ||
+        cbp != c[18] || k != c[19]) {
+        change = 1;
+    } else if (D_0032F244 != c[12]) {
+        change = 2;
+    } else if (D_0032F248 != c[0] || D_0032F24C != c[1]) {
+        change = 4;
+    } else if (D_0032F228 != c[2] || D_0032F22C != c[3] || D_0032F230 != c[4] ||
+               D_0032F234 != c[5] || D_0032F238 != c[6]) {
+        change = 8;
+    } else if ((short)D_0032F1F4 != c[20] || D_0032F250 != c[21]) {
+        change = 0x10;
+    } else if (D_0032F220 != c[10]) {
+        change = 0x20;
+    } else if (D_0032F208 != c[7] || D_0032F20C != c[8] || D_0032F210 != c[9] ||
+               D_0032F224 != c[11]) {
+        change = 0x40;
+    }
+    if (change == 0) {
+        return (qword *)q;
+    }
+    ctx = D_0032F264 == 0;
+    D_0032F264 = ctx;
+    c = &D_003A9CC0[ctx * 22];
+    q[1] = 0x3F;
+    c[13] = tbp;
+    c[14] = tbw;
+    c[15] = psm;
+    c[16] = tw;
+    c[17] = th;
+    c[18] = cbp;
+    c[19] = k;
+    q[2] = ((unsigned long)mxl << 2) | ((unsigned long)mmag << 5) | ((unsigned long)mmin << 6) |
+           ((unsigned long)k << 32);
+    q[3] = ctx + 0x14;
+    q[4] = tbp | ((unsigned long)tbw << 14) | ((unsigned long)psm << 20) | ((unsigned long)tw << 26) |
+           ((unsigned long)th << 30) | ((unsigned long)1 << 34) | ((unsigned long)cbp << 37) |
+           ((unsigned long)cld << 61);
+    q[5] = ctx + 6;
+    q += 6;
+    n = 3;
+    if (mxl) {
+        q[0] = mipbp[0] | ((unsigned long)mipbw[0] << 14) | ((unsigned long)mipbp[1] << 20) |
+               ((unsigned long)mipbw[1] << 34) | ((unsigned long)mipbp[2] << 40) |
+               ((unsigned long)mipbw[2] << 54);
+        q[1] = ctx + 0x34;
+        q[2] = mipbp[3] | ((unsigned long)mipbw[3] << 14) | ((unsigned long)mipbp[4] << 20) |
+               ((unsigned long)mipbw[4] << 34) | ((unsigned long)mipbp[5] << 40) |
+               ((unsigned long)mipbw[5] << 54);
+        q[3] = ctx + 0x36;
+        q += 4;
+        n = 5;
+    }
+    q[0] = D_0032F244;
+    q[1] = 0x3D;
+    c[12] = D_0032F244;
+    q[2] = D_0032F248 | ((unsigned long)D_0032F24C << 2);
+    q[3] = ctx + 8;
+    c[0] = D_0032F248;
+    c[1] = D_0032F24C;
+    q[4] = D_0032F228 | ((unsigned long)D_0032F22C << 2) | ((unsigned long)D_0032F230 << 4) |
+           ((unsigned long)D_0032F234 << 6) | ((unsigned long)D_0032F238 << 32);
+    q[5] = ctx + 0x42;
+    c[2] = D_0032F228;
+    c[3] = D_0032F22C;
+    c[4] = D_0032F230;
+    c[5] = D_0032F234;
+    c[6] = D_0032F238;
+    q[6] = (short)D_0032F1F4 | ((unsigned long)D_0032F1F8 << 16) | ((unsigned long)D_0032F1F6 << 24) |
+           ((unsigned long)D_0032F250 << 32);
+    q[7] = ctx + 0x4C;
+    c[20] = (short)D_0032F1F4;
+    c[21] = D_0032F250;
+    q[8] = D_0032F1FA | ((unsigned long)D_0032F1FC << 24) | ((unsigned long)D_0032F220 << 32);
+    q[9] = ctx + 0x4E;
+    c[10] = D_0032F220;
+    q[10] = D_0032F208 | ((unsigned long)D_0032F20C << 1) | ((unsigned long)D_0032F210 << 4) |
+            ((unsigned long)D_0032F224 << 17) | 0x10000;
+    q[11] = ctx + 0x47;
+    c[11] = D_0032F224;
+    c[7] = D_0032F208;
+    c[8] = D_0032F20C;
+    c[9] = D_0032F210;
+    n += 6;
+    if (n != 0) {
+        ((unsigned long *)p)[0] = n | ((unsigned long)eop << 15) | 0x1000000000000000;
+        ((unsigned long *)p)[1] = 0xE;
+    }
+    return (qword *)(q + 12);
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/gbx/Texture", func_0023FE10);
+#endif
 
 void func_002403F8(GLTexture *t) {
     void *a;
