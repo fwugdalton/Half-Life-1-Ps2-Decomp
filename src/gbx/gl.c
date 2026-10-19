@@ -220,6 +220,7 @@ int func_002D0E60(int a);
 int func_002F0150(int a);
 void func_002D0EF8(int (*handler)(void));
 void func_0023CE98(int mode);
+unsigned int func_0023CA00(void);
 int func_0023D160(void);
 void func_0023EB88(void);
 extern int D_00331370;
