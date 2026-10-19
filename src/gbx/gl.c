@@ -157,6 +157,20 @@ extern int D_0032F008;
 extern int D_0032F00C;
 extern int D_00331044;          /* primitiva do GS */
 extern int D_00331048;          /* buffer duplo de vértices */
+extern int D_0032F248;
+extern int D_00331348;          /* quadros desenhados */
+extern unsigned int D_003A9908; /* contador do COP0 no quadro atual */
+extern unsigned int D_003A990C; /* contador no quadro anterior */
+extern unsigned int D_003A9910; /* ciclos do último quadro */
+extern unsigned long D_0032F1B8; /* soma dos últimos 6 quadros */
+extern unsigned int D_0032F1A0[6];
+extern int D_0032F1C0;
+void func_0023CA28(int a, int b, int c, ...);
+void func_0023D248(void);
+void func_0023D068(void);
+extern int D_0032F24C;
+extern GLMatrix D_00331180[4];  /* pilha de projeção */
+extern GLMatrix D_00331280[4];  /* pilha de modelview */
 extern GLVec D_0032F280[];      /* buffers de vértices (cor, textura, posição) */
 extern GLVec D_0032F780[];
 extern GLVec D_0032FC80[];
@@ -191,7 +205,58 @@ INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023AA18);
 
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023AB00);
 
+#ifdef NON_MATCHING /* ordem dos stores nas globais */
+void func_0023AB28(void) {
+    int i;
+
+    D_0032F200 = 1;
+    D_0032F204 = 0;
+    D_0032F208 = 0;
+    D_0032F20C = 1;
+    D_0032F210 = 0;
+    D_0032F214 = 1;
+    D_0032F218 = 2;
+    D_0032F21C = 1;
+    D_0032F220 = 0;
+    D_0032F224 = 0;
+    D_0032F228 = 0;
+    D_0032F22C = 1;
+    D_0032F230 = 0;
+    D_0032F234 = 1;
+    D_0032F238 = 0;
+    D_0032F23C = 0;
+    D_0032F240 = 0;
+    D_0032F248 = 0;
+    D_0032F24C = 0;
+    D_0032F250 = 0;
+    D_0032F25C = 0;
+    D_0032F260 = 0;
+    D_0032F264 = 0;
+    D_0032F268 = 0x1700;
+    D_0032F26C = 0.0f;
+    D_0033102C = 0;
+    D_00331030 = 0;
+    D_00331034 = 0;
+    D_00331038 = 0;
+    D_00331040 = 0;
+    D_00331048 = 0;
+    D_0033104C = 1;
+    D_00331358 = 0;
+    for (i = 0; i < 3; i++) {
+        MIDENTITYP(&D_00331180[i]);
+        MIDENTITYP(&D_00331280[i]);
+    }
+    MIDENTITYP(&D_00331100);
+    MIDENTITYP(&D_00331080);
+    D_00331140 = D_00331180;
+    D_00331144 = D_00331280;
+    func_0023AA00();
+    func_0023CD48();
+    func_0023D228();
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023AB28);
+#endif
 
 void func_0023AD90(void) {
 }
@@ -208,7 +273,34 @@ INCLUDE_RODATA("asm/nonmatchings/gbx/gl", D_00388970);
 
 INCLUDE_RODATA("asm/nonmatchings/gbx/gl", D_00388978);
 
+#ifdef NON_MATCHING /* agendamento das cargas e registradores */
+void func_0023ADB8(void) {
+    float fps;
+
+    D_00331348++;
+    __asm__ volatile("mfc0 %0, $9" : "=r"(D_003A9908));
+    if (D_003A990C < D_003A9908) {
+        D_003A9910 = D_003A9908 - D_003A990C;
+    } else {
+        D_003A9910 = D_003A9908 + (0xFFFFFFFF - D_003A990C);
+    }
+    D_003A990C = D_003A9908;
+    if (294912000.0f / (float)D_003A9910 > 3.0f) {
+        D_0032F1B8 -= D_0032F1A0[D_0032F1C0];
+        D_0032F1A0[D_0032F1C0] = D_003A9910;
+        D_0032F1B8 += D_003A9910;
+        if (++D_0032F1C0 >= 6) {
+            D_0032F1C0 = 0;
+        }
+    }
+    fps = 294912000.0f / (float)(D_0032F1B8 / 6);
+    func_0023CA28(0, 0, "FPS %.0f", fps);
+    func_0023D248();
+    func_0023D068();
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023ADB8);
+#endif
 
 void func_0023AF68(void) {
     if (D_003313D4->b) {
