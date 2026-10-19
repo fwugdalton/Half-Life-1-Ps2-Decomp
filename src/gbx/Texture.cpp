@@ -25,6 +25,10 @@ qword *func_0023FC60(qword *p, int tbp, int tbw, int psm, int tw, int th, int cb
                      int min, int mag, int mxl, int l, int k, int *mipbp, int *mipbw, int lod);
 extern unsigned int D_0032F250; /* máscara de cor do canal */
 extern int D_0033134C;
+extern int D_0032F264;          /* contexto do GS */
+extern unsigned short D_0032F1F4; /* FBP do buffer de desenho */
+extern short D_0032F1F6;        /* PSM do buffer */
+extern short D_0032F1F8;        /* FBW do buffer */
 extern int D_003A9CB8;          /* início da área de texturas na VRAM */
 extern int D_003A9CC0[44];      /* registradores do GS guardados */
 extern GLTexture *D_003313D4;
@@ -300,7 +304,42 @@ qword *func_0023FB58(qword *p, int dbp, int dbw, int psm, int w, int h, int src)
     return p + 1;
 }
 
+#ifdef NON_MATCHING /* agendamento dos stores do pacote */
+qword *func_0023FC60(qword *p, int tbp, int tbw, int psm, int tw, int th, int cbp, int cld,
+                     int mmin, int mmag, int mxl, int l, int k, int *mipbp, int *mipbw, int eop) {
+    int ctx;
+    int *c;
+    unsigned long *q;
+
+    ctx = D_0032F264;
+    c = &D_003A9CC0[ctx * 22];
+    q = (unsigned long *)p;
+    q[1] = 0xE;
+    q[0] = ((unsigned long)eop << 15) | 0x1000000000000004;
+    c[13] = tbp;
+    c[14] = tbw;
+    c[15] = psm;
+    c[16] = tw;
+    c[17] = th;
+    c[18] = cbp;
+    q[3] = 0x3F;
+    q[4] = ((unsigned long)mxl << 2) | ((unsigned long)mmag << 5) | ((unsigned long)mmin << 6) |
+           ((unsigned long)l << 19) | ((unsigned long)k << 32);
+    q[5] = ctx + 0x14;
+    q[6] = tbp | ((unsigned long)tbw << 14) | ((unsigned long)psm << 20) | ((unsigned long)tw << 26) |
+           ((unsigned long)th << 30) | ((unsigned long)1 << 34) | ((unsigned long)cbp << 37) |
+           ((unsigned long)cld << 61);
+    q[7] = ctx + 6;
+    q[8] = (short)D_0032F1F4 | ((unsigned long)D_0032F1F8 << 16) | ((unsigned long)D_0032F1F6 << 24) |
+           ((unsigned long)D_0032F250 << 32);
+    c[20] = (short)D_0032F1F4;
+    c[21] = D_0032F250;
+    q[9] = ctx + 0x4C;
+    return p + 5;
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/gbx/Texture", func_0023FC60);
+#endif
 
 INCLUDE_ASM("asm/nonmatchings/gbx/Texture", func_0023FE10);
 
