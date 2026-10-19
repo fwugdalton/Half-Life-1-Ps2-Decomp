@@ -267,7 +267,7 @@ segments:
       - [0x288730, .rodata, gbx/CdAudio]
       - [0x2887F0, .rodata, gbx/MethodPointerTable]
       - [0x288838, rodata, cod/288838]
-      - [0x288938, .rodata, gbx/gl]
+      - [0x288940, .rodata, gbx/gl]
       - [0x288A08, .rodata, gbx/Texture]
       - [0x288AA8, .rodata, engine/common]
       - [0x288DE0, .rodata, engine/build]
