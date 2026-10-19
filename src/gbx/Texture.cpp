@@ -57,7 +57,8 @@ int func_0023F3B8(int x);
 int func_0023F948(int w, int h, int psm8);
 qword *func_0023FB58(qword *p, int dbp, int dbw, int psm, int w, int h, int src);
 extern int D_003A9D74;          /* CLUT carregada na VRAM */
-extern int D_003A9D78[3];       /* canais carregados na VRAM */
+extern int D_003A9D70;          /* textura carregada na VRAM */
+extern int D_003A9D78[6];       /* canais e mipmaps carregados na VRAM */
 void func_0023FAB0(void);
 void func_00241500(const void *src, void *a, void *b, void *c, int n);
 qword *func_0023FE10(qword *p, int tbp, int tbw, int psm, int tw, int th, int cbp, int cpsm,
@@ -856,7 +857,117 @@ void func_002409F8(GLTexture *t) {
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/gbx/Texture", func_00240D60);
+void func_00240D60(GLTexture *t) {
+    qword *start;
+    qword *p;
+
+    if (t->a == 0) {
+        return;
+    }
+    start = (qword *)func_0023CA00();
+    p = start;
+    if (t->xC) {
+        D_003A9D70 = t->x84;
+        D_003A9D74 = t->x88;
+        D_003A9D78[0] = t->x98[0];
+        D_003A9D78[1] = t->x98[1];
+        D_003A9D78[2] = t->x98[2];
+        D_003A9D78[3] = t->x98[3];
+        D_003A9D78[4] = t->x98[4];
+        D_003A9D78[5] = t->x98[5];
+        if (t->x88 == 0) {
+            func_0023F420(t, &t->x88, 16, 16, 0);
+        }
+        if (t->x84 == 0) {
+            func_0023F420(t, &t->x84, t->x10, t->x14, t->xC);
+        }
+        if (t->xC4[0] && t->x98[0] == 0) {
+            func_0023F420(t, &t->x98[0], t->x3C[0], t->x54[0], t->xC);
+        }
+        if (t->xC4[1] && t->x98[1] == 0) {
+            func_0023F420(t, &t->x98[1], t->x3C[1], t->x54[1], t->xC);
+        }
+        if (t->xC4[2] && t->x98[2] == 0) {
+            func_0023F420(t, &t->x98[2], t->x3C[2], t->x54[2], t->xC);
+        }
+        if (t->xC4[3] && t->x98[3] == 0) {
+            func_0023F420(t, &t->x98[3], t->x3C[3], t->x54[3], t->xC);
+        }
+        if (t->xC4[4] && t->x98[4] == 0) {
+            func_0023F420(t, &t->x98[4], t->x3C[4], t->x54[4], t->xC);
+        }
+        if (t->xC4[5] && t->x98[5] == 0) {
+            func_0023F420(t, &t->x98[5], t->x3C[5], t->x54[5], t->xC);
+        }
+        if (t->x88 == 0 || t->x84 == 0 || (t->xC4[0] && t->x98[0] == 0) ||
+            (t->xC4[1] && t->x98[1] == 0) || (t->xC4[2] && t->x98[2] == 0) ||
+            (t->xC4[3] && t->x98[3] == 0) || (t->xC4[4] && t->x98[4] == 0) ||
+            (t->xC4[5] && t->x98[5] == 0)) {
+            func_0023F9C8((t->x10 + 127) / 128 * ((t->x14 + 63) / 64) * 2);
+            if (t->x88 == 0) {
+                func_0023F420(t, &t->x88, 16, 16, 0);
+            }
+            if (t->x84 == 0) {
+                func_0023F420(t, &t->x84, t->x10, t->x14, t->xC);
+            }
+            if (t->xC4[0] && t->x98[0] == 0) {
+                func_0023F420(t, &t->x98[0], t->x3C[0], t->x54[0], t->xC);
+            }
+            if (t->xC4[1] && t->x98[1] == 0) {
+                func_0023F420(t, &t->x98[1], t->x3C[1], t->x54[1], t->xC);
+            }
+            if (t->xC4[2] && t->x98[2] == 0) {
+                func_0023F420(t, &t->x98[2], t->x3C[2], t->x54[2], t->xC);
+            }
+            if (t->xC4[3] && t->x98[3] == 0) {
+                func_0023F420(t, &t->x98[3], t->x3C[3], t->x54[3], t->xC);
+            }
+            if (t->xC4[4] && t->x98[4] == 0) {
+                func_0023F420(t, &t->x98[4], t->x3C[4], t->x54[4], t->xC);
+            }
+            if (t->xC4[5] && t->x98[5] == 0) {
+                func_0023F420(t, &t->x98[5], t->x3C[5], t->x54[5], t->xC);
+            }
+        }
+        if (t->x88 != D_003A9D74) {
+            p = func_0023FB58(start, t->x88, 1, 0, 16, 16, (int)t->xB4);
+        }
+        if (t->x84 != D_003A9D70) {
+            p = func_0023FB58(p, t->x84, t->x20, t->xC, t->x10, t->x14, (int)t->xB0);
+        }
+        if (t->x98[0] != D_003A9D78[0]) {
+            p = func_0023FB58(p, t->x98[0], t->x6C[0], t->xC, t->x3C[0], t->x54[0], (int)t->xC4[0]);
+        }
+        if (t->x98[1] != D_003A9D78[1]) {
+            p = func_0023FB58(p, t->x98[1], t->x6C[1], t->xC, t->x3C[1], t->x54[1], (int)t->xC4[1]);
+        }
+        if (t->x98[2] != D_003A9D78[2]) {
+            p = func_0023FB58(p, t->x98[2], t->x6C[2], t->xC, t->x3C[2], t->x54[2], (int)t->xC4[2]);
+        }
+        if (t->x98[3] != D_003A9D78[3]) {
+            p = func_0023FB58(p, t->x98[3], t->x6C[3], t->xC, t->x3C[3], t->x54[3], (int)t->xC4[3]);
+        }
+        if (t->x98[4] != D_003A9D78[4]) {
+            p = func_0023FB58(p, t->x98[4], t->x6C[4], t->xC, t->x3C[4], t->x54[4], (int)t->xC4[4]);
+        }
+        if (t->x98[5] != D_003A9D78[5]) {
+            p = func_0023FB58(p, t->x98[5], t->x6C[5], t->xC, t->x3C[5], t->x54[5], (int)t->xC4[5]);
+        }
+    } else if (t->x84 == 0) {
+        func_0023F420(t, &t->x84, t->x10, t->x14, 0);
+        p = func_0023FB58(start, t->x84, t->x20, t->xC, t->x10, t->x14, (int)t->xB0);
+    }
+    if (start < p) {
+        *(unsigned long *)p = 0x8000000070000000;
+        __asm__ volatile("sync.l\n\tnop");
+        *(volatile int *)0x1000E010 = 4;
+        *(volatile int *)0x1000A020 = 0;
+        *(volatile int *)0x1000A010 = 0;
+        *(volatile int *)0x1000A030 = (int)start | 0x80000000;
+        *(volatile int *)0x1000A000 = 0x105;
+        __asm__ volatile("sync.l\n\tnop");
+    }
+}
 
 unsigned int func_00241408(void) {
     if (D_003313A8 == 1) {
