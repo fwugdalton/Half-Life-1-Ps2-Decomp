@@ -173,6 +173,7 @@ extern int D_00331360;
 extern int D_0033135C;
 int func_002EF6A0(int sema);
 qword *func_002407F0(GLTexture *t, qword *p);
+qword *func_00240928(GLTexture *t, qword *p, int i);
 extern float D_0032F26C;
 extern int D_0032F180;
 extern int D_003A9C94;
@@ -1355,7 +1356,51 @@ qword *func_0023DCE0(qword *p) {
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023DCE0);
 #endif
 
+#ifdef NON_MATCHING /* agendamento e registradores */
+qword *func_0023DF68(qword *p) {
+    int prim;
+    int n;
+    unsigned long tag;
+
+    n = D_0033103C;
+    prim = (D_0032F264 << 9) | (D_0032F204 << 6) | (D_0032F240 << 5) | (D_0032F25C << 4) | (D_0032F200 << 3);
+    *(unsigned long *)p = 0x8000000010000000;
+    ((int *)p)[3] = 0xFFFF5550;
+    ((int *)p)[2] = 0x20000000;
+    p++;
+    tag = n | 0x30000000;
+    *(unsigned long *)p = tag | ((unsigned long)(unsigned int)D_003A9CAC << 32);
+    ((int *)p)[3] = ((n * 3) << 16) | 0x7C008000;
+    ((int *)p)[2] = 0x1000301;
+    p++;
+    *(unsigned long *)p = tag | ((unsigned long)(unsigned int)D_003A9CB0 << 32);
+    ((int *)p)[3] = (n << 16) | 0x6C008002;
+    ((int *)p)[2] = 0x1000103;
+    p++;
+    *(unsigned long *)p = 0x8000000070000004;
+    ((int *)p)[2] = 0x1000101;
+    ((int *)p)[3] = 0x6C0180DE;
+    p++;
+    ((unsigned long *)p)[0] = (unsigned long)(n | 0x8000) | ((unsigned long)1 << 46) | ((unsigned long)(prim | D_00331044) << 47) | ((unsigned long)3 << 60);
+    ((unsigned long *)p)[1] = 0x412;
+    p++;
+    ((int *)p)[0] = 0x1000101;
+    ((int *)p)[1] = 0x600181FF;
+    ((int *)p)[2] = D_00331044;
+    ((int *)p)[3] = 0x6C0181BD;
+    p++;
+    ((unsigned long *)p)[0] = (unsigned long)(n | 0x8000) | ((unsigned long)1 << 46) | ((unsigned long)(prim | 5) << 47) | ((unsigned long)3 << 60);
+    ((unsigned long *)p)[1] = 0x412;
+    p++;
+    ((int *)p)[0] = 0x17000000;
+    ((int *)p)[1] = 0;
+    ((int *)p)[2] = 0;
+    ((int *)p)[3] = 0x11000000;
+    return p + 1;
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023DF68);
+#endif
 
 int *func_0023E150(int *p) {
     float end;
@@ -1374,7 +1419,54 @@ int *func_0023E150(int *p) {
     return p + 4;
 }
 
+#ifdef NON_MATCHING /* agendamento e registradores */
+qword *func_0023E1E8(qword *p) {
+    int prim;
+    int n;
+    int t;
+
+    n = D_0033103C;
+    t = n * 3;
+    prim = (D_0032F264 << 9) | (D_0032F204 << 6) | (D_0032F240 << 5) | (D_0032F25C << 4) | (D_0032F200 << 3) | 5;
+    *(unsigned long *)p = 0x8000000010000000;
+    ((int *)p)[3] = 0xFFFFAA50;
+    ((int *)p)[2] = 0x20000000;
+    p++;
+    *(unsigned long *)p = ((n * 2) / 4 + ((n * 2) % 4 != 0) | 0x30000000) | ((unsigned long)(unsigned int)D_003A9CAC << 32);
+    ((int *)p)[3] = (t << 16) | 0x74008000;
+    ((int *)p)[2] = 0x1000301;
+    p++;
+    *(unsigned long *)p = 0x8000000010000000;
+    ((int *)p)[3] = 0xFFFFFF40;
+    ((int *)p)[2] = 0x20000000;
+    p++;
+    *(unsigned long *)p = (t / 4 + (t % 4 != 0) | 0x30000000) | ((unsigned long)(unsigned int)D_003A9CB0 << 32);
+    ((int *)p)[2] = 0x1000103;
+    ((int *)p)[3] = (n << 16) | 0x78008002;
+    p++;
+    *(unsigned long *)p = 0x8000000070000012;
+    ((int *)p)[2] = (t + 6) | 0x1000500;
+    ((int *)p)[3] = 0x6C0F8054;
+    p = func_00240928(D_003313D4, p + 1, 0);
+    p = func_00240928(D_003313D4, p, 1);
+    p = func_00240928(D_003313D4, p, 2);
+    ((int *)p)[2] = 8;
+    ((int *)p)[0] = 0x1000101;
+    ((int *)p)[1] = 0x600181FF;
+    ((int *)p)[3] = 0x6C018059;
+    p++;
+    ((unsigned long *)p)[0] = (unsigned long)D_0033103C | ((unsigned long)1 << 46) | ((unsigned long)prim << 47) | ((unsigned long)3 << 60);
+    ((unsigned long *)p)[1] = 0x412;
+    p++;
+    ((int *)p)[0] = 0x17000000;
+    ((int *)p)[3] = 0x11000000;
+    ((int *)p)[1] = 0;
+    ((int *)p)[2] = 0;
+    return p + 1;
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023E1E8);
+#endif
 
 #ifdef NON_MATCHING /* a ordem das cargas e dos stores difere */
 qword *func_0023E468(qword *p) {
