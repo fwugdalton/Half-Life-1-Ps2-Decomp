@@ -34,7 +34,9 @@ extern int D_003A9CC0[44];      /* registradores do GS guardados */
 extern GLTexture *D_003313D4;
 void *Mem_DbgMalloc(int size, const char *file, int line);
 void func_0023F320(void);
-int func_0023F420(GLTexture *t, int *bp, int w, int h, int psm);
+void func_0023F420(GLTexture *t, int *bp, int w, int h, int psm);
+extern const unsigned char D_00388A18[]; /* máscaras de colunas */
+extern const int D_00388A28[];   /* blocos dentro da página */
 unsigned int func_0023CA00(void);
 int func_0023F3B8(int x);
 int func_0023F948(int w, int h, int psm8);
@@ -223,7 +225,142 @@ int func_0023F3F0(int x) {
     return n;
 }
 
+#ifdef NON_MATCHING /* registradores dos laços de busca */
+void func_0023F420(GLTexture *t, int *bp, int w, int h, int psm) {
+    int cols;
+    int rows;
+    int size;
+    unsigned char *cur;
+    unsigned char *q;
+    int ok;
+    int i;
+    int j;
+    int idx;
+    GLTexture **p;
+
+    if (psm) {
+        cols = (w + 15) / 16;
+        rows = (h + 15) / 16;
+    } else {
+        cols = (w + 7) / 8;
+        rows = (h + 7) / 8;
+    }
+    if (cols > 8) {
+        if (rows < 4) {
+            rows = 4;
+        }
+        cols >>= 3;
+        size = rows * cols;
+        cur = (unsigned char *)D_003313E0;
+        do {
+            ok = 1;
+            for (i = 0; i < rows; i++) {
+                q = (i / 4) * (cols * 4) + cur + i % 4;
+                for (j = cols; j != 0; j--) {
+                    if (*q != 0) {
+                        ok = 0;
+                        goto next;
+                    }
+                    q += 4;
+                }
+            }
+        next:
+            if (!ok) {
+                cur += 4;
+                if ((unsigned char *)(D_003313E0 + D_003A9CBC) < cur + size) {
+                    cur = (unsigned char *)&D_003313E0[func_0023F948(w, h, psm)];
+                    ok = 1;
+                }
+            }
+        } while (!ok);
+        for (i = 0; i < rows; i++) {
+            q = (i / 4) * (cols * 4) + cur + i % 4;
+            for (j = cols; j != 0; j--) {
+                *q = 0xFF;
+                q += 4;
+            }
+        }
+        idx = (cur - (unsigned char *)D_003313E0) / 4;
+        *bp = (D_003A9CB8 + idx * 0x800) >> 6;
+        p = D_003313DC[idx];
+        for (i = (rows + 3) / 4; i != 0; i--) {
+            *p = t;
+            p += 32;
+        }
+        return;
+    } else {
+        unsigned char mask;
+        unsigned char *base;
+        int shift;
+        int rem;
+        int k;
+        int n;
+        int off;
+
+        mask = D_00388A18[cols];
+        cur = (unsigned char *)D_003313E0;
+        rem = 4 - rows;
+        if (rem < 0) {
+            rem = 0;
+        }
+        shift = 8 - cols;
+        base = cur;
+        q = cur;
+        do {
+            ok = 1;
+            for (i = 0; i < rows; i++) {
+                if (q[0] & mask) {
+                    ok = 0;
+                    break;
+                }
+                q++;
+            }
+            if (!ok) {
+                if (shift != 0) {
+                    q = cur;
+                    mask = mask >> cols;
+                    shift -= cols;
+                } else if (rem != 0) {
+                    cur = base + rows;
+                    mask = D_00388A18[cols];
+                    q = cur;
+                    shift = 8 - cols;
+                    rem -= rows;
+                } else {
+                    cur = base + 4;
+                    shift = 8 - cols;
+                    mask = D_00388A18[cols];
+                    base = cur;
+                    q = cur;
+                    if ((unsigned char *)(D_003313E0 + D_003A9CBC) < cur + rows) {
+                        cur = (unsigned char *)&D_003313E0[func_0023F948(w, h, psm)];
+                        rem = 4 - rows;
+                        ok = 1;
+                        base = cur;
+                        q = cur;
+                    }
+                }
+            }
+        } while (!ok);
+        for (i = 0; i < rows; i++) {
+            cur[i] |= mask;
+        }
+        idx = (cur - (unsigned char *)D_003313E0) / 4;
+        for (k = 0; k < 8 && !(D_00388A18[k + 1] & mask); k++) {
+        }
+        n = cur - (unsigned char *)D_003313E0;
+        off = D_00388A28[k + (n % 4) * 8];
+        *bp = (D_003A9CB8 + idx * 0x800 + off * 64) >> 6;
+        p = &D_003313DC[idx][off];
+        for (i = (rows + 3) / 4; i != 0; i--) {
+            *p = t;
+            p += 32;
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/gbx/Texture", func_0023F420);
+#endif
 
 int func_0023F948(int w, int h, int psm8) {
     int n;
