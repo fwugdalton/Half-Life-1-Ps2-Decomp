@@ -14,7 +14,13 @@ void *memset(void *p, int c, unsigned int n);
 extern int D_003313D0;
 extern int D_003990C8;
 extern GLTexture *(*D_003313DC)[32]; /* blocos da VRAM */
-extern void *D_003313E0;
+extern int *D_003313E0;          /* linhas de blocos da VRAM em uso */
+extern unsigned int *volatile D_003990CC; /* tabela de troca da CLUT */
+extern unsigned char D_003313B0[32];
+extern const char D_00388A08[]; /* "Gbx/Texture.cpp" */
+void *func_00225D48(int size, int align, const char *file, int line);
+void func_00225DB8(void *buf);
+int func_0023F9C8(int n);
 extern int D_003A9CBC;          /* linhas de blocos da VRAM */
 
 INCLUDE_ASM("asm/nonmatchings/gbx/Texture", func_0023EFD0);
@@ -37,7 +43,39 @@ void func_0023F1E0(int n, GLuint *ids) {
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/gbx/Texture", func_0023F230);
+void func_0023F230(int n, const GLuint *ids) {
+    GLTexture *t;
+    int i;
+
+    for (i = 0; i < n; i++) {
+        t = &D_003313D8[ids[i]];
+        if (t->a) {
+            t->a = 0;
+            t->b = 0;
+            t->xB0 = 0;
+            t->xC4[0] = 0;
+            t->xC4[1] = 0;
+            t->xC4[2] = 0;
+            t->xC4[3] = 0;
+            t->xC4[4] = 0;
+            t->xC4[5] = 0;
+            t->xB4 = 0;
+            if (t->xB8) {
+                func_00225DB8(t->xB8);
+            }
+            if (t->xBC) {
+                func_00225DB8(t->xBC);
+            }
+            if (t->xC0) {
+                func_00225DB8(t->xC0);
+            }
+            t->xB8 = 0;
+            t->xBC = 0;
+            t->xC0 = 0;
+            func_00240500(t);
+        }
+    }
+}
 
 void func_0023F320(void) {
     GLTexture *t;
@@ -87,11 +125,60 @@ int func_0023F3F0(int x) {
 
 INCLUDE_ASM("asm/nonmatchings/gbx/Texture", func_0023F420);
 
-INCLUDE_ASM("asm/nonmatchings/gbx/Texture", func_0023F948);
+int func_0023F948(int w, int h, int psm8) {
+    int n;
 
-INCLUDE_ASM("asm/nonmatchings/gbx/Texture", func_0023F9C8);
+    if (psm8) {
+        w = (w + 127) / 128;
+        n = (h + 63) / 64;
+    } else {
+        w = (w + 63) / 64;
+        n = (h + 31) / 32;
+    }
+    return func_0023F9C8(w * n);
+}
 
+int func_0023F9C8(int n) {
+    int start;
+    int *p;
+    GLTexture **q;
+    int j;
+
+    if (D_003A9CBC < D_003313D0 + n) {
+        D_003313D0 = 0;
+    }
+    start = D_003313D0;
+    D_003313D0 = start + n;
+    p = &D_003313E0[start];
+    q = D_003313DC[start];
+    for (; n != 0; n--) {
+        *p = 0;
+        for (j = 0; j < 32; j++) {
+            if (q[j]) {
+                func_00240500(q[j]);
+                q[j] = 0;
+            }
+        }
+        p++;
+        q += 32;
+    }
+    return start;
+}
+
+#ifdef NON_MATCHING /* registradores da soma do endereço */
+void func_0023FAB0(void) {
+    unsigned int i;
+    unsigned int h;
+
+    D_003990CC = (unsigned int *)func_00225D48(0x400, 0x80, D_00388A08, 0x300);
+    for (i = 0; i < 0x100; i++) {
+        h = i >> 1;
+        D_003990CC[D_003313B0[i & 0x1F] + (i & ~0x1F)] = (h << 24) + (h << 16) + (h << 8) + h;
+    }
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/gbx/Texture", func_0023FAB0);
+#endif
 
 INCLUDE_ASM("asm/nonmatchings/gbx/Texture", func_0023FB58);
 

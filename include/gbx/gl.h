@@ -52,9 +52,9 @@ typedef struct {
     int xAC;
     const void *xB0; /* pixels */
     const void *xB4; /* paleta */
-    int xB8;
-    int xBC;
-    int xC0;
+    void *xB8;      /* buffers alocados */
+    void *xBC;
+    void *xC0;
     const void *xC4[6]; /* pixels de cada nível */
 } GLTexture;
 
