@@ -27,6 +27,76 @@ typedef struct {
 
 typedef unsigned int GLuint;
 
+/* matriz identidade com o VU0 (m é GLMatrix) */
+#define MIDENTITY(t) __asm__ volatile( \
+    "vsub.xyzw $vf4, $vf0, $vf0\n\t" \
+    "vadd.w $vf4, $vf4, $vf0\n\t" \
+    "vmr32.xyzw $vf5, $vf4\n\t" \
+    "vmr32.xyzw $vf6, $vf5\n\t" \
+    "vmr32.xyzw $vf7, $vf6\n\t" \
+    "sqc2 $vf4, %0\n\t" \
+    "sqc2 $vf5, %1\n\t" \
+    "sqc2 $vf6, %2\n\t" \
+    "sqc2 $vf7, %3" \
+    : "=m"(*(GLVec *)&(t).m[12]), "=m"(*(GLVec *)&(t).m[8]), "=m"(*(GLVec *)&(t).m[4]), "=m"(*(GLVec *)&(t).m[0]))
+
+/* d = d * t com o VU0 */
+#define MMUL(d, t) __asm__ volatile( \
+    "lqc2 $vf4, 0x0(%0)\n\t" \
+    "lqc2 $vf5, 0x10(%0)\n\t" \
+    "lqc2 $vf6, 0x20(%0)\n\t" \
+    "lqc2 $vf7, 0x30(%0)\n\t" \
+    "lqc2 $vf8, %1\n\t" \
+    "lqc2 $vf9, %2\n\t" \
+    "lqc2 $vf10, %3\n\t" \
+    "lqc2 $vf11, %4\n\t" \
+    "vmulax.xyzw $ACC, $vf4, $vf8x\n\t" \
+    "vmadday.xyzw $ACC, $vf5, $vf8y\n\t" \
+    "vmaddaz.xyzw $ACC, $vf6, $vf8z\n\t" \
+    "vmaddw.xyzw $vf12, $vf7, $vf8w\n\t" \
+    "vmulax.xyzw $ACC, $vf4, $vf9x\n\t" \
+    "vmadday.xyzw $ACC, $vf5, $vf9y\n\t" \
+    "vmaddaz.xyzw $ACC, $vf6, $vf9z\n\t" \
+    "vmaddw.xyzw $vf13, $vf7, $vf9w\n\t" \
+    "vmulax.xyzw $ACC, $vf4, $vf10x\n\t" \
+    "vmadday.xyzw $ACC, $vf5, $vf10y\n\t" \
+    "vmaddaz.xyzw $ACC, $vf6, $vf10z\n\t" \
+    "vmaddw.xyzw $vf14, $vf7, $vf10w\n\t" \
+    "vmulax.xyzw $ACC, $vf4, $vf11x\n\t" \
+    "vmadday.xyzw $ACC, $vf5, $vf11y\n\t" \
+    "vmaddaz.xyzw $ACC, $vf6, $vf11z\n\t" \
+    "vmaddw.xyzw $vf15, $vf7, $vf11w\n\t" \
+    "sqc2 $vf12, 0x0(%0)\n\t" \
+    "sqc2 $vf13, 0x10(%0)\n\t" \
+    "sqc2 $vf14, 0x20(%0)\n\t" \
+    "sqc2 $vf15, 0x30(%0)" \
+    : : "r"(d), "m"(*(GLVec *)&(t).m[0]), "m"(*(GLVec *)&(t).m[4]), "m"(*(GLVec *)&(t).m[8]), "m"(*(GLVec *)&(t).m[12]) : "memory")
+
+#define MIDENTITYP(p) __asm__ volatile( \
+    "vsub.xyzw $vf4, $vf0, $vf0\n\t" \
+    "vadd.w $vf4, $vf4, $vf0\n\t" \
+    "vmr32.xyzw $vf5, $vf4\n\t" \
+    "vmr32.xyzw $vf6, $vf5\n\t" \
+    "vmr32.xyzw $vf7, $vf6\n\t" \
+    "sqc2 $vf4, 0x30(%0)\n\t" \
+    "sqc2 $vf5, 0x20(%0)\n\t" \
+    "sqc2 $vf6, 0x10(%0)\n\t" \
+    "sqc2 $vf7, 0x0(%0)" : : "r"(p) : "memory")
+
+/* estado da tela (FRAME e DISPLAY do GS) */
+typedef struct {
+    char pad0[0x160];
+    char pad160[0x160];
+    char pad2C0[0x80];
+    short x340;
+    short pad342;
+    short x344;
+    short x346;
+    short x348;
+    short pad34A;
+    short x34C;
+} GLScreen;
+
 /* cópia de 16 bytes com lq/sq */
 #define QCOPY(d, s) __asm__ volatile("lq $3, 0(%1)\n\tsq $3, 0(%0)" : : "r"(d), "r"(s) : "$3", "memory")
 
@@ -91,6 +161,26 @@ void func_0023F230(void);
 int func_002F00E8(int a);
 void func_002EF360(int a, int b);
 extern unsigned int *D_0032F160;
+extern const char *D_0032F18C;  /* GL_VENDOR */
+extern const char *D_0032F190;  /* GL_RENDERER */
+extern const char *D_0032F194;  /* GL_VERSION */
+extern const char *D_0032F198;  /* GL_EXTENSIONS */
+extern int D_0032F260;          /* modo do glTexEnv */
+extern short D_00331340;        /* cor de limpeza */
+extern short D_00331342;
+extern short D_00331344;
+extern short D_00331346;
+extern float D_003337EC;
+extern GLMatrix D_00331080;     /* matriz do viewport */
+extern int D_0032EF80;          /* largura da tela */
+extern int D_0032EF84;          /* altura da tela */
+typedef int GLsizei;
+float cosf(float x);
+float sinf(float x);
+extern int D_00331360;
+extern int D_0033135C;
+int func_002EF6A0(int sema);
+qword *func_002407F0(GLTexture *t, qword *p);
 extern float D_0032F26C;
 extern int D_0032F180;
 extern int D_003A9C94;
@@ -114,15 +204,50 @@ int func_00239D88(int n) {
 
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_00239DB8);
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_00239ED0);
+void func_00239ED0(unsigned long *p, short fbp, short psm, int fbw) {
+    unsigned long v;
+
+    v = (fbw << 16) | (long)fbp | ((long)psm << 24);
+    p[0] = v | 0xFFFFFFFF00000000;
+    p[1] = 0x4C;
+    p += 14;
+    p[1] = 0x4C;
+    p[0] = v;
+}
 
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_00239F28);
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023A150);
+void func_0023A150(GLScreen *s, short w, short h) {
+    short x;
+    short y;
+
+    if (h == 0x200) {
+        if (w != 0x200) {
+            return;
+        }
+        y = 0x80;
+        x = 0x100;
+    } else if (w != 0x200) {
+        if (w != 0x280) {
+            return;
+        }
+        y = 0x8C;
+        x = 0x118;
+    } else {
+        y = 0x70;
+        x = 0xE0;
+    }
+    s->x34C = x;
+    s->x348 = y;
+    s->x346 = 0;
+}
 
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023A1B0);
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023A2A8);
+void func_0023A2A8(GLScreen *s) {
+    func_00239ED0((unsigned long *)s->pad160, s->x346, s->x344, s->x340);
+    func_00239ED0((unsigned long *)s->pad2C0, s->x348, s->x344, s->x340);
+}
 
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023A2F0);
 
@@ -173,7 +298,28 @@ void func_0023AFA8(void) {
 
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023AFC8);
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023B0D0);
+const char *func_0023B0D0(GLenum name) {
+    const char *s;
+
+    switch (name) {
+    case 0x1F00:
+        s = D_0032F18C;
+        break;
+    case 0x1F01:
+        s = D_0032F190;
+        break;
+    case 0x1F02:
+        s = D_0032F194;
+        break;
+    case 0x1F03:
+        s = D_0032F198;
+        break;
+    default:
+        s = 0;
+        break;
+    }
+    return s;
+}
 
 void glGetFloatv(GLenum pname, GLfloat *params) {
     float *m;
@@ -244,19 +390,144 @@ void glPopMatrix(void) {
     D_0033104C = 1;
 }
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", glTranslatef);
+void glTranslatef(GLfloat x, GLfloat y, GLfloat z) {
+    GLMatrix t;
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", glRotatef);
+    MIDENTITY(t);
+    t.m[12] = x;
+    t.m[13] = y;
+    t.m[14] = z;
+    MMUL(D_00331144, t);
+    D_0033104C = 1;
+}
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", glLoadIdentity);
+void glRotatef(GLfloat angle, GLfloat x, GLfloat y, GLfloat z) {
+    GLMatrix t;
+    GLVec v;
+    float c;
+    float s;
+    float k;
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", glFrustum);
+    v.v[0] = x;
+    v.v[1] = y;
+    v.v[2] = z;
+    __asm__ volatile(
+        "lqc2 $vf4, 0x0(%0)\n\t"
+        "vmul.xyz $vf5, $vf4, $vf4\n\t"
+        "vaddy.x $vf5, $vf5, $vf5y\n\t"
+        "vaddz.x $vf5, $vf5, $vf5z\n\t"
+        ".word 0x4A0503BD\n\t"  /* vsqrt Q, $vf5x */
+        "vwaitq\n\t"
+        "vaddq.x $vf5, $vf0, $Q\n\t"
+        "vdiv $Q, $vf0w, $vf5x\n\t"
+        "vsub.xyzw $vf6, $vf0, $vf0\n\t"
+        "vwaitq\n\t"
+        "vmulq.xyz $vf6, $vf4, $Q\n\t"
+        "sqc2 $vf6, 0x0(%0)" : : "r"(&v) : "memory");
+    angle *= 3.141593f / 180.0f;
+    c = cosf(angle);
+    s = sinf(angle);
+    MIDENTITY(t);
+    x = v.v[0];
+    y = v.v[1];
+    z = v.v[2];
+    k = 1.0f - c;
+    t.m[0] = x * x * k + c;
+    t.m[4] = x * y * k - z * s;
+    t.m[8] = x * z * k + y * s;
+    t.m[1] = x * y * k + z * s;
+    t.m[5] = y * y * k + c;
+    t.m[9] = y * z * k - x * s;
+    t.m[2] = x * z * k - y * s;
+    t.m[6] = y * z * k + x * s;
+    t.m[10] = z * z * k + c;
+    MMUL(D_00331144, t);
+    D_0033104C = 1;
+}
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", glOrtho);
+void glLoadIdentity(void) {
+    GLMatrix *m;
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", glViewport);
+    switch (D_0032F268) {
+    case 0x1701:
+        m = D_00331140;
+        break;
+    case 0x1700:
+        m = D_00331144;
+        break;
+    default:
+        goto end;
+    }
+    __asm__ volatile(
+        "vsub.xyzw $vf4, $vf0, $vf0\n\t"
+        "vadd.w $vf4, $vf4, $vf0\n\t"
+        "vmr32.xyzw $vf5, $vf4\n\t"
+        "vmr32.xyzw $vf6, $vf5\n\t"
+        "vmr32.xyzw $vf7, $vf6\n\t"
+        "sqc2 $vf4, 0x30(%0)\n\t"
+        "sqc2 $vf5, 0x20(%0)\n\t"
+        "sqc2 $vf6, 0x10(%0)\n\t"
+        "sqc2 $vf7, 0x0(%0)" : : "r"(m) : "$2", "memory");
+end:
+    D_0033104C = 1;
+}
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", glDepthRange);
+void glFrustum(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat zNear, GLfloat zFar) {
+    GLMatrix t;
+
+    MIDENTITY(t);
+    t.m[0] = (zNear + zNear) / (right - left);
+    t.m[5] = -((zNear + zNear) / (top - bottom));
+    t.m[10] = -(zFar + zNear) / (zFar - zNear);
+    t.m[11] = -1.0f;
+    t.m[14] = zFar * (zNear * -2.0f) / (zFar - zNear);
+    t.m[15] = 0;
+    MMUL(D_00331140, t);
+    D_0033104C = 1;
+}
+
+void glOrtho(GLfloat left, GLfloat right, GLfloat bottom, GLfloat top, GLfloat zNear, GLfloat zFar) {
+    GLMatrix t;
+
+    MIDENTITY(t);
+    t.m[0] = 2.0f / (right - left);
+    t.m[5] = -(2.0f / (top - bottom));
+    t.m[10] = -2.0f / (zFar - zNear);
+    t.m[12] = -1.0f;
+    t.m[13] = -1.0f;
+    MMUL(D_00331140, t);
+    D_0033104C = 1;
+}
+
+void glViewport(GLint x, GLint y, GLsizei width, GLsizei height) {
+    GLMatrix *m;
+    int w;
+    int h;
+
+    m = &D_00331080;
+    MIDENTITYP(m);
+    w = width / 2;
+    h = height / 2;
+    m->m[0] = w;
+    m->m[5] = h;
+    m->m[10] = -32767.0f;
+    m->m[14] = 32768.0f;
+    m->m[12] = 2048.0f - (D_0032EF80 / 2 - (x + w));
+    m->m[13] = 2048.0f - (D_0032EF84 / 2 - (y + h));
+    m->m[15] = 1.0f;
+    D_0033104C = 1;
+}
+
+void glDepthRange(GLfloat zNear, GLfloat zFar) {
+    float f;
+    float n;
+
+    f = (1.0f - zFar) * 65534.0f + 1.0f;
+    n = (1.0f - zNear) * 65534.0f + 1.0f;
+    D_0033104C = 1;
+    D_00331080.m[10] = (n - f) * -0.5f;
+    D_00331080.m[14] = (n + f) * 0.5f;
+}
 
 void func_0023B930(void) {
 }
@@ -616,7 +887,22 @@ void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, G
     func_002407A8(D_003313D4, xoffset, yoffset, width, height, pixels);
 }
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", glTexEnvf);
+void glTexEnvf(GLenum target, GLenum pname, GLfloat param) {
+    switch ((int)param) {
+    case 0x2100:
+        D_0032F260 = 0;
+        break;
+    case 0x1E01:
+        D_0032F260 = 1;
+        break;
+    case 0x1906:
+        *(volatile int *)&D_0032F260 = 2;
+        break;
+    case 0xBE2:
+    case 0x2101:
+        break;
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023C600);
 
@@ -636,7 +922,12 @@ void func_0023C808(GLfloat f) {
     D_0032F26C = f;
 }
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023C818);
+void func_0023C818(GLfloat r, GLfloat g, GLfloat b, GLfloat a) {
+    D_00331340 = r * 255.0f;
+    D_00331342 = g * 255.0f;
+    D_00331344 = b * 255.0f;
+    D_00331346 = a * 128.0f;
+}
 
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023C880);
 
@@ -678,11 +969,32 @@ void func_0023D248(void) {
     D_00331380 = 0;
 }
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023D258);
+void func_0023D258(void) {
+    if (D_003337EC != 0 && D_00331360 == 1) {
+        D_00331360 = 0;
+        func_002EF6A0(D_0033135C);
+    }
+    D_00331380 = 1;
+}
 
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023D2B8);
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023D3B0);
+qword *func_0023D3B0(qword *p) {
+    qword *start;
+    int n;
+
+    start = p;
+    p = func_002407F0(D_003313D4, start + 1);
+    n = p - start - 1;
+    if (n >= 2) {
+        *(unsigned long *)start = n | 0x10000000 | 0x8000000000000000;
+        ((int *)start)[3] = n | 0x51000000;
+        ((int *)start)[2] = 0;
+    } else {
+        p = start;
+    }
+    return p;
+}
 
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023D430);
 
