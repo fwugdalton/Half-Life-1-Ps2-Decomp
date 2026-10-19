@@ -21,12 +21,98 @@ extern const char D_00388A08[]; /* "Gbx/Texture.cpp" */
 void *func_00225D48(int size, int align, const char *file, int line);
 void func_00225DB8(void *buf);
 int func_0023F9C8(int n);
+qword *func_0023FC60(qword *p, int tbp, int tbw, int psm, int tw, int th, int cbp, int cpsm,
+                     int min, int mag, int mxl, int l, int k, int *mipbp, int *mipbw, int lod);
+extern unsigned int D_0032F250; /* máscara de cor do canal */
+extern int D_0033134C;
+extern int D_003A9CB8;          /* início da área de texturas na VRAM */
+extern int D_003A9CC0[44];      /* registradores do GS guardados */
+extern GLTexture *D_003313D4;
+void *Mem_DbgMalloc(int size, const char *file, int line);
+void func_0023F320(void);
+void func_0023FAB0(void);
 void func_00241500(const void *src, void *a, void *b, void *c, int n);
 qword *func_0023FE10(qword *p, int tbp, int tbw, int psm, int tw, int th, int cbp, int cpsm,
                      int min, int mag, int mxl, int l, int k, int *mipbp, int *mipbw, int lod);
 extern int D_003A9CBC;          /* linhas de blocos da VRAM */
 
+#ifdef NON_MATCHING /* contador do laço e ordem dos stores */
+void func_0023EFD0(void) {
+    int i;
+
+    if (D_003313D8 == 0) {
+        D_003313D8 = (GLTexture *)Mem_DbgMalloc(0x445FC, D_00388A08, 0x92);
+        memset(D_003313D8, 0, 0x445FC);
+    }
+    if (D_003313DC == 0) {
+        D_003313DC = (GLTexture *(*)[32])Mem_DbgMalloc(0x7400, D_00388A08, 0x98);
+        memset(D_003313DC, 0, 0x7400);
+    }
+    if (D_003313E0 == 0) {
+        D_003313E0 = (int *)Mem_DbgMalloc(0x3A0, D_00388A08, 0x9D);
+        memset(D_003313E0, 0, 0x3A0);
+    }
+    if (D_0033134C) {
+        D_003A9CB8 = 0xA0000;
+        D_003A9CBC = 0xC0;
+    } else {
+        D_003A9CB8 = 0x8C000;
+        D_003A9CBC = 0xE8;
+    }
+    D_003313D4 = D_003313D8;
+    for (i = 0x4F8; i >= 0; i--) {
+        D_003313D8[i].x8 = i;
+    }
+    func_0023FAB0();
+    D_003A9CC0[0] = -1;
+    D_003A9CC0[1] = -1;
+    D_003A9CC0[2] = -1;
+    D_003A9CC0[3] = -1;
+    D_003A9CC0[4] = -1;
+    D_003A9CC0[5] = -1;
+    D_003A9CC0[6] = -1;
+    D_003A9CC0[7] = -1;
+    D_003A9CC0[8] = -1;
+    D_003A9CC0[9] = -1;
+    D_003A9CC0[10] = 0;
+    D_003A9CC0[11] = 0;
+    D_003A9CC0[12] = 0;
+    D_003A9CC0[21] = 0;
+    D_003A9CC0[20] = 0;
+    D_003A9CC0[13] = -1;
+    D_003A9CC0[14] = -1;
+    D_003A9CC0[15] = -1;
+    D_003A9CC0[16] = -1;
+    D_003A9CC0[17] = -1;
+    D_003A9CC0[18] = -1;
+    D_003A9CC0[19] = -1;
+    D_003A9CC0[22] = -1;
+    D_003A9CC0[23] = -1;
+    D_003A9CC0[24] = -1;
+    D_003A9CC0[25] = -1;
+    D_003A9CC0[26] = -1;
+    D_003A9CC0[27] = -1;
+    D_003A9CC0[28] = -1;
+    D_003A9CC0[29] = -1;
+    D_003A9CC0[30] = -1;
+    D_003A9CC0[31] = -1;
+    D_003A9CC0[32] = 0;
+    D_003A9CC0[33] = 0;
+    D_003A9CC0[41] = -1;
+    D_003A9CC0[34] = 0;
+    D_003A9CC0[43] = 0;
+    D_003A9CC0[42] = 0;
+    D_003A9CC0[35] = -1;
+    D_003A9CC0[36] = -1;
+    D_003A9CC0[37] = -1;
+    D_003A9CC0[38] = -1;
+    D_003A9CC0[39] = -1;
+    D_003A9CC0[40] = -1;
+    func_0023F320();
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/gbx/Texture", func_0023EFD0);
+#endif
 
 void func_0023F1D8(void) {
 }
@@ -96,9 +182,9 @@ void func_0023F320(void) {
         t->x98[3] = 0;
         t->x98[4] = 0;
         t->x98[5] = 0;
-        t->x8C = 0;
-        t->x90 = 0;
-        t->x94 = 0;
+        t->x8C[0] = 0;
+        t->x8C[1] = 0;
+        t->x8C[2] = 0;
     }
     memset(D_003313DC, 0, 0x7400);
     memset(D_003313E0, 0, 0x3A0);
@@ -239,9 +325,9 @@ void func_002403F8(GLTexture *t) {
         t->x98[3] = 0;
         t->x98[4] = 0;
         t->x98[5] = 0;
-        t->x8C = 0;
-        t->x90 = 0;
-        t->x94 = 0;
+        t->x8C[0] = 0;
+        t->x8C[1] = 0;
+        t->x8C[2] = 0;
     }
     a = (void *)((int)t->xB8 | 0x30000000);
     b = (void *)((int)t->xBC | 0x30000000);
@@ -270,9 +356,9 @@ void func_00240500(GLTexture *t) {
     t->x98[3] = 0;
     t->x98[4] = 0;
     t->x98[5] = 0;
-    t->x8C = 0;
-    t->x90 = 0;
-    t->x94 = 0;
+    t->x8C[0] = 0;
+    t->x8C[1] = 0;
+    t->x8C[2] = 0;
     p = D_003313DC[0];
     for (i = 0; i < D_003A9CBC; i++) {
         q = p;
@@ -376,7 +462,7 @@ qword *func_002407F0(GLTexture *t, qword *p) {
     qword *r;
 
     if (t->b) {
-        r = func_0023FE10(p, t->x8C, t->x20, t->xC, t->x18, t->x1C, D_003990C8, 4,
+        r = func_0023FE10(p, t->x8C[0], t->x20, t->xC, t->x18, t->x1C, D_003990C8, 4,
                           t->x28, t->x2C, 0, 0, 0, 0, 0, 1);
     } else if (t->xC == 0) {
         r = func_0023FE10(p, t->x84, t->x20, 0, t->x18, t->x1C, 0, 0,
@@ -391,7 +477,21 @@ qword *func_002407F0(GLTexture *t, qword *p) {
 INCLUDE_ASM("asm/nonmatchings/gbx/Texture", func_002407F0);
 #endif
 
-INCLUDE_ASM("asm/nonmatchings/gbx/Texture", func_00240928);
+qword *func_00240928(GLTexture *t, qword *p, int ch) {
+    switch (ch) {
+    case 0:
+        D_0032F250 = 0xFF00FFFF;
+        break;
+    case 1:
+        D_0032F250 = 0xFFFF00FF;
+        break;
+    case 2:
+        D_0032F250 = 0xFFFFFF00;
+        break;
+    }
+    return func_0023FC60(p, t->x8C[ch], t->x20, t->xC, t->x18, t->x1C, D_003990C8, 4,
+                         t->x28, t->x2C, 0, 0, 0, 0, 0, 0);
+}
 
 INCLUDE_ASM("asm/nonmatchings/gbx/Texture", func_002409F8);
 

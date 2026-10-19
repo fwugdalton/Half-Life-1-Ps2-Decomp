@@ -41,9 +41,7 @@ typedef struct {
     int x6C[6];     /* TBW de cada nível */
     int x84;
     int x88;
-    int x8C;
-    int x90;
-    int x94;
+    int x8C[3];     /* CLUT de cada canal */
     int x98[6];     /* endereço na VRAM de cada nível */
     const void *xB0; /* pixels */
     const void *xB4; /* paleta */
