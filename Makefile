@@ -31,6 +31,8 @@ split:
 	# apaga o asm antigo para nao sobrarem arquivos de segmentos que viraram C
 	rm -rf asm
 	$(PYTHON) -m splat split $(BASENAME).yaml
+	# o gas não aceita a sintaxe do splat para as macros do VU0
+	$(PYTHON) tools/vu0words.py
 	# .sbss/.bss do original ficam em enderecos fixos (alinhamento que o splat nao reproduz)
 	sed -i -e 's/^\(\s*\)\.cod_bss (NOLOAD) :/\1.cod_bss 0x00399000 (NOLOAD) :/' \
 	       -e 's/^\(\s*\)cod_BSS_START = \.;/\1. = 0x900;\n\1cod_BSS_START = .;/' $(BASENAME).ld
