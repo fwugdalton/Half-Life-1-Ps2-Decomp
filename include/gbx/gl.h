@@ -205,6 +205,8 @@ void func_0023A150(GLScreen *s, short w, short h, short psm);
 void func_0023A2F0(GLScreen *s, short w, short h, short psm, short fbp0, short fbp1);
 void func_0023A4E8(GLScreen *s, short w, short h, short psm, short a, short b, short c, short zpsm, short a5, short a6);
 void func_002D0BF0(GLDispEnv *disp, short psm, short w, short h, short dx, short dy);
+void func_0023A1B0(GLScreen *s, short w, short h, short psm, short zpsm, short a5, short a6);
+void func_0023A2A8(GLScreen *s);
 void func_0023A708(GLScreen *s, int buf, int en1);
 void func_0023A858(GLScreen *s, int buf, int full);
 

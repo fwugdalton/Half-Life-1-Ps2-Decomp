@@ -114,6 +114,14 @@ extern GLScreen *D_003A9C90;   /* tela */
 extern unsigned short D_0032F1F0;
 extern unsigned short D_0032F1F2;
 extern unsigned short D_0032F1F4;
+extern unsigned short D_0032F1F6;
+extern unsigned short D_0032F1F8;
+extern unsigned short D_0032F1FA;
+extern unsigned short D_0032F1FC;
+extern GLScreen D_003A9940;
+void func_002D0A68(int a, int b, int c, int d);
+void func_002EF8E0(int a);
+void func_0023EFD0(void);
 extern int D_00331374;
 qword *func_0023E9E8(qword *p);
 void func_0023AA18(void);
@@ -193,6 +201,27 @@ qword *func_00240928(GLTexture *t, qword *p, int i);
 extern float D_0032F26C;
 extern int D_0032F180;
 extern int D_003A9C94;
+extern int D_00331354;          /* interrupção do VBlank ligada */
+extern int D_0033134C;          /* modo de 448 linhas */
+extern int D_00331364;
+/* ee_sema_t */
+typedef struct {
+    int count;
+    int max_count;
+    int init_count;
+    int wait_threads;
+    int attr;
+    int option;
+} SemaParam;
+int func_002EF660(SemaParam *p);
+int func_002EF340(int cause, int (*handler)(void), int arg);
+void func_002D0B88(void);
+int func_002D0E60(int a);
+int func_002F0150(int a);
+void func_002D0EF8(int (*handler)(void));
+void func_0023CE98(int mode);
+int func_0023D160(void);
+void func_0023EB88(void);
 extern int D_00331370;
 extern int D_00331378;
 extern int D_00331380;
@@ -1069,7 +1098,52 @@ void func_0023C818(GLfloat r, GLfloat g, GLfloat b, GLfloat a) {
     D_00331346 = a * 128.0f;
 }
 
+#ifdef NON_MATCHING /* ordem das cargas e registradores */
+void func_0023C880(void) {
+    unsigned long *p;
+    unsigned long rgba;
+    unsigned long xy0;
+    unsigned long xy1;
+    int w;
+    int h;
+    int x1, y1;
+
+    p = (unsigned long *)func_0023CA00();
+    h = D_0032EF84;
+    w = D_0032EF80;
+    rgba = D_00331340 | ((unsigned long)D_00331342 << 8) | ((unsigned long)D_00331344 << 16) | ((unsigned long)D_00331346 << 24) | ((unsigned long)1 << 32);
+    xy0 = ((0x800 - (w >> 1)) << 4) | ((unsigned long)((0x800 - (h >> 1)) << 4) << 16);
+    x1 = w + 0x800;
+    y1 = h + 0x800;
+    x1 -= w >> 1;
+    y1 -= h >> 1;
+    xy1 = (x1 << 4) | ((unsigned long)(y1 << 4) << 16);
+    p[0] = 0x1000000000008006;
+    p[1] = 0xE;
+    p[2] = 0x30000;
+    p[3] = 0x47;
+    p[4] = 6;
+    p[5] = 0;
+    p[6] = rgba;
+    p[7] = 1;
+    p[8] = xy0;
+    p[9] = 5;
+    p[10] = xy1;
+    p[11] = 5;
+    p[12] = 0x50000;
+    p[13] = 0x47;
+    __asm__ volatile("sync.l\n\tnop");
+    *(volatile int *)0x1000E010 = 4;
+    *(volatile int *)0x1000A020 = 7;
+    *(volatile int *)0x1000A010 = (int)p | 0x80000000;
+    *(volatile int *)0x1000A030 = 0;
+    *(volatile int *)0x1000A000 = 0x105;
+    __asm__ volatile("sync.l\n\tnop\n\t.set noreorder\n\t.set reorder");
+    func_0023AA18();
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023C880);
+#endif
 
 unsigned int func_0023CA00(void) {
     if (D_0032F180 == 1) {
@@ -1120,16 +1194,117 @@ void func_0023CA58(void) {
     D_0032F00C = 0x200;
 }
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023CBC8);
+void func_0023CBC8(void) {
+    D_0032EF88 = 0x80;
+    D_0032EF8C = 0x70;
+    D_0032EF90 = 0x80;
+    D_0032EF94 = 0;
+    D_0032EF98 = 0x100;
+    D_0032EF9C = 0xE0;
+    D_0032EFA0 = 0x80;
+    D_0032EFA4 = 0xE0;
+    D_0032EFA8 = 0x100;
+    D_0032EFAC = 0xE0;
+    D_0032EFB0 = 0;
+    D_0032EFB4 = 0;
+    D_0032EFB8 = 0x200;
+    D_0032EFBC = 0xE0;
+    D_0032EFC0 = 0;
+    D_0032EFC4 = 0xE0;
+    D_0032EFC8 = 0x200;
+    D_0032EFCC = 0xE0;
+    D_0032EFD0 = 0;
+    D_0032EFD4 = 0x70;
+    D_0032EFD8 = 0x100;
+    D_0032EFDC = 0xE0;
+    D_0032EFE0 = 0x100;
+    D_0032EFE4 = 0x70;
+    D_0032EFE8 = 0x100;
+    D_0032EFEC = 0xE0;
+    D_0032EFF0 = 0;
+    D_0032EFF4 = 0;
+    D_0032EFF8 = 0x100;
+    D_0032EFFC = 0x1C0;
+    D_0032F000 = 0x100;
+    D_0032F004 = 0;
+    D_0032F008 = 0x100;
+    D_0032F00C = 0x1C0;
+}
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023CD48);
+void func_0023CD48(void) {
+    SemaParam p;
+
+    func_002D0B88();
+    func_0023CE98(0);
+    D_00331354 = 1;
+    D_003A9C94 = func_002EF340(2, func_0023D160, 0);
+    D_00331360 = 0;
+    D_00331364 = 0;
+    while (func_002D0E60(0) == 0) {
+    }
+    func_002F0150(2);
+    p.max_count = 1;
+    p.init_count = 0;
+    D_0033135C = func_002EF660(&p);
+    func_002D0EF8(func_0023D160);
+    __asm__ volatile("sync.l\n\tnop");
+    *(volatile int *)0x1000E010 = 2;
+    *(volatile int *)0x10009020 = 0;
+    *(volatile int *)0x10009010 = 0;
+    *(volatile int *)0x10009030 = (int)D_002F5980 & 0x0FFFFFFF;
+    *(volatile int *)0x10009000 = 0x145;
+    __asm__ volatile("sync.l\n\tnop\n\t.set noreorder\n\t.set reorder");
+    func_0023AA18();
+    func_0023EB88();
+}
 
 void func_0023CE68(void) {
     func_002F00E8(2);
     func_002EF360(2, D_003A9C94);
 }
 
+#ifdef NON_MATCHING /* o reorg usa o lui do delay slot no outro ramo */
+void func_0023CE98(int mode) {
+    if (D_00331354) {
+        func_002F00E8(2);
+    }
+    if (mode) {
+        D_0033134C = 1;
+        D_0032EF84 = 0x200;
+        D_0032EF80 = 0x200;
+        func_0023CA58();
+        func_002D0A68(0, 1, 3, 0);
+    } else {
+        D_0032EF80 = 0x200;
+        D_0033134C = 0;
+        D_0032EF84 = 0x1C0;
+        func_0023CBC8();
+        func_002D0A68(0, 1, 2, 0);
+    }
+    D_003A9C90 = &D_003A9940;
+    func_0023A1B0(D_003A9C90, D_0032EF80, D_0032EF84, 0, 2, 0x3A, 1);
+    func_002EF8E0(0);
+    D_0032F1F2 = D_003A9C90->x348;
+    D_0032F1F4 = D_003A9C90->x346;
+    D_0032F1F8 = D_003A9C90->x340;
+    D_0032F1F6 = D_003A9C90->x344;
+    D_0032F1FA = D_003A9C90->x34C;
+    D_0032F1FC = D_003A9C90->x34A;
+    D_0032F1F0 = D_003A9C90->x346;
+    func_0023A708(D_003A9C90, 1, 1);
+    func_0023A858(D_003A9C90, 0, 1);
+    func_0023A708(D_003A9C90, 0, 1);
+    func_0023A858(D_003A9C90, 1, 1);
+    func_0023A2A8(D_003A9C90);
+    func_002EF8E0(0);
+    func_0023EFD0();
+    if (D_00331354) {
+        func_002F0150(2);
+    }
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023CE98);
+#endif
 
 void func_0023D068(void) {
     if (D_003337EC != 0) {
