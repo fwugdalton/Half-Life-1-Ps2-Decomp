@@ -68,6 +68,7 @@ extern short D_00331344;
 extern short D_00331346;
 extern float D_003337EC;
 extern GLMatrix D_00331080;     /* matriz do viewport */
+extern GLMatrix D_00331100;
 extern int D_0032EF80;          /* largura da tela */
 extern int D_0032EF84;          /* altura da tela */
 typedef int GLsizei;
@@ -86,7 +87,19 @@ extern int D_003A9C9C;
 extern int D_00331390;
 extern int D_00331394;
 float func_002D8268(float x);
-void func_0023ECF8(qword *p, int mode);
+qword *func_0023ECF8(qword *p, int mode);
+extern GLVec *D_003A9CA8;       /* cores do desenho atual */
+extern GLVec *D_003A9CAC;       /* coordenadas de textura do desenho atual */
+extern GLVec *D_003A9CB0;       /* vértices do desenho atual */
+extern int D_0032F250;
+qword *func_0023E1E8(qword *p);
+qword *func_0023D8B8(qword *p);
+qword *func_0023DA90(qword *p);
+qword *func_0023DCE0(qword *p);
+qword *func_0023E468(qword *p);
+qword *func_0023E608(qword *p);
+qword *func_0023E830(qword *p);
+int *func_0023E150(int *p);
 qword *func_0023EE68(qword *p, int mode);
 void func_0023D2B8(void);
 void func_0023D520(void);
@@ -297,7 +310,7 @@ void glMatrixMode(GLenum mode) {
     D_0032F268 = mode;
 }
 
-#ifdef NON_MATCHING /* registradores trocados */
+#ifdef NON_MATCHING /* o alvo intercala os lq/sq da cópia */
 void glPushMatrix(void) {
     GLMatrix *n;
     GLMatrix *m;
@@ -306,13 +319,13 @@ void glPushMatrix(void) {
     case 0x1701:
         m = D_00331140;
         n = m + 1;
-        MCOPY(n, m);
+        *n = *m;
         D_00331140 = n;
         break;
     case 0x1700:
         m = D_00331144;
         n = m + 1;
-        MCOPY(n, m);
+        *n = *m;
         D_00331144 = n;
         break;
     }
@@ -1155,7 +1168,41 @@ qword *func_0023D748(void) {
     return (qword *)0x70002000;
 }
 
+#ifdef NON_MATCHING /* agendamento e registradores das cópias */
+qword *func_0023D778(qword *p) {
+    *(unsigned long *)p = 0x8000000010000014;
+    ((int *)p)[3] = 0x6C0480F1;
+    ((int *)p)[2] = 0;
+    p++;
+    MCOPYT(p, D_00331140);
+    p += 4;
+    *(unsigned long *)p = 0;
+    ((int *)p)[3] = 0x6C0480F5;
+    ((int *)p)[2] = 0;
+    p++;
+    MCOPYT(p, D_00331144);
+    p += 4;
+    *(unsigned long *)p = 0;
+    ((int *)p)[3] = 0x6C0480F9;
+    ((int *)p)[2] = 0;
+    p++;
+    MCOPYT(p, &D_00331100);
+    p += 4;
+    *(unsigned long *)p = 0;
+    ((int *)p)[3] = 0x6C0480FD;
+    ((int *)p)[2] = 0;
+    p++;
+    MCOPYT(p, &D_00331080);
+    p += 4;
+    ((int *)p)[0] = 0x14000000;
+    ((int *)p)[1] = 0;
+    ((int *)p)[2] = 0;
+    ((int *)p)[3] = 0;
+    return p + 1;
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023D778);
+#endif
 
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023D8B8);
 
@@ -1199,9 +1246,81 @@ qword *func_0023ECD8(qword *p) {
     return func_0023D778(p);
 }
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023ECF8);
+qword *func_0023ECF8(qword *p, int mode) {
+    qword *r;
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023EE68);
+    r = 0;
+    if (D_0033102C) {
+        D_003A9CB0 = (GLVec *)D_00331030;
+        D_003A9CA8 = (GLVec *)D_00331034;
+        D_003A9CAC = (GLVec *)D_00331038;
+    } else {
+        if (D_00331048) {
+            D_003A9CA8 = D_00330180;
+            D_003A9CAC = D_00330680;
+            D_003A9CB0 = D_00330B80;
+        } else {
+            D_003A9CA8 = D_0032F280;
+            D_003A9CAC = D_0032F780;
+            D_003A9CB0 = D_0032FC80;
+        }
+        D_00331048 = D_00331048 == 0;
+    }
+    if (D_003313D4->b) {
+        r = func_0023E1E8(p);
+        D_0032F250 = 0;
+    } else {
+        if (D_0032F240) {
+            p = (qword *)func_0023E150((int *)p);
+        }
+        switch ((unsigned int)mode) {
+        case 0:
+            r = func_0023D8B8(p);
+            break;
+        case 1:
+            r = func_0023DA90(p);
+            break;
+        case 2:
+            r = func_0023DCE0(p);
+            break;
+        }
+    }
+    return r;
+}
+
+qword *func_0023EE68(qword *p, int mode) {
+    qword *r;
+
+    if (D_0033102C) {
+        D_003A9CB0 = (GLVec *)D_00331030;
+        D_003A9CA8 = (GLVec *)D_00331034;
+        D_003A9CAC = (GLVec *)D_00331038;
+    } else {
+        if (D_00331048) {
+            D_003A9CA8 = D_00330180;
+            D_003A9CAC = D_00330680;
+            D_003A9CB0 = D_00330B80;
+        } else {
+            D_003A9CA8 = D_0032F280;
+            D_003A9CAC = D_0032F780;
+            D_003A9CB0 = D_0032FC80;
+        }
+        D_00331048 = D_00331048 == 0;
+    }
+    r = func_0023E468(p);
+    switch ((unsigned int)mode) {
+    case 0:
+        r = func_0023E468(p);
+        break;
+    case 1:
+        r = func_0023E608(p);
+        break;
+    case 3:
+        r = func_0023E830(p);
+        break;
+    }
+    return r;
+}
 
 unsigned int func_0023EFA0(void) {
     if (D_0033138C == 1) {

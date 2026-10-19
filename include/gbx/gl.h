@@ -180,6 +180,16 @@ typedef struct {
 /* cópia de 16 bytes com lq/sq */
 #define QCOPY(d, s) __asm__ volatile("lq $3, 0(%1)\n\tsq $3, 0(%0)" : : "r"(d), "r"(s) : "$3", "memory")
 
+/* cópia de uma matriz 4x4 com lq/sq (registrador temporário escolhido pelo gcc) */
+#define MCOPYT(d, s) do { \
+    qword _t; \
+    __asm__ volatile( \
+        "lq %0, 0x0(%2)\n\tsq %0, 0x0(%1)\n\t" \
+        "lq %0, 0x10(%2)\n\tsq %0, 0x10(%1)\n\t" \
+        "lq %0, 0x20(%2)\n\tsq %0, 0x20(%1)\n\t" \
+        "lq %0, 0x30(%2)\n\tsq %0, 0x30(%1)" : "=&r"(_t) : "r"(d), "r"(s) : "memory"); \
+} while (0)
+
 /* cópia de uma matriz 4x4 com lq/sq */
 #define MCOPY(d, s) __asm__ volatile( \
     "lq $5, 0x0(%1)\n\tsq $5, 0x0(%0)\n\t" \
