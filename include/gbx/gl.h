@@ -21,15 +21,25 @@ typedef struct {
 
 /* textura (0xDC bytes) */
 typedef struct {
-    int a;
+    int a;          /* em uso */
     int b;
-    char pad8[0x20];
+    int x8;         /* nome do GL */
+    int xC;
+    int x10;        /* largura */
+    int x14;        /* altura */
+    int x18;        /* log2 da largura */
+    int x1C;        /* log2 da altura */
+    int x20;        /* largura do buffer (TBW) */
+    int x24;
     int x28;        /* filtro de redução */
     int x2C;        /* filtro de ampliação */
     int x30;        /* usa névoa */
     int x34;
     int x38;
-    char pad3C[0xA0];
+    char pad3C[0x74];
+    const void *xB0; /* pixels */
+    const void *xB4;
+    char padB8[0x24];
 } GLTexture;
 
 typedef unsigned int GLuint;

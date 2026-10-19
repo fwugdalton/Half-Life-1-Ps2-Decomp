@@ -121,6 +121,7 @@ segments:
       - [0x139D88, c, gbx/GsEnv]
       - [0x13AA00, c, gbx/gl]
       - [0x13EFD0, cpp, gbx/Texture]
+      - [0x141500, c, gbx/TexConv]
       - [0x141578, c, engine/common]
       - [0x1455D8, c, engine/build]
       - [0x1456F8, c, engine/in_camera]
