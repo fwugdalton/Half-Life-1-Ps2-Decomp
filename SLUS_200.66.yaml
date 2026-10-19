@@ -71,7 +71,8 @@ segments:
     subsegments:
       - [0x000000, asm, cod/000000] # .text
       - [0x117280, c, zlib/adler32]
-      - [0x117420, asm, cod/117420]
+      - [0x117420, c, zlib/compress]
+      - [0x117510, asm, cod/117510]
       - [0x119B20, c, zlib/crc32]
       - [0x119D28, c, zlib/deflate]
       - [0x11BC78, asm, cod/11BC78]
@@ -232,6 +233,8 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x285088, .rodata, zlib/compress]
+      - [0x285090, rodata, cod/285090]
       - [0x2850F8, .rodata, zlib/crc32]
       - [0x2858F8, .rodata, zlib/deflate]
       - [0x2859B0, rodata, cod/2859B0]

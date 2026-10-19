@@ -1884,3 +1884,5 @@ Release__17MouseStateManagerUi = 0x0022A0B0; // type:func
 Clear__17MouseStateManager = 0x0022A108; // type:func
 Dispatch__17MouseStateManager = 0x0022A1A0; // type:func
 __builtin_new = 0x00225A18; // type:func
+compress2 = 0x00217420; // type:func
+compress = 0x002174F0; // type:func
