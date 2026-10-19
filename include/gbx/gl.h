@@ -36,10 +36,26 @@ typedef struct {
     int x30;        /* usa névoa */
     int x34;
     int x38;
-    char pad3C[0x74];
+    int x3C[6];     /* largura de cada nível de mipmap */
+    int x54[6];     /* altura de cada nível */
+    int x6C[6];     /* TBW de cada nível */
+    int x84;
+    int x88;
+    int x8C;
+    int x90;
+    int x94;
+    int x98;
+    int x9C;
+    int xA0;
+    int xA4;
+    int xA8;
+    int xAC;
     const void *xB0; /* pixels */
-    const void *xB4;
-    char padB8[0x24];
+    const void *xB4; /* paleta */
+    int xB8;
+    int xBC;
+    int xC0;
+    const void *xC4[6]; /* pixels de cada nível */
 } GLTexture;
 
 typedef unsigned int GLuint;
