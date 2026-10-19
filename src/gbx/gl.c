@@ -22,7 +22,11 @@ typedef struct {
 typedef struct {
     int a;
     int b;
-    char pad[0xD4];
+    char pad8[0x28];
+    int x30;        /* usa névoa */
+    int x34;
+    int x38;
+    char pad3C[0xA0];
 } GLTexture;
 
 typedef unsigned int GLuint;
@@ -154,7 +158,7 @@ void func_002407A8(GLTexture *tex, int x, int y, int w, int h, const void *pixel
 void func_002409F8(GLTexture *t);
 void func_00240D60(GLTexture *t);
 void func_0023D258(void);
-void func_0023D778(void);
+qword *func_0023D778(qword *p);
 void func_0023F1D8(void);
 void func_0023F1E0(void);
 void func_0023F230(void);
@@ -176,6 +180,84 @@ extern int D_0032EF80;          /* largura da tela */
 extern int D_0032EF84;          /* altura da tela */
 typedef int GLsizei;
 float cosf(float x);
+extern float D_00333804;
+extern float D_00333864;
+extern float D_00331384;        /* densidade da névoa */
+extern int D_003A9C98;
+extern int D_003A9C9C;
+extern int D_00331390;
+extern int D_00331394;
+float func_002D8268(float x);
+void func_0023ECF8(qword *p, int mode);
+qword *func_0023EE68(qword *p, int mode);
+void func_0023D2B8(void);
+void func_0023D520(void);
+qword *func_0023D748(void);
+qword *func_0023ECD8(qword *p);
+qword *func_0023D3B0(qword *p);
+extern int D_00331364;
+extern int D_00331350;          /* buffer de tela atual */
+void func_0023A708(int a, int b, int c);
+void func_0023A858(int a, int b, int c);
+extern int D_00331368;
+extern int D_003A9C90;
+extern unsigned short D_0032F1F0;
+extern unsigned short D_0032F1F2;
+extern unsigned short D_0032F1F4;
+extern int D_00331374;
+void func_0023E9E8(qword *p);
+void func_0023AA18(void);
+extern qword *D_003A9CA0;       /* fim do pacote atual */
+extern qword *D_003A9CA4;       /* início do pacote atual */
+int func_002EF690(int sema);
+/* registradores do GS guardados (0x32EF88..0x32F00C) */
+extern int D_0032EF88;
+extern int D_0032EF8C;
+extern int D_0032EF90;
+extern int D_0032EF94;
+extern int D_0032EF98;
+extern int D_0032EF9C;
+extern int D_0032EFA0;
+extern int D_0032EFA4;
+extern int D_0032EFA8;
+extern int D_0032EFAC;
+extern int D_0032EFB0;
+extern int D_0032EFB4;
+extern int D_0032EFB8;
+extern int D_0032EFBC;
+extern int D_0032EFC0;
+extern int D_0032EFC4;
+extern int D_0032EFC8;
+extern int D_0032EFCC;
+extern int D_0032EFD0;
+extern int D_0032EFD4;
+extern int D_0032EFD8;
+extern int D_0032EFDC;
+extern int D_0032EFE0;
+extern int D_0032EFE4;
+extern int D_0032EFE8;
+extern int D_0032EFEC;
+extern int D_0032EFF0;
+extern int D_0032EFF4;
+extern int D_0032EFF8;
+extern int D_0032EFFC;
+extern int D_0032F000;
+extern int D_0032F004;
+extern int D_0032F008;
+extern int D_0032F00C;
+extern int D_00331044;          /* primitiva do GS */
+extern int D_00331048;          /* buffer duplo de vértices */
+extern GLVec D_0032F280[];      /* buffers de vértices (cor, textura, posição) */
+extern GLVec D_0032F780[];
+extern GLVec D_0032FC80[];
+extern GLVec D_00330180[];
+extern GLVec D_00330680[];
+extern GLVec D_00330B80[];
+void func_002405A8(GLTexture *t, int w, int h);
+void func_00240608(GLTexture *t, const void *pixels);
+void func_00240658(GLTexture *t, const void *pixels);
+void func_002406C8(GLTexture *t, const void *pixels);
+void func_00240738(GLTexture *t, int level, int w, int h, const void *pixels);
 float sinf(float x);
 extern int D_00331360;
 extern int D_0033135C;
@@ -744,7 +826,29 @@ void func_0023BF50(GLint size, GLenum type, GLint stride, const void *ptr) {
     D_00331038 = ptr;
 }
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", glBegin);
+void glBegin(GLenum mode) {
+    func_0023AF68();
+    D_0033103C = 0;
+    switch (mode) {
+    case 5:
+        D_00331044 = 4;
+        break;
+    case 6:
+    case 7:
+    case 9:
+        D_00331044 = 5;
+        break;
+    }
+    if (D_00331048) {
+        D_00331020 = (GLVec *)((unsigned int)D_00330180 | 0x30000000);
+        D_00331024 = (GLVec *)((unsigned int)D_00330680 | 0x30000000);
+        D_00331028 = (GLVec *)((unsigned int)D_00330B80 | 0x30000000);
+    } else {
+        D_00331020 = (GLVec *)((unsigned int)D_0032F280 | 0x30000000);
+        D_00331024 = (GLVec *)((unsigned int)D_0032F780 | 0x30000000);
+        D_00331028 = (GLVec *)((unsigned int)D_0032FC80 | 0x30000000);
+    }
+}
 
 void glTexCoord2f(GLfloat s, GLfloat t) {
     D_0032F1E0.v[0] = s;
@@ -881,7 +985,24 @@ void func_0023C450(GLenum target, GLenum internalformat, GLint width, GLenum for
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", glTexImage2D);
+void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void *pixels) {
+    if (level == 0) {
+        func_002405A8(D_003313D4, width, height);
+        switch (format) {
+        case 0x8801:
+            func_002406C8(D_003313D4, pixels);
+            break;
+        case 0x1908:
+            func_00240658(D_003313D4, pixels);
+            break;
+        case 0x1900:
+            func_00240608(D_003313D4, pixels);
+            break;
+        }
+    } else if (format == 0x1900) {
+        func_00240738(D_003313D4, level - 1, width, height, pixels);
+    }
+}
 
 void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint width, GLint height, GLenum format, GLenum type, const void *pixels) {
     func_002407A8(D_003313D4, xoffset, yoffset, width, height, pixels);
@@ -943,7 +1064,42 @@ unsigned int func_0023CA00(void) {
 void func_0023CA28(int a, int b, int c, ...) {
 }
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023CA58);
+void func_0023CA58(void) {
+    D_0032EF88 = 0x80;
+    D_0032EF8C = 0x80;
+    D_0032EF90 = 0x80;
+    D_0032EF94 = 0;
+    D_0032EF98 = 0x100;
+    D_0032EF9C = 0x100;
+    D_0032EFA0 = 0x80;
+    D_0032EFA4 = 0x100;
+    D_0032EFA8 = 0x100;
+    D_0032EFAC = 0x100;
+    D_0032EFB0 = 0;
+    D_0032EFB4 = 0;
+    D_0032EFB8 = 0x200;
+    D_0032EFBC = 0x100;
+    D_0032EFC0 = 0;
+    D_0032EFC4 = 0x100;
+    D_0032EFC8 = 0x200;
+    D_0032EFCC = 0x100;
+    D_0032EFD0 = 0;
+    D_0032EFD4 = 0x80;
+    D_0032EFD8 = 0x100;
+    D_0032EFDC = 0x100;
+    D_0032EFE0 = 0x100;
+    D_0032EFE4 = 0x80;
+    D_0032EFE8 = 0x100;
+    D_0032EFEC = 0x100;
+    D_0032EFF0 = 0;
+    D_0032EFF4 = 0;
+    D_0032EFF8 = 0x100;
+    D_0032EFFC = 0x200;
+    D_0032F000 = 0x100;
+    D_0032F004 = 0;
+    D_0032F008 = 0x100;
+    D_0032F00C = 0x200;
+}
 
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023CBC8);
 
@@ -956,9 +1112,37 @@ void func_0023CE68(void) {
 
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023CE98);
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023D068);
+void func_0023D068(void) {
+    if (D_003337EC != 0) {
+        D_00331360 = 1;
+        D_00331364 = 1;
+        D_00331368 = D_00333804 != 0;
+    } else {
+        D_00331350 = D_00331350 == 0;
+        func_0023A708(D_003A9C90, D_00331350 ^ 1, 1);
+        if (D_00333804 != 0) {
+            D_00331350 = D_00331350 == 0;
+        }
+        func_0023A858(D_003A9C90, D_00331350, 1);
+        D_0032F1F4 = D_00331350 ? D_0032F1F2 : D_0032F1F0;
+    }
+}
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023D160);
+int func_0023D160(void) {
+    if (D_00331364 == 1) {
+        D_00331364 = 0;
+        D_00331350 = D_00331350 == 0;
+        func_0023A708(D_003A9C90, D_00331350 ^ 1, 1);
+        if (D_00331368) {
+            D_00331350 = D_00331350 == 0;
+        }
+        func_0023A858(D_003A9C90, D_00331350, 1);
+        D_0032F1F4 = D_00331350 ? D_0032F1F2 : D_0032F1F0;
+        func_002EF690(D_0033135C);
+    }
+    __asm__ volatile("sync.l\n\tei");
+    return 0;
+}
 
 void func_0023D228(void) {
     D_0033137C = 0x1102;
@@ -977,7 +1161,33 @@ void func_0023D258(void) {
     D_00331380 = 1;
 }
 
+#ifdef NON_MATCHING /* o alvo carrega D_003313D4 depois da conversão */
+void func_0023D2B8(void) {
+    float d;
+    float f;
+    int i;
+
+    if (D_00333864 != 0 || D_0032F26C == 0) {
+        d = D_00331384;
+    } else {
+        if (1.0f < D_0032F26C) {
+            D_0032F26C = 1.0f;
+        }
+        d = D_00331384 / D_0032F26C;
+    }
+    f = -(func_002D8268(d) * 1.442695f);
+    if (f < 0) {
+        f += 256.0f;
+    }
+    i = f * 16.0f;
+    D_003A9C9C = i;
+    D_003A9C98 = 0;
+    D_003313D4->x38 = i;
+    D_003313D4->x34 = 0;
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023D2B8);
+#endif
 
 qword *func_0023D3B0(qword *p) {
     qword *start;
@@ -996,9 +1206,47 @@ qword *func_0023D3B0(qword *p) {
     return p;
 }
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023D430);
+void func_0023D430(int mode) {
+    qword *p;
+    qword *q;
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023D520);
+    if (D_00331380 == 1) {
+        if (D_003313D4->x30) {
+            func_0023D2B8();
+        }
+        p = func_0023D748();
+        q = p;
+        if (D_0033104C) {
+            q = func_0023ECD8(p);
+        }
+        q = func_0023D3B0(q);
+        func_0023ECF8(q, mode);
+        func_0023AA18();
+        __asm__ volatile("sync.l\n\tnop");
+        *(volatile int *)0x1000E010 = 2;
+        *(volatile int *)0x10009020 = 0;
+        *(volatile int *)0x10009010 = 0;
+        *(volatile int *)0x10009030 = (int)p | 0x80000000;
+        *(volatile int *)0x10009000 = 0x145;
+        __asm__ volatile("sync.l\n\tnop");
+    }
+}
+
+void func_0023D520(void) {
+    if (D_00331374 == 0 && D_00331380 == 1) {
+        func_0023E9E8(D_003A9CA0 - 1);
+        func_0023AA18();
+        __asm__ volatile("sync.l\n\tnop");
+        *(volatile int *)0x1000E010 = 2;
+        *(volatile int *)0x10009020 = 0;
+        *(volatile int *)0x10009010 = 0;
+        *(volatile int *)0x10009030 = (int)D_003A9CA4 | 0x80000000;
+        *(volatile int *)0x10009000 = 0x145;
+        __asm__ volatile("sync.l\n\tnop");
+    }
+    D_00331374 = 1;
+    D_00331378 = 0;
+}
 
 int func_0023D5F0(void) {
     int n;
@@ -1007,15 +1255,42 @@ int func_0023D5F0(void) {
     return n + D_00331378 < 0xDF;
 }
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023D618);
+void func_0023D618(int mode) {
+    int n;
+    qword *p;
 
-unsigned int func_0023D748(void) {
+    n = D_0033103C * 3 + 1;
+    if (n + D_00331378 >= 0xDF) {
+        func_0023D520();
+    }
+    if (D_00331374) {
+        D_00331390 = 0;
+        D_00331394 = 0xDE;
+        D_00331374 = 0;
+        if (D_003313D4->x30) {
+            func_0023D2B8();
+        }
+        p = func_0023D748();
+        D_003A9CA0 = p;
+        D_003A9CA4 = p;
+        if (D_0033104C) {
+            D_003A9CA0 = func_0023ECD8(p);
+        }
+        D_003A9CA0 = func_0023D3B0(D_003A9CA0);
+    }
+    D_003A9CA0 = func_0023EE68(D_003A9CA0, mode);
+    D_00331394 += n;
+    D_00331390 += n - 1;
+    D_00331378 += n;
+}
+
+qword *func_0023D748(void) {
     if (D_00331370 == 1) {
         D_00331370 = 0;
-        return 0x70003000;
+        return (qword *)0x70003000;
     }
     D_00331370 = 1;
-    return 0x70002000;
+    return (qword *)0x70002000;
 }
 
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023D778);
@@ -1028,7 +1303,22 @@ INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023DCE0);
 
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023DF68);
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023E150);
+int *func_0023E150(int *p) {
+    float end;
+    float start;
+
+    end = D_0032F258;
+    start = D_0032F254;
+    *(unsigned long *)p = 0x8000000010000001;
+    p[2] = 0x1000101;
+    p[3] = 0;
+    p += 4;
+    p[0] = 0x640180DF;
+    p[3] = 0;
+    ((float *)p)[2] = end * start * 255.0f / (end - start);
+    ((float *)p)[1] = ((end + start) * -255.0f / (end - start) + 255.0f) * 0.5f;
+    return p + 4;
+}
 
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023E1E8);
 
@@ -1042,9 +1332,9 @@ INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023E9E8);
 
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023EB88);
 
-void func_0023ECD8(void) {
+qword *func_0023ECD8(qword *p) {
     D_0033104C = 0;
-    func_0023D778();
+    return func_0023D778(p);
 }
 
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023ECF8);
