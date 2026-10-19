@@ -21,6 +21,9 @@ extern const char D_00388A08[]; /* "Gbx/Texture.cpp" */
 void *func_00225D48(int size, int align, const char *file, int line);
 void func_00225DB8(void *buf);
 int func_0023F9C8(int n);
+void func_00241500(const void *src, void *a, void *b, void *c, int n);
+qword *func_0023FE10(qword *p, int tbp, int tbw, int psm, int tw, int th, int cbp, int cpsm,
+                     int min, int mag, int mxl, int l, int k, int *mipbp, int *mipbw, int lod);
 extern int D_003A9CBC;          /* linhas de blocos da VRAM */
 
 INCLUDE_ASM("asm/nonmatchings/gbx/Texture", func_0023EFD0);
@@ -87,12 +90,12 @@ void func_0023F320(void) {
     for (i = 0; i < 0x4F9; i++, t++) {
         t->x84 = 0;
         t->x88 = 0;
-        t->x98 = 0;
-        t->x9C = 0;
-        t->xA0 = 0;
-        t->xA4 = 0;
-        t->xA8 = 0;
-        t->xAC = 0;
+        t->x98[0] = 0;
+        t->x98[1] = 0;
+        t->x98[2] = 0;
+        t->x98[3] = 0;
+        t->x98[4] = 0;
+        t->x98[5] = 0;
         t->x8C = 0;
         t->x90 = 0;
         t->x94 = 0;
@@ -180,13 +183,72 @@ void func_0023FAB0(void) {
 INCLUDE_ASM("asm/nonmatchings/gbx/Texture", func_0023FAB0);
 #endif
 
-INCLUDE_ASM("asm/nonmatchings/gbx/Texture", func_0023FB58);
+qword *func_0023FB58(qword *p, int dbp, int dbw, int psm, int w, int h, int src) {
+    int n;
+
+    if (psm) {
+        n = w * h / 16;
+    } else {
+        n = w * h / 4;
+    }
+    *(unsigned long *)p = 0x8000000010000006;
+    p++;
+    ((unsigned long *)p)[0] = 0x1000000000008004;
+    ((unsigned long *)p)[1] = 0xE;
+    p++;
+    ((unsigned long *)p)[0] = ((unsigned long)dbp << 32) | ((unsigned long)dbw << 48) | ((unsigned long)psm << 56);
+    ((unsigned long *)p)[1] = 0x50;
+    p++;
+    ((unsigned long *)p)[0] = 0;
+    ((unsigned long *)p)[1] = 0x51;
+    p++;
+    ((unsigned long *)p)[0] = w | ((unsigned long)h << 32);
+    ((unsigned long *)p)[1] = 0x52;
+    p++;
+    ((unsigned long *)p)[0] = 0;
+    ((unsigned long *)p)[1] = 0x53;
+    p++;
+    *(unsigned long *)p = (n | 0x8000) | ((unsigned long)3 << 59);
+    p++;
+    *(unsigned long *)p = (n | 0x30000000) | ((unsigned long)src << 32);
+    return p + 1;
+}
 
 INCLUDE_ASM("asm/nonmatchings/gbx/Texture", func_0023FC60);
 
 INCLUDE_ASM("asm/nonmatchings/gbx/Texture", func_0023FE10);
 
-INCLUDE_ASM("asm/nonmatchings/gbx/Texture", func_002403F8);
+void func_002403F8(GLTexture *t) {
+    void *a;
+    void *b;
+    void *c;
+
+    if (t->xB8 == 0) {
+        t->xB8 = func_00225D48(t->x24, 0x80, D_00388A08, 0x467);
+        t->xBC = func_00225D48(t->x24, 0x80, D_00388A08, 0x468);
+        t->xC0 = func_00225D48(t->x24, 0x80, D_00388A08, 0x469);
+    }
+    if (t->x8 == 0x4F8) {
+        D_003990C8 = 0;
+    } else {
+        t->x84 = 0;
+        t->x88 = 0;
+        t->x98[0] = 0;
+        t->x98[1] = 0;
+        t->x98[2] = 0;
+        t->x98[3] = 0;
+        t->x98[4] = 0;
+        t->x98[5] = 0;
+        t->x8C = 0;
+        t->x90 = 0;
+        t->x94 = 0;
+    }
+    a = (void *)((int)t->xB8 | 0x30000000);
+    b = (void *)((int)t->xBC | 0x30000000);
+    c = (void *)((int)t->xC0 | 0x30000000);
+    func_00241500(t->xB0, c, b, a, t->x10 * t->x14);
+    __asm__ volatile("sync.l\n\tnop");
+}
 
 #ifdef NON_MATCHING /* o alvo guarda o limite do laço num registrador */
 void func_00240500(GLTexture *t) {
@@ -202,12 +264,12 @@ void func_00240500(GLTexture *t) {
     }
     t->x84 = 0;
     t->x88 = 0;
-    t->x98 = 0;
-    t->x9C = 0;
-    t->xA0 = 0;
-    t->xA4 = 0;
-    t->xA8 = 0;
-    t->xAC = 0;
+    t->x98[0] = 0;
+    t->x98[1] = 0;
+    t->x98[2] = 0;
+    t->x98[3] = 0;
+    t->x98[4] = 0;
+    t->x98[5] = 0;
     t->x8C = 0;
     t->x90 = 0;
     t->x94 = 0;
@@ -309,7 +371,25 @@ void func_002407D8(GLTexture *t, const void *p) {
     }
 }
 
+#ifdef NON_MATCHING /* o gcc junta os stores dos argumentos na pilha */
+qword *func_002407F0(GLTexture *t, qword *p) {
+    qword *r;
+
+    if (t->b) {
+        r = func_0023FE10(p, t->x8C, t->x20, t->xC, t->x18, t->x1C, D_003990C8, 4,
+                          t->x28, t->x2C, 0, 0, 0, 0, 0, 1);
+    } else if (t->xC == 0) {
+        r = func_0023FE10(p, t->x84, t->x20, 0, t->x18, t->x1C, 0, 0,
+                          t->x28, t->x2C, 0, 0, 0, 0, 0, 1);
+    } else {
+        r = func_0023FE10(p, t->x84, t->x20, t->xC, t->x18, t->x1C, t->x88, 4,
+                          t->x28, t->x2C, t->x30, t->x34, t->x38, t->x98, t->x6C, 1);
+    }
+    return r;
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/gbx/Texture", func_002407F0);
+#endif
 
 INCLUDE_ASM("asm/nonmatchings/gbx/Texture", func_00240928);
 

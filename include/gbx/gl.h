@@ -44,12 +44,7 @@ typedef struct {
     int x8C;
     int x90;
     int x94;
-    int x98;
-    int x9C;
-    int xA0;
-    int xA4;
-    int xA8;
-    int xAC;
+    int x98[6];     /* endereço na VRAM de cada nível */
     const void *xB0; /* pixels */
     const void *xB4; /* paleta */
     void *xB8;      /* buffers alocados */
