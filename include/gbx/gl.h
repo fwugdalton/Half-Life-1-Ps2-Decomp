@@ -23,7 +23,9 @@ typedef struct {
 typedef struct {
     int a;
     int b;
-    char pad8[0x28];
+    char pad8[0x20];
+    int x28;        /* filtro de redução */
+    int x2C;        /* filtro de ampliação */
     int x30;        /* usa névoa */
     int x34;
     int x38;

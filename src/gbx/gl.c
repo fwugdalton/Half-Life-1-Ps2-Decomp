@@ -165,7 +165,9 @@ extern unsigned int D_003A9910; /* ciclos do último quadro */
 extern unsigned long D_0032F1B8; /* soma dos últimos 6 quadros */
 extern unsigned int D_0032F1A0[6];
 extern int D_0032F1C0;
-void func_0023CA28(int a, int b, int c, ...);
+void func_0023CA28(int a, int b, const char *fmt, ...);
+void func_0023CD48(void);
+void func_0023D228(void);
 void func_0023D248(void);
 void func_0023D068(void);
 extern int D_0032F24C;
@@ -994,10 +996,58 @@ void glTexEnvf(GLenum target, GLenum pname, GLfloat param) {
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023C600);
-
-void func_0023C7B0(void) {
-    ((volatile GLTexture *)D_003313D4)->b = 1;
+void func_0023C600(GLenum target, GLenum pname, GLfloat param) {
+    switch (pname) {
+    case 0x2801:
+        switch ((int)param) {
+        case 0x2600:
+            D_003313D4->x28 = 0;
+            break;
+        case 0x2601:
+            D_003313D4->x28 = 1;
+            break;
+        case 0x2700:
+            D_003313D4->x28 = 2;
+            break;
+        case 0x2701:
+            D_003313D4->x28 = 3;
+            break;
+        case 0x2702:
+            D_003313D4->x28 = 4;
+            break;
+        case 0x2703:
+            D_003313D4->x28 = 5;
+            break;
+        }
+        break;
+    case 0x2800:
+        switch ((int)param) {
+        case 0x2600:
+            D_003313D4->x2C = 0;
+            break;
+        case 0x2601:
+            D_003313D4->x2C = 1;
+            break;
+        }
+        break;
+    case 0x2802:
+        if (param == 10497.0f) {
+            D_0032F248 = 0;
+        } else if (param == 10496.0f) {
+            D_0032F248 = 1;
+        }
+        break;
+    case 0x2803:
+        if (param == 10497.0f) {
+            D_0032F24C = 0;
+        } else if (param == 10496.0f) {
+            D_0032F24C = 1;
+        }
+        break;
+    case 0x2804:
+        ((volatile GLTexture *)D_003313D4)->b = 1;
+        break;
+    }
 }
 
 void func_0023C7C8(void) {
@@ -1030,7 +1080,7 @@ unsigned int func_0023CA00(void) {
     return 0x70000000;
 }
 
-void func_0023CA28(int a, int b, int c, ...) {
+void func_0023CA28(int a, int b, const char *fmt, ...) {
 }
 
 void func_0023CA58(void) {
