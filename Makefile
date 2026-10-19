@@ -108,6 +108,8 @@ $(BUILD_DIR)/src/zlib/zutil.o: SECTALIGN_C := --set-section-alignment .text=8 --
 # MemFileSystem.cpp tem tabelas de salto: .rodata alinhada em 16
 $(BUILD_DIR)/src/gbx/MemFileSystem.o: SECTALIGN_C := --set-section-alignment .text=8 --set-section-alignment .data=4 --set-section-alignment .rodata=16
 # a .rodata do gl_warp começa alinhada em 16 no original
+# o .text do gl.o começa alinhado a 256 bytes (0x23AA00); o fim do GsEnv.o é preenchido com nops
+$(BUILD_DIR)/src/gbx/gl.o: SECTALIGN_C := --set-section-alignment .text=256 --set-section-alignment .data=4 --set-section-alignment .rodata=16
 $(BUILD_DIR)/src/engine/gl_warp.o: SECTALIGN_C := --set-section-alignment .text=8 --set-section-alignment .data=4 --set-section-alignment .rodata=16
 
 $(BUILD_DIR)/src/%.o: src/%.c $(shell find include -name "*.h")

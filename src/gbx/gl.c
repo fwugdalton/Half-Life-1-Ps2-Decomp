@@ -1,115 +1,7 @@
 /* Gbx: implementação do OpenGL do PS2 (pacotes GIF para o GS) */
 
 #include "common.h"
-
-typedef unsigned int GLenum;
-typedef int GLint;
-typedef float GLfloat;
-
-/* matriz 4x4 alinhada a 16 (copiada com lq/sq) */
-typedef struct {
-    float m[16];
-} __attribute__((aligned(16))) GLMatrix;
-
-typedef int qword __attribute__((mode(TI)));
-
-/* vetor de 4 floats alinhado a 16 */
-typedef struct {
-    float v[4];
-} __attribute__((aligned(16))) GLVec;
-
-/* textura (0xDC bytes) */
-typedef struct {
-    int a;
-    int b;
-    char pad8[0x28];
-    int x30;        /* usa névoa */
-    int x34;
-    int x38;
-    char pad3C[0xA0];
-} GLTexture;
-
-typedef unsigned int GLuint;
-
-/* matriz identidade com o VU0 (m é GLMatrix) */
-#define MIDENTITY(t) __asm__ volatile( \
-    "vsub.xyzw $vf4, $vf0, $vf0\n\t" \
-    "vadd.w $vf4, $vf4, $vf0\n\t" \
-    "vmr32.xyzw $vf5, $vf4\n\t" \
-    "vmr32.xyzw $vf6, $vf5\n\t" \
-    "vmr32.xyzw $vf7, $vf6\n\t" \
-    "sqc2 $vf4, %0\n\t" \
-    "sqc2 $vf5, %1\n\t" \
-    "sqc2 $vf6, %2\n\t" \
-    "sqc2 $vf7, %3" \
-    : "=m"(*(GLVec *)&(t).m[12]), "=m"(*(GLVec *)&(t).m[8]), "=m"(*(GLVec *)&(t).m[4]), "=m"(*(GLVec *)&(t).m[0]))
-
-/* d = d * t com o VU0 */
-#define MMUL(d, t) __asm__ volatile( \
-    "lqc2 $vf4, 0x0(%0)\n\t" \
-    "lqc2 $vf5, 0x10(%0)\n\t" \
-    "lqc2 $vf6, 0x20(%0)\n\t" \
-    "lqc2 $vf7, 0x30(%0)\n\t" \
-    "lqc2 $vf8, %1\n\t" \
-    "lqc2 $vf9, %2\n\t" \
-    "lqc2 $vf10, %3\n\t" \
-    "lqc2 $vf11, %4\n\t" \
-    "vmulax.xyzw $ACC, $vf4, $vf8x\n\t" \
-    "vmadday.xyzw $ACC, $vf5, $vf8y\n\t" \
-    "vmaddaz.xyzw $ACC, $vf6, $vf8z\n\t" \
-    "vmaddw.xyzw $vf12, $vf7, $vf8w\n\t" \
-    "vmulax.xyzw $ACC, $vf4, $vf9x\n\t" \
-    "vmadday.xyzw $ACC, $vf5, $vf9y\n\t" \
-    "vmaddaz.xyzw $ACC, $vf6, $vf9z\n\t" \
-    "vmaddw.xyzw $vf13, $vf7, $vf9w\n\t" \
-    "vmulax.xyzw $ACC, $vf4, $vf10x\n\t" \
-    "vmadday.xyzw $ACC, $vf5, $vf10y\n\t" \
-    "vmaddaz.xyzw $ACC, $vf6, $vf10z\n\t" \
-    "vmaddw.xyzw $vf14, $vf7, $vf10w\n\t" \
-    "vmulax.xyzw $ACC, $vf4, $vf11x\n\t" \
-    "vmadday.xyzw $ACC, $vf5, $vf11y\n\t" \
-    "vmaddaz.xyzw $ACC, $vf6, $vf11z\n\t" \
-    "vmaddw.xyzw $vf15, $vf7, $vf11w\n\t" \
-    "sqc2 $vf12, 0x0(%0)\n\t" \
-    "sqc2 $vf13, 0x10(%0)\n\t" \
-    "sqc2 $vf14, 0x20(%0)\n\t" \
-    "sqc2 $vf15, 0x30(%0)" \
-    : : "r"(d), "m"(*(GLVec *)&(t).m[0]), "m"(*(GLVec *)&(t).m[4]), "m"(*(GLVec *)&(t).m[8]), "m"(*(GLVec *)&(t).m[12]) : "memory")
-
-#define MIDENTITYP(p) __asm__ volatile( \
-    "vsub.xyzw $vf4, $vf0, $vf0\n\t" \
-    "vadd.w $vf4, $vf4, $vf0\n\t" \
-    "vmr32.xyzw $vf5, $vf4\n\t" \
-    "vmr32.xyzw $vf6, $vf5\n\t" \
-    "vmr32.xyzw $vf7, $vf6\n\t" \
-    "sqc2 $vf4, 0x30(%0)\n\t" \
-    "sqc2 $vf5, 0x20(%0)\n\t" \
-    "sqc2 $vf6, 0x10(%0)\n\t" \
-    "sqc2 $vf7, 0x0(%0)" : : "r"(p) : "memory")
-
-/* estado da tela (FRAME e DISPLAY do GS) */
-typedef struct {
-    char pad0[0x160];
-    char pad160[0x160];
-    char pad2C0[0x80];
-    short x340;
-    short pad342;
-    short x344;
-    short x346;
-    short x348;
-    short pad34A;
-    short x34C;
-} GLScreen;
-
-/* cópia de 16 bytes com lq/sq */
-#define QCOPY(d, s) __asm__ volatile("lq $3, 0(%1)\n\tsq $3, 0(%0)" : : "r"(d), "r"(s) : "$3", "memory")
-
-/* cópia de uma matriz 4x4 com lq/sq */
-#define MCOPY(d, s) __asm__ volatile( \
-    "lq $5, 0x0(%1)\n\tsq $5, 0x0(%0)\n\t" \
-    "lq $5, 0x10(%1)\n\tsq $5, 0x10(%0)\n\t" \
-    "lq $5, 0x20(%1)\n\tsq $5, 0x20(%0)\n\t" \
-    "lq $5, 0x30(%1)\n\tsq $5, 0x30(%0)" : : "r"(d), "r"(s) : "$5", "memory")
+#include "gbx/gl.h"
 
 extern GLMatrix *D_00331140;    /* topo da pilha de projeção */
 extern GLMatrix *D_00331144;    /* topo da pilha de modelview */
@@ -180,6 +72,12 @@ extern int D_0032EF80;          /* largura da tela */
 extern int D_0032EF84;          /* altura da tela */
 typedef int GLsizei;
 float cosf(float x);
+extern unsigned int D_0032F188; /* microprograma do VU1 carregado */
+extern qword D_002F5980[];      /* microprogramas do VU1 */
+extern qword D_002F71B0[];
+extern qword D_002F9E50[];
+extern qword D_002FC5A0[];
+extern qword D_003001C0[];
 extern float D_00333804;
 extern float D_00333864;
 extern float D_00331384;        /* densidade da névoa */
@@ -197,10 +95,8 @@ qword *func_0023ECD8(qword *p);
 qword *func_0023D3B0(qword *p);
 extern int D_00331364;
 extern int D_00331350;          /* buffer de tela atual */
-void func_0023A708(int a, int b, int c);
-void func_0023A858(int a, int b, int c);
 extern int D_00331368;
-extern int D_003A9C90;
+extern GLScreen *D_003A9C90;   /* tela */
 extern unsigned short D_0032F1F0;
 extern unsigned short D_0032F1F2;
 extern unsigned short D_0032F1F4;
@@ -272,73 +168,6 @@ extern int D_00331380;
 extern int D_0033138C;
 
 
-int func_00239D88(int n) {
-    int i;
-
-    for (i = 0; i < 32; i++) {
-        n >>= 1;
-        if (n == 0) {
-            break;
-        }
-    }
-    return i;
-}
-
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_00239DB8);
-
-void func_00239ED0(unsigned long *p, short fbp, short psm, int fbw) {
-    unsigned long v;
-
-    v = (fbw << 16) | (long)fbp | ((long)psm << 24);
-    p[0] = v | 0xFFFFFFFF00000000;
-    p[1] = 0x4C;
-    p += 14;
-    p[1] = 0x4C;
-    p[0] = v;
-}
-
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_00239F28);
-
-void func_0023A150(GLScreen *s, short w, short h) {
-    short x;
-    short y;
-
-    if (h == 0x200) {
-        if (w != 0x200) {
-            return;
-        }
-        y = 0x80;
-        x = 0x100;
-    } else if (w != 0x200) {
-        if (w != 0x280) {
-            return;
-        }
-        y = 0x8C;
-        x = 0x118;
-    } else {
-        y = 0x70;
-        x = 0xE0;
-    }
-    s->x34C = x;
-    s->x348 = y;
-    s->x346 = 0;
-}
-
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023A1B0);
-
-void func_0023A2A8(GLScreen *s) {
-    func_00239ED0((unsigned long *)s->pad160, s->x346, s->x344, s->x340);
-    func_00239ED0((unsigned long *)s->pad2C0, s->x348, s->x344, s->x340);
-}
-
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023A2F0);
-
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023A4E8);
-
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023A708);
-
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023A858);
-
 void func_0023AA00(void) {
     *D_0032F160 |= 6;
 }
@@ -378,7 +207,40 @@ void func_0023AFA8(void) {
     func_0023F1D8();
 }
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023AFC8);
+void func_0023AFC8(unsigned int mode) {
+    qword *p;
+
+    p = 0;
+    if (D_0032F188 != mode) {
+        D_0033104C = 1;
+        D_0032F188 = mode;
+        switch (mode) {
+        case 0:
+            p = D_002F5980;
+            break;
+        case 1:
+            p = D_002F71B0;
+            break;
+        case 2:
+            p = D_002F9E50;
+            break;
+        case 3:
+            p = D_002FC5A0;
+            break;
+        case 4:
+            p = D_003001C0;
+            break;
+        }
+        func_0023AA18();
+        __asm__ volatile("sync.l\n\tnop");
+        *(volatile int *)0x1000E010 = 2;
+        *(volatile int *)0x10009020 = 0;
+        *(volatile int *)0x10009010 = 0;
+        *(volatile int *)0x10009030 = (int)p & 0x0FFFFFFF;
+        *(volatile int *)0x10009000 = 0x145;
+        __asm__ volatile("sync.l\n\tnop");
+    }
+}
 
 const char *func_0023B0D0(GLenum name) {
     const char *s;
