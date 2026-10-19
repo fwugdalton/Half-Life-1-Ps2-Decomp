@@ -1205,11 +1205,155 @@ qword *func_0023D778(qword *p) {
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023D778);
 #endif
 
+#ifdef NON_MATCHING /* agendamento e registradores */
+qword *func_0023D8B8(qword *p) {
+    int prim;
+    int n;
+    unsigned long tag;
+
+    n = D_0033103C;
+    prim = (D_0032F264 << 9) | (D_0032F204 << 6) | (D_0032F240 << 5) | (D_0032F25C << 4) | (D_0032F200 << 3);
+    tag = n | 0x30000000;
+    *(unsigned long *)p = tag | ((unsigned long)(unsigned int)D_003A9CAC << 32);
+    ((int *)p)[2] = 0x1000103;
+    ((int *)p)[3] = (n << 16) | 0x6C008000;
+    p++;
+    *(unsigned long *)p = tag | ((unsigned long)(unsigned int)D_003A9CA8 << 32);
+    ((int *)p)[3] = (n << 16) | 0x6C008001;
+    ((int *)p)[2] = 0;
+    p++;
+    *(unsigned long *)p = tag | ((unsigned long)(unsigned int)D_003A9CB0 << 32);
+    ((int *)p)[3] = (n << 16) | 0x6C008002;
+    ((int *)p)[2] = 0;
+    p++;
+    *(unsigned long *)p = 0x8000000070000004;
+    ((int *)p)[2] = 0x1000101;
+    ((int *)p)[3] = 0x6C0180DE;
+    p++;
+    ((unsigned long *)p)[0] = (unsigned long)(n | 0x8000) | ((unsigned long)1 << 46) | ((unsigned long)(prim | D_00331044) << 47) | ((unsigned long)3 << 60);
+    ((unsigned long *)p)[1] = 0x412;
+    p++;
+    ((int *)p)[0] = 0x1000101;
+    ((int *)p)[1] = 0x600181FF;
+    ((int *)p)[2] = D_00331044;
+    ((int *)p)[3] = 0x6C0181BD;
+    p++;
+    ((unsigned long *)p)[0] = (unsigned long)(n | 0x8000) | ((unsigned long)1 << 46) | ((unsigned long)(prim | 5) << 47) | ((unsigned long)3 << 60);
+    ((unsigned long *)p)[1] = 0x412;
+    p++;
+    ((int *)p)[0] = 0x17000000;
+    ((int *)p)[1] = 0;
+    ((int *)p)[2] = 0;
+    ((int *)p)[3] = 0x11000000;
+    return p + 1;
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023D8B8);
+#endif
 
+#ifdef NON_MATCHING /* agendamento e registradores */
+qword *func_0023DA90(qword *p) {
+    int prim;
+    int n;
+    int t;
+
+    n = D_0033103C;
+    t = n * 3;
+    prim = (D_0032F264 << 9) | (D_0032F204 << 6) | (D_0032F240 << 5) | (D_0032F25C << 4) | (D_0032F200 << 3);
+    *(unsigned long *)p = 0x8000000010000000;
+    ((int *)p)[3] = 0xFFFF5550;
+    ((int *)p)[2] = 0x20000000;
+    p++;
+    *(unsigned long *)p = (n / 2 + (n & 1) | 0x30000000) | ((unsigned long)(unsigned int)D_003A9CAC << 32);
+    ((int *)p)[2] = 0x1000301;
+    ((int *)p)[3] = (t << 16) | 0x74008000;
+    p++;
+    *(unsigned long *)p = 0x8000000010000000;
+    ((int *)p)[2] = 0x20000000;
+    ((int *)p)[3] = 0xFFFF5540;
+    p++;
+    *(unsigned long *)p = (t / 4 + ((t & 3) != 0) | 0x30000000) | ((unsigned long)(unsigned int)D_003A9CB0 << 32);
+    ((int *)p)[2] = 0x1000103;
+    ((int *)p)[3] = (n << 16) | 0x78008002;
+    p++;
+    *(unsigned long *)p = 0x8000000070000004;
+    ((int *)p)[2] = 0x1000101;
+    ((int *)p)[3] = 0x6C0180DE;
+    p++;
+    ((unsigned long *)p)[0] = (unsigned long)(n | 0x8000) | ((unsigned long)1 << 46) | ((unsigned long)(prim | D_00331044) << 47) | ((unsigned long)3 << 60);
+    ((unsigned long *)p)[1] = 0x412;
+    p++;
+    ((int *)p)[0] = 0x1000101;
+    ((int *)p)[1] = 0x600181FF;
+    ((int *)p)[2] = D_00331044;
+    ((int *)p)[3] = 0x6C0181BD;
+    p++;
+    ((unsigned long *)p)[0] = (unsigned long)(n | 0x8000) | ((unsigned long)1 << 46) | ((unsigned long)(prim | 5) << 47) | ((unsigned long)3 << 60);
+    ((unsigned long *)p)[1] = 0x412;
+    p++;
+    ((int *)p)[0] = 0x17000000;
+    ((int *)p)[1] = 0;
+    ((int *)p)[2] = 0;
+    ((int *)p)[3] = 0x11000000;
+    return p + 1;
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023DA90);
+#endif
 
+#ifdef NON_MATCHING /* agendamento e registradores */
+qword *func_0023DCE0(qword *p) {
+    int prim;
+    int n;
+    int t;
+
+    n = D_0033103C;
+    t = n * 3;
+    prim = (D_0032F264 << 9) | (D_0032F204 << 6) | (D_0032F240 << 5) | (D_0032F25C << 4) | (D_0032F200 << 3);
+    *(unsigned long *)p = 0x8000000010000000;
+    ((int *)p)[3] = 0xFFFF5550;
+    ((int *)p)[2] = 0x20000000;
+    p++;
+    *(unsigned long *)p = (n / 2 + (n & 1) | 0x30000000) | ((unsigned long)(unsigned int)D_003A9CAC << 32);
+    ((int *)p)[3] = (n << 16) | 0x74008000;
+    ((int *)p)[2] = 0x1000103;
+    p++;
+    *(unsigned long *)p = (n | 0x30000000) | ((unsigned long)(unsigned int)D_003A9CA8 << 32);
+    ((int *)p)[3] = (n << 16) | 0x6C008001;
+    ((int *)p)[2] = 0;
+    p++;
+    *(unsigned long *)p = 0x8000000010000000;
+    ((int *)p)[2] = 0x20000000;
+    ((int *)p)[3] = 0xFFFF5540;
+    p++;
+    *(unsigned long *)p = (t / 4 + ((t & 3) != 0) | 0x30000000) | ((unsigned long)(unsigned int)D_003A9CB0 << 32);
+    ((int *)p)[2] = 0x1000103;
+    ((int *)p)[3] = (n << 16) | 0x78008002;
+    p++;
+    *(unsigned long *)p = 0x8000000070000004;
+    ((int *)p)[2] = 0x1000101;
+    ((int *)p)[3] = 0x6C0180DE;
+    p++;
+    ((unsigned long *)p)[0] = (unsigned long)(n | 0x8000) | ((unsigned long)1 << 46) | ((unsigned long)(prim | D_00331044) << 47) | ((unsigned long)3 << 60);
+    ((unsigned long *)p)[1] = 0x412;
+    p++;
+    ((int *)p)[0] = 0x1000101;
+    ((int *)p)[1] = 0x600181FF;
+    ((int *)p)[2] = D_00331044;
+    ((int *)p)[3] = 0x6C0181BD;
+    p++;
+    ((unsigned long *)p)[0] = (unsigned long)(n | 0x8000) | ((unsigned long)1 << 46) | ((unsigned long)(prim | 5) << 47) | ((unsigned long)3 << 60);
+    ((unsigned long *)p)[1] = 0x412;
+    p++;
+    ((int *)p)[0] = 0x17000000;
+    ((int *)p)[1] = 0;
+    ((int *)p)[2] = 0;
+    ((int *)p)[3] = 0x11000000;
+    return p + 1;
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023DCE0);
+#endif
 
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023DF68);
 
