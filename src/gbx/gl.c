@@ -41,6 +41,7 @@ extern GLVec *D_00331028;       /* próximo vértice */
 extern int D_0033103C;          /* vértices no buffer */
 extern float D_0032F254;        /* GL_FOG_START */
 extern float D_0032F258;        /* GL_FOG_END */
+extern int D_0032F264;
 extern int D_0032F244;          /* cor da névoa */
 extern GLTexture *D_003313D4;   /* textura ligada */
 extern GLTexture *D_003313D8;
@@ -114,7 +115,7 @@ extern unsigned short D_0032F1F0;
 extern unsigned short D_0032F1F2;
 extern unsigned short D_0032F1F4;
 extern int D_00331374;
-void func_0023E9E8(qword *p);
+qword *func_0023E9E8(qword *p);
 void func_0023AA18(void);
 extern qword *D_003A9CA0;       /* fim do pacote atual */
 extern qword *D_003A9CA4;       /* início do pacote atual */
@@ -1237,9 +1238,100 @@ INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023E608);
 
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023E830);
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023E9E8);
+#ifdef NON_MATCHING /* a ordem do ld e das constantes da tag difere */
+qword *func_0023E9E8(qword *p) {
+    int prim;
+    int n;
+    int qwc;
+    float end;
+    float start;
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023EB88);
+    prim = (D_0032F264 << 9) | (D_0032F204 << 6) | (D_0032F240 << 5) | (D_0032F25C << 4) | (D_0032F200 << 3) | 5;
+    n = D_0033103C;
+    *(unsigned long *)p |= 0x8000;
+    p++;
+    qwc = D_0032F240 ? 4 : 3;
+    *(unsigned long *)p = (unsigned long)qwc | ((unsigned long)7 << 28) | ((unsigned long)0x80000000 << 32);
+    ((int *)p)[3] = 0x6C0181BD;
+    ((int *)p)[2] = 0x1000101;
+    p++;
+    ((unsigned long *)p)[1] = 0x412;
+    ((unsigned long *)p)[0] = (unsigned long)n | ((unsigned long)1 << 15) | ((unsigned long)1 << 46) | ((unsigned long)prim << 47) | ((unsigned long)0 << 58) | ((unsigned long)3 << 60);
+    p++;
+    ((int *)p)[0] = 0x1000101;
+    ((int *)p)[1] = 0x600181FF;
+    ((int *)p)[2] = D_00331040 ? 0x30 : 0x20;
+    ((int *)p)[3] = 0;
+    p++;
+    if (D_0032F240) {
+        end = D_0032F258;
+        start = D_0032F254;
+        ((int *)p)[0] = 0x640180DF;
+        ((int *)p)[3] = 0;
+        ((float *)p)[2] = end * start * 255.0f / (end - start);
+        ((float *)p)[1] = ((end + start) * -255.0f / (end - start) + 255.0f) * 0.5f;
+        p++;
+    }
+    ((int *)p)[0] = 0x17000000;
+    ((int *)p)[3] = 0x11000000;
+    ((int *)p)[1] = 0;
+    ((int *)p)[2] = 0;
+    return p + 1;
+}
+#else
+INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023E9E8);
+#endif
+
+void func_0023EB88(void) {
+    qword *p;
+    qword *q;
+    float one;
+    float k;
+
+    q = func_0023D748();
+    *(unsigned long *)q = 0x8000000070000007;
+    ((int *)q)[3] = 0x6C0101FE;
+    p = q;
+    ((int *)q)[2] = 0;
+    q++;
+    ((unsigned long *)q)[0] = 0x3002C00000008000;
+    ((unsigned long *)q)[1] = 0x412;
+    q++;
+    ((int *)q)[3] = 0x6C0103FE;
+    ((int *)q)[0] = 0;
+    ((int *)q)[1] = 0;
+    ((int *)q)[2] = 0;
+    q++;
+    ((unsigned long *)q)[0] = 0x3002C00000008000;
+    ((unsigned long *)q)[1] = 0x412;
+    q++;
+    *(unsigned long *)q = 0;
+    ((int *)q)[3] = 0x30000000;
+    ((int *)q)[2] = 0;
+    q++;
+    one = 1.0f;
+    ((float *)q)[0] = one;
+    ((float *)q)[1] = one;
+    ((float *)q)[2] = one;
+    ((float *)q)[3] = one;
+    q++;
+    *(unsigned long *)q = 0;
+    ((int *)q)[3] = 0x31000000;
+    ((int *)q)[2] = 0;
+    q++;
+    k = 1.3333330154418945f;
+    ((float *)q)[0] = k;
+    ((float *)q)[1] = k;
+    ((float *)q)[2] = k;
+    ((float *)q)[3] = k;
+    __asm__ volatile("sync.l\n\tnop");
+    *(volatile int *)0x1000E010 = 2;
+    *(volatile int *)0x10009020 = 0;
+    *(volatile int *)0x10009010 = 0;
+    *(volatile int *)0x10009030 = (int)p | 0x80000000;
+    *(volatile int *)0x10009000 = 0x145;
+    __asm__ volatile("sync.l\n\tnop");
+}
 
 qword *func_0023ECD8(qword *p) {
     D_0033104C = 0;
