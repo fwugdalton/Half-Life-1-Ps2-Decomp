@@ -13,6 +13,30 @@ typedef struct {
 
 typedef int qword __attribute__((mode(TI)));
 
+/* vetor de 4 floats alinhado a 16 */
+typedef struct {
+    float v[4];
+} __attribute__((aligned(16))) GLVec;
+
+/* textura (0xDC bytes) */
+typedef struct {
+    int a;
+    int b;
+    char pad[0xD4];
+} GLTexture;
+
+typedef unsigned int GLuint;
+
+/* cópia de 16 bytes com lq/sq */
+#define QCOPY(d, s) __asm__ volatile("lq $3, 0(%1)\n\tsq $3, 0(%0)" : : "r"(d), "r"(s) : "$3", "memory")
+
+/* cópia de uma matriz 4x4 com lq/sq */
+#define MCOPY(d, s) __asm__ volatile( \
+    "lq $5, 0x0(%1)\n\tsq $5, 0x0(%0)\n\t" \
+    "lq $5, 0x10(%1)\n\tsq $5, 0x10(%0)\n\t" \
+    "lq $5, 0x20(%1)\n\tsq $5, 0x20(%0)\n\t" \
+    "lq $5, 0x30(%1)\n\tsq $5, 0x30(%0)" : : "r"(d), "r"(s) : "$5", "memory")
+
 extern GLMatrix *D_00331140;    /* topo da pilha de projeção */
 extern GLMatrix *D_00331144;    /* topo da pilha de modelview */
 extern int D_0033104C;          /* matrizes mudaram */
@@ -43,8 +67,37 @@ extern int D_0033102C;          /* arrays de vértices ligados */
 extern const void *D_00331030;  /* glVertexPointer */
 extern const void *D_00331034;  /* glColorPointer */
 extern const void *D_00331038;  /* glTexCoordPointer */
-extern float D_0032F1E0[4];     /* coordenada de textura atual */
-extern float sprite_color[4] __attribute__((aligned(16)));
+extern GLVec D_0032F1E0;        /* coordenada de textura atual */
+extern GLVec sprite_color;      /* cor atual */
+extern GLVec *D_00331020;       /* próxima cor do buffer */
+extern GLVec *D_00331024;       /* próxima coordenada de textura */
+extern GLVec *D_00331028;       /* próximo vértice */
+extern int D_0033103C;          /* vértices no buffer */
+extern float D_0032F254;        /* GL_FOG_START */
+extern float D_0032F258;        /* GL_FOG_END */
+extern int D_0032F244;          /* cor da névoa */
+extern GLTexture *D_003313D4;   /* textura ligada */
+extern GLTexture *D_003313D8;
+void func_0023D430(int a);
+void func_002407D8(GLTexture *tex, const void *table);
+void func_002407A8(GLTexture *tex, int x, int y, int w, int h, const void *pixels);
+void func_002409F8(GLTexture *t);
+void func_00240D60(GLTexture *t);
+void func_0023D258(void);
+void func_0023D778(void);
+void func_0023F1D8(void);
+void func_0023F1E0(void);
+void func_0023F230(void);
+int func_002F00E8(int a);
+void func_002EF360(int a, int b);
+extern unsigned int *D_0032F160;
+extern float D_0032F26C;
+extern int D_0032F180;
+extern int D_003A9C94;
+extern int D_00331370;
+extern int D_00331378;
+extern int D_00331380;
+extern int D_0033138C;
 
 
 int func_00239D88(int n) {
@@ -79,7 +132,9 @@ INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023A708);
 
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023A858);
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023AA00);
+void func_0023AA00(void) {
+    *D_0032F160 |= 6;
+}
 
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023AA18);
 
@@ -90,7 +145,9 @@ INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023AB28);
 void func_0023AD90(void) {
 }
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023AD98);
+void func_0023AD98(void) {
+    func_0023D258();
+}
 
 INCLUDE_RODATA("asm/nonmatchings/gbx/gl", D_00388940);
 
@@ -102,9 +159,17 @@ INCLUDE_RODATA("asm/nonmatchings/gbx/gl", D_00388978);
 
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023ADB8);
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023AF68);
+void func_0023AF68(void) {
+    if (D_003313D4->b) {
+        func_002409F8(D_003313D4);
+    } else {
+        func_00240D60(D_003313D4);
+    }
+}
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023AFA8);
+void func_0023AFA8(void) {
+    func_0023F1D8();
+}
 
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023AFC8);
 
@@ -142,28 +207,22 @@ void glMatrixMode(GLenum mode) {
     D_0032F268 = mode;
 }
 
-#ifdef NON_MATCHING /* o alvo intercala os lq/sq da cópia */
+#ifdef NON_MATCHING /* registradores trocados */
 void glPushMatrix(void) {
-    GLMatrix *m;
     GLMatrix *n;
+    GLMatrix *m;
 
     switch (D_0032F268) {
     case 0x1701:
         m = D_00331140;
         n = m + 1;
-        ((qword *)n)[0] = ((qword *)m)[0];
-        ((qword *)n)[1] = ((qword *)m)[1];
-        ((qword *)n)[2] = ((qword *)m)[2];
-        ((qword *)n)[3] = ((qword *)m)[3];
+        MCOPY(n, m);
         D_00331140 = n;
         break;
     case 0x1700:
         m = D_00331144;
         n = m + 1;
-        ((qword *)n)[0] = ((qword *)m)[0];
-        ((qword *)n)[1] = ((qword *)m)[1];
-        ((qword *)n)[2] = ((qword *)m)[2];
-        ((qword *)n)[3] = ((qword *)m)[3];
+        MCOPY(n, m);
         D_00331144 = n;
         break;
     }
@@ -417,66 +476,181 @@ void func_0023BF50(GLint size, GLenum type, GLint stride, const void *ptr) {
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", glBegin);
 
 void glTexCoord2f(GLfloat s, GLfloat t) {
-    D_0032F1E0[0] = s;
-    D_0032F1E0[1] = t;
-    D_0032F1E0[2] = 1.0f;
-    D_0032F1E0[3] = 0;
+    D_0032F1E0.v[0] = s;
+    D_0032F1E0.v[1] = t;
+    D_0032F1E0.v[2] = 1.0f;
+    D_0032F1E0.v[3] = 0;
 }
 
 void func_0023C070(const unsigned char *v) {
-    sprite_color[0] = v[0] * (1.0f / 255.0f);
-    sprite_color[1] = v[1] * (1.0f / 255.0f);
-    sprite_color[2] = v[2] * (1.0f / 255.0f);
-    sprite_color[3] = 1.0f;
+    sprite_color.v[0] = v[0] * (1.0f / 255.0f);
+    sprite_color.v[1] = v[1] * (1.0f / 255.0f);
+    sprite_color.v[2] = v[2] * (1.0f / 255.0f);
+    sprite_color.v[3] = 1.0f;
 }
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", glColor4ub);
+void glColor4ub(unsigned char r, unsigned char g, unsigned char b, unsigned char a) {
+    sprite_color.v[0] = r * (1.0f / 255.0f);
+    sprite_color.v[1] = g * (1.0f / 255.0f);
+    sprite_color.v[2] = b * (1.0f / 255.0f);
+    sprite_color.v[3] = a * (1.0f / 255.0f);
+}
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", glColor4ubv);
+void glColor4ubv(const unsigned char *v) {
+    sprite_color.v[0] = v[0] * (1.0f / 255.0f);
+    sprite_color.v[1] = v[1] * (1.0f / 255.0f);
+    sprite_color.v[2] = v[2] * (1.0f / 255.0f);
+    sprite_color.v[3] = v[3] * (1.0f / 255.0f);
+}
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", glColor3f);
+void glColor3f(GLfloat r, GLfloat g, GLfloat b) {
+    sprite_color.v[0] = r;
+    sprite_color.v[1] = g;
+    sprite_color.v[2] = b;
+    sprite_color.v[3] = 1.0f;
+}
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", glColor4f);
+void glColor4f(GLfloat r, GLfloat g, GLfloat b, GLfloat a) {
+    sprite_color.v[0] = r;
+    sprite_color.v[1] = g;
+    sprite_color.v[2] = b;
+    sprite_color.v[3] = a;
+}
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023C218);
+void func_0023C218(GLfloat x, GLfloat y, GLfloat z) {
+    GLVec *c;
+    GLVec *t;
+    GLVec *v;
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", glVertex3fv);
+    c = D_00331020;
+    QCOPY(c, &sprite_color);
+    t = D_00331024;
+    QCOPY(t, &D_0032F1E0);
+    v = D_00331028;
+    v->v[0] = x;
+    v->v[1] = y;
+    v->v[2] = z;
+    v->v[3] = 1.0f;
+    D_00331020 = c + 1;
+    D_00331024 = t + 1;
+    D_00331028 = v + 1;
+    D_0033103C++;
+}
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", glVertex2f);
+void glVertex3fv(const GLfloat *p) {
+    GLVec *c;
+    GLVec *t;
+    GLVec *v;
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023C3A0);
+    c = D_00331020;
+    QCOPY(c, &sprite_color);
+    t = D_00331024;
+    QCOPY(t, &D_0032F1E0);
+    v = D_00331028;
+    v->v[0] = p[0];
+    v->v[1] = p[1];
+    v->v[2] = p[2];
+    v->v[3] = 1.0f;
+    D_00331020 = c + 1;
+    D_00331024 = t + 1;
+    D_00331028 = v + 1;
+    D_0033103C++;
+}
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023C3D8);
+void glVertex2f(GLfloat x, GLfloat y) {
+    GLVec *c;
+    GLVec *t;
+    GLVec *v;
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", glEnd);
+    c = D_00331020;
+    QCOPY(c, &sprite_color);
+    t = D_00331024;
+    QCOPY(t, &D_0032F1E0);
+    v = D_00331028;
+    v->v[0] = x;
+    v->v[1] = y;
+    v->v[2] = 0;
+    v->v[3] = 1.0f;
+    D_00331020 = c + 1;
+    D_00331024 = t + 1;
+    D_00331028 = v + 1;
+    D_0033103C++;
+}
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023C430);
+void func_0023C3A0(GLenum pname, GLfloat param) {
+    switch (pname) {
+    case 0xB63:
+        D_0032F254 = param;
+        break;
+    case 0xB64:
+        D_0032F258 = param;
+        break;
+    case 0xB65:
+        break;
+    }
+}
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023C450);
+void func_0023C3D8(unsigned char r, unsigned char g, unsigned char b) {
+    D_0032F244 = r | (g << 8) | (b << 16);
+}
+
+void glEnd(void) {
+    if (D_0033103C >= 3) {
+        func_0023D430(0);
+    }
+}
+
+void func_0023C430(GLenum target, GLuint texture) {
+    D_003313D4 = &D_003313D8[texture];
+}
+
+void func_0023C450(GLenum target, GLenum internalformat, GLint width, GLenum format, GLenum type, const void *table) {
+    if (format == 0x8801) {
+        func_002407D8(D_003313D4, table);
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", glTexImage2D);
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", glTexSubImage2D);
+void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint width, GLint height, GLenum format, GLenum type, const void *pixels) {
+    func_002407A8(D_003313D4, xoffset, yoffset, width, height, pixels);
+}
 
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", glTexEnvf);
 
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023C600);
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023C7B0);
+void func_0023C7B0(void) {
+    ((volatile GLTexture *)D_003313D4)->b = 1;
+}
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023C7C8);
+void func_0023C7C8(void) {
+    func_0023F230();
+}
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023C7E8);
+void func_0023C7E8(void) {
+    func_0023F1E0();
+}
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023C808);
+void func_0023C808(GLfloat f) {
+    D_0032F26C = f;
+}
 
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023C818);
 
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023C880);
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023CA00);
+unsigned int func_0023CA00(void) {
+    if (D_0032F180 == 1) {
+        D_0032F180 = 0;
+        return 0x70001000;
+    }
+    D_0032F180 = 1;
+    return 0x70000000;
+}
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023CA28);
+void func_0023CA28(int a, int b, int c, ...) {
+}
 
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023CA58);
 
@@ -484,7 +658,10 @@ INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023CBC8);
 
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023CD48);
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023CE68);
+void func_0023CE68(void) {
+    func_002F00E8(2);
+    func_002EF360(2, D_003A9C94);
+}
 
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023CE98);
 
@@ -492,9 +669,14 @@ INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023D068);
 
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023D160);
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023D228);
+void func_0023D228(void) {
+    D_0033137C = 0x1102;
+    D_00331380 = 1;
+}
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023D248);
+void func_0023D248(void) {
+    D_00331380 = 0;
+}
 
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023D258);
 
@@ -506,11 +688,23 @@ INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023D430);
 
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023D520);
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023D5F0);
+int func_0023D5F0(void) {
+    int n;
+
+    n = D_0033103C * 3 + 1;
+    return n + D_00331378 < 0xDF;
+}
 
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023D618);
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023D748);
+unsigned int func_0023D748(void) {
+    if (D_00331370 == 1) {
+        D_00331370 = 0;
+        return 0x70003000;
+    }
+    D_00331370 = 1;
+    return 0x70002000;
+}
 
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023D778);
 
@@ -536,10 +730,20 @@ INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023E9E8);
 
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023EB88);
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023ECD8);
+void func_0023ECD8(void) {
+    D_0033104C = 0;
+    func_0023D778();
+}
 
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023ECF8);
 
 INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023EE68);
 
-INCLUDE_ASM("asm/nonmatchings/gbx/gl", func_0023EFA0);
+unsigned int func_0023EFA0(void) {
+    if (D_0033138C == 1) {
+        D_0033138C = 0;
+        return 0x70003000;
+    }
+    D_0033138C = 1;
+    return 0x70002000;
+}
