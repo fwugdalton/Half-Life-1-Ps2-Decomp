@@ -34,6 +34,13 @@ extern int D_003A9CC0[44];      /* registradores do GS guardados */
 extern GLTexture *D_003313D4;
 void *Mem_DbgMalloc(int size, const char *file, int line);
 void func_0023F320(void);
+int func_0023F420(GLTexture *t, int *bp, int w, int h, int psm);
+unsigned int func_0023CA00(void);
+int func_0023F3B8(int x);
+int func_0023F948(int w, int h, int psm8);
+qword *func_0023FB58(qword *p, int dbp, int dbw, int psm, int w, int h, int src);
+extern int D_003A9D74;          /* CLUT carregada na VRAM */
+extern int D_003A9D78[3];       /* canais carregados na VRAM */
 void func_0023FAB0(void);
 void func_00241500(const void *src, void *a, void *b, void *c, int n);
 qword *func_0023FE10(qword *p, int tbp, int tbw, int psm, int tw, int th, int cbp, int cpsm,
@@ -532,7 +539,66 @@ qword *func_00240928(GLTexture *t, qword *p, int ch) {
                          t->x28, t->x2C, 0, 0, 0, 0, 0, 0);
 }
 
-INCLUDE_ASM("asm/nonmatchings/gbx/Texture", func_002409F8);
+void func_002409F8(GLTexture *t) {
+    qword *start;
+    qword *p;
+
+    start = (qword *)func_0023CA00();
+    D_003A9D78[0] = t->x8C[0];
+    D_003A9D78[1] = t->x8C[1];
+    p = start;
+    D_003A9D74 = D_003990C8;
+    D_003A9D78[2] = t->x8C[2];
+    if (D_003990C8 == 0) {
+        func_0023F420(&D_003313D8[0x4F8], &D_003990C8, 16, 16, 0);
+    }
+    if (t->x8C[0] == 0) {
+        func_0023F420(t, &t->x8C[0], t->x10, t->x14, t->xC);
+    }
+    if (t->x8C[1] == 0) {
+        func_0023F420(t, &t->x8C[1], t->x10, t->x14, t->xC);
+    }
+    if (t->x8C[2] == 0) {
+        func_0023F420(t, &t->x8C[2], t->x10, t->x14, t->xC);
+    }
+    if (D_003990C8 == 0 || t->x8C[0] == 0 || t->x8C[1] == 0 || t->x8C[2] == 0) {
+        func_0023F948(func_0023F3B8(t->x10 * 3 + 32), func_0023F3B8(t->x14 + 32), t->xC);
+        if (D_003990C8 == 0) {
+            func_0023F420(&D_003313D8[0x4F8], &D_003990C8, 16, 16, 0);
+        }
+        if (t->x8C[0] == 0) {
+            func_0023F420(t, &t->x8C[0], t->x10, t->x14, t->xC);
+        }
+        if (t->x8C[1] == 0) {
+            func_0023F420(t, &t->x8C[1], t->x10, t->x14, t->xC);
+        }
+        if (t->x8C[2] == 0) {
+            func_0023F420(t, &t->x8C[2], t->x10, t->x14, t->xC);
+        }
+    }
+    if (D_003990C8 != D_003A9D74) {
+        p = func_0023FB58(start, D_003990C8, 1, 0, 16, 16, (int)D_003990CC);
+    }
+    if (t->x8C[0] != D_003A9D78[0]) {
+        p = func_0023FB58(p, t->x8C[0], t->x20, t->xC, t->x10, t->x14, (int)t->xB8);
+    }
+    if (t->x8C[1] != D_003A9D78[1]) {
+        p = func_0023FB58(p, t->x8C[1], t->x20, t->xC, t->x10, t->x14, (int)t->xBC);
+    }
+    if (t->x8C[2] != D_003A9D78[2]) {
+        p = func_0023FB58(p, t->x8C[2], t->x20, t->xC, t->x10, t->x14, (int)t->xC0);
+    }
+    if (start < p) {
+        *(unsigned long *)p = 0x8000000070000000;
+        __asm__ volatile("sync.l\n\tnop");
+        *(volatile int *)0x1000E010 = 4;
+        *(volatile int *)0x1000A020 = 0;
+        *(volatile int *)0x1000A010 = 0;
+        *(volatile int *)0x1000A030 = (int)start | 0x80000000;
+        *(volatile int *)0x1000A000 = 0x105;
+        __asm__ volatile("sync.l\n\tnop");
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/gbx/Texture", func_00240D60);
 
