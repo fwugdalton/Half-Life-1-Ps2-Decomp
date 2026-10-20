@@ -201,8 +201,13 @@ for line in lines:
             if label_at is not None:
                 # o gas moderno poria o nop do mtc1 antes do .p2align (o ee-as põe depois):
                 # o mtc1 vira .word para o gas não ver o atraso, e o nop vai junto do rótulo
+                # (um li.s/mtc1 logo antes também vira .word, senão o gas põe um nop entre os dois)
                 n = len(out)
-                out[pending_idx:pending_idx + 1] = raw_mtc1(out[pending_idx])
+                idxs = [pending_idx]
+                while idxs[0] > 0 and FPWRITE.match(out[idxs[0] - 1]):
+                    idxs.insert(0, idxs[0] - 1)
+                for i in reversed(idxs):
+                    out[i:i + 1] = raw_mtc1(out[i])
                 out.insert(label_at + len(out) - n, '\tnop')
             else:
                 out.append('\tnop')

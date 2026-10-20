@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x0F5F68, cpp, dlls/tentacle_decay]
       - [0x0F8190, cpp, dlls/triggers]
       - [0x100ED8, cpp, dlls/tripmine]
       - [0x102B90, cpp, dlls/turret]
@@ -215,6 +216,7 @@ segments:
       - [0x1D0A68, asm, cod/1D0A68]
       - [0x1F5980, textbin, cod/1F5980] # .vutext
       - [0x201B00, data, cod/201B00] # .data
+      - [0x223E88, .data, dlls/tentacle_decay]
       - [0x223FC0, .data, dlls/triggers]
       - [0x2241F8, .data, dlls/tripmine]
       - [0x224288, .data, dlls/turret]
@@ -259,6 +261,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x2794B0, .rodata, dlls/tentacle_decay]
       - [0x279F08, .rodata, dlls/triggers]
       - [0x27E8D0, .rodata, dlls/tripmine]
       - [0x27F1F8, .rodata, dlls/turret]
