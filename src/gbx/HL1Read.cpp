@@ -89,6 +89,9 @@ int func_0022BE50(void *data, int size, int count, void *f);
 char *func_0022BF38(void *f);
 void *Mem_DbgMalloc(int size, const char *file, int line);
 void Mem_Free(void *ptr);
+void *func_00225860(void *dst, int c, int n);
+void *Q_memcpy(void *dest, void *src, int count);
+extern char *D_00326F38;           /* "" */
 extern const char D_00385B78[];     /* "Gbx/HL1Read.cpp" */
 
 void func_00221898(char *p, char **tokens, int count);
@@ -183,9 +186,156 @@ void func_00221898(char *p, char **tokens, int count)
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/gbx/HL1Read", func_002218E8);
+char *func_002218E8(char *p, ENTITYTABLE *entities, short *a2, int count, char **tokens)
+{
+    short len;
+    short token;
+    int fields;
+    int i;
+    int j;
+    ENTITYTABLE *e;
 
-INCLUDE_ASM("asm/nonmatchings/gbx/HL1Read", func_00221AA8);
+    for (i = 0; i < count; i++) {
+        Q_memcpy(&len, p, 2);
+        p += 2;
+        Q_memcpy(a2, p, 2);
+        p += 2;
+        Q_memcpy(&fields, p, 4);
+        p += 4;
+        e = &entities[i];
+        e->id = 0;
+        e->classname = D_00326F38;
+        e->location = 0;
+        e->size = 0;
+        e->flags = 0;
+        for (j = 0; j < fields; j++) {
+            Q_memcpy(&len, p, 2);
+            p += 2;
+            Q_memcpy(&token, p, 2);
+            p += 2;
+            switch (tokens[token][0]) {
+            case 'i':
+                Q_memcpy(&e->id, p, len);
+                break;
+            case 'l':
+                Q_memcpy(&e->location, p, len);
+                break;
+            case 's':
+                Q_memcpy(&e->size, p, len);
+                break;
+            case 'f':
+                Q_memcpy(&e->flags, p, len);
+                break;
+            case 'c':
+                e->classname = p;
+                break;
+            }
+            p += len;
+        }
+    }
+    return p;
+}
+
+char *func_00221AA8(char *p, short *a1, SAVE_HEADER *h, char **tokens, int *size)
+{
+    short hdr;
+    short len;
+    short token;
+    int fields;
+    int i;
+
+    *size = 0;
+    Q_memcpy(&hdr, p, 2);
+    p += 2;
+    Q_memcpy(a1, p, 2);
+    p += 2;
+    Q_memcpy(&fields, p, 4);
+    p += 4;
+    *size += 8;
+    h->saveId = 0;
+    h->version = 0;
+    h->skillLevel = 0;
+    h->entityCount = 0;
+    h->connectionCount = 0;
+    h->lightStyleCount = 0;
+    h->time = 0;
+    func_00225860(h->mapName, 0, 32);
+    func_00225860(h->skyName, 0, 32);
+    h->skyColor_r = 0;
+    h->skyColor_g = 0;
+    h->skyColor_b = 0;
+    h->skyVec_x = 0;
+    h->skyVec_y = 0;
+    h->skyVec_z = 0;
+    for (i = 0; i < fields; i++) {
+        Q_memcpy(&len, p, 2);
+        p += 2;
+        Q_memcpy(&token, p, 2);
+        p += 2;
+        *size += len + 4;
+        switch (tokens[token][2]) {
+        case 'v':
+            Q_memcpy(&h->saveId, p, len);
+            break;
+        case 'r':
+            Q_memcpy(&h->version, p, len);
+            break;
+        case 'i':
+            Q_memcpy(&h->skillLevel, p, len);
+            break;
+        case 't':
+            Q_memcpy(&h->entityCount, p, len);
+            break;
+        case 'n':
+            Q_memcpy(&h->connectionCount, p, len);
+            break;
+        case 'g':
+            Q_memcpy(&h->lightStyleCount, p, len);
+            break;
+        case 'm':
+            Q_memcpy(&h->time, p, len);
+            break;
+        case 'p':
+            Q_memcpy(h->mapName, p, len);
+            break;
+        case 'y':
+            switch (tokens[token][3]) {
+            case 'C':
+                switch (tokens[token][9]) {
+                case 'r':
+                    Q_memcpy(&h->skyColor_r, p, len);
+                    break;
+                case 'g':
+                    Q_memcpy(&h->skyColor_g, p, len);
+                    break;
+                case 'b':
+                    Q_memcpy(&h->skyColor_b, p, len);
+                    break;
+                }
+                break;
+            case 'V':
+                switch (tokens[token][7]) {
+                case 'x':
+                    Q_memcpy(&h->skyVec_x, p, len);
+                    break;
+                case 'y':
+                    Q_memcpy(&h->skyVec_y, p, len);
+                    break;
+                case 'z':
+                    Q_memcpy(&h->skyVec_z, p, len);
+                    break;
+                }
+                break;
+            case 'N':
+                Q_memcpy(h->skyName, p, len);
+                break;
+            }
+            break;
+        }
+        p += len;
+    }
+    return p;
+}
 
 INCLUDE_ASM("asm/nonmatchings/gbx/HL1Read", func_00221DF0);
 
@@ -193,6 +343,26 @@ INCLUDE_ASM("asm/nonmatchings/gbx/HL1Read", func_00222018);
 
 INCLUDE_ASM("asm/nonmatchings/gbx/HL1Read", func_002221E0);
 
-INCLUDE_ASM("asm/nonmatchings/gbx/HL1Read", func_002223E8);
+char *func_002223E8(char *p, int *count)
+{
+    short len;
+    short id;
+    int i;
+
+    Q_memcpy(&len, p, 2);
+    p += 2;
+    Q_memcpy(&id, p, 2);
+    p += 2;
+    Q_memcpy(count, p, 4);
+    p += 4;
+    for (i = 0; i < *count; i++) {
+        Q_memcpy(&len, p, 2);
+        p += 2;
+        Q_memcpy(&id, p, 2);
+        p += 2;
+        p += len;
+    }
+    return p;
+}
 
 }
