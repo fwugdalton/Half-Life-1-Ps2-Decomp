@@ -29,6 +29,13 @@ typedef struct {
 } SAVE_HEADER;
 
 typedef struct {
+    char mapName[32];
+    char landmarkName[32];
+    int landmark;               /* 0x40 */
+    float vecLandmark[3];       /* 0x44 */
+} SAVECONNECTION;
+
+typedef struct {
     int index;
     char style[64];
 } SAVELIGHTSTYLE;
@@ -67,10 +74,11 @@ typedef struct {
     short unk32;
     SAVE_HEADER header;         /* 0x34 */
     int unkA8;
-    int unkAC;
-    void *unkB0;                /* 0xB0 */
-    int dataSize;               /* 0xB4 */
-    void *data;                 /* 0xB8 */
+    short unkAC;                /* 0xAC */
+    short unkAE;
+    SAVECONNECTION *connections; /* 0xB0 */
+    int connSize;               /* 0xB4 */
+    char *connStart;            /* 0xB8 */
     short unkBC;                /* 0xBC */
     short unkBE;
     SAVELIGHTSTYLE *lightStyles; /* 0xC0 */
@@ -97,8 +105,8 @@ extern const char D_00385B78[];     /* "Gbx/HL1Read.cpp" */
 void func_00221898(char *p, char **tokens, int count);
 char *func_002218E8(char *p, ENTITYTABLE *entities, short *a2, int count, char **tokens);
 char *func_00221AA8(char *p, short *a1, SAVE_HEADER *header, char **tokens, int *a4);
-char *func_00221DF0(char *p, int *a1, void *buf, int count, char **tokens, int *a5, void **a6);
-char *func_00222018(char *p, short *a1, SAVELIGHTSTYLE *buf, int count, char **tokens, int *a5);
+char *func_00221DF0(char *p, short *a1, SAVECONNECTION *buf, int count, char **tokens, int *size, char **start);
+char *func_00222018(char *p, short *a1, SAVELIGHTSTYLE *buf, int count, char **tokens, int *size);
 char *func_002221E0(char *p, SaveRecord *buf, int count, int *a3, int total, char **tokens);
 char *func_002223E8(char *p, int *size);
 
@@ -133,8 +141,8 @@ int func_00221470(const char *name, SaveData *s)
         p = func_002218E8(data, s->entities, &s->unk08, s->entityCount, s->tokens);
         s->unk10 = p - data;
         p = func_00221AA8(p, &s->unk30, &s->header, s->tokens, &s->unkA8);
-        s->unkB0 = Mem_DbgMalloc(s->header.connectionCount * 0x50, D_00385B78, 0x4D);
-        p = func_00221DF0(p, &s->unkAC, s->unkB0, s->header.connectionCount, s->tokens, &s->dataSize, &s->data);
+        s->connections = (SAVECONNECTION *)Mem_DbgMalloc(s->header.connectionCount * 0x50, D_00385B78, 0x4D);
+        p = func_00221DF0(p, &s->unkAC, s->connections, s->header.connectionCount, s->tokens, &s->connSize, &s->connStart);
         s->lightStyles = (SAVELIGHTSTYLE *)Mem_DbgMalloc(s->header.lightStyleCount * 0x44, D_00385B78, 0x52);
         p = func_00222018(p, &s->unkBC, s->lightStyles, s->header.lightStyleCount, s->tokens, &s->unkC4);
         s->unkC8 = 0;
@@ -163,7 +171,7 @@ void func_00221768(SaveData s)
     Mem_Free(s.tokenData);
     Mem_Free(s.tokens);
     Mem_Free(s.entities);
-    Mem_Free(s.unkB0);
+    Mem_Free(s.connections);
     Mem_Free(s.lightStyles);
     if (s.unkCC)
         Mem_Free(s.unkCC);
@@ -337,9 +345,100 @@ char *func_00221AA8(char *p, short *a1, SAVE_HEADER *h, char **tokens, int *size
     return p;
 }
 
-INCLUDE_ASM("asm/nonmatchings/gbx/HL1Read", func_00221DF0);
+#ifdef NON_MATCHING /* ponteiro da conexão e contador interno trocam de registrador (s1/s2) e *start sai de s0 */
+char *func_00221DF0(char *p, short *a1, SAVECONNECTION *buf, int count, char **tokens, int *size, char **start)
+{
+    short len;
+    short token;
+    int fields;
+    int i;
+    int j;
+    SAVECONNECTION *c;
 
-INCLUDE_ASM("asm/nonmatchings/gbx/HL1Read", func_00222018);
+    *size = 0;
+    *start = p;
+    for (i = 0; i < count; i++) {
+        Q_memcpy(&len, p, 2);
+        p += 2;
+        Q_memcpy(a1, p, 2);
+        p += 2;
+        Q_memcpy(&fields, p, 4);
+        p += 4;
+        *size += 8;
+        c = &buf[i];
+        func_00225860(c->mapName, 0, 32);
+        func_00225860(c->landmarkName, 0, 32);
+        c->landmark = 0;
+        func_00225860(c->vecLandmark, 0, 12);
+        for (j = 0; j < fields; j++) {
+            Q_memcpy(&len, p, 2);
+            p += 2;
+            Q_memcpy(&token, p, 2);
+            p += 2;
+            *size += len + 4;
+            switch (tokens[token][0]) {
+            case 'm':
+                Q_memcpy(c->mapName, p, len);
+                break;
+            case 'l':
+                Q_memcpy(c->landmarkName, p, len);
+                break;
+            case 'p':
+                Q_memcpy(&c->landmark, p, len);
+                break;
+            case 'v':
+                Q_memcpy(c->vecLandmark, p, len);
+                break;
+            }
+            p += len;
+        }
+    }
+    return p;
+}
+#else
+INCLUDE_ASM("asm/nonmatchings/gbx/HL1Read", func_00221DF0);
+#endif
+
+char *func_00222018(char *p, short *a1, SAVELIGHTSTYLE *buf, int count, char **tokens, int *size)
+{
+    short len;
+    short token;
+    int fields;
+    int i;
+    int j;
+    SAVELIGHTSTYLE *ls;
+
+    *size = 0;
+    for (i = 0; i < count; i++) {
+        Q_memcpy(&len, p, 2);
+        p += 2;
+        Q_memcpy(a1, p, 2);
+        p += 2;
+        ls = &buf[i];
+        Q_memcpy(&fields, p, 4);
+        p += 4;
+        *size += 8;
+        ls->index = 0;
+        func_00225860(ls->style, 0, 64);
+        for (j = 0; j < fields; j++) {
+            Q_memcpy(&len, p, 2);
+            p += 2;
+            Q_memcpy(&token, p, 2);
+            p += 2;
+            *size += len + 4;
+            switch (tokens[token][0]) {
+            case 'i':
+                Q_memcpy(&ls->index, p, len);
+                break;
+            case 's':
+                Q_memcpy(ls->style, p, len);
+                break;
+            }
+            p += len;
+        }
+    }
+    return p;
+}
 
 INCLUDE_ASM("asm/nonmatchings/gbx/HL1Read", func_002221E0);
 
