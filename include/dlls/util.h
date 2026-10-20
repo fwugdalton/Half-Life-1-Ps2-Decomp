@@ -443,6 +443,7 @@ inline void STOP_SOUND(edict_t *entity, int channel, const char *sample)
 #define TE_MODEL            106
 
 #define EF_MUZZLEFLASH      2
+#define EF_NOINTERP         32
 
 #define IN_ATTACK           (1 << 0)
 #define IN_ATTACK2          (1 << 11)
