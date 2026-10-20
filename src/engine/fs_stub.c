@@ -1,21 +1,52 @@
 /* stubs do sistema de arquivos */
 
 #include "common.h"
+#include <stdarg.h>
 
-INCLUDE_ASM("asm/nonmatchings/engine/fs_stub", FS_Open);
+void *FS_Open(const char *path, const char *mode)
+{
+    return (void *)0xDEADBEEF;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/fs_stub", FS_Close);
+void FS_Close(void *f)
+{
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/fs_stub", func_002224D0);
+int func_002224D0(void)
+{
+    return 0;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/fs_stub", func_002224D8);
+int func_002224D8(void)
+{
+    return 0;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/fs_stub", func_002224E0);
+int func_002224E0(void)
+{
+    return 1;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/fs_stub", func_002224E8);
+int func_002224E8(void)
+{
+    return 0;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/fs_stub", func_002224F0);
+int func_002224F0(void)
+{
+    return 0;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/fs_stub", func_002224F8);
+int func_002224F8(void)
+{
+    return 0;
+}
 
-INCLUDE_ASM("asm/nonmatchings/engine/fs_stub", func_00222500);
+int func_00222500(void *f, const char *fmt, ...)
+{
+    va_list ap;
+
+    va_start(ap, fmt);
+    va_end(ap);
+    return 0;
+}
