@@ -22,12 +22,28 @@
 
 #define WEAPON_IS_ONTARGET  0x40
 
+#define AUTOAIM_10DEGREES   0.1736481776669
+
+typedef enum
+{
+    PLAYER_IDLE,
+    PLAYER_WALK,
+    PLAYER_JUMP,
+    PLAYER_SUPERJUMP,
+    PLAYER_DIE,
+    PLAYER_ATTACK1,
+    PLAYER_PS2_ATTACK2,     /* PS2: ataque secundário (carga do vortigaunt) */
+} PLAYER_ANIM;
+
 class CBasePlayerItem;
 
 class CBasePlayer : public CBaseMonster
 {
 public:
-    byte m_ps2Unk2A0[0x468 - 0x2A0];
+    int m_iPlayerSound;                         /* 0x2A0 */
+    int m_iTargetVolume;                        /* 0x2A4 */
+    int m_iWeaponVolume;                        /* 0x2A8 */
+    byte m_ps2Unk2AC[0x468 - 0x2AC];
     BOOL m_fWeapon;                             /* 0x468 */
     byte m_ps2Unk46C[0x490 - 0x46C];
     int m_afPhysicsFlags;                       /* 0x490 */
@@ -41,11 +57,29 @@ public:
     int m_rgAmmo[MAX_AMMO_SLOTS];               /* 0x4C4 */
     byte m_ps2Unk544[0x5DC - 0x544];
     BOOL m_fOnTarget;                           /* 0x5DC */
-    byte m_ps2Unk5E0[0x770 - 0x5E0];
+    byte m_ps2Unk5E0[0x5E8 - 0x5E0];
+    int m_iDeaths;                              /* 0x5E8 */
+    int m_ps2Unk5EC;
+    int m_ps2ShotsFired;                        /* 0x5F0: estatística do placar do PS2 */
+    int m_ps2ShotsHit;                          /* 0x5F4 */
+    int m_ps2Stat5F8;                           /* 0x5F8 */
+    byte m_ps2Unk5FC[0x620 - 0x5FC];
+    int m_ps2ClientIndex;                       /* 0x620: vai no ScoreInfo com um jogador só */
+    byte m_ps2Unk624[0x770 - 0x624];
     BOOL m_ps2InfiniteAmmo;                     /* 0x770: recarrega sem gastar munição */
     byte m_ps2Unk774[0x7BC - 0x774];
     char m_szAnimExtention[32];                 /* 0x7BC */
 
+    /* virtuais novos do CBasePlayer a partir do slot 128 (só o que já é usado) */
+    virtual void Ps2Virt128(void);
+    virtual void Ps2Virt129(void);
+    virtual void Ps2Virt130(void);
+    virtual void Ps2Virt131(void);
+    virtual void Ps2Virt132(void);
+    virtual void Ps2Virt133(void);
+    virtual Vector GetAutoaimVector(float flDelta);     /* slot 134 */
+
+    void SetAnimation(PLAYER_ANIM playerAnim);
     static int GetAmmoIndex(const char *psz);
     BOOL HasPlayerItem(CBasePlayerItem *pCheckItem);
     void GiveNamedItem(const char *szName);
@@ -53,5 +87,6 @@ public:
 
 extern BOOL gEvilImpulse101;
 extern int gmsgCurWeapon;
+extern int gmsgScoreInfo;
 
 #endif

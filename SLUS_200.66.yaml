@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x10C3A0, cpp, dlls/weapon_islave]
       - [0x10F3C8, cpp, dlls/weapons]
       - [0x1129E8, cpp, dlls/wheelchair]
       - [0x1144E8, cpp, dlls/xen]
@@ -209,6 +210,7 @@ segments:
       - [0x1D0A68, asm, cod/1D0A68]
       - [0x1F5980, textbin, cod/1F5980] # .vutext
       - [0x201B00, data, cod/201B00] # .data
+      - [0x224AE0, .data, dlls/weapon_islave]
       - [0x224B30, .data, dlls/weapons]
       - [0x224C68, .data, dlls/wheelchair]
       - [0x224F80, .data, dlls/xen]
@@ -247,6 +249,8 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x281350, .rodata, dlls/weapon_islave]
+      - [0x281B18, rodata, cod/281B18]
       - [0x281B20, .rodata, dlls/weapons]
       - [0x282BC8, rodata, cod/282BC8]
       - [0x282BD0, .rodata, dlls/wheelchair]

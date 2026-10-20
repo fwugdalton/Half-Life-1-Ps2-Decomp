@@ -328,6 +328,10 @@ void UTIL_MakeVectors(const Vector &vecAngles);
 float UTIL_VecToYaw(const Vector &vec);
 Vector UTIL_VecToAngles(const Vector &vec);
 void UTIL_TraceLine(const Vector &vecStart, const Vector &vecEnd, int igmon, edict_t *pentIgnore, TraceResult *ptr);
+void UTIL_TraceHull(const Vector &vecStart, const Vector &vecEnd, int igmon, int hullNumber, edict_t *pentIgnore, TraceResult *ptr);
+
+enum { ignore_monsters = 1, dont_ignore_monsters = 0, missile = 2 };
+enum { point_hull = 0, human_hull = 1, large_hull = 2, head_hull = 3 };
 class CBaseEntity;
 void UTIL_Remove(CBaseEntity *pEntity);
 int UTIL_EntitiesInBox(CBaseEntity **pList, int listMax, const Vector &mins, const Vector &maxs, int flagMask);
@@ -372,6 +376,7 @@ inline void STOP_SOUND(edict_t *entity, int channel, const char *sample)
 #define MSG_PAS             5
 
 #define SVC_TEMPENTITY      23
+#define TE_DLIGHT           27
 #define SVC_WEAPONANIM      35
 
 #define TE_MODEL            106

@@ -43,7 +43,7 @@ public:
     virtual void Ps2Virt15(void);
     virtual void Ps2Virt16(void);
     virtual void Ps2Virt17(void);
-    virtual void Ps2Virt18(void);
+    virtual BOOL Ps2Virt18(CBasePlayer *pPlayer, CBaseEntity *pTarget); /* conta o acerto nas estatísticas */
     virtual void Ps2Virt19(void);
     virtual void Ps2Virt20(void);
     virtual void Ps2Virt21(void);

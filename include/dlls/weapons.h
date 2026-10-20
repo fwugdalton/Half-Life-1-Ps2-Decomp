@@ -230,6 +230,8 @@ extern MULTIDAMAGE gMultiDamage;
 #define WEAPON_ACTIVITY_VOLUME  64
 
 #define VECTOR_CONE_1DEGREES    Vector(0.00873, 0.00873, 0.00873)
+#define VECTOR_CONE_5DEGREES    Vector(0.04362, 0.04362, 0.04362)
+#define VECTOR_CONE_15DEGREES   Vector(0.13053, 0.13053, 0.13053)
 
 class CWeaponBox : public CBaseEntity
 {
