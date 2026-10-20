@@ -33,6 +33,21 @@ typedef struct {
     char style[64];
 } SAVELIGHTSTYLE;
 
+typedef struct {
+    short id;
+    short len;
+    void *data;
+    int owned;
+} SaveEntry;
+
+typedef struct SaveRecord {
+    short token;
+    short unk02;
+    int unk04;
+    unsigned char count;        /* 0x08 */
+    SaveEntry *entries;         /* 0x0C */
+} SaveRecord;
+
 /* dados de um save já lidos (0xD8 bytes) */
 typedef struct {
     int id;                     /* 0x00 */
@@ -62,7 +77,7 @@ typedef struct {
     int unkC4;
     int unkC8;                  /* 0xC8 */
     int unkCC;
-    void *unkD0;                /* 0xD0 */
+    struct SaveRecord *records; /* 0xD0 */
     int unkD4;
 } SaveData;
 
@@ -81,6 +96,8 @@ int func_0022BD98(const void *data, int size, int count, void *f);
 int func_0022BE50(void *data, int size, int count, void *f);
 void func_0022BF78(void *in, void *out, int size);
 void *memcpy(void *dst, const void *src, unsigned int n);
+void *Mem_DbgMalloc(int size, const char *file, int line);
+void Mem_Free(void *ptr);
 int func_0021DA00(const void *buf, int len);
 
 /* índices dos nomes de campo no vetor de tokens do save */
@@ -579,7 +596,96 @@ void func_00220748(void *in, void *out, SaveData dict)
 INCLUDE_ASM("asm/nonmatchings/gbx/HL1Decompress", func_00220748);
 #endif
 
+#ifdef NON_MATCHING /* o teste do laço externo é fundido por crossjump e a constante 4 cai em v0 em vez de t3 */
+void func_00220B10(void *in, void *out, SaveData *dict)
+{
+    SaveEntry entries[256];
+    SaveRecord rec;
+    unsigned char cmd;
+    short idx;
+    short delId;
+    short size;
+    int cnt;
+    unsigned char i;
+    unsigned char j;
+    unsigned char k;
+    unsigned char m;
+    unsigned char n;
+
+    rec.count = 0;
+    rec.entries = entries;
+    func_0022BE50(&cmd, 1, 1, in);
+    while (cmd == 4) {
+        func_0022BE50(&idx, 2, 1, in);
+        if (idx != -1) {
+            rec.token = dict->records[idx].token;
+            rec.count = dict->records[idx].count;
+            for (i = 0; i < dict->records[idx].count; i++) {
+                entries[i] = dict->records[idx].entries[i];
+                entries[i].owned = 0;
+            }
+        } else {
+            func_0022BE50(&rec.token, 2, 1, in);
+            rec.count = 0;
+        }
+        func_0022BE50(&cmd, 1, 1, in);
+        while (cmd < 4) {
+            SaveEntry e;
+            switch (cmd) {
+            case 1:
+                func_0022BE50(&e.id, 2, 1, in);
+                func_0022BE50(&e.len, 2, 1, in);
+                e.data = Mem_DbgMalloc(e.len, "Gbx/HL1Decompress.cpp", 0x3FB);
+                func_0022BE50(e.data, e.len, 1, in);
+                for (k = 0; k < rec.count; k++) {
+                    if (entries[k].id == e.id) {
+                        entries[k].len = e.len;
+                        entries[k].data = e.data;
+                        entries[k].owned = 1;
+                        break;
+                    }
+                }
+                break;
+            case 2:
+                func_0022BE50(&delId, 2, 1, in);
+                for (m = 0; m < rec.count; m++) {
+                    if (entries[m].id == delId) {
+                        for (j = m; j < rec.count - 1; j++)
+                            entries[j] = entries[j + 1];
+                        rec.count--;
+                        break;
+                    }
+                }
+                break;
+            case 3:
+                func_0022BE50(&e.id, 2, 1, in);
+                func_0022BE50(&e.len, 2, 1, in);
+                e.data = Mem_DbgMalloc(e.len, "Gbx/HL1Decompress.cpp", 0x42F);
+                func_0022BE50(e.data, e.len, 1, in);
+                e.owned = 1;
+                entries[rec.count] = e;
+                rec.count++;
+                break;
+            }
+            func_0022BE50(&cmd, 1, 1, in);
+        }
+        size = 4;
+        cnt = rec.count;
+        func_0022BD98(&size, 2, 1, out);
+        func_0022BD98(&rec.token, 2, 1, out);
+        func_0022BD98(&cnt, 4, 1, out);
+        for (n = 0; n < rec.count; n++) {
+            func_0022BD98(&entries[n].len, 2, 1, out);
+            func_0022BD98(&entries[n].id, 2, 1, out);
+            func_0022BD98(entries[n].data, entries[n].len, 1, out);
+            if (entries[n].owned == 1)
+                Mem_Free(entries[n].data);
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/gbx/HL1Decompress", func_00220B10);
+#endif
 
 void func_00221018(int index, const char *token)
 {
