@@ -52,7 +52,7 @@ public:
     byte m_ps2Unk494[0x498 - 0x494];
     int m_iFOV;                                 /* 0x498 */
     int m_iClientFOV;                           /* 0x49C */
-    byte m_ps2Unk4A0[0x4B8 - 0x4A0];
+    CBasePlayerItem *m_rgpPlayerItems[MAX_ITEM_TYPES]; /* 0x4A0 */
     CBasePlayerItem *m_pActiveItem;             /* 0x4B8 */
     CBasePlayerItem *m_pClientActiveItem;       /* 0x4BC */
     CBasePlayerItem *m_pLastItem;               /* 0x4C0 */

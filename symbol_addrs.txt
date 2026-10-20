@@ -3226,3 +3226,9 @@ _vt$11CNullEntity = 0x00377298;
 _vt$11CBaseToggle = 0x00377478;
 EntitySetState__12CGlobalStatei12GLOBALESTATE = 0x0018C448;
 WorldGraph = 0x00315240;
+// stats
+AmmoDamage__FPCc = 0x001EE388; // type:func
+UpdateStatsFile__FfPcffi = 0x001EE4F8; // type:func
+UpdateStats__FP11CBasePlayer = 0x001EE500; // type:func
+InitStats__FP11CBasePlayer = 0x001EE878; // type:func
+gStats = 0x00323830;
