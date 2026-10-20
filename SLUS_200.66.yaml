@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x0D37D8, cpp, dlls/python]
       - [0x0D4570, cpp, dlls/rat]
       - [0x0D4818, cpp, dlls/roach]
       - [0x0D5950, cpp, dlls/rosenberg]
@@ -302,6 +303,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x26E128, .rodata, dlls/python]
       - [0x26E750, .rodata, dlls/rat]
       - [0x26EBB0, .rodata, dlls/roach]
       - [0x26F080, .rodata, dlls/rosenberg]
