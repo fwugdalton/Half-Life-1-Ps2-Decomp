@@ -75,6 +75,7 @@ public:
     }
     inline void SetBrightness(int brightness) { pev->renderamt = brightness; }
     inline void SetNoise(int amplitude) { pev->body = amplitude; }
+    inline void SetScrollRate(int speed) { pev->animtime = speed; }
     inline int GetBrightness(void) { return pev->renderamt; }
 
     static CBeam *BeamCreate(const char *pSpriteName, int width);

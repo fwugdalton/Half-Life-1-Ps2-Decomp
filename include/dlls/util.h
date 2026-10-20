@@ -357,6 +357,8 @@ void UTIL_SetOrigin(entvars_t *pev, const Vector &vecOrigin);
 void UTIL_MakeVectors(const Vector &vecAngles);
 float UTIL_VecToYaw(const Vector &vec);
 Vector UTIL_VecToAngles(const Vector &vec);
+class CBaseEntity;
+CBaseEntity *UTIL_FindEntityByClassname(CBaseEntity *pStartEntity, const char *szName);
 float UTIL_AngleMod(float a);
 void UTIL_MakeAimVectors(const Vector &vecAngles);
 void UTIL_Sparks(const Vector &position);

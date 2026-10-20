@@ -187,6 +187,39 @@ public:
     void EXPORT Materialize(void);
 };
 
+class CGrenade : public CBaseMonster
+{
+public:
+    void Spawn(void);
+
+    typedef enum { SATCHEL_DETONATE = 0, SATCHEL_RELEASE } SATCHELCODE;
+
+    static CGrenade *ShootTimed(entvars_t *pevOwner, Vector vecStart, Vector vecVelocity, float time);
+    static CGrenade *ShootContact(entvars_t *pevOwner, Vector vecStart, Vector vecVelocity);
+    static CGrenade *ShootSatchelCharge(entvars_t *pevOwner, Vector vecStart, Vector vecVelocity);
+    static void UseSatchelCharges(entvars_t *pevOwner, SATCHELCODE code);
+
+    void Explode(Vector vecSrc, Vector vecAim);
+    virtual void Explode(TraceResult *pTrace, int bitsDamageType);  /* virtual no PS2 (slot 128) */
+    void EXPORT Smoke(void);
+
+    void EXPORT BounceTouch(CBaseEntity *pOther);
+    void EXPORT SlideTouch(CBaseEntity *pOther);
+    void EXPORT ExplodeTouch(CBaseEntity *pOther);
+    void EXPORT DangerSoundThink(void);
+    void EXPORT PreDetonate(void);
+    void EXPORT Detonate(void);
+    void EXPORT DetonateUse(CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value);
+    void EXPORT TumbleThink(void);
+
+    virtual void BounceSound(void);
+    virtual int BloodColor(void);       /* fora de linha no PS2 (ggrenade.cpp) */
+    virtual void Killed(entvars_t *pevAttacker, int iGib);
+
+    BOOL m_fRegisteredSound;            /* 0x2A0 */
+    int m_iPs2Unk2A4;                   /* 0x2A4 */
+};
+
 extern DLL_GLOBAL short g_sModelIndexLaser;
 extern DLL_GLOBAL const char *g_pModelNameLaser;
 
