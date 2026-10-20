@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x0D9B68, cpp, dlls/satchel]
       - [0x0DB108, cpp, dlls/schedule]
       - [0x0DD878, cpp, dlls/scientist]
       - [0x0E0420, cpp, dlls/scripted]
@@ -234,6 +235,7 @@ segments:
       - [0x1D0A68, asm, cod/1D0A68]
       - [0x1F5980, textbin, cod/1F5980] # .vutext
       - [0x201B00, data, cod/201B00] # .data
+      - [0x218100, .data, dlls/satchel]
       - [0x218110, .data, dlls/scientist]
       - [0x218488, .data, dlls/scripted]
       - [0x2185E8, .data, dlls/shotgun]
@@ -294,6 +296,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x270718, .rodata, dlls/satchel]
       - [0x270FE0, .rodata, dlls/schedule]
       - [0x2715A0, .rodata, dlls/scientist]
       - [0x2727B0, .rodata, dlls/scripted]
