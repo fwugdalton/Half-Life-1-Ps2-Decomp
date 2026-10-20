@@ -69,6 +69,7 @@ typedef struct {
 extern "C" {
 
 int func_00228DC0(const char *s);
+int func_00228E00(const char *a, const char *b);
 void func_00228CF0(char *dst, const char *src);
 void func_00225860(void *dst, int c, int n);
 void *func_0022B118(const char *name, const char *mode);
@@ -580,6 +581,58 @@ INCLUDE_ASM("asm/nonmatchings/gbx/HL1Decompress", func_00220748);
 
 INCLUDE_ASM("asm/nonmatchings/gbx/HL1Decompress", func_00220B10);
 
-INCLUDE_ASM("asm/nonmatchings/gbx/HL1Decompress", func_00221018);
+void func_00221018(int index, const char *token)
+{
+    if (*token == 0)
+        return;
+    if (D_003A6380 == -1 && func_00228E00("id", token) == 0)
+        D_003A6380 = index;
+    if (D_003A6382 == -1 && func_00228E00("location", token) == 0)
+        D_003A6382 = index;
+    if (D_003A6384 == -1 && func_00228E00("size", token) == 0)
+        D_003A6384 = index;
+    if (D_003A6386 == -1 && func_00228E00("flags", token) == 0)
+        D_003A6386 = index;
+    if (D_003A6388 == -1 && func_00228E00("classname", token) == 0)
+        D_003A6388 = index;
+    if (D_003A638A == -1 && func_00228E00("skillLevel", token) == 0)
+        D_003A638A = index;
+    if (D_003A638C == -1 && func_00228E00("entityCount", token) == 0)
+        D_003A638C = index;
+    if (D_003A638E == -1 && func_00228E00("connectionCount", token) == 0)
+        D_003A638E = index;
+    if (D_003A6390 == -1 && func_00228E00("lightStyleCount", token) == 0)
+        D_003A6390 = index;
+    if (D_003A6392 == -1 && func_00228E00("time", token) == 0)
+        D_003A6392 = index;
+    if (D_003A6394 == -1 && func_00228E00("mapName", token) == 0)
+        D_003A6394 = index;
+    if (D_003A6396 == -1 && func_00228E00("skyName", token) == 0)
+        D_003A6396 = index;
+    if (D_003A6398 == -1 && func_00228E00("skyColor_r", token) == 0)
+        D_003A6398 = index;
+    if (D_003A639A == -1 && func_00228E00("skyColor_g", token) == 0)
+        D_003A639A = index;
+    if (D_003A639C == -1 && func_00228E00("skyColor_b", token) == 0)
+        D_003A639C = index;
+    if (D_003A639E == -1 && func_00228E00("skyVec_x", token) == 0)
+        D_003A639E = index;
+    if (D_003A63A0 == -1 && func_00228E00("skyVec_y", token) == 0)
+        D_003A63A0 = index;
+    if (D_003A63A2 == -1 && func_00228E00("skyVec_z", token) == 0)
+        D_003A63A2 = index;
+    if (D_003A63A4 == -1 && func_00228E00("mapName", token) == 0)
+        D_003A63A4 = index;
+    if (D_003A63A6 == -1 && func_00228E00("landmarkName", token) == 0)
+        D_003A63A6 = index;
+    if (D_003A63A8 == -1 && func_00228E00("pentLandmark", token) == 0)
+        D_003A63A8 = index;
+    if (D_003A63AA == -1 && func_00228E00("vecLandmarkOrigin", token) == 0)
+        D_003A63AA = index;
+    if (D_003A63AC == -1 && func_00228E00("index", token) == 0)
+        D_003A63AC = index;
+    if (D_003A63AE == -1 && func_00228E00("style", token) == 0)
+        D_003A63AE = index;
+}
 
 }
