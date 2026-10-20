@@ -57,6 +57,8 @@ public:
 
 /* o gcc 2.95 põe no .rodata as constantes de ponteiro para membro das
    funções inline (mesmo sem uso): por isso o LiveForTime está aqui */
+#define SF_BEAM_TOGGLE      0x0002
+#define SF_BEAM_SPARKEND    0x0020
 #define SF_BEAM_TEMPORARY   0x8000
 
 class CBeam : public CBaseEntity

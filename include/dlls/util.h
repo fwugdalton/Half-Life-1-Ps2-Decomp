@@ -270,6 +270,31 @@ enum
     kRenderTransAdd,
 };
 
+enum
+{
+    kRenderFxNone = 0,
+    kRenderFxPulseSlow,
+    kRenderFxPulseFast,
+    kRenderFxPulseSlowWide,
+    kRenderFxPulseFastWide,
+    kRenderFxFadeSlow,
+    kRenderFxFadeFast,
+    kRenderFxSolidSlow,
+    kRenderFxSolidFast,
+    kRenderFxStrobeSlow,
+    kRenderFxStrobeFast,
+    kRenderFxStrobeFaster,
+    kRenderFxFlickerSlow,
+    kRenderFxFlickerFast,
+    kRenderFxNoDissipation,
+    kRenderFxDistort,
+    kRenderFxHologram,
+    kRenderFxDeadPlayer,
+    kRenderFxExplode,
+    kRenderFxGlowShell,
+    kRenderFxClampMinScale,
+};
+
 #define ARRAYSIZE(p)        (sizeof(p) / sizeof(p[0]))
 
 typedef enum
@@ -399,6 +424,7 @@ extern "C" int strncmp(const char *s1, const char *s2, unsigned int n);
 extern "C" int strcasecmp(const char *s1, const char *s2);
 extern "C" char *strcpy(char *dst, const char *src);
 extern "C" int atoi(const char *s);
+extern "C" double atof(const char *s);
 extern "C" void *memset(void *dst, int c, unsigned int n);
 #define stricmp strcasecmp
 
@@ -408,5 +434,9 @@ extern "C" void *memset(void *dst, int c, unsigned int n);
 #ifndef max
 #define max(a, b)  (((a) > (b)) ? (a) : (b))
 #endif
+
+#define SetBits(flBitVector, bits)      ((flBitVector) = (int)(flBitVector) | (bits))
+#define ClearBits(flBitVector, bits)    ((flBitVector) = (int)(flBitVector) & ~(bits))
+#define FBitSet(flBitVector, bit)       ((int)(flBitVector) & (bit))
 
 #endif
