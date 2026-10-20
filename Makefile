@@ -61,6 +61,10 @@ $(BUILD_DIR)/src/gbx/GlobalPak.o: CFLAGS += -fmove-all-movables
 $(BUILD_DIR)/src/gbx/GamePak.o: CFLAGS += -fmove-all-movables
 $(BUILD_DIR)/src/gbx/StreamZip.o: CFLAGS += -fmove-all-movables
 $(BUILD_DIR)/src/gbx/HL1Read.o: CFLAGS += -fmove-all-movables
+# as dlls do jogo (HLSDK) usam sqrt.s direto
+$(BUILD_DIR)/src/dlls/%.o: CFLAGS += -ffast-math
+# o objeto estático do LINK_ENTITY_TO_CLASS (1 byte de .bss) já está no .bss em asm
+$(BUILD_DIR)/src/dlls/%.o: OBJCOPY_EXTRA := -R .bss
 
 # mathlib.c foi compilado com -ffast-math (sqrt.s direto, sem o teste de errno)
 $(BUILD_DIR)/src/engine/mathlib.o: CFLAGS += -ffast-math
@@ -127,7 +131,7 @@ $(BUILD_DIR)/src/%.o: src/%.cpp $(shell find include -name "*.h")
 	$(CC) $(CFLAGS) -S -o $(BUILD_DIR)/src/$*.s0 $<
 	$(FIX_ASM) $(BUILD_DIR)/src/$*.s0 $(BUILD_DIR)/src/$*.s
 	$(AS) $(ASFLAGS) -o $@ $(BUILD_DIR)/src/$*.s
-	$(OBJCOPY) $(SECTALIGN_C) $@
+	$(OBJCOPY) $(SECTALIGN_C) $(OBJCOPY_EXTRA) $@
 
 $(ELF): $(O_FILES) $(BASENAME).ld
 	$(LD) $(LDFLAGS) -T $(BASENAME).ld -o $@

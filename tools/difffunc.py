@@ -2,10 +2,12 @@
 import sys, os, subprocess, struct, re
 sys.path.insert(0, os.path.dirname(__file__)); import cmpfunc as c
 o, name = sys.argv[1], sys.argv[2]
+forced = None
+if '=' in name: name, forced = name.split('='); forced = int(forced, 16)
 funcs, text, relocs = c.obj_funcs(o)
 sa = c.symaddrs()
 off, size = [(f[1], f[2]) for f in funcs if f[0] == name][0]
-addr = sa[name] if name in sa else int(name[5:], 16)
+addr = forced if forced else sa[name] if name in sa else int(name[5:], 16)
 osize = max(size, int(sys.argv[3], 16) if len(sys.argv) > 3 else size)
 def dis(buf, base):
     open('/tmp/_d.bin', 'wb').write(buf)
