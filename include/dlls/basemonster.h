@@ -83,6 +83,9 @@ public:
 
     int m_bloodColor;                       /* 0x244 */
 
+    virtual int BloodColor(void) { return m_bloodColor; }
+    virtual CBaseMonster *MyMonsterPointer(void) { return this; }
+
     int m_failSchedule;                     /* 0x248 */
 
     float m_flHungryTime;                   /* 0x24C */

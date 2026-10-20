@@ -251,6 +251,18 @@ inline BOOL FStringNull(int iString) { return iString == iStringNull; }
 #define VEC_DUCK_HULL_MAX   Vector(16, 16, 18)
 #define VEC_DUCK_VIEW       Vector(0, 0, 12)
 
+#define EF_NODRAW           128
+
+enum
+{
+    kRenderNormal,
+    kRenderTransColor,
+    kRenderTransTexture,
+    kRenderGlow,
+    kRenderTransAlpha,
+    kRenderTransAdd,
+};
+
 #define ARRAYSIZE(p)        (sizeof(p) / sizeof(p[0]))
 
 typedef enum
@@ -311,6 +323,20 @@ Vector UTIL_VecToAngles(const Vector &vec);
 void UTIL_TraceLine(const Vector &vecStart, const Vector &vecEnd, int igmon, edict_t *pentIgnore, TraceResult *ptr);
 class CBaseEntity;
 void UTIL_Remove(CBaseEntity *pEntity);
+int UTIL_EntitiesInBox(CBaseEntity **pList, int listMax, const Vector &mins, const Vector &maxs, int flagMask);
+
+inline void UTIL_MakeVectorsPrivate(const Vector &vecAngles, float *p_vForward, float *p_vRight, float *p_vUp)
+{
+    g_engfuncs.pfnAngleVectors(vecAngles, p_vForward, p_vRight, p_vUp);
+}
+
+extern "C" int strcmp(const char *s1, const char *s2);
+inline BOOL FStrEq(const char *sz1, const char *sz2) { return (strcmp(sz1, sz2) == 0); }
+
+inline BOOL FClassnameIs(entvars_t *pev, const char *szClassname)
+{
+    return FStrEq(STRING(pev->classname), szClassname);
+}
 
 void EMIT_SOUND_DYN(edict_t *entity, int channel, const char *sample, float volume, float attenuation, int flags, int pitch);
 
@@ -323,5 +349,11 @@ inline void STOP_SOUND(edict_t *entity, int channel, const char *sample)
 {
     EMIT_SOUND_DYN(entity, channel, sample, 0, 0, SND_STOP, PITCH_NORM);
 }
+
+#define PRECACHE_SOUND_ARRAY(a) \
+    { for (int i = 0; i < ARRAYSIZE(a); i++) PRECACHE_SOUND((char *)a[i]); }
+
+#define EMIT_SOUND_ARRAY_DYN(chan, array) \
+    EMIT_SOUND_DYN(ENT(pev), chan, array[RANDOM_LONG(0, ARRAYSIZE(array) - 1)], 1.0, ATTN_NORM, 0, RANDOM_LONG(95, 105));
 
 #endif

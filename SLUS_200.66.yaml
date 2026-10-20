@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x1144E8, cpp, dlls/xen]
       - [0x1162C0, cpp, dlls/zombie]
       - [0x117280, c, zlib/adler32]
       - [0x117420, c, zlib/compress]
@@ -206,6 +207,7 @@ segments:
       - [0x1D0A68, asm, cod/1D0A68]
       - [0x1F5980, textbin, cod/1F5980] # .vutext
       - [0x201B00, data, cod/201B00] # .data
+      - [0x224F80, .data, dlls/xen]
       - [0x225018, .data, dlls/zombie]
       - [0x225070, data, cod/225070]
       - [0x225080, .data, zlib/deflate]
@@ -241,6 +243,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x283540, .rodata, dlls/xen]
       - [0x284A98, .rodata, dlls/zombie]
       - [0x285088, .rodata, zlib/compress]
       - [0x285090, .rodata, engine/compress_dict]

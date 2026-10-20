@@ -39,4 +39,34 @@ typedef struct
     short flags;
 } TYPEDESCRIPTION;
 
+class CSave
+{
+public:
+    int WriteFields(const char *pname, void *pBaseData, TYPEDESCRIPTION *pFields, int fieldCount);
+};
+
+class CRestore
+{
+public:
+    int ReadFields(const char *pname, void *pBaseData, TYPEDESCRIPTION *pFields, int fieldCount);
+};
+
+#define _FIELD(type, name, fieldtype, count, flags) { fieldtype, #name, (int)&(((type *)0)->name), count, flags }
+#define DEFINE_FIELD(type, name, fieldtype) _FIELD(type, name, fieldtype, 1, 0)
+#define DEFINE_ARRAY(type, name, fieldtype, count) _FIELD(type, name, fieldtype, count, 0)
+
+#define IMPLEMENT_SAVERESTORE(derivedClass, baseClass) \
+    int derivedClass::Save(CSave &save) \
+    { \
+        if (!baseClass::Save(save)) \
+            return 0; \
+        return save.WriteFields(#derivedClass, this, m_SaveData, ARRAYSIZE(m_SaveData)); \
+    } \
+    int derivedClass::Restore(CRestore &restore) \
+    { \
+        if (!baseClass::Restore(restore)) \
+            return 0; \
+        return restore.ReadFields(#derivedClass, this, m_SaveData, ARRAYSIZE(m_SaveData)); \
+    }
+
 #endif

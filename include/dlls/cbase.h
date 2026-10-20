@@ -222,7 +222,7 @@ class CPointEntity : public CBaseEntity
 {
 public:
     void Spawn(void);
-    virtual int ObjectCaps(void) { return CBaseEntity::ObjectCaps() & ~FCAP_ACROSS_TRANSITION; }
+    virtual int ObjectCaps(void);       /* no PS2 não é inline (cópia única em 0x1EFEC0) */
 };
 
 typedef struct locksounds

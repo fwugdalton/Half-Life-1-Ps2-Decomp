@@ -82,4 +82,6 @@ typedef enum
     ACT_FLINCH_RIGHTLEG
 } Activity;
 
+#define ACTIVITY_NOT_AVAILABLE      -1
+
 #endif

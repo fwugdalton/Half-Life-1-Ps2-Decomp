@@ -63,8 +63,9 @@ $(BUILD_DIR)/src/gbx/StreamZip.o: CFLAGS += -fmove-all-movables
 $(BUILD_DIR)/src/gbx/HL1Read.o: CFLAGS += -fmove-all-movables
 # as dlls do jogo (HLSDK) usam sqrt.s direto
 $(BUILD_DIR)/src/dlls/%.o: CFLAGS += -ffast-math
-# o objeto estático do LINK_ENTITY_TO_CLASS (1 byte de .bss) já está no .bss em asm
-$(BUILD_DIR)/src/dlls/%.o: OBJCOPY_EXTRA := -R .bss
+# o objeto estático do LINK_ENTITY_TO_CLASS (1 byte de .bss) já está no .bss em asm;
+# o .data das dlls é alinhado em 8
+$(BUILD_DIR)/src/dlls/%.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8
 
 # mathlib.c foi compilado com -ffast-math (sqrt.s direto, sem o teste de errno)
 $(BUILD_DIR)/src/engine/mathlib.o: CFLAGS += -ffast-math
