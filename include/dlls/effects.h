@@ -79,6 +79,7 @@ public:
     inline int GetBrightness(void) { return pev->renderamt; }
 
     static CBeam *BeamCreate(const char *pSpriteName, int width);
+    void PointsInit(const Vector &start, const Vector &end);
     void PointEntInit(const Vector &start, int endIndex);
 
     inline void LiveForTime(float time)
