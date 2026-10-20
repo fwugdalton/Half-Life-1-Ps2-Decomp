@@ -136,6 +136,9 @@ D_00318778 = 0x00318778;
 D_0031877C = 0x0031877C;
 D_003727C0 = 0x003727C0; /* "targetname" do scripted.cpp (DelayStart em asm) */
 D_00372A48 = 0x00372A48; /* "scripted_sequence" do scripted.cpp */
+D_0036FB10 = 0x0036FB10; /* ponteiro para CRpgRocket::Smoke (rpg.cpp) */
+D_0036FB18 = 0x0036FB18; /* "spark_shower" (rpg.cpp) */
+D_0036FB28 = 0x0036FB28; /* ponteiro para SUB_Remove (rpg.cpp) */
 /* engine/sv_main: início */
 D_0038E8F8 = 0x0038E8F8;
 /* engine/sv_main: fim */
