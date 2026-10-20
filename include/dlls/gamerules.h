@@ -56,7 +56,7 @@ public:
     virtual void Ps2Virt28(void);
     virtual void Ps2Virt29(void);
     virtual void Ps2Virt30(void);
-    virtual void Ps2Virt31(void);
+    virtual void DeathNotice(CBaseEntity *pVictim, entvars_t *pKiller, entvars_t *pevInflictor); /* slot 31 (0xF8) */
     virtual BOOL CanHavePlayerItem(CBasePlayer *pPlayer, CBasePlayerItem *pWeapon); /* slot 32 (0x100) */
     virtual void PlayerGotWeapon(CBasePlayer *pPlayer, CBasePlayerItem *pWeapon);
     virtual int WeaponShouldRespawn(CBasePlayerItem *pWeapon);

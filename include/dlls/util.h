@@ -357,6 +357,10 @@ void UTIL_SetOrigin(entvars_t *pev, const Vector &vecOrigin);
 void UTIL_MakeVectors(const Vector &vecAngles);
 float UTIL_VecToYaw(const Vector &vec);
 Vector UTIL_VecToAngles(const Vector &vec);
+float UTIL_AngleMod(float a);
+void UTIL_MakeAimVectors(const Vector &vecAngles);
+void UTIL_Sparks(const Vector &position);
+void UTIL_Ricochet(const Vector &position, float scale);
 void UTIL_TraceLine(const Vector &vecStart, const Vector &vecEnd, int igmon, edict_t *pentIgnore, TraceResult *ptr);
 void UTIL_TraceHull(const Vector &vecStart, const Vector &vecEnd, int igmon, int hullNumber, edict_t *pentIgnore, TraceResult *ptr);
 

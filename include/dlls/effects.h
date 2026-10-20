@@ -40,6 +40,8 @@ public:
         pev->renderamt = a;
         pev->renderfx = fx;
     }
+    inline void SetBrightness(int brightness) { pev->renderamt = brightness; }
+    inline void SetScale(float scale) { pev->scale = scale; }
 
     inline void AnimateAndDie(float framerate)
     {
