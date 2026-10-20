@@ -34,6 +34,11 @@ typedef int EOFFSET;
 #define WALK_MOVE           (*g_engfuncs.pfnWalkMove)
 #define SET_ORIGIN          (*g_engfuncs.pfnSetOrigin)
 #define EMIT_SOUND_DYN1     (*g_engfuncs.pfnEmitSound)
+#define EMIT_SOUND_DYN2     (*g_engfuncs.pfnEmitSound)
+#define SVC_ROOMTYPE 37
+extern "C" char *strcat(char *, const char *);
+extern "C" int strncasecmp(const char *, const char *, unsigned int);
+void UTIL_EmitAmbientSound(edict_t *entity, const Vector &vecOrigin, const char *samp, float vol, float attenuation, int fFlags, int pitch);
 #define BUILD_SOUND_MSG     (*g_engfuncs.pfnBuildSoundMsg)
 #define TRACE_LINE          (*g_engfuncs.pfnTraceLine)
 #define TRACE_TOSS          (*g_engfuncs.pfnTraceToss)

@@ -43,7 +43,11 @@ public:
     int m_iPlayerSound;                         /* 0x2A0 */
     int m_iTargetVolume;                        /* 0x2A4 */
     int m_iWeaponVolume;                        /* 0x2A8 */
-    byte m_ps2Unk2AC[0x430 - 0x2AC];
+    byte m_ps2Unk2AC[0x2CC - 0x2AC];
+    edict_t *m_pentSndLast; /* 0x2CC */
+    float m_flSndRoomtype; /* 0x2D0 */
+    float m_flSndRange; /* 0x2D4 */
+    byte m_ps2Unk2D8[0x430 - 0x2D8];
     float m_flgeigerRange;                      /* 0x430 */
     byte m_ps2Unk434[0x468 - 0x434];
     BOOL m_fWeapon;                             /* 0x468 */

@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x0E6BC0, cpp, dlls/sound]
       - [0x0EA608, cpp, dlls/soundent]
       - [0x0EAE30, cpp, dlls/spectator]
       - [0x0EB048, cpp, dlls/squadmonster]
@@ -225,6 +226,7 @@ segments:
       - [0x1D0A68, asm, cod/1D0A68]
       - [0x1F5980, textbin, cod/1F5980] # .vutext
       - [0x201B00, data, cod/201B00] # .data
+      - [0x2187C0, .data, dlls/sound]
       - [0x223770, .data, dlls/soundent]
       - [0x223774, .data, dlls/spectator]
       - [0x223778, .data, dlls/squadmonster]
@@ -279,6 +281,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x274A90, .rodata, dlls/sound]
       - [0x275778, .rodata, dlls/soundent]
       - [0x275AD0, .rodata, dlls/spectator]
       - [0x275D38, .rodata, dlls/squadmonster]
