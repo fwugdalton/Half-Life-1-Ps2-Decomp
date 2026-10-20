@@ -70,6 +70,7 @@ $(BUILD_DIR)/src/dlls/%.o: CFLAGS += -ffast-math
 $(BUILD_DIR)/src/dlls/%.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8
 # o .rodata do tentacle_decay começa alinhado em 16 (o tentacle.cpp termina com 0xC de padding)
 $(BUILD_DIR)/src/dlls/tentacle_decay.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8 --set-section-alignment .rodata=16
+$(BUILD_DIR)/src/dlls/rosenberg.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8 --set-section-alignment .rodata=16
 $(BUILD_DIR)/src/dlls/talkmonster.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .rodata=16
 $(BUILD_DIR)/src/dlls/teamplay_gamerules.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=4
 $(BUILD_DIR)/src/dlls/spectator.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=4
