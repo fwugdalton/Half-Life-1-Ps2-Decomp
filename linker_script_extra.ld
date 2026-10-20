@@ -38,6 +38,10 @@ D_00381600 = 0x00381600;
 
 /* string do triggers.cpp emitida pelo C++ e usada pelo CRenderFxManager::Use (INCLUDE_ASM) */
 D_00379F18 = 0x00379F18; /* "targetname" */
+
+/* cvars do multiplay usados pelo dlls/coopplay_gamerules.cpp */
+D_0030FF28 = 0x0030FF28; /* mp_weaponstay */
+D_00310048 = 0x00310048; /* mp_coopweprespawn */
 /* engine/sv_main: início */
 D_0038E8F8 = 0x0038E8F8;
 /* engine/sv_main: fim */

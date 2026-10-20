@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x0E4FC0, cpp, dlls/coopplay_gamerules]
       - [0x0E56E8, cpp, dlls/slave_collar]
       - [0x0E6BC0, cpp, dlls/sound]
       - [0x0EA608, cpp, dlls/soundent]
@@ -283,6 +284,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x274498, .rodata, dlls/coopplay_gamerules]
       - [0x274748, .rodata, dlls/slave_collar]
       - [0x274A90, .rodata, dlls/sound]
       - [0x275778, .rodata, dlls/soundent]

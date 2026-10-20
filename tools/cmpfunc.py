@@ -24,7 +24,11 @@ def obj_funcs(o):
         p = line.split()
         if len(p) >= 8 and p[3] == 'FUNC' and p[6] != 'UND':
             funcs.append((p[7], int(p[1], 16), int(p[2])))
-    text = subprocess.run([CROSS + 'objcopy', '-O', 'binary', '-j', '.text', o, '/dev/stdout'], capture_output=True).stdout
+    # num arquivo temporário: com /dev/stdout num pipe o objcopy às vezes não escreve nada
+    import tempfile
+    with tempfile.NamedTemporaryFile(suffix='.bin') as tmp:
+        subprocess.run([CROSS + 'objcopy', '-O', 'binary', '-j', '.text', o, tmp.name], check=True)
+        text = open(tmp.name, 'rb').read()
     rel = subprocess.check_output([CROSS + 'objdump', '-r', '-j', '.text', o], text=True)
     relocs = {int(m.group(1), 16): m.group(2) for m in re.finditer(r'^([0-9a-f]{8}) (R_MIPS_\w+)', rel, re.M)}
     global RELSYM

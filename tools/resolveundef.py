@@ -14,7 +14,11 @@ secdata = {}
 def oword(sec, off):
     # a parte do endereço que já vem no .o (o addend do REL)
     if sec not in secdata:
-        secdata[sec] = subprocess.check_output([c.CROSS + 'objcopy', '-O', 'binary', '-j', sec, o, '/dev/stdout'])
+        # num arquivo temporário: com /dev/stdout num pipe o objcopy às vezes não escreve nada
+        import tempfile
+        with tempfile.NamedTemporaryFile(suffix='.bin') as tmp:
+            subprocess.check_call([c.CROSS + 'objcopy', '-O', 'binary', '-j', sec, o, tmp.name])
+            secdata[sec] = open(tmp.name, 'rb').read()
     return struct.unpack('<I', secdata[sec][off:off + 4])[0]
 s16 = lambda x: struct.unpack('<h', struct.pack('<H', x & 0xFFFF))[0]
 res, sec, hi, ohi = {}, None, {}, {}
