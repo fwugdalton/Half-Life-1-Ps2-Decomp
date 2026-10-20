@@ -45,7 +45,6 @@ void func_00217538(void) {
     Pak_Close(&D_003A4AB8, D_00385090);
 }
 
-#ifdef NON_MATCHING /* o resultado divide o registrador com a constante 1 */
 int func_00217560(const char *dir, const char *name) {
     char path[256];
     char dictName[16];
@@ -59,23 +58,21 @@ int func_00217560(const char *dir, const char *name) {
     sprintf(outPath, D_003850C0, dir, name);
     func_002178B8(path);
     func_002178B8(outPath);
-    r = func_00217768(dictName);
-    if (r != 1) {
-        return 0;
-    }
-    if (func_00221470(dictName, dict) == r) {
-        if (func_00221470(path, in) == r) {
-            func_0021DA50(in, dict, outPath);
-            func_00221768(in);
+    if (func_00217768(dictName) == 1) {
+        r = 1;
+        if (func_00221470(dictName, dict) == r) {
+            if (func_00221470(path, in) == r) {
+                func_0021DA50(in, dict, outPath);
+                func_00221768(in);
+            }
+            func_00221768(dict);
         }
-        func_00221768(dict);
+        func_00217890(dictName);
+    } else {
+        r = 0;
     }
-    func_00217890(dictName);
     return r;
 }
-#else
-INCLUDE_ASM("asm/nonmatchings/engine/compress_dict", func_00217560);
-#endif
 
 void func_00217678(const char *dir, const char *name) {
     char path[256];
