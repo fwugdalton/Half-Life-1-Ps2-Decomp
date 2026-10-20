@@ -90,17 +90,17 @@ TYPEDESCRIPTION CWheelchair::m_SaveData[] =
 
 IMPLEMENT_SAVERESTORE(CWheelchair, CTalkMonster);
 
-Task_t tlFollow[] =
+Task_t tlWcFollow[] =
 {
     { TASK_SET_FAIL_SCHEDULE, (float)SCHED_CANT_FOLLOW },
     { TASK_MOVE_TO_TARGET_RANGE, (float)128 },
 };
 
-Schedule_t slFollow[] =
+Schedule_t slWcFollow[] =
 {
     {
-        tlFollow,
-        ARRAYSIZE(tlFollow),
+        tlWcFollow,
+        ARRAYSIZE(tlWcFollow),
         bits_COND_NEW_ENEMY |
         bits_COND_LIGHT_DAMAGE |
         bits_COND_HEAVY_DAMAGE |
@@ -111,17 +111,17 @@ Schedule_t slFollow[] =
     },
 };
 
-Task_t tlFollowScared[] =
+Task_t tlWcFollowScared[] =
 {
     { TASK_SET_FAIL_SCHEDULE, (float)SCHED_TARGET_CHASE },
     { TASK_MOVE_TO_TARGET_RANGE_SCARED, (float)128 },
 };
 
-Schedule_t slFollowScared[] =
+Schedule_t slWcFollowScared[] =
 {
     {
-        tlFollowScared,
-        ARRAYSIZE(tlFollowScared),
+        tlWcFollowScared,
+        ARRAYSIZE(tlWcFollowScared),
         bits_COND_NEW_ENEMY |
         bits_COND_HEAR_SOUND |
         bits_COND_LIGHT_DAMAGE |
@@ -131,18 +131,18 @@ Schedule_t slFollowScared[] =
     },
 };
 
-Task_t tlFaceTargetScared[] =
+Task_t tlWcFaceTargetScared[] =
 {
     { TASK_FACE_TARGET, (float)0 },
     { TASK_SET_ACTIVITY, (float)ACT_CROUCHIDLE },
     { TASK_SET_SCHEDULE, (float)SCHED_TARGET_CHASE_SCARED },
 };
 
-Schedule_t slFaceTargetScared[] =
+Schedule_t slWcFaceTargetScared[] =
 {
     {
-        tlFaceTargetScared,
-        ARRAYSIZE(tlFaceTargetScared),
+        tlWcFaceTargetScared,
+        ARRAYSIZE(tlWcFaceTargetScared),
         bits_COND_HEAR_SOUND |
         bits_COND_NEW_ENEMY,
         bits_SOUND_DANGER,
@@ -150,23 +150,23 @@ Schedule_t slFaceTargetScared[] =
     },
 };
 
-Task_t tlStopFollowing[] =
+Task_t tlWcStopFollowing[] =
 {
     { TASK_CANT_FOLLOW, (float)0 },
 };
 
-Schedule_t slStopFollowing[] =
+Schedule_t slWcStopFollowing[] =
 {
     {
-        tlStopFollowing,
-        ARRAYSIZE(tlStopFollowing),
+        tlWcStopFollowing,
+        ARRAYSIZE(tlWcStopFollowing),
         0,
         0,
         "StopFollowing"
     },
 };
 
-Task_t tlHeal[] =
+Task_t tlWcHeal[] =
 {
     { TASK_MOVE_TO_TARGET_RANGE, (float)50 },
     { TASK_SET_FAIL_SCHEDULE, (float)SCHED_TARGET_CHASE },
@@ -177,18 +177,18 @@ Task_t tlHeal[] =
     { TASK_PLAY_SEQUENCE_FACE_TARGET, (float)ACT_DISARM },
 };
 
-Schedule_t slHeal[] =
+Schedule_t slWcHeal[] =
 {
     {
-        tlHeal,
-        ARRAYSIZE(tlHeal),
+        tlWcHeal,
+        ARRAYSIZE(tlWcHeal),
         0,
         0,
         "Heal"
     },
 };
 
-Task_t tlFaceTarget[] =
+Task_t tlWcFaceTarget[] =
 {
     { TASK_STOP_MOVING, (float)0 },
     { TASK_FACE_TARGET, (float)0 },
@@ -196,11 +196,11 @@ Task_t tlFaceTarget[] =
     { TASK_SET_SCHEDULE, (float)SCHED_TARGET_CHASE },
 };
 
-Schedule_t slFaceTarget[] =
+Schedule_t slWcFaceTarget[] =
 {
     {
-        tlFaceTarget,
-        ARRAYSIZE(tlFaceTarget),
+        tlWcFaceTarget,
+        ARRAYSIZE(tlWcFaceTarget),
         bits_COND_CLIENT_PUSH |
         bits_COND_NEW_ENEMY |
         bits_COND_HEAR_SOUND,
@@ -210,7 +210,7 @@ Schedule_t slFaceTarget[] =
     },
 };
 
-Task_t tlSciPanic[] =
+Task_t tlWcSciPanic[] =
 {
     { TASK_STOP_MOVING, (float)0 },
     { TASK_FACE_ENEMY, (float)0 },
@@ -219,18 +219,18 @@ Task_t tlSciPanic[] =
     { TASK_SET_ACTIVITY, (float)ACT_IDLE },
 };
 
-Schedule_t slSciPanic[] =
+Schedule_t slWcSciPanic[] =
 {
     {
-        tlSciPanic,
-        ARRAYSIZE(tlSciPanic),
+        tlWcSciPanic,
+        ARRAYSIZE(tlWcSciPanic),
         0,
         0,
         "SciPanic"
     },
 };
 
-Task_t tlIdleSciStand[] =
+Task_t tlWcIdleSciStand[] =
 {
     { TASK_STOP_MOVING, 0 },
     { TASK_SET_ACTIVITY, (float)ACT_IDLE },
@@ -238,11 +238,11 @@ Task_t tlIdleSciStand[] =
     { TASK_TLK_HEADRESET, (float)0 },
 };
 
-Schedule_t slIdleSciStand[] =
+Schedule_t slWcIdleSciStand[] =
 {
     {
-        tlIdleSciStand,
-        ARRAYSIZE(tlIdleSciStand),
+        tlWcIdleSciStand,
+        ARRAYSIZE(tlWcIdleSciStand),
         bits_COND_NEW_ENEMY |
         bits_COND_LIGHT_DAMAGE |
         bits_COND_HEAVY_DAMAGE |
@@ -261,7 +261,7 @@ Schedule_t slIdleSciStand[] =
     },
 };
 
-Task_t tlScientistCover[] =
+Task_t tlWcScientistCover[] =
 {
     { TASK_SET_FAIL_SCHEDULE, (float)SCHED_PANIC },
     { TASK_STOP_MOVING, (float)0 },
@@ -271,18 +271,18 @@ Task_t tlScientistCover[] =
     { TASK_SET_SCHEDULE, (float)SCHED_HIDE },
 };
 
-Schedule_t slScientistCover[] =
+Schedule_t slWcScientistCover[] =
 {
     {
-        tlScientistCover,
-        ARRAYSIZE(tlScientistCover),
+        tlWcScientistCover,
+        ARRAYSIZE(tlWcScientistCover),
         bits_COND_NEW_ENEMY,
         0,
         "ScientistCover"
     },
 };
 
-Task_t tlScientistHide[] =
+Task_t tlWcScientistHide[] =
 {
     { TASK_SET_FAIL_SCHEDULE, (float)SCHED_PANIC },
     { TASK_STOP_MOVING, (float)0 },
@@ -291,11 +291,11 @@ Task_t tlScientistHide[] =
     { TASK_WAIT_RANDOM, (float)10.0 },
 };
 
-Schedule_t slScientistHide[] =
+Schedule_t slWcScientistHide[] =
 {
     {
-        tlScientistHide,
-        ARRAYSIZE(tlScientistHide),
+        tlWcScientistHide,
+        ARRAYSIZE(tlWcScientistHide),
         bits_COND_NEW_ENEMY |
         bits_COND_HEAR_SOUND |
         bits_COND_SEE_ENEMY |
@@ -307,7 +307,7 @@ Schedule_t slScientistHide[] =
     },
 };
 
-Task_t tlScientistStartle[] =
+Task_t tlWcScientistStartle[] =
 {
     { TASK_SET_FAIL_SCHEDULE, (float)SCHED_PANIC },
     { TASK_RANDOM_SCREAM, (float)0.3 },
@@ -318,11 +318,11 @@ Task_t tlScientistStartle[] =
     { TASK_WAIT_RANDOM, (float)1.0 },
 };
 
-Schedule_t slScientistStartle[] =
+Schedule_t slWcScientistStartle[] =
 {
     {
-        tlScientistStartle,
-        ARRAYSIZE(tlScientistStartle),
+        tlWcScientistStartle,
+        ARRAYSIZE(tlWcScientistStartle),
         bits_COND_NEW_ENEMY |
         bits_COND_SEE_ENEMY |
         bits_COND_SEE_HATE |
@@ -333,18 +333,18 @@ Schedule_t slScientistStartle[] =
     },
 };
 
-Task_t tlFear[] =
+Task_t tlWcFear[] =
 {
     { TASK_STOP_MOVING, (float)0 },
     { TASK_FACE_ENEMY, (float)0 },
     { TASK_SAY_FEAR, (float)0 },
 };
 
-Schedule_t slFear[] =
+Schedule_t slWcFear[] =
 {
     {
-        tlFear,
-        ARRAYSIZE(tlFear),
+        tlWcFear,
+        ARRAYSIZE(tlWcFear),
         bits_COND_NEW_ENEMY,
         0,
         "Fear"
@@ -353,18 +353,18 @@ Schedule_t slFear[] =
 
 DEFINE_CUSTOM_SCHEDULES(CWheelchair)
 {
-    slFollow,
-    slFaceTarget,
-    slIdleSciStand,
-    slFear,
-    slScientistCover,
-    slScientistHide,
-    slScientistStartle,
-    slHeal,
-    slStopFollowing,
-    slSciPanic,
-    slFollowScared,
-    slFaceTargetScared,
+    slWcFollow,
+    slWcFaceTarget,
+    slWcIdleSciStand,
+    slWcFear,
+    slWcScientistCover,
+    slWcScientistHide,
+    slWcScientistStartle,
+    slWcHeal,
+    slWcStopFollowing,
+    slWcSciPanic,
+    slWcFollowScared,
+    slWcFaceTargetScared,
 };
 
 IMPLEMENT_CUSTOM_SCHEDULES(CWheelchair, CTalkMonster);
@@ -685,41 +685,41 @@ Schedule_t *CWheelchair::GetScheduleOfType(int Type)
         psched = CTalkMonster::GetScheduleOfType(Type);
 
         if (psched == slIdleStand)
-            return slFaceTarget;
+            return slWcFaceTarget;
         else
             return psched;
 
     case SCHED_TARGET_CHASE:
-        return slFollow;
+        return slWcFollow;
 
     case SCHED_CANT_FOLLOW:
-        return slStopFollowing;
+        return slWcStopFollowing;
 
     case SCHED_PANIC:
-        return slSciPanic;
+        return slWcSciPanic;
 
     case SCHED_TARGET_CHASE_SCARED:
-        return slFollowScared;
+        return slWcFollowScared;
 
     case SCHED_TARGET_FACE_SCARED:
-        return slFaceTargetScared;
+        return slWcFaceTargetScared;
 
     case SCHED_IDLE_STAND:
         psched = CTalkMonster::GetScheduleOfType(Type);
 
         if (psched == slIdleStand)
-            return slIdleSciStand;
+            return slWcIdleSciStand;
         else
             return psched;
 
     case SCHED_HIDE:
-        return slScientistHide;
+        return slWcScientistHide;
 
     case SCHED_STARTLE:
-        return slScientistStartle;
+        return slWcScientistStartle;
 
     case SCHED_FEAR:
-        return slFear;
+        return slWcFear;
     }
 
     return CTalkMonster::GetScheduleOfType(Type);
@@ -801,7 +801,7 @@ Schedule_t *CWheelchair::GetSchedule(void)
                 if (TargetDistance() <= 128)
                 {
                     if (CanHeal())
-                        return slHeal;
+                        return slWcHeal;
                     if (HasConditions(bits_COND_CLIENT_PUSH))
                         return GetScheduleOfType(SCHED_MOVE_AWAY_FOLLOW);
                 }
@@ -822,14 +822,14 @@ Schedule_t *CWheelchair::GetSchedule(void)
         break;
     case MONSTERSTATE_COMBAT:
         if (HasConditions(bits_COND_NEW_ENEMY))
-            return slFear;
+            return slWcFear;
         if (HasConditions(bits_COND_SEE_ENEMY))
-            return slScientistCover;
+            return slWcScientistCover;
 
         if (HasConditions(bits_COND_HEAR_SOUND))
             return slTakeCoverFromBestSound;
 
-        return slScientistCover;
+        return slWcScientistCover;
         break;
     }
 
