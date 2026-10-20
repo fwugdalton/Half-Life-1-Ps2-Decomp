@@ -3299,3 +3299,10 @@ PointInFront__6CPlaneRC6Vector = 0x001BD3D0;
 PushEnemy__12CBaseMonsterP11CBaseEntityR6Vector = 0x001A3520;
 __6CPlane = 0x001BD368;
 slChaseEnemyFailed = 0x0030F388;
+// spectator
+SpectatorConnect__14CBaseSpectator = 0x001EAE30; // type:func
+SpectatorDisconnect__14CBaseSpectator = 0x001EAE58; // type:func
+SpectatorImpulseCommand__14CBaseSpectator = 0x001EAE60; // type:func
+SpectatorThink__14CBaseSpectator = 0x001EAFC0; // type:func
+Spawn__14CBaseSpectator = 0x001EB020; // type:func
+_vt$14CBaseSpectator = 0x00375B58;

@@ -217,6 +217,7 @@ inline BOOL FStringNull(int iString) { return iString == iStringNull; }
 #define FL_DUCKING          (1 << 14)
 #define FL_FLOAT            (1 << 15)
 #define FL_GRAPHED          (1 << 16)
+#define FL_SPECTATOR        (1 << 26)
 
 #define CHAN_AUTO           0
 #define CHAN_WEAPON         1

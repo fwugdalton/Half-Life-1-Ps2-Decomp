@@ -72,6 +72,7 @@ $(BUILD_DIR)/src/dlls/%.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .dat
 $(BUILD_DIR)/src/dlls/tentacle_decay.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8 --set-section-alignment .rodata=16
 $(BUILD_DIR)/src/dlls/talkmonster.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .rodata=16
 $(BUILD_DIR)/src/dlls/teamplay_gamerules.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=4
+$(BUILD_DIR)/src/dlls/spectator.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=4
 
 # mathlib.c foi compilado com -ffast-math (sqrt.s direto, sem o teste de errno)
 $(BUILD_DIR)/src/engine/mathlib.o: CFLAGS += -ffast-math
