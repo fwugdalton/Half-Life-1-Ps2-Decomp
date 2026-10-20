@@ -86,6 +86,7 @@ inline void *GET_PRIVATE(edict_t *pent)
 #define GETENTITYILLUM      (*g_engfuncs.pfnGetEntityIllum)
 #define FIND_ENTITY_IN_SPHERE (*g_engfuncs.pfnFindEntityInSphere)
 #define FIND_CLIENT_IN_PVS  (*g_engfuncs.pfnFindClientInPVS)
+#define UTIL_EntitiesInPVS  (*g_engfuncs.pfnEntitiesInPVS)
 #define EMIT_AMBIENT_SOUND  (*g_engfuncs.pfnEmitAmbientSound)
 #define GET_MODEL_PTR       (*g_engfuncs.pfnGetModelPtr)
 #define REG_USER_MSG        (*g_engfuncs.pfnRegUserMsg)
@@ -371,6 +372,14 @@ enum { point_hull = 0, human_hull = 1, large_hull = 2, head_hull = 3 };
 class CBaseEntity;
 void UTIL_Remove(CBaseEntity *pEntity);
 int UTIL_EntitiesInBox(CBaseEntity **pList, int listMax, const Vector &mins, const Vector &maxs, int flagMask);
+CBaseEntity *UTIL_FindEntityByString(CBaseEntity *pStartEntity, const char *szKeyword, const char *szValue);
+void UTIL_StripToken(const char *pKey, char *pDest);
+BOOL UTIL_IsMasterTriggered(string_t sMaster, CBaseEntity *pActivator);
+CBaseEntity *UTIL_PlayerByIndex(int playerIndex);
+void UTIL_ShowMessage(const char *pString, CBaseEntity *pPlayer);
+void UTIL_ShowMessageAll(const char *pString);
+void UTIL_ScreenFadeAll(const Vector &color, float fadeTime, float holdTime, int alpha, int flags);
+void UTIL_ScreenFade(CBaseEntity *pEntity, const Vector &color, float fadeTime, float holdTime, int alpha, int flags);
 
 inline void UTIL_MakeVectorsPrivate(const Vector &vecAngles, float *p_vForward, float *p_vRight, float *p_vUp)
 {
@@ -380,6 +389,10 @@ inline void UTIL_MakeVectorsPrivate(const Vector &vecAngles, float *p_vForward, 
 extern "C" int strcmp(const char *s1, const char *s2);
 inline BOOL FStrEq(const char *sz1, const char *sz2) { return (strcmp(sz1, sz2) == 0); }
 
+inline BOOL FClassnameIs(edict_t *pent, const char *szClassname)
+{
+    return FStrEq(STRING(VARS(pent)->classname), szClassname);
+}
 inline BOOL FClassnameIs(entvars_t *pev, const char *szClassname)
 {
     return FStrEq(STRING(pev->classname), szClassname);
@@ -412,6 +425,8 @@ inline void STOP_SOUND(edict_t *entity, int channel, const char *sample)
 #define MSG_PAS             5
 
 #define SVC_TEMPENTITY      23
+#define SVC_INTERMISSION    30
+#define SVC_CDTRACK         32
 #define TE_DLIGHT           27
 #define SVC_WEAPONANIM      35
 
@@ -507,6 +522,7 @@ void UTIL_PrecacheOther(const char *szClassname);
 extern "C" int strncmp(const char *s1, const char *s2, unsigned int n);
 extern "C" int strcasecmp(const char *s1, const char *s2);
 extern "C" char *strcpy(char *dst, const char *src);
+extern "C" unsigned int strlen(const char *s);
 extern "C" int atoi(const char *s);
 extern "C" double atof(const char *s);
 extern "C" void *memset(void *dst, int c, unsigned int n);

@@ -167,6 +167,7 @@ typedef struct
     int maxEntities;            /* 0x94 */
     const char *pStringBase;    /* 0x98 */
     void *pSaveData;            /* 0x9C */
+    Vector vecLandmarkOffset;   /* 0xA0 */
 } globalvars_t;
 
 typedef struct KeyValueData_s
@@ -363,7 +364,7 @@ typedef struct enginefuncs_s
     int (*pfnIsDedicatedServer)(void);                                  /* 0x1D4 */
     void *(*pfnCVarGetPointer)(const char *szVarName);                  /* 0x1D8 */
     unsigned int (*pfnGetPlayerWONId)(edict_t *e);                      /* 0x1DC */
-    void (*pfnUnk1E0)(void);                                            /* 0x1E0 */
+    void (*pfnPs2Unk1E0)(int a, int b);                                 /* 0x1E0 */
 } enginefuncs_t;
 
 extern enginefuncs_t g_engfuncs;        /* g_engfuncs */

@@ -35,6 +35,9 @@ D_00381510 = 0x00381510;
 D_00381528 = 0x00381528;
 D_00381540 = 0x00381540;
 D_00381600 = 0x00381600;
+
+/* string do triggers.cpp emitida pelo C++ e usada pelo CRenderFxManager::Use (INCLUDE_ASM) */
+D_00379F18 = 0x00379F18; /* "targetname" */
 /* engine/sv_main: início */
 D_0038E8F8 = 0x0038E8F8;
 /* engine/sv_main: fim */

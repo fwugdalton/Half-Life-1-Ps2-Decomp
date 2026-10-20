@@ -43,7 +43,9 @@ public:
     int m_iPlayerSound;                         /* 0x2A0 */
     int m_iTargetVolume;                        /* 0x2A4 */
     int m_iWeaponVolume;                        /* 0x2A8 */
-    byte m_ps2Unk2AC[0x468 - 0x2AC];
+    byte m_ps2Unk2AC[0x430 - 0x2AC];
+    float m_flgeigerRange;                      /* 0x430 */
+    byte m_ps2Unk434[0x468 - 0x434];
     BOOL m_fWeapon;                             /* 0x468 */
     byte m_ps2Unk46C[0x490 - 0x46C];
     int m_afPhysicsFlags;                       /* 0x490 */
@@ -65,9 +67,29 @@ public:
     int m_ps2Stat5F8;                           /* 0x5F8 */
     byte m_ps2Unk5FC[0x620 - 0x5FC];
     int m_ps2ClientIndex;                       /* 0x620: vai no ScoreInfo com um jogador só */
-    byte m_ps2Unk624[0x770 - 0x624];
+    Vector m_ps2Unk624[6];                      /* 0x624: o construtor do PS2 tem um laço de 6 Vector (posição exata desconhecida) */
+    /* Vector soltos (posição desconhecida): sem eles o g++ inlinaria o construtor do CBasePlayer,
+       que no PS2 sai fora de linha (__11CBasePlayer) */
+    Vector m_ps2Vec66C;
+    Vector m_ps2Vec678;
+    Vector m_ps2Vec684;
+    Vector m_ps2Vec690;
+    Vector m_ps2Vec69C;
+    Vector m_ps2Vec6A8;
+    Vector m_ps2Vec6B4;
+    Vector m_ps2Vec6C0;
+    Vector m_ps2Vec6CC;
+    Vector m_ps2Vec6D8;
+    Vector m_ps2Vec6E4;
+    Vector m_ps2Vec6F0;
+    byte m_ps2Unk6FC[0x770 - 0x6FC];
     BOOL m_ps2InfiniteAmmo;                     /* 0x770: recarrega sem gastar munição */
-    byte m_ps2Unk774[0x7BC - 0x774];
+    float m_ps2Gravity;                         /* 0x774: gravidade do trigger_gravity */
+    byte m_ps2Unk778[0x77C - 0x778];
+    EHANDLE m_ps2hUnk77C;                       /* 0x77C */
+    byte m_ps2Unk784[0x79C - 0x784];
+    EHANDLE m_ps2hUnk79C;                       /* 0x79C */
+    byte m_ps2Unk7A4[0x7BC - 0x7A4];
     char m_szAnimExtention[32];                 /* 0x7BC */
 
     /* virtuais novos do CBasePlayer a partir do slot 128 (só o que já é usado) */
@@ -83,6 +105,8 @@ public:
     static int GetAmmoIndex(const char *psz);
     BOOL HasPlayerItem(CBasePlayerItem *pCheckItem);
     void GiveNamedItem(const char *szName);
+    void EnableControl(BOOL fControl);
+    void RemoveAllItems(BOOL removeSuit);
 };
 
 extern BOOL gEvilImpulse101;

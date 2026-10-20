@@ -1429,7 +1429,7 @@ float UTIL_DotPoints ( const Vector &vecSrc, const Vector &vecCheck, const Vecto
 //=========================================================
 // UTIL_StripToken - for redundant keynames
 //=========================================================
-void UTIL_StripToken( const char *pKey, char *pDest, int nLen )
+void UTIL_StripToken( const char *pKey, char *pDest )
 {
 	int i = 0;
 
