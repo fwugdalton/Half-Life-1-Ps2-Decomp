@@ -92,7 +92,7 @@ public:
     void HandleAnimEvent(MonsterEvent_t *pEvent);
     void PrescheduleThink(void);
 
-    int GetVoice(void);
+    int GetVoicePitch(void);
     void IdleRespond(void);
     int FIdleSpeak(void);
     int FIdleStare(void);

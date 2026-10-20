@@ -221,6 +221,7 @@ struct WayPoint_t
 #define MOVEGOAL_NODE           (1 << 4)
 
 #define bits_COND_CLIENT_PUSH       (bits_COND_SPECIAL1)
+#define bits_COND_CLIENT_UNSEEN     (bits_COND_SPECIAL2)
 
 #define CUSTOM_SCHEDULES \
     virtual Schedule_t *ScheduleFromName(const char *pName); \
