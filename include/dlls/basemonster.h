@@ -100,7 +100,8 @@ public:
     SCRIPTSTATE m_scriptState;              /* 0x26C */
     CCineMonster *m_pCine;                  /* 0x270 */
 
-    int m_ps2Unk274[11];                    /* 0x274: campos extras do PS2 (a ver) */
+    int m_ps2Unk274[10];                    /* 0x274: campos extras do PS2 (a ver) */
+    float m_flPathCheckTime;                /* 0x29C: PS2, última falha de rota (espera 3 s) */
 
     virtual int Save(CSave &save);
     virtual int Restore(CRestore &restore);

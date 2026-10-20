@@ -147,6 +147,7 @@ public:
     void EXPORT SUB_Remove(void);
     void EXPORT SUB_DoNothing(void);
     void EXPORT SUB_StartFadeOut(void);
+    void SUB_StartFadeOutLater(void); /* PS2: igual, mas o fade começa em 5 s */
     void EXPORT SUB_FadeOut(void);
     void EXPORT SUB_CallUseToggle(void) { this->Use(this, this, USE_TOGGLE, 0); }
     int ShouldToggle(USE_TYPE useType, BOOL currentState);

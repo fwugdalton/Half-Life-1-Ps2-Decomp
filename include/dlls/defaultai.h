@@ -5,5 +5,6 @@
 
 extern Schedule_t slIdleStand[];
 extern Schedule_t slTakeCoverFromBestSound[];
+extern Schedule_t slError[];
 
 #endif
