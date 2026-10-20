@@ -13,6 +13,7 @@ D_0038FA20 = 0x0038FA20;
 D_0038FA38 = 0x0038FA38;
 /* engine/sv_phys: fim */
 D_00334EAE = 0x00334EAE; /* contador de amostras do canal direito (snd_win_gbx.c) */
+D_00382E30 = 0x00382E30; /* valor 0x382E30 em .rodata do engine (cai no meio do .rodata do wheelchair.cpp) */
 
 /* strings do Gbx/MemFileSystem.cpp emitidas pelo C++ e usadas por funções INCLUDE_ASM */
 D_00386F30 = 0x00386F30; /* "Gbx/MemFileSystem.cpp" */

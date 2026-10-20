@@ -190,16 +190,16 @@ public:
 
     BOOL FGetNodeRoute(Vector vecDest);
 
-    inline void TaskComplete(void) { if (!HasConditions(bits_COND_TASK_FAILED)) m_iTaskStatus = 2; }
+    inline void TaskComplete(void) { if (!HasConditions(bits_COND_TASK_FAILED)) m_iTaskStatus = TASKSTATUS_COMPLETE; }
     void MovementComplete(void);
     inline void TaskFail(void) { SetConditions(bits_COND_TASK_FAILED); }
-    inline void TaskBegin(void) { m_iTaskStatus = 1; }
+    inline void TaskBegin(void) { m_iTaskStatus = TASKSTATUS_RUNNING; }
     int TaskIsRunning(void);
-    inline int TaskIsComplete(void) { return (m_iTaskStatus == 2); }
-    inline int MovementIsComplete(void) { return (m_movementGoal == 0); }
+    inline int TaskIsComplete(void) { return (m_iTaskStatus == TASKSTATUS_COMPLETE); }
+    inline int MovementIsComplete(void) { return (m_movementGoal == MOVEGOAL_NONE); }
 
     int IScheduleFlags(void);
-    BOOL FRefreshRoute(void);
+    BOOL FRefreshRoute(int iUnk = 0); /* PS2: arg extra (a1) */
     BOOL FRouteClear(void);
     void RouteSimplify(CBaseEntity *pTargetEnt);
     void AdvanceRoute(float distance);
@@ -220,21 +220,11 @@ public:
     virtual void CheckAmmo(void) { return; }
     virtual int IgnoreConditions(void);
 
-    inline void SetConditions(int iConditions) { m_afConditions |= iConditions; }
-    inline void ClearConditions(int iConditions) { m_afConditions &= ~iConditions; }
-    inline BOOL HasConditions(int iConditions)
-    {
-        if (m_afConditions & iConditions)
-            return TRUE;
-        return FALSE;
-    }
-    inline BOOL HasAllConditions(int iConditions)
-    {
-        if ((m_afConditions & iConditions) == iConditions)
-            return TRUE;
-        return FALSE;
-    }
-
+    /* no PS2 estas quatro não são inline (cópias em 0x1A8BC0..0x1A8BF8) */
+    void SetConditions(int iConditions);
+    void ClearConditions(int iConditions);
+    BOOL HasConditions(int iConditions);
+    BOOL HasAllConditions(int iConditions);
     virtual BOOL FValidateHintType(short sHint);
     int FindHintNode(void);
     virtual BOOL FCanActiveIdle(void);

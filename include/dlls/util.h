@@ -253,6 +253,11 @@ inline BOOL FStringNull(int iString) { return iString == iStringNull; }
 
 #define EF_NODRAW           128
 
+#define VIEW_FIELD_FULL         (float)-1.0
+#define VIEW_FIELD_WIDE         (float)-0.7
+#define VIEW_FIELD_NARROW       (float)0.7
+#define VIEW_FIELD_ULTRA_NARROW (float)0.9
+
 enum
 {
     kRenderNormal,
