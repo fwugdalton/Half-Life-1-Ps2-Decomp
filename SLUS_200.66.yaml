@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x0EC6A0, cpp, dlls/squeakgrenade]
       - [0x0EE388, cpp, dlls/stats]
       - [0x0EE890, cpp, dlls/subs]
       - [0x0EFEF8, cpp, dlls/talkmonster]
@@ -221,6 +222,7 @@ segments:
       - [0x1D0A68, asm, cod/1D0A68]
       - [0x1F5980, textbin, cod/1F5980] # .vutext
       - [0x201B00, data, cod/201B00] # .data
+      - [0x2237C8, .data, dlls/squeakgrenade]
       - [0x223830, .data, dlls/stats]
       - [0x223850, .data, dlls/subs]
       - [0x2239A0, .data, dlls/talkmonster]
@@ -271,6 +273,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x276240, .rodata, dlls/squeakgrenade]
       - [0x276B60, .rodata, dlls/stats]
       - [0x276C20, .rodata, dlls/subs]
       - [0x277A90, .rodata, dlls/talkmonster]

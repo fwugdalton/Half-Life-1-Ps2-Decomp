@@ -1,7 +1,9 @@
 #ifndef DLLS_SKILL_H
 #define DLLS_SKILL_H
 
-/* skill.h do HLSDK: gSkillData em D_00318xxx (a ver o início exato) */
+/* skill.h do HLSDK: gSkillData em 0x318618 (agruntHealth em 0x31861C, apacheHealth
+   em 0x318624, plrDmg9MM em 0x3186EC). O PS2 tem 8 bytes a mais entre o bigmomma e o
+   snark; a posição exata deles ainda não foi vista. */
 
 struct skilldata_t
 {
@@ -18,6 +20,8 @@ struct skilldata_t
     float bigmommaDmgSlash;
     float bigmommaDmgBlast;
     float bigmommaRadiusBlast;
+
+    float ps2Unk[2];                /* a ver */
 
     float bullsquidHealth;
     float bullsquidDmgBite;

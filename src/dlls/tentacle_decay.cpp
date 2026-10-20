@@ -19,12 +19,6 @@
 
 #define TENTACLE_AE_CUT 1003    /* PS2: o tentáculo foi cortado */
 
-class CSoundEnt : public CBaseEntity
-{
-public:
-    static void InsertSound(int iType, const Vector &vecOrigin, int iVolume, float flDuration);
-};
-
 class CCineMonster : public CBaseMonster
 {
 public:

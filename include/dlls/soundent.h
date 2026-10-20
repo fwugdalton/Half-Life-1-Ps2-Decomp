@@ -31,4 +31,11 @@ public:
     BOOL FIsScent(void);
 };
 
+/* só as estáticas usadas pelas outras unidades */
+class CSoundEnt : public CBaseEntity
+{
+public:
+    static void InsertSound(int iType, const Vector &vecOrigin, int iVolume, float flDuration);
+};
+
 #endif

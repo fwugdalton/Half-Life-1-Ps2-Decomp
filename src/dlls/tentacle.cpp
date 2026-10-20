@@ -16,12 +16,6 @@
 #define M_PI 3.14159265358979323846
 
 
-class CSoundEnt : public CBaseEntity
-{
-public:
-    static void InsertSound(int iType, const Vector &vecOrigin, int iVolume, float flDuration);
-};
-
 TraceResult UTIL_GetGlobalTrace(void);
 void UTIL_EmitAmbientSound(edict_t *entity, const Vector &vecOrigin, const char *samp, float vol, float attenuation, int fFlags, int pitch);
 
