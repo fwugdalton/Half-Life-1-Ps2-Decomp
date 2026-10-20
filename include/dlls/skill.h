@@ -1,9 +1,10 @@
 #ifndef DLLS_SKILL_H
 #define DLLS_SKILL_H
 
-/* skill.h do HLSDK: gSkillData em 0x318618 (agruntHealth em 0x31861C, apacheHealth
-   em 0x318624, plrDmg9MM em 0x3186EC). O PS2 tem 8 bytes a mais entre o bigmomma e o
-   snark; a posição exata deles ainda não foi vista. */
+/* skill.h do HLSDK: gSkillData em 0x318618, 0x168 bytes (o CGameRules::RefreshSkillData
+   em 0x16F488 preenche todos). O PS2 tem o dano do vortigaunt jogável do Decay
+   (sk_plr_islave, sk_plr_islavezap) depois do islave e os monstros novos do Decay
+   (flyer, focus) no fim. */
 
 struct skilldata_t
 {
@@ -20,8 +21,6 @@ struct skilldata_t
     float bigmommaDmgSlash;
     float bigmommaDmgBlast;
     float bigmommaRadiusBlast;
-
-    float ps2Unk[2];                /* a ver */
 
     float bullsquidHealth;
     float bullsquidDmgBite;
@@ -50,6 +49,9 @@ struct skilldata_t
     float slaveDmgClaw;
     float slaveDmgClawrake;
     float slaveDmgZap;
+
+    float plrDmgISlave;             /* 0x78: sk_plr_islave */
+    float plrDmgISlaveZap;          /* 0x7C: sk_plr_islavezap */
 
     float ichthyosaurHealth;
     float ichthyosaurDmgShake;
@@ -118,6 +120,10 @@ struct skilldata_t
     float plrStomach;
     float plrLeg;
     float plrArm;
+
+    float flyerHealth;              /* 0x15C */
+    float flyerDamage;
+    float focusHealth;
 };
 
 extern skilldata_t gSkillData;

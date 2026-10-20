@@ -3451,3 +3451,4 @@ GetTeamIndex__10CGameRulesPCc = 0x0016FC90;
 IsValidTeam__10CGameRulesPCc = 0x0016FCA8;
 PlayerRelationship__10CGameRulesP11CBaseEntityT1 = 0x001ACA70;
 SetDefaultPlayerTeam__10CGameRulesP11CBasePlayer = 0x0016FCB8;
+GetSkillCvar__FPc = 0x001E4F38; // type:func

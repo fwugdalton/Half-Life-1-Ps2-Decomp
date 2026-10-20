@@ -292,8 +292,8 @@ void CISlaveCollar::ZapBeam(int side)
     if (pEntity != NULL && pEntity->pev->takedamage)
     {
         ClearMultiDamage();
-        pEntity->TraceAttack(pev, gSkillData.slaveDmgClaw, vecAim, &tr, DMG_SHOCK);
-        pEntity->TakeDamage(pev, pev, gSkillData.slaveDmgClaw, DMG_SHOCK);
+        pEntity->TraceAttack(pev, gSkillData.slaveDmgZap, vecAim, &tr, DMG_SHOCK);
+        pEntity->TakeDamage(pev, pev, gSkillData.slaveDmgZap, DMG_SHOCK);
     }
 
     UTIL_TraceLine(vecSrc, vecSrc + vecAim * 1024, ignore_monsters, ENT(pev), &tr);

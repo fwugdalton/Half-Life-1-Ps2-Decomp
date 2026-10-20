@@ -428,7 +428,7 @@ void CWeaponISlave::ZapBeam(int side)
     if (flCharge > 1.0f || m_iHudState == 3)
         flCharge = 1.0f;
 
-    float flDamage = gSkillData.slaveDmgZap * flCharge;
+    float flDamage = gSkillData.plrDmgISlaveZap * flCharge;
     float flBrightness = flCharge * 255;
 
     m_pZapBeam[iBeam]->PointEntInit(tr.vecEndPos, m_pPlayer->entindex());
@@ -628,7 +628,7 @@ void CWeaponISlave::PrimaryAttack(void)
         }
 
         ClearMultiDamage();
-        pEntity->TraceAttack(m_pPlayer->pev, gSkillData.slaveDmgClawrake, gpGlobals->v_forward, &tr, DMG_CLUB);
+        pEntity->TraceAttack(m_pPlayer->pev, gSkillData.plrDmgISlave, gpGlobals->v_forward, &tr, DMG_CLUB);
         ApplyMultiDamage(m_pPlayer->pev, m_pPlayer->pev);
 
         if (!pEntity->IsPlayer() && pEntity->pev->takedamage && !m_pPlayer->pev->deadflag)
