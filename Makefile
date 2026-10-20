@@ -59,6 +59,7 @@ $(BUILD_DIR)/src/gbx/SystemSaveInitialize.o: CFLAGS += -fmove-all-movables
 $(BUILD_DIR)/src/gbx/MemCardSlot.o: CFLAGS += -fmove-all-movables
 $(BUILD_DIR)/src/gbx/GlobalPak.o: CFLAGS += -fmove-all-movables
 $(BUILD_DIR)/src/gbx/GamePak.o: CFLAGS += -fmove-all-movables
+$(BUILD_DIR)/src/dlls/util.o: CFLAGS += -fmove-all-movables
 $(BUILD_DIR)/src/gbx/StreamZip.o: CFLAGS += -fmove-all-movables
 $(BUILD_DIR)/src/gbx/HL1Read.o: CFLAGS += -fmove-all-movables
 # as dlls do jogo (HLSDK) usam sqrt.s direto

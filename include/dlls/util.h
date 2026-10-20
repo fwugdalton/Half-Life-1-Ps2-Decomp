@@ -140,6 +140,11 @@ inline edict_t *FIND_ENTITY_BY_TARGET(edict_t *entStart, const char *pszName)
 inline edict_t *ENT(const entvars_t *pev) { return pev->pContainingEntity; }
 inline edict_t *ENT(edict_t *pent) { return pent; }
 inline edict_t *ENT(EOFFSET eoffset) { return (*g_engfuncs.pfnPEntityOfEntOffset)(eoffset); }
+
+inline void MESSAGE_BEGIN(int msg_dest, int msg_type, const float *pOrigin, entvars_t *ent)
+{
+    (*g_engfuncs.pfnMessageBegin)(msg_dest, msg_type, pOrigin, ENT(ent));
+}
 inline EOFFSET OFFSET(EOFFSET eoffset) { return eoffset; }
 inline EOFFSET OFFSET(const edict_t *pent) { return (*g_engfuncs.pfnEntOffsetOfPEntity)(pent); }
 inline EOFFSET OFFSET(entvars_t *pev) { return OFFSET(ENT(pev)); }
@@ -412,7 +417,80 @@ inline void STOP_SOUND(edict_t *entity, int channel, const char *sample)
 #define IN_ATTACK2          (1 << 11)
 #define IN_RELOAD           (1 << 13)
 
-#define DECAL_GUNSHOT1      0
+#define TE_BSPDECAL         13
+#define TE_SPARKS           9
+#define TE_TEXTMESSAGE      29
+#define TE_BLOODSTREAM      101
+#define TE_BLOOD            103
+#define TE_DECAL            104
+#define TE_GUNSHOTDECAL     109
+#define TE_ARMOR_RICOCHET   111
+#define TE_PLAYERDECAL      112
+#define TE_BUBBLES          113
+#define TE_BUBBLETRAIL      114
+#define TE_BLOODSPRITE      115
+#define TE_WORLDDECAL       116
+#define TE_WORLDDECALHIGH   117
+#define TE_DECALHIGH        118
+
+#define CONTENTS_EMPTY      -1
+#define CONTENTS_SOLID      -2
+#define CONTENTS_WATER      -3
+#define CONTENTS_SLIME      -4
+#define CONTENTS_LAVA       -5
+#define CONTENTS_SKY        -6
+
+#define HUD_PRINTNOTIFY     1
+#define HUD_PRINTCONSOLE    2
+#define HUD_PRINTTALK       3
+#define HUD_PRINTCENTER     4
+
+#define LANGUAGE_ENGLISH    0
+#define LANGUAGE_GERMAN     1
+#define LANGUAGE_FRENCH     2
+#define LANGUAGE_BRITISH    3
+
+extern int g_Language;
+
+extern int gmsgTextMsg;
+extern int gmsgHudText;
+extern int gmsgSayText;
+
+#define FL_KILLME           (1 << 30)
+
+#define ASSERT(f)
+
+typedef struct hudtextparms_s
+{
+    float x;
+    float y;
+    int effect;
+    byte r1, g1, b1, a1;
+    byte r2, g2, b2, a2;
+    float fadeinTime;
+    float fadeoutTime;
+    float holdTime;
+    float fxTime;
+    int channel;
+} hudtextparms_t;
+
+class CBaseEntity;
+void UTIL_HudMessageAll(const hudtextparms_t &textparms, const char *pMessage);
+void UTIL_HudMessage(CBaseEntity *pEntity, const hudtextparms_t &textparms, const char *pMessage);
+
+char *UTIL_dtos1(int d);
+char *UTIL_dtos2(int d);
+char *UTIL_dtos3(int d);
+char *UTIL_dtos4(int d);
+
+void UTIL_ClientPrintAll(int msg_dest, const char *msg_name, const char *param1 = NULL, const char *param2 = NULL, const char *param3 = NULL, const char *param4 = NULL);
+void ClientPrint(entvars_t *client, int msg_dest, const char *msg_name, const char *param1 = NULL, const char *param2 = NULL, const char *param3 = NULL, const char *param4 = NULL);
+
+int SENTENCEG_Lookup(const char *sample, char *sentencenum);
+
+extern "C" int sprintf(char *buf, const char *fmt, ...);
+extern "C" int vsprintf(char *buf, const char *fmt, char *ap);
+extern "C" char *strncpy(char *dst, const char *src, unsigned int n);
 
 void UTIL_BloodDrips(const Vector &origin, const Vector &direction, int color, int amount);
 void UTIL_DecalTrace(TraceResult *pTrace, int decalNumber);

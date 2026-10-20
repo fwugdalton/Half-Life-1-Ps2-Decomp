@@ -6,6 +6,7 @@
 
 #include "dlls/extdll.h"
 #include "dlls/util.h"
+#include "dlls/decals.h"
 #include "dlls/cbase.h"
 #include "dlls/monsters.h"
 #include "dlls/weapons.h"

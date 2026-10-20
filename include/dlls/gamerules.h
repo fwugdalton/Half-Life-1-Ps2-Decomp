@@ -34,7 +34,7 @@ public:
     virtual BOOL GetNextBestWeapon(CBasePlayer *pPlayer, CBasePlayerItem *pCurrentWeapon); /* slot 6 (0x30) */
     virtual BOOL Ps2Virt07(void);       /* sem item_suit no W_Precache */
     virtual BOOL Ps2Virt08(void);       /* com weaponbox no W_Precache */
-    virtual void Ps2Virt09(void);
+    virtual BOOL Ps2Virt09(void);       /* slot 9 (0x48): o UTIL_TeamsMatch testa este, não o IsTeamplay */
     virtual BOOL IsMultiplayer(void);   /* slot 10 (0x50): escolhe as listas curtas de sons */
     virtual BOOL IsDeathmatch(void);
     virtual BOOL IsTeamplay(void);

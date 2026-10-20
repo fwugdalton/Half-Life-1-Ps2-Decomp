@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x106730, cpp, dlls/util]
       - [0x10B330, cpp, dlls/warpball]
       - [0x10C3A0, cpp, dlls/weapon_islave]
       - [0x10F3C8, cpp, dlls/weapons]
@@ -211,6 +212,7 @@ segments:
       - [0x1D0A68, asm, cod/1D0A68]
       - [0x1F5980, textbin, cod/1F5980] # .vutext
       - [0x201B00, data, cod/201B00] # .data
+      - [0x2243F8, .data, dlls/util]
       - [0x2249A0, .data, dlls/warpball]
       - [0x224AE0, .data, dlls/weapon_islave]
       - [0x224B30, .data, dlls/weapons]
@@ -251,6 +253,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x2807D0, .rodata, dlls/util]
       - [0x280E90, .rodata, dlls/warpball]
       - [0x281350, .rodata, dlls/weapon_islave]
       - [0x281B18, rodata, cod/281B18]

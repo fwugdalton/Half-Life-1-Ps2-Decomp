@@ -17,7 +17,7 @@
 
 /* variante do UTIL_TraceLine em util.cpp que chama o pfnTraceLine (0x84)
    sem a flag de vidro; o nome original é desconhecido */
-void UTIL_TraceLine2(const Vector &vecStart, const Vector &vecEnd, int igmon, edict_t *pentIgnore, TraceResult *ptr);
+void UTIL_TraceLineNoEnts(const Vector &vecStart, const Vector &vecEnd, int igmon, edict_t *pentIgnore, TraceResult *ptr);
 void UTIL_ScreenShake(const Vector &center, float amplitude, float frequency, float duration, float radius);
 void RadiusDamage(Vector vecSrc, entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, float flRadius, int iClassIgnore, int bitsDamageType);
 void DispatchSpawn(edict_t *pent);
@@ -260,7 +260,7 @@ void CWarpBall::WarpBallThink(void)
         if (m_flGround == 0)
         {
             TraceResult tr;
-            UTIL_TraceLine2(pev->origin, pev->origin - Vector(0, 0, 2048), ignore_monsters, ENT(pev), &tr);
+            UTIL_TraceLineNoEnts(pev->origin, pev->origin - Vector(0, 0, 2048), ignore_monsters, ENT(pev), &tr);
             m_flGround = tr.vecEndPos.z;
         }
 
@@ -362,7 +362,7 @@ void CWarpBall::MakeMonster(void)
     if (m_flGround == 0)
     {
         TraceResult tr;
-        UTIL_TraceLine2(pev->origin, pev->origin - Vector(0, 0, 2048), ignore_monsters, ENT(pev), &tr);
+        UTIL_TraceLineNoEnts(pev->origin, pev->origin - Vector(0, 0, 2048), ignore_monsters, ENT(pev), &tr);
         m_flGround = tr.vecEndPos.z;
     }
 

@@ -179,6 +179,52 @@ typedef struct KeyValueData_s
 
 typedef struct
 {
+    int id;                     /* 0x00 */
+    edict_t *pent;              /* 0x04 */
+    int location;               /* 0x08 */
+    int size;                   /* 0x0C */
+    int flags;                  /* 0x10 */
+    string_t classname;         /* 0x14 */
+} ENTITYTABLE;
+
+#define FENTTABLE_PLAYER        0x80000000
+#define FENTTABLE_REMOVED       0x40000000
+#define FENTTABLE_MOVEABLE      0x20000000
+#define FENTTABLE_GLOBAL        0x10000000
+
+typedef struct
+{
+    char mapName[32];           /* 0x00 */
+    char landmarkName[32];      /* 0x20 */
+    edict_t *pentLandmark;      /* 0x40 */
+    Vector vecLandmarkOrigin;   /* 0x44 */
+} LEVELLIST;
+
+#define MAX_LEVEL_CONNECTIONS   16
+
+typedef struct saverestore_s
+{
+    char *pBaseData;            /* 0x000 */
+    char *pCurrentData;         /* 0x004 */
+    int size;                   /* 0x008 */
+    int bufferSize;             /* 0x00C */
+    int tokenSize;              /* 0x010 */
+    int tokenCount;             /* 0x014 */
+    char **pTokens;             /* 0x018 */
+    int currentIndex;           /* 0x01C */
+    int tableCount;             /* 0x020 */
+    int connectionCount;        /* 0x024 */
+    ENTITYTABLE *pTable;        /* 0x028 */
+    LEVELLIST levelList[MAX_LEVEL_CONNECTIONS]; /* 0x02C */
+    int fUseLandmark;           /* 0x52C */
+    char szLandmarkName[20];    /* 0x530 */
+    Vector vecLandmarkOffset;   /* 0x544 */
+    float time;                 /* 0x550 */
+    char szCurrentMapName[32];  /* 0x554 */
+} SAVERESTOREDATA;              /* 0x574 */
+
+typedef struct
+{
     int fAllSolid;              /* 0x00 */
     int fStartSolid;            /* 0x04 */
     int fInOpen;                /* 0x08 */
