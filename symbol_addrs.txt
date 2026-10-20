@@ -3866,5 +3866,14 @@ Look__6CRoachi = 0x001D5650; // type:func
 GetClassPtr__H1Z6CRoach_PX01_PX01 = 0x001D5860; // type:func
 _GLOBAL_$I$monster_cockroach = 0x001D5930; // type:func
 _vt$6CRoach = 0x0036EC58;
-FShouldEat__12CBaseMonster = 0x001A1928;
-RouteClassify__12CBaseMonsteri = 0x001A3EE0;
+FShouldEat__12CBaseMonster = 0x001A1928; // type:func
+RouteClassify__12CBaseMonsteri = 0x001A3EE0; // type:func
+// rat
+monster_rat = 0x001D4570; // type:func
+Classify__4CRat = 0x001D4590; // type:func
+SetYawSpeed__4CRat = 0x001D4598; // type:func
+Spawn__4CRat = 0x001D45B0; // type:func
+Precache__4CRat = 0x001D46C0; // type:func
+GetClassPtr__H1Z4CRat_PX01_PX01 = 0x001D4728; // type:func
+_GLOBAL_$I$monster_rat = 0x001D47F8; // type:func
+_vt$4CRat = 0x0036E798;
