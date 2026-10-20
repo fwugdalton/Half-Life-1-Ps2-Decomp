@@ -16,7 +16,7 @@
 #define NOT_USED 255
 
 extern "C" int cl_numlocal;
-extern "C" void func_00113D08(int iPlayer, float flTime, float flDelay);
+extern "C" void func_00113D08(float flTime, float flDelay, int iPlayer);
 
 DLL_GLOBAL const char *g_pModelNameLaser = "sprites/laserbeam.spz";
 
@@ -793,7 +793,7 @@ int CBasePlayerWeapon::DefaultReload(int iClipSize, int iAnim, float fDelay)
     m_fInReload = TRUE;
 
     m_flTimeWeaponIdle = pGlobals->time + 3;
-    func_00113D08(ENTINDEX(m_pPlayer->edict()) - 1, pGlobals->time, fDelay);
+    func_00113D08(pGlobals->time, fDelay, ENTINDEX(m_pPlayer->edict()) - 1);
     return TRUE;
 }
 

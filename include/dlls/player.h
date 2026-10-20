@@ -43,7 +43,9 @@ public:
     int m_iPlayerSound;                         /* 0x2A0 */
     int m_iTargetVolume;                        /* 0x2A4 */
     int m_iWeaponVolume;                        /* 0x2A8 */
-    byte m_ps2Unk2AC[0x2CC - 0x2AC];
+    int m_iExtraSoundTypes;                     /* 0x2AC */
+    int m_iWeaponFlash;                         /* 0x2B0 */
+    byte m_ps2Unk2B4[0x2CC - 0x2B4];
     edict_t *m_pentSndLast; /* 0x2CC */
     float m_flSndRoomtype; /* 0x2D0 */
     float m_flSndRange; /* 0x2D4 */
@@ -108,6 +110,7 @@ public:
     virtual Vector GetAutoaimVector(float flDelta);     /* slot 134 */
 
     void SetAnimation(PLAYER_ANIM playerAnim);
+    void SetSuitUpdate(char *name, int fgroup, int iNoRepeat);
     static int GetAmmoIndex(const char *psz);
     BOOL HasPlayerItem(CBasePlayerItem *pCheckItem);
     void GiveNamedItem(const char *szName);
@@ -117,6 +120,7 @@ public:
 
 extern BOOL gEvilImpulse101;
 extern int gmsgCurWeapon;
+extern int gmsgWeapPickup;
 extern int gmsgScoreInfo;
 
 #endif
