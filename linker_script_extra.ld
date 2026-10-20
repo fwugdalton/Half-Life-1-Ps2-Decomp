@@ -28,6 +28,7 @@ D_00387490 = 0x00387490; /* "TempMCSave.sav" */
 D_003874A0 = 0x003874A0; /* "%s%s" */
 D_003874C0 = 0x003874C0; /* "%d" */
 D_003874C8 = 0x003874C8; /* "NumSaves" */
+D_00324C60 = 0x00324C60;
 /* engine/sv_main: início */
 D_0038E8F8 = 0x0038E8F8;
 /* engine/sv_main: fim */

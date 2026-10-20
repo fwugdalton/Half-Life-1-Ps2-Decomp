@@ -5,6 +5,8 @@
 
 #include "dlls/extdll.h"
 
+/* o g_vecZero das dlls (0x312C28) é outro símbolo que o do motor (0x3328F8) */
+#define g_vecZero g_vecZero_dll
 extern Vector g_vecZero;
 
 typedef int EOFFSET;
@@ -360,5 +362,46 @@ inline void STOP_SOUND(edict_t *entity, int channel, const char *sample)
 
 #define EMIT_SOUND_ARRAY_DYN(chan, array) \
     EMIT_SOUND_DYN(ENT(pev), chan, array[RANDOM_LONG(0, ARRAYSIZE(array) - 1)], 1.0, ATTN_NORM, 0, RANDOM_LONG(95, 105));
+
+/* usados por weapons.cpp */
+#define MSG_BROADCAST       0
+#define MSG_ONE             1
+#define MSG_ALL             2
+#define MSG_INIT            3
+#define MSG_PVS             4
+#define MSG_PAS             5
+
+#define SVC_TEMPENTITY      23
+#define SVC_WEAPONANIM      35
+
+#define TE_MODEL            106
+
+#define EF_MUZZLEFLASH      2
+
+#define IN_ATTACK           (1 << 0)
+#define IN_ATTACK2          (1 << 11)
+#define IN_RELOAD           (1 << 13)
+
+#define DECAL_GUNSHOT1      0
+
+void UTIL_BloodDrips(const Vector &origin, const Vector &direction, int color, int amount);
+void UTIL_DecalTrace(TraceResult *pTrace, int decalNumber);
+void UTIL_GunshotDecalTrace(TraceResult *pTrace, int decalNumber);
+BOOL UTIL_IsValidEntity(edict_t *pent);
+void UTIL_PrecacheOther(const char *szClassname);
+
+extern "C" int strncmp(const char *s1, const char *s2, unsigned int n);
+extern "C" int strcasecmp(const char *s1, const char *s2);
+extern "C" char *strcpy(char *dst, const char *src);
+extern "C" int atoi(const char *s);
+extern "C" void *memset(void *dst, int c, unsigned int n);
+#define stricmp strcasecmp
+
+#ifndef min
+#define min(a, b)  (((a) < (b)) ? (a) : (b))
+#endif
+#ifndef max
+#define max(a, b)  (((a) > (b)) ? (a) : (b))
+#endif
 
 #endif
