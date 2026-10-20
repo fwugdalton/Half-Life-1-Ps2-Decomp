@@ -483,6 +483,7 @@ extern int gmsgSayText;
 #define FL_KILLME           (1 << 30)
 
 #define ASSERT(f)
+#define ASSERTSZ(f, sz)
 
 typedef struct hudtextparms_s
 {
