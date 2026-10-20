@@ -50,7 +50,7 @@ typedef struct {
 typedef struct SaveRecord {
     short token;
     short unk02;
-    int unk04;
+    char *classname;            /* 0x04 */
     unsigned char count;        /* 0x08 */
     SaveEntry *entries;         /* 0x0C */
 } SaveRecord;
@@ -107,7 +107,8 @@ char *func_002218E8(char *p, ENTITYTABLE *entities, short *a2, int count, char *
 char *func_00221AA8(char *p, short *a1, SAVE_HEADER *header, char **tokens, int *a4);
 char *func_00221DF0(char *p, short *a1, SAVECONNECTION *buf, int count, char **tokens, int *size, char **start);
 char *func_00222018(char *p, short *a1, SAVELIGHTSTYLE *buf, int count, char **tokens, int *size);
-char *func_002221E0(char *p, SaveRecord *buf, int count, int *a3, int total, char **tokens);
+char *func_002221E0(char *p, SaveRecord *records, int count, SaveEntry **pool, int total, char **tokens);
+int func_00228E00(const char *a, const char *b);
 char *func_002223E8(char *p, int *size);
 
 int func_00221470(const char *name, SaveData *s)
@@ -156,7 +157,7 @@ int func_00221470(const char *name, SaveData *s)
         }
         s->records = (SaveRecord *)Mem_DbgMalloc(s->unkC8 * 16, D_00385B78, 0x65);
         data = p;
-        s->unkD4 = func_002221E0(data, s->records, s->unkC8, (int *)&s->unkCC, total, s->tokens) - data;
+        s->unkD4 = func_002221E0(data, s->records, s->unkC8, (SaveEntry **)&s->unkCC, total, s->tokens) - data;
         r = 1;
     }
     func_0022B238(f);
@@ -440,7 +441,48 @@ char *func_00222018(char *p, short *a1, SAVELIGHTSTYLE *buf, int count, char **t
     return p;
 }
 
-INCLUDE_ASM("asm/nonmatchings/gbx/HL1Read", func_002221E0);
+char *func_002221E0(char *p, SaveRecord *records, int count, SaveEntry **pool, int total, char **tokens)
+{
+    short len;
+    short token;
+    int n;
+    int used;
+    int i;
+    int j;
+    SaveEntry *entries;
+
+
+    entries = (SaveEntry *)Mem_DbgMalloc(total * sizeof(SaveEntry), D_00385B78, 0x286);
+    used = 0;
+    *pool = entries;
+    for (i = 0; i < count; i++) {
+        Q_memcpy(&len, p, 2);
+        p += 2;
+        Q_memcpy(&token, p, 2);
+        p += 2;
+        Q_memcpy(&n, p, 4);
+        p += 4;
+
+        records[i].token = token;
+        records[i].count = n;
+        records[i].entries = &entries[used];
+        used += n;
+        records[i].classname = 0;
+        for (j = 0; j < n; j++) {
+            Q_memcpy(&len, p, 2);
+            p += 2;
+            Q_memcpy(&token, p, 2);
+            p += 2;
+            records[i].entries[j].len = len;
+            records[i].entries[j].id = token;
+            records[i].entries[j].data = p;
+            p += len;
+            if (func_00228E00(tokens[token], "classname") == 0)
+                records[i].classname = (char *)records[i].entries[j].data;
+        }
+    }
+    return p;
+}
 
 char *func_002223E8(char *p, int *count)
 {
