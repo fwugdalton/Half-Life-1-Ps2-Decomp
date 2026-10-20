@@ -174,23 +174,22 @@ int func_00235280(pakfile_t *pak, const char *name) {
 
 #ifdef NON_MATCHING
 /* fluxo igual; registradores (o original usa um temporário a mais) e um movn no lugar de movz */
+
+static inline int PakToLower(char c) {
+    int r = c;
+    if ((_ctype_ + 1)[c] & 1) {
+        r = c + 0x20;
+    }
+    return r;
+}
+
 int func_00235300(const char *a, paklump_t *lump) {
     const char *b;
-    int c1;
-    int c2;
 
     b = lump->name;
     do {
         if (!(*a == '/' && *b == '\\')) {
-            c1 = *a;
-            c2 = *b;
-            if ((_ctype_ + 1)[c1] & 1) {
-                c1 += 0x20;
-            }
-            if ((_ctype_ + 1)[c2] & 1) {
-                c2 += 0x20;
-            }
-            if (c1 != c2) {
+            if (PakToLower(*a) != PakToLower(*b)) {
                 return 0;
             }
             if (*a == 0) {
