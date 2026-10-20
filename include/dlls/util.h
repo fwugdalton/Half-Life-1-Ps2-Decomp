@@ -373,6 +373,7 @@ class CBaseEntity;
 void UTIL_Remove(CBaseEntity *pEntity);
 int UTIL_EntitiesInBox(CBaseEntity **pList, int listMax, const Vector &mins, const Vector &maxs, int flagMask);
 CBaseEntity *UTIL_FindEntityByString(CBaseEntity *pStartEntity, const char *szKeyword, const char *szValue);
+CBaseEntity *UTIL_FindEntityInSphere(CBaseEntity *pStartEntity, const Vector &vecCenter, float flRadius);
 void UTIL_StripToken(const char *pKey, char *pDest);
 BOOL UTIL_IsMasterTriggered(string_t sMaster, CBaseEntity *pActivator);
 CBaseEntity *UTIL_PlayerByIndex(int playerIndex);
