@@ -65,7 +65,8 @@ public:
     int m_ps2ShotsFired;                        /* 0x5F0: estatística do placar do PS2 */
     int m_ps2ShotsHit;                          /* 0x5F4 */
     int m_ps2Stat5F8;                           /* 0x5F8 */
-    byte m_ps2Unk5FC[0x620 - 0x5FC];
+    byte m_ps2Unk5FC[0x610 - 0x5FC];
+    char m_szTeamName[16];                      /* 0x610 */
     int m_ps2ClientIndex;                       /* 0x620: vai no ScoreInfo com um jogador só */
     Vector m_ps2Unk624[6];                      /* 0x624: o construtor do PS2 tem um laço de 6 Vector (posição exata desconhecida) */
     /* Vector soltos (posição desconhecida): sem eles o g++ inlinaria o construtor do CBasePlayer,

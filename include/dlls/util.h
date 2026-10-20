@@ -376,6 +376,9 @@ CBaseEntity *UTIL_FindEntityByString(CBaseEntity *pStartEntity, const char *szKe
 void UTIL_StripToken(const char *pKey, char *pDest);
 BOOL UTIL_IsMasterTriggered(string_t sMaster, CBaseEntity *pActivator);
 CBaseEntity *UTIL_PlayerByIndex(int playerIndex);
+void UTIL_SayText(const char *pText, CBaseEntity *pEntity);
+void UTIL_SayTextAll(const char *pText, CBaseEntity *pEntity);
+void UTIL_LogPrintf(char *fmt, ...);
 void UTIL_ShowMessage(const char *pString, CBaseEntity *pPlayer);
 void UTIL_ShowMessageAll(const char *pString);
 void UTIL_ScreenFadeAll(const Vector &color, float fadeTime, float holdTime, int alpha, int flags);
@@ -521,6 +524,7 @@ void UTIL_PrecacheOther(const char *szClassname);
 
 extern "C" int strncmp(const char *s1, const char *s2, unsigned int n);
 extern "C" int strcasecmp(const char *s1, const char *s2);
+extern "C" char *strtok(char *s, const char *delim);
 extern "C" char *strcpy(char *dst, const char *src);
 extern "C" unsigned int strlen(const char *s);
 extern "C" int atoi(const char *s);

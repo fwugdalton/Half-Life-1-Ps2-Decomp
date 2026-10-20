@@ -1168,7 +1168,7 @@ void UTIL_Ricochet( const Vector &position, float scale )
 BOOL UTIL_TeamsMatch( const char *pTeamName1, const char *pTeamName2 )
 {
 	// Everyone matches unless it's teamplay
-	if ( !g_pGameRules->Ps2Virt09() )
+	if ( !g_pGameRules->IsTeamplay() )
 		return TRUE;
 
 	// Both on a team?

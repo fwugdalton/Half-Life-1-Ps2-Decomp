@@ -1238,7 +1238,7 @@ int CSentry::TakeDamage(entvars_t *pevInflictor, entvars_t *pevAttacker, float f
 	pev->health -= flDamage;
 	if (pev->health <= 0)
 	{
-		g_pGameRules->DeathNotice( this, pevAttacker, pevInflictor );
+		g_pGameRules->Ps2Virt31( this, pevAttacker, pevInflictor );
 		pev->health = 0;
 		pev->takedamage = DAMAGE_NO;
 		pev->dmgtime = gpGlobals->time;

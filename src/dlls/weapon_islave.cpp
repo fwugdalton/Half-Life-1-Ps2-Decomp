@@ -459,7 +459,7 @@ void CWeaponISlave::ZapBeam(int side)
             if (!pEntity->IsPlayer() && !m_pPlayer->pev->deadflag)
                 m_pPlayer->TakeHealth((100 - m_pPlayer->pev->health) * 0.1f, DMG_GENERIC);
 
-            if (g_pGameRules->Ps2Virt18(m_pPlayer, pEntity))
+            if (g_pGameRules->FPlayerCanTakeDamage(m_pPlayer, pEntity))
                 m_pPlayer->m_ps2ShotsHit++;
         }
 
@@ -487,7 +487,7 @@ void CWeaponISlave::ZapBeam(int side)
         if (!pEntity->IsPlayer() && !m_pPlayer->pev->deadflag)
             m_pPlayer->TakeHealth((100 - m_pPlayer->pev->health) * 0.1f, DMG_GENERIC);
 
-        if (g_pGameRules->Ps2Virt18(m_pPlayer, pEntity))
+        if (g_pGameRules->FPlayerCanTakeDamage(m_pPlayer, pEntity))
             m_pPlayer->m_ps2ShotsHit++;
     }
 
