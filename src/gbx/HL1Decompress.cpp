@@ -56,7 +56,8 @@ typedef struct {
     int unkB0;                  /* 0xB0 */
     int dataSize;               /* 0xB4 */
     void *data;                 /* 0xB8 */
-    int unkBC;
+    short unkBC;                /* 0xBC */
+    short unkBE;
     SAVELIGHTSTYLE *lightStyles; /* 0xC0 */
     int unkC4;
     int unkC8;                  /* 0xC8 */
@@ -68,6 +69,8 @@ typedef struct {
 extern "C" {
 
 int func_00228DC0(const char *s);
+void func_00228CF0(char *dst, const char *src);
+void func_00225860(void *dst, int c, int n);
 void *func_0022B118(const char *name, const char *mode);
 void func_0022B238(void *f);
 void func_0022B248(const char *name);
@@ -75,6 +78,8 @@ void func_0022B310(const char *name, int a1);
 void func_0022B590(const char *from, const char *to);
 int func_0022BD98(const void *data, int size, int count, void *f);
 int func_0022BE50(void *data, int size, int count, void *f);
+void func_0022BF78(void *in, void *out, int size);
+void *memcpy(void *dst, const void *src, unsigned int n);
 int func_0021DA00(const void *buf, int len);
 
 /* índices dos nomes de campo no vetor de tokens do save */
@@ -108,8 +113,8 @@ extern const char D_00385A18[];     /* "" */
 int func_0021F530(void *in, void *out, int dictCount, char **dictTokens, int unused);
 void func_0021F738(void *in, void *out, int count, int dictCount, ENTITYTABLE *dict, short token);
 void func_0021FBB8(void *in, void *out, short token, SAVE_HEADER *dict);
-void func_00220628(void *in, void *out, SaveData *dict);
-void func_00220748(void *in, void *out, SaveData *dict);
+void func_00220628(void *in, void *out, SaveData dict);
+void func_00220748(void *in, void *out, SaveData dict);
 void func_00220B10(void *in, void *out, SaveData *dict);
 void func_00221018(int index, const char *token);
 
@@ -165,8 +170,8 @@ void func_0021F180(const char *in, SaveData dict, const char *out)
     func_0021F530(fin, fout, dict.tokenCount, dict.tokens, save.unk24);
     func_0021F738(fin, fout, save.entityCount, dict.entityCount, dict.entities, dict.unk08);
     func_0021FBB8(fin, fout, dict.unk30, &dict.header);
-    func_00220628(fin, fout, &dict);
-    func_00220748(fin, fout, &dict);
+    func_00220628(fin, fout, dict);
+    func_00220748(fin, fout, dict);
     func_00220B10(fin, fout, &dict);
     func_0022B238(fin);
     func_0022B238(fout);
@@ -314,11 +319,264 @@ void func_0021F738(void *in, void *out, int count, int dictCount, ENTITYTABLE *d
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/gbx/HL1Decompress", func_0021FBB8);
+void func_0021FBB8(void *in, void *out, short token, SAVE_HEADER *dict)
+{
+    SAVE_HEADER h;
+    unsigned short flags;
+    short len1;
+    short len2;
+    short size;
+    int fields;
 
-INCLUDE_ASM("asm/nonmatchings/gbx/HL1Decompress", func_00220628);
+    fields = 0;
+    func_0022BE50(&flags, 2, 1, in);
+    if (flags & 0x1)
+        func_0022BE50(&h.skillLevel, 4, 1, in);
+    else
+        h.skillLevel = dict->skillLevel;
+    if (!func_0021DA00(&h.skillLevel, 4))
+        fields++;
+    if (flags & 0x2)
+        func_0022BE50(&h.entityCount, 4, 1, in);
+    else
+        h.entityCount = dict->entityCount;
+    if (!func_0021DA00(&h.entityCount, 4))
+        fields++;
+    if (flags & 0x4)
+        func_0022BE50(&h.connectionCount, 4, 1, in);
+    else
+        h.connectionCount = dict->connectionCount;
+    if (!func_0021DA00(&h.connectionCount, 4))
+        fields++;
+    if (flags & 0x8)
+        func_0022BE50(&h.lightStyleCount, 4, 1, in);
+    else
+        h.lightStyleCount = dict->lightStyleCount;
+    if (!func_0021DA00(&h.lightStyleCount, 4))
+        fields++;
+    if (flags & 0x10)
+        func_0022BE50(&h.time, 4, 1, in);
+    else
+        h.time = dict->time;
+    if (!func_0021DA00(&h.time, 4))
+        fields++;
+    if (flags & 0x20) {
+        func_00225860(h.mapName, 0, 32);
+        func_0022BE50(&len1, 2, 1, in);
+        func_0022BE50(h.mapName, len1, 1, in);
+    } else {
+        func_00225860(h.mapName, 0, 32);
+        func_00228CF0(h.mapName, dict->mapName);
+    }
+    if (!func_0021DA00(h.mapName, 32))
+        fields++;
+    if (flags & 0x40) {
+        func_00225860(h.skyName, 0, 32);
+        func_0022BE50(&len2, 2, 1, in);
+        func_0022BE50(h.skyName, len2, 1, in);
+    } else {
+        func_00225860(h.skyName, 0, 32);
+        func_00228CF0(h.skyName, dict->skyName);
+    }
+    if (!func_0021DA00(h.skyName, 32))
+        fields++;
+    if (flags & 0x80)
+        func_0022BE50(&h.skyColor_r, 4, 1, in);
+    else
+        h.skyColor_r = dict->skyColor_r;
+    if (!func_0021DA00(&h.skyColor_r, 4))
+        fields++;
+    if (flags & 0x100)
+        func_0022BE50(&h.skyColor_g, 4, 1, in);
+    else
+        h.skyColor_g = dict->skyColor_g;
+    if (!func_0021DA00(&h.skyColor_g, 4))
+        fields++;
+    if (flags & 0x200)
+        func_0022BE50(&h.skyColor_b, 4, 1, in);
+    else
+        h.skyColor_b = dict->skyColor_b;
+    if (!func_0021DA00(&h.skyColor_b, 4))
+        fields++;
+    if (flags & 0x400)
+        func_0022BE50(&h.skyVec_x, 4, 1, in);
+    else
+        h.skyVec_x = dict->skyVec_x;
+    if (!func_0021DA00(&h.skyVec_x, 4))
+        fields++;
+    if (flags & 0x800)
+        func_0022BE50(&h.skyVec_y, 4, 1, in);
+    else
+        h.skyVec_y = dict->skyVec_y;
+    if (!func_0021DA00(&h.skyVec_y, 4))
+        fields++;
+    if (flags & 0x1000)
+        func_0022BE50(&h.skyVec_z, 4, 1, in);
+    else
+        h.skyVec_z = dict->skyVec_z;
+    if (!func_0021DA00(&h.skyVec_z, 4))
+        fields++;
 
+    size = 4;
+    func_0022BD98(&size, 2, 1, out);
+    func_0022BD98(&token, 2, 1, out);
+    func_0022BD98(&fields, 4, 1, out);
+    if (!func_0021DA00(&h.skillLevel, 4)) {
+        short n = 4;
+
+        func_0022BD98(&n, 2, 1, out);
+        func_0022BD98(&D_003A638A, 2, 1, out);
+        func_0022BD98(&h.skillLevel, n, 1, out);
+    }
+    if (!func_0021DA00(&h.entityCount, 4)) {
+        short n = 4;
+
+        func_0022BD98(&n, 2, 1, out);
+        func_0022BD98(&D_003A638C, 2, 1, out);
+        func_0022BD98(&h.entityCount, n, 1, out);
+    }
+    if (!func_0021DA00(&h.connectionCount, 4)) {
+        short n = 4;
+
+        func_0022BD98(&n, 2, 1, out);
+        func_0022BD98(&D_003A638E, 2, 1, out);
+        func_0022BD98(&h.connectionCount, n, 1, out);
+    }
+    if (!func_0021DA00(&h.lightStyleCount, 4)) {
+        short n = 4;
+
+        func_0022BD98(&n, 2, 1, out);
+        func_0022BD98(&D_003A6390, 2, 1, out);
+        func_0022BD98(&h.lightStyleCount, n, 1, out);
+    }
+    if (!func_0021DA00(&h.time, 4)) {
+        short n = 4;
+
+        func_0022BD98(&n, 2, 1, out);
+        func_0022BD98(&D_003A6392, 2, 1, out);
+        func_0022BD98(&h.time, n, 1, out);
+    }
+    if (!func_0021DA00(h.mapName, 32)) {
+        short n = 32;
+
+        func_0022BD98(&n, 2, 1, out);
+        func_0022BD98(&D_003A6394, 2, 1, out);
+        func_0022BD98(h.mapName, n, 1, out);
+    }
+    if (!func_0021DA00(h.skyName, 32)) {
+        short n = 32;
+
+        func_0022BD98(&n, 2, 1, out);
+        func_0022BD98(&D_003A6396, 2, 1, out);
+        func_0022BD98(h.skyName, n, 1, out);
+    }
+    if (!func_0021DA00(&h.skyColor_r, 4)) {
+        short n = 4;
+
+        func_0022BD98(&n, 2, 1, out);
+        func_0022BD98(&D_003A6398, 2, 1, out);
+        func_0022BD98(&h.skyColor_r, n, 1, out);
+    }
+    if (!func_0021DA00(&h.skyColor_g, 4)) {
+        short n = 4;
+
+        func_0022BD98(&n, 2, 1, out);
+        func_0022BD98(&D_003A639A, 2, 1, out);
+        func_0022BD98(&h.skyColor_g, n, 1, out);
+    }
+    if (!func_0021DA00(&h.skyColor_b, 4)) {
+        short n = 4;
+
+        func_0022BD98(&n, 2, 1, out);
+        func_0022BD98(&D_003A639C, 2, 1, out);
+        func_0022BD98(&h.skyColor_b, n, 1, out);
+    }
+    if (!func_0021DA00(&h.skyVec_x, 4)) {
+        short n = 4;
+
+        func_0022BD98(&n, 2, 1, out);
+        func_0022BD98(&D_003A639E, 2, 1, out);
+        func_0022BD98(&h.skyVec_x, n, 1, out);
+    }
+    if (!func_0021DA00(&h.skyVec_y, 4)) {
+        short n = 4;
+
+        func_0022BD98(&n, 2, 1, out);
+        func_0022BD98(&D_003A63A0, 2, 1, out);
+        func_0022BD98(&h.skyVec_y, n, 1, out);
+    }
+    if (!func_0021DA00(&h.skyVec_z, 4)) {
+        short n = 4;
+
+        func_0022BD98(&n, 2, 1, out);
+        func_0022BD98(&D_003A63A2, 2, 1, out);
+        func_0022BD98(&h.skyVec_z, n, 1, out);
+    }
+}
+
+void func_00220628(void *in, void *out, SaveData dict)
+{
+    int size;
+
+    size = 0;
+    func_0022BE50(&size, 4, 1, in);
+    func_0022BF78(in, out, size);
+}
+
+#ifdef NON_MATCHING /* registradores s3/s4 trocados (in e ls.style) */
+void func_00220748(void *in, void *out, SaveData dict)
+{
+    short count;
+    int i;
+
+    func_0022BE50(&count, 2, 1, in);
+    for (i = 0; i < count; i++) {
+        SAVELIGHTSTYLE ls;
+        unsigned char flags;
+        unsigned char len;
+        short size;
+        int fields;
+
+        func_0022BE50(&flags, 1, 1, in);
+        if (flags & 1)
+            func_0022BE50(&ls.index, 4, 1, in);
+        else
+            ls.index = dict.lightStyles[i].index;
+        if (flags & 2) {
+            func_0022BE50(&len, 1, 1, in);
+            func_0022BE50(ls.style, len, 1, in);
+        } else {
+            memcpy(ls.style, dict.lightStyles[i].style, 64);
+        }
+
+        fields = 0;
+        size = 4;
+        if (!func_0021DA00(&ls.index, 4))
+            fields++;
+        if (!func_0021DA00(ls.style, 64))
+            fields++;
+        func_0022BD98(&size, 2, 1, out);
+        func_0022BD98(&dict.unkBC, 2, 1, out);
+        func_0022BD98(&fields, 4, 1, out);
+        if (!func_0021DA00(&ls.index, 4)) {
+            short n = 4;
+
+            func_0022BD98(&n, 2, 1, out);
+            func_0022BD98(&D_003A63AC, 2, 1, out);
+            func_0022BD98(&ls.index, n, 1, out);
+        }
+        if (!func_0021DA00(ls.style, 64)) {
+            short n = 64;
+
+            func_0022BD98(&n, 2, 1, out);
+            func_0022BD98(&D_003A63AE, 2, 1, out);
+            func_0022BD98(ls.style, n, 1, out);
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/gbx/HL1Decompress", func_00220748);
+#endif
 
 INCLUDE_ASM("asm/nonmatchings/gbx/HL1Decompress", func_00220B10);
 
