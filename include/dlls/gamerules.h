@@ -24,7 +24,10 @@ enum
 class CGameRules
 {
 public:
-    int m_ps2Unk00[4];                  /* 0x00 */
+    int m_ps2Unk00;                     /* 0x00 */
+    float m_flSlowmoEnd;                /* 0x04: cheat slowmo (singleplay) */
+    float m_flNextSlowmo;               /* 0x08 */
+    BOOL m_fInfiniteAmmo;               /* 0x0C: cheat_infammo */
 
     virtual void RefreshSkillData(void);                                /* slot 1 */
     virtual void Think(void) = 0;
