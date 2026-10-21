@@ -142,6 +142,8 @@ D_0036FB28 = 0x0036FB28; /* ponteiro para SUB_Remove (rpg.cpp) */
 D_0036E210 = 0x0036E210; /* "weapons/357_cock1.wav" (python.cpp) */
 D_0036E228 = 0x0036E228; /* "weapons/357_shot1.wav" (python.cpp) */
 D_0036E240 = 0x0036E240; /* "weapons/357_shot2.wav" (python.cpp) */
+D_00369368 = 0x00369368; /* "FuncTrain with no target" (plats.cpp) */
+D_003695F0 = 0x003695F0; /* ponteiro para CFuncTrackTrain::Find (plats.cpp) */
 /* engine/sv_main: início */
 D_0038E8F8 = 0x0038E8F8;
 /* engine/sv_main: fim */
