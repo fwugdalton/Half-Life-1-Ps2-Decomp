@@ -214,7 +214,8 @@ for line in lines:
             else:
                 out.append('\tnop')
             after_nop.add(len(out))
-        elif reorder and pending_fpr is not None and label_at is not None:
+        elif pending_fpr is not None and label_at is not None:
+            # (vale também quando a instrução depois do rótulo está num bloco noreorder, ex. jal)
             # mtc1 seguido de rótulo cuja instrução não lê o registrador: o ee-as não põe nop,
             # mas o gas moderno poria (não sabe o que vem depois do rótulo)
             # (um li.s/mtc1 logo antes também vira .word, senão o gas põe o nop antes do .word)

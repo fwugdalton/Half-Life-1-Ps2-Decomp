@@ -73,6 +73,7 @@ public:
         pev->rendercolor.y = g;
         pev->rendercolor.z = b;
     }
+    inline void SetFlags(int flags) { pev->rendermode = (pev->rendermode & 0x0F) | (flags & 0xF0); }
     inline void SetBrightness(int brightness) { pev->renderamt = brightness; }
     inline void SetNoise(int amplitude) { pev->body = amplitude; }
     inline void SetScrollRate(int speed) { pev->animtime = speed; }
