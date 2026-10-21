@@ -3900,3 +3900,14 @@ AddAmmo__11CPythonAmmoP11CBaseEntity = 0x001D44C0; // type:func
 _GLOBAL_$I$weapon_python = 0x001D4550; // type:func
 _vt$11CPythonAmmo = 0x0036E270;
 _vt$7CPython = 0x0036E458;
+// playermonster
+monster_player = 0x001D3508; // type:func
+Classify__14CPlayerMonster = 0x001D3528; // type:func
+SetYawSpeed__14CPlayerMonster = 0x001D3530; // type:func
+HandleAnimEvent__14CPlayerMonsterP14MonsterEvent_s = 0x001D3548; // type:func
+ISoundMask__14CPlayerMonster = 0x001D3568; // type:func
+Spawn__14CPlayerMonster = 0x001D3570; // type:func
+Precache__14CPlayerMonster = 0x001D3680; // type:func
+GetClassPtr__H1Z14CPlayerMonster_PX01_PX01 = 0x001D36E8; // type:func
+_GLOBAL_$I$monster_player = 0x001D37B8; // type:func
+_vt$14CPlayerMonster = 0x0036DD10;
