@@ -70,6 +70,8 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x0BD368, cpp, dlls/plane]
+      - [0x0BD438, asm, cod/0BD438]
       - [0x0D3508, cpp, dlls/playermonster]
       - [0x0D37D8, cpp, dlls/python]
       - [0x0D4570, cpp, dlls/rat]
