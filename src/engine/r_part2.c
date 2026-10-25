@@ -85,7 +85,7 @@ void glVertex3fv(float *v);
 #define FBEAM_SHADEOUT 0x80
 
 extern float D_0050F188[NOISE_DIVISIONS + 1]; /* rgNoise */
-double func_002D78A0(double x, double y); /* fmod */
+double fmod(double x, double y); /* fmod */
 struct mnode_s *PVSNode(struct mnode_s *node, vec_t *emins, vec_t *emaxs, int clientId);
 qboolean R_CullBox(vec3_t mins, vec3_t maxs);
 void func_002B5590(float *noise, int divs);
@@ -1871,7 +1871,7 @@ void func_002B5DC8(vec3_t source, vec3_t delta, float width, float scale, float 
 
         noiseIndex += noiseStep;
         VectorCopy(screen, screenLast);
-        vLast = func_002D78A0(vLast, 1.0);
+        vLast = fmod(vLast, 1.0);
     }
 
     glEnd();
