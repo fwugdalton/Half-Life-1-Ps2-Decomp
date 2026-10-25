@@ -175,6 +175,11 @@ func_002E58F8 = 0x002E58F8;
 D_0035F1D0 = 0x0035F1D0;
 D_0035F1E8 = 0x0035F1E8;
 /* dlls/items: fim */
+/* dlls/islave: início */
+D_0035EB28 = 0x0035EB28;
+D_0035EB50 = 0x0035EB50;
+D_0035EB60 = 0x0035EB60;
+/* dlls/islave: fim */
 /* engine/sv_main: início */
 D_0038E8F8 = 0x0038E8F8;
 /* engine/sv_main: fim */
