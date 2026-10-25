@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x098798, cpp, dlls/leech]
       - [0x09A7F0, cpp, dlls/lights]
       - [0x09B2A0, cpp, dlls/maprules]
       - [0x09D2C0, cpp, dlls/mtank]
@@ -258,6 +259,7 @@ segments:
       - [0x1D0A68, asm, cod/1D0A68]
       - [0x1F5980, textbin, cod/1F5980] # .vutext
       - [0x201B00, data, cod/201B00] # .data
+      - [0x2145B8, .data, dlls/leech]
       - [0x214690, .data, dlls/lights]
       - [0x2146B0, .data, dlls/maprules]
       - [0x214710, .data, dlls/mtank]
@@ -334,6 +336,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x2603F8, .rodata, dlls/leech]
       - [0x2609B0, .rodata, dlls/lights]
       - [0x260EE8, .rodata, dlls/maprules]
       - [0x262BA8, .rodata, dlls/mtank]

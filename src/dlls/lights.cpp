@@ -19,7 +19,8 @@
   spawn and think functions for editor-placed lights
 
   Diferenças do PS2: a chave "_light" do CLight guarda a cor (bytes em 0x38) e o
-  raio (0x3C); com spawnflags & 2 a luz manda um TE_ELIGHT (Ps2Unk58, também
+  raio (0x3C); com spawnflags & 2 a luz manda um TE_ELIGHT (SendELight, virtual nova
+  depois do Ps2Unk58, também
   chamado pelo think ELightThink) para os clientes. Existe o nome entity_light, os
   cvars do céu são cl_skycolor_* / cl_skyvec_* e o light_environment faz as contas
   em float.
