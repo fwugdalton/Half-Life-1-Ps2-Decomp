@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x0AB410, cpp, dlls/multiplay_gamerules]
       - [0x0ACFE0, cpp, dlls/nihilanth]
       - [0x0B36A0, cpp, dlls/nodes]
       - [0x0B97E8, cpp, dlls/osprey]
@@ -317,6 +318,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x265E78, .rodata, dlls/multiplay_gamerules]
       - [0x2663F0, .rodata, dlls/nihilanth]
       - [0x267348, .rodata, dlls/nodes]
       - [0x268350, .rodata, dlls/osprey]

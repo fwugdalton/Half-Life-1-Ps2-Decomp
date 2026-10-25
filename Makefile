@@ -74,6 +74,7 @@ $(BUILD_DIR)/src/dlls/rosenberg.o: OBJCOPY_EXTRA := -R .bss --set-section-alignm
 $(BUILD_DIR)/src/dlls/roach.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .rodata=16
 $(BUILD_DIR)/src/dlls/talkmonster.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .rodata=16
 $(BUILD_DIR)/src/dlls/plats.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8 --set-section-alignment .rodata=16
+$(BUILD_DIR)/src/dlls/nihilanth.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8 --set-section-alignment .rodata=16
 $(BUILD_DIR)/src/dlls/teamplay_gamerules.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=4
 $(BUILD_DIR)/src/dlls/spectator.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=4
 

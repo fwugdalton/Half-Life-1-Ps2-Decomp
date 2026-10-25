@@ -251,7 +251,7 @@ typedef struct enginefuncs_s
     int (*pfnModelFrames)(int modelIndex);                              /* 0x010 */
     void (*pfnSetSize)(edict_t *e, const float *rgflMin, const float *rgflMax); /* 0x014 */
     void (*pfnChangeLevel)(char *s1, char *s2);                         /* 0x018 */
-    void (*pfnUnk1C)(void);                                             /* 0x01C */
+    void (*pfnPs2ChangeLevelMP)(char *s1);                              /* 0x01C: troca de mapa do multiplayer do PS2 */
     void (*pfnGetSpawnParms)(edict_t *ent);                             /* 0x020 */
     void (*pfnSaveSpawnParms)(edict_t *ent);                            /* 0x024 */
     float (*pfnVecToYaw)(const float *rgflVector);                      /* 0x028 */

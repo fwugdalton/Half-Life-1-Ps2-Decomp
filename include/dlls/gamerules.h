@@ -103,8 +103,7 @@ public:
 #define GR_ALLY         3
 #define GR_NEUTRAL      4
 
-/* CHalfLifeMultiplay (multiplay_gamerules.cpp, 0x1AB410...): só as virtuais que ele
-   sobrescreve (as entradas da vtable do teamplay que caem em 0x1AB000-0x1AD000) */
+/* CHalfLifeMultiplay (multiplay_gamerules.cpp, 0x1AB410-0x1ACFE0): as virtuais que ele sobrescreve */
 class CHalfLifeMultiplay : public CGameRules
 {
 public:
@@ -120,6 +119,7 @@ public:
     virtual BOOL Ps2Virt08(void);
     virtual BOOL IsMultiplayer(void);
     virtual BOOL ClientConnected(edict_t *pEntity, const char *pszName, const char *pszAddress, char szRejectReason[128]);
+    virtual void UpdateGameMode(CBasePlayer *pPlayer);
     virtual void InitHUD(CBasePlayer *pl);
     virtual void ClientDisconnected(edict_t *pClient);
     virtual float FlPlayerFallDamage(CBasePlayer *pPlayer);
@@ -130,6 +130,8 @@ public:
     virtual float FlPlayerSpawnTime(CBasePlayer *pPlayer);
     virtual edict_t *GetPlayerSpawnSpot(CBasePlayer *pPlayer);
     virtual BOOL AllowAutoTargetCrosshair(void);
+    virtual BOOL ClientCommand(CBasePlayer *pPlayer, const char *pcmd);
+    virtual int IPointsForKill(CBasePlayer *pAttacker, CBasePlayer *pKilled);
     virtual void PlayerKilled(CBasePlayer *pVictim, entvars_t *pKiller, entvars_t *pInflictor);
     virtual void DeathNotice(CBasePlayer *pVictim, entvars_t *pKiller, entvars_t *pInflictor);
     virtual BOOL CanHavePlayerItem(CBasePlayer *pPlayer, CBasePlayerItem *pWeapon);
@@ -151,6 +153,8 @@ public:
     virtual float FlHEVChargerRechargeTime(void);
     virtual int DeadPlayerWeapons(CBasePlayer *pPlayer);
     virtual int DeadPlayerAmmo(CBasePlayer *pPlayer);
+    virtual const char *GetTeamID(CBaseEntity *pEntity);
+    virtual int PlayerRelationship(CBaseEntity *pPlayer, CBaseEntity *pTarget);
     virtual BOOL PlayTextureSounds(void);
     virtual BOOL PlayFootstepSounds(CBasePlayer *pl, float fvol);
     virtual BOOL FAllowMonsters(void);
@@ -158,6 +162,8 @@ public:
 
     virtual void ChangeLevel(void);                                    /* slot 67 */
     virtual void GoToIntermission(void);                               /* slot 68 (0x220) */
+
+    void SendMOTDToClient(edict_t *client);
 
     float m_flIntermissionEndTime;      /* 0x14 */
     BOOL m_iEndIntermissionButtonHit;   /* 0x18 */

@@ -45,7 +45,10 @@ public:
     int m_iWeaponVolume;                        /* 0x2A8 */
     int m_iExtraSoundTypes;                     /* 0x2AC */
     int m_iWeaponFlash;                         /* 0x2B0 */
-    byte m_ps2Unk2B4[0x2CC - 0x2B4];
+    byte m_ps2Unk2B4[0x2C0 - 0x2B4];
+    int m_afButtonLast;                         /* 0x2C0 */
+    int m_afButtonPressed;                      /* 0x2C4 */
+    int m_afButtonReleased;                     /* 0x2C8 */
     edict_t *m_pentSndLast; /* 0x2CC */
     float m_flSndRoomtype; /* 0x2D0 */
     float m_flSndRange; /* 0x2D4 */
@@ -72,7 +75,8 @@ public:
     int m_ps2ShotsFired;                        /* 0x5F0: estatística do placar do PS2 */
     int m_ps2ShotsHit;                          /* 0x5F4 */
     int m_ps2Stat5F8;                           /* 0x5F8 */
-    byte m_ps2Unk5FC[0x610 - 0x5FC];
+    byte m_ps2Unk5FC[0x60C - 0x5FC];
+    float m_flNextDecalTime;                    /* 0x60C */
     char m_szTeamName[16];                      /* 0x610 */
     int m_ps2ClientIndex;                       /* 0x620: vai no ScoreInfo com um jogador só */
     Vector m_ps2Unk624[6];                      /* 0x624: o construtor do PS2 tem um laço de 6 Vector (posição exata desconhecida) */
@@ -93,7 +97,7 @@ public:
     byte m_ps2Unk6FC[0x770 - 0x6FC];
     BOOL m_ps2InfiniteAmmo;                     /* 0x770: recarrega sem gastar munição */
     float m_ps2Gravity;                         /* 0x774: gravidade do trigger_gravity */
-    byte m_ps2Unk778[0x77C - 0x778];
+    BOOL m_ps2ShowScores;                       /* 0x778: coopswitch alterna +showscores/-showscores */
     EHANDLE m_ps2hUnk77C;                       /* 0x77C */
     byte m_ps2Unk784[0x79C - 0x784];
     EHANDLE m_ps2hUnk79C;                       /* 0x79C */
@@ -116,6 +120,9 @@ public:
     void GiveNamedItem(const char *szName);
     void EnableControl(BOOL fControl);
     void RemoveAllItems(BOOL removeSuit);
+    BOOL IsOnLadder(void);
+    BOOL HasNamedPlayerItem(const char *pszItemName);
+    BOOL SwitchWeapon(CBasePlayerItem *pWeapon);
 };
 
 extern BOOL gEvilImpulse101;
