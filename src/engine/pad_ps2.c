@@ -60,7 +60,7 @@ int func_002D1BD0(int port, int slot, int offs, int lock);      /* scePadSetMain
 int func_002D1C88(int port, int slot, const unsigned char *d);  /* scePadSetActDirect */
 int func_002D1D40(int port, int slot, const unsigned char *d);  /* scePadSetActAlign */
 void *memset(void *dst, int c, unsigned int n);
-int func_002E4560(const void *a, const void *b, unsigned int n); /* memcmp */
+int memcmp(const void *a, const void *b, unsigned int n); /* memcmp */
 unsigned long func_00229B88(void);
 unsigned long func_00229C38(unsigned long a, unsigned long b);
 
@@ -834,5 +834,5 @@ PadState func_00219798(unsigned char *data) {
 }
 
 int func_00219B00(const PadState *a, const PadState *b) {
-    return func_002E4560(a, b, sizeof(PadState)) == 0;
+    return memcmp(a, b, sizeof(PadState)) == 0;
 }

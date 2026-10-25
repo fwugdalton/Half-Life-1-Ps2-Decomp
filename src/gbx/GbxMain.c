@@ -16,7 +16,7 @@ void func_00236990(int a);
 void func_002369C0(int a);
 int func_0010F390(void *p);
 void func_0010F310(void *p, int key);
-int func_002E4560(void);
+int memcmp(void);
 int func_002E4480(void);
 int func_002256E0(int key);
 void func_002256F0(int state);
@@ -149,7 +149,7 @@ void func_002256F0(int state) {
 }
 
 int func_00225790(void) {
-    return func_002E4560();
+    return memcmp();
 }
 
 int func_002257B0(void) {

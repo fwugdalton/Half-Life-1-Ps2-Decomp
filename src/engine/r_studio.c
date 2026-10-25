@@ -98,7 +98,7 @@ void *func_00244928(char *name, int *pLength);
 void *Cache_Alloc(cache_user_t *c, int size, char *name);
 void *memcpy(void *dst, const void *src, unsigned int n);
 void Mem_Free(void *p);
-int func_002E4560(const void *a, const void *b, int n);
+int memcmp(const void *a, const void *b, int n);
 int strcasecmp(const char *a, const char *b);
 int abs(int x);
 void Sys_Error(const char *fmt, ...);
@@ -382,8 +382,8 @@ r_studiocache_t *R_CheckStudioCache(model_t *pModel, float frame, int sequence, 
         if (pCached->pModel == pModel && pCached->frame == frame && pCached->sequence == sequence
             && VectorCompare(pCached->angles, angles) && VectorCompare(pCached->origin, origin)
             && VectorCompare(pCached->size, size)
-            && !func_002E4560(pCached->controller, controller, 4)
-            && !func_002E4560(pCached->blending, blending, 2))
+            && !memcmp(pCached->controller, controller, 4)
+            && !memcmp(pCached->blending, blending, 2))
         {
             return pCached;
         }
@@ -1304,7 +1304,7 @@ int R_StudioCheckBBox(void)
     VectorAdd(currententity->origin, mins, mins);
     VectorAdd(currententity->origin, maxs, maxs);
 
-    if (currententity->model && !func_002E4560(currententity->model->name + 7, "barnacle", 8))
+    if (currententity->model && !memcmp(currententity->model->name + 7, "barnacle", 8))
         mins[2] -= 1024.0f;
 
     return !R_CullBox(mins, maxs);

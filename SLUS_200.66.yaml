@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x0B36A0, cpp, dlls/nodes]
       - [0x0B97E8, cpp, dlls/osprey]
       - [0x0BC3D0, cpp, dlls/pathcorner]
       - [0x0BD368, cpp, dlls/plane]
@@ -246,6 +247,7 @@ segments:
       - [0x1D0A68, asm, cod/1D0A68]
       - [0x1F5980, textbin, cod/1F5980] # .vutext
       - [0x201B00, data, cod/201B00] # .data
+      - [0x215240, .data, dlls/nodes]
       - [0x2175D8, .data, dlls/osprey]
       - [0x217718, .data, dlls/pathcorner]
       - [0x217778, .data, dlls/plats]
@@ -313,6 +315,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x267348, .rodata, dlls/nodes]
       - [0x268350, .rodata, dlls/osprey]
       - [0x268A80, .rodata, dlls/pathcorner]
       - [0x268F60, .rodata, dlls/plats]
