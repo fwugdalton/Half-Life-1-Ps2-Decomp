@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x091F48, cpp, dlls/ichthyosaur]
       - [0x095050, cpp, dlls/islave]
       - [0x0971D8, cpp, dlls/items]
       - [0x098798, cpp, dlls/leech]
@@ -261,6 +262,7 @@ segments:
       - [0x1D0A68, asm, cod/1D0A68]
       - [0x1F5980, textbin, cod/1F5980] # .vutext
       - [0x201B00, data, cod/201B00] # .data
+      - [0x214350, .data, dlls/ichthyosaur]
       - [0x2144E8, .data, dlls/islave]
       - [0x2145B8, .data, dlls/leech]
       - [0x214690, .data, dlls/lights]
@@ -339,6 +341,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x25E200, .rodata, dlls/ichthyosaur]
       - [0x25E990, .rodata, dlls/islave]
       - [0x25F088, .rodata, dlls/items]
       - [0x2603F8, .rodata, dlls/leech]

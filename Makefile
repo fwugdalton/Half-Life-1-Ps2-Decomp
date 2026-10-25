@@ -72,6 +72,7 @@ $(BUILD_DIR)/src/dlls/%.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .dat
 # o .rodata do tentacle_decay começa alinhado em 16 (o tentacle.cpp termina com 0xC de padding)
 $(BUILD_DIR)/src/dlls/tentacle_decay.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8 --set-section-alignment .rodata=16
 $(BUILD_DIR)/src/dlls/rosenberg.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8 --set-section-alignment .rodata=16
+$(BUILD_DIR)/src/dlls/islave.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8 --set-section-alignment .rodata=16
 $(BUILD_DIR)/src/dlls/roach.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .rodata=16
 $(BUILD_DIR)/src/dlls/talkmonster.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .rodata=16
 $(BUILD_DIR)/src/dlls/plats.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8 --set-section-alignment .rodata=16
