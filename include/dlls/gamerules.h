@@ -93,7 +93,7 @@ public:
     virtual void EndMultiplayerGame(void);                             /* slot 62 */
     virtual void Ps2Virt63(void);
     virtual CBaseEntity *Ps2Virt64(int iPlayerIndex); /* slot 64 (0x200): jogador pelo player_index */
-    virtual void Ps2Virt65(void);
+    virtual void Ps2Virt65(BOOL bOn); /* slot 65 (0x208): FALSE/TRUE em volta do GiveNamedItem do game_player_equip */
     virtual void Ps2Virt66(void);
 };
 

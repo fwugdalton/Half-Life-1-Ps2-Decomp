@@ -26,6 +26,9 @@
 - um objeto global zerado com nome de endereço (asm("D_XXXXXXXX"), ex. um array
   estático com construtor que no original fica no .bss do asm) não é definido aqui:
   o rótulo e o .space saem e o símbolo vem do asm.
+- uma função com INLINE_INCLUDE_ASM(pasta, nome) no corpo (include/inline_include_asm.h,
+  comentário "#INLINE_INCLUDE_ASM pasta/nome.s") é trocada pelo .include desse .s (cópia fora
+  de linha de uma inline que não casa, ou função-chave de uma classe que precisa da vtable).
 """
 import sys, re
 
@@ -269,4 +272,20 @@ if drop:
         if keep(l):
             res.append(l)
     out = res
+INL = re.compile(r'#INLINE_INCLUDE_ASM\s+(\S+)')
+while True:
+    k = next((i for i, l in enumerate(out) if INL.search(l)), None)
+    if k is None:
+        break
+    path = INL.search(out[k]).group(1)
+    name = path.rsplit('/', 1)[-1][:-2]
+    a = max(i for i in range(k) if re.match(r'^\s+\.ent\s+(\S+)', out[i]))
+    fn = re.match(r'^\s+\.ent\s+(\S+)', out[a]).group(1)
+    b = next(i for i in range(k, len(out)) if re.match(r'^\s+\.end\s+' + re.escape(fn) + r'\s*$', out[i]))
+    if fn != name:
+        sys.exit('fixasm: INLINE_INCLUDE_ASM de %s dentro de %s' % (name, fn))
+    if a > 0 and re.match(r'^\s+\.(globl|weak)\s+' + re.escape(fn) + r'\s*$', out[a - 1]):
+        a -= 1
+    out[a:b + 1] = ['\t.set\tnoat', '\t.set\tnoreorder', '\t.include\t"%s"' % path,
+                    '\t.set\treorder', '\t.set\tat']
 open(sys.argv[2], 'w').write('\n'.join(out))
