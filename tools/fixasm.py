@@ -141,10 +141,12 @@ for line in lines:
         import struct
         ind, rd, val = md.groups()
         v = struct.unpack('<Q', struct.pack('<d', float(val)))[0]
+        # só doubles com os 48 bits de baixo zerados (1.0, 0.5, 256...) viram ori + dsll
+        # (com o menor deslocamento); 264.0 (0x40708 << 44) já vai para a .rodata (lights.cpp)
         for sh in range(49):
             if v & ~(0xFFFF << sh) == 0:
                 break
-        else:
+        if v & ((1 << 48) - 1):
             # valor sem forma curta: o ee-as põe o double na .rodata e carrega com lui/ld via $at
             lit_n = globals().get('lit_n', 0) + 1
             globals()['lit_n'] = lit_n
@@ -272,6 +274,21 @@ if drop:
         if keep(l):
             res.append(l)
     out = res
+# os doubles do li.d vão para a .rodata depois do .end da função (trocar de seção no meio
+# do código faz o gas pôr o nop de um mtc1 anterior)
+res, lits = [], []
+i = 0
+while i < len(out):
+    if out[i] == '\t.pushsection .rodata' and i + 4 < len(out) and out[i + 2].startswith('$LIT'):
+        lits += out[i:i + 5]
+        i += 5
+        continue
+    res.append(out[i])
+    if lits and re.match(r'^\s+\.end\s', out[i]):
+        res += lits
+        lits = []
+    i += 1
+out = res + lits
 INL = re.compile(r'#INLINE_INCLUDE_ASM\s+(\S+)')
 while True:
     k = next((i for i, l in enumerate(out) if INL.search(l)), None)
