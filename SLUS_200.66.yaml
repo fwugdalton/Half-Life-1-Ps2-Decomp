@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x0A8D90, cpp, dlls/monsterstate]
       - [0x0A9208, cpp, dlls/mortar]
       - [0x0A9D68, cpp, dlls/mp5]
       - [0x0AB410, cpp, dlls/multiplay_gamerules]
@@ -321,6 +322,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x264BA0, .rodata, dlls/monsterstate]
       - [0x264C20, .rodata, dlls/mortar]
       - [0x265368, .rodata, dlls/mp5]
       - [0x265E78, .rodata, dlls/multiplay_gamerules]
