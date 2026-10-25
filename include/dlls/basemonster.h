@@ -100,7 +100,9 @@ public:
     SCRIPTSTATE m_scriptState;              /* 0x26C */
     CCineMonster *m_pCine;                  /* 0x270 */
 
-    int m_ps2Unk274[10];                    /* 0x274: campos extras do PS2 (a ver) */
+    int m_ps2Unk274[6];                     /* 0x274: campos extras do PS2 (a ver) */
+    EHANDLE m_hAIEventPs2;                  /* 0x28C: PS2, limpo ao achar um info_aievent inativo */
+    EHANDLE m_hAIEventTarget;               /* 0x294: PS2, alvo acionado pelo info_aievent */
     float m_flPathCheckTime;                /* 0x29C: PS2, última falha de rota (espera 3 s) */
 
     virtual int Save(CSave &save);
@@ -125,6 +127,7 @@ public:
 
     virtual void MonsterThink(void);
     void EXPORT CallMonsterThink(void) { this->MonsterThink(); }
+    void EXPORT MonsterUse(CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value);
     virtual int IRelationship(CBaseEntity *pTarget);
     virtual void MonsterInit(void);
     virtual void MonsterInitDead(void);
@@ -189,7 +192,7 @@ public:
     void PushEnemy(CBaseEntity *pEnemy, Vector &vecLastKnownPos);
     BOOL PopEnemy(void);
 
-    BOOL FGetNodeRoute(Vector vecDest);
+    BOOL FGetNodeRoute(Vector vecDest, int iSrcNode = 0, int iDestNode = 0); /* PS2: nós já achados */
 
     inline void TaskComplete(void) { if (!HasConditions(bits_COND_TASK_FAILED)) m_iTaskStatus = TASKSTATUS_COMPLETE; }
     void MovementComplete(void);
@@ -208,6 +211,7 @@ public:
     void MakeIdealYaw(Vector vecTarget);
     virtual void SetYawSpeed(void) { return; }
     BOOL BuildRoute(const Vector &vecGoal, int iMoveFlag, CBaseEntity *pTarget);
+    BOOL BuildNodeRoute(const Vector &vecGoal, int iMoveFlag, CBaseEntity *pTarget); /* PS2: tenta os nós antes */
     virtual BOOL BuildNearestRoute(Vector vecThreat, Vector vecViewOffset, float flMinDist, float flMaxDist);
     int RouteClassify(int iMoveFlag);
     void InsertWaypoint(Vector vecLocation, int afMoveFlags);
@@ -221,11 +225,20 @@ public:
     virtual void CheckAmmo(void) { return; }
     virtual int IgnoreConditions(void);
 
-    /* no PS2 estas quatro não são inline (cópias em 0x1A8BC0..0x1A8BF8) */
+    /* estas quatro são inline, mas as cópias fora de linha (0x1A8BC0..0x1A8BF8, do
+       monsters.cpp) são chamadas por quem as usa antes da definição; os outros
+       arquivos as declaram aqui sem corpo e definem inline onde casa */
+#ifdef DLLS_MONSTERS_CPP
+    inline void SetConditions(int iConditions) { m_afConditions |= iConditions; }
+    inline void ClearConditions(int iConditions) { m_afConditions &= ~iConditions; }
+    inline BOOL HasConditions(int iConditions) { if (m_afConditions & iConditions) return TRUE; return FALSE; }
+    inline BOOL HasAllConditions(int iConditions) { if ((m_afConditions & iConditions) == iConditions) return TRUE; return FALSE; }
+#else
     void SetConditions(int iConditions);
     void ClearConditions(int iConditions);
     BOOL HasConditions(int iConditions);
     BOOL HasAllConditions(int iConditions);
+#endif
     virtual BOOL FValidateHintType(short sHint);
     int FindHintNode(void);
     virtual BOOL FCanActiveIdle(void);

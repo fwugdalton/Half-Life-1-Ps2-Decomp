@@ -216,9 +216,9 @@ struct WayPoint_t
 #define MOVEGOAL_NONE           0
 #define MOVEGOAL_TARGETENT      (1 << 0)
 #define MOVEGOAL_ENEMY          (1 << 1)
-#define MOVEGOAL_PATHCORNER     (1 << 2)
-#define MOVEGOAL_LOCATION       (1 << 3)
-#define MOVEGOAL_NODE           (1 << 4)
+#define MOVEGOAL_PATHCORNER     (1 << 4)
+#define MOVEGOAL_LOCATION       (1 << 6)
+#define MOVEGOAL_NODE           (1 << 5)
 
 #define bits_COND_CLIENT_PUSH       (bits_COND_SPECIAL1)
 #define bits_COND_CLIENT_UNSEEN     (bits_COND_SPECIAL2)
