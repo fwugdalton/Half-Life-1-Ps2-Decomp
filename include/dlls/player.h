@@ -18,6 +18,12 @@
 #define PFLAG_PS2_NOPICKUP  (1 << 6)   /* PS2: não pega armas nem munição (fora do impulse 101) */
 
 #define MAX_ITEM_TYPES      6
+#define MAX_ITEMS           5
+
+#define ITEM_HEALTHKIT      1
+#define ITEM_ANTIDOTE       2
+#define ITEM_SECURITY       3
+#define ITEM_BATTERY        4
 #define MAX_AMMO_SLOTS      32
 
 #define WEAPON_IS_ONTARGET  0x40
@@ -55,11 +61,14 @@ public:
     float m_flSndRoomtype; /* 0x2D0 */
     float m_flSndRange; /* 0x2D4 */
     float m_flFallVelocity; /* 0x2D8 */
-    byte m_ps2Unk2DC[0x430 - 0x2DC];
+    int m_rgItems[MAX_ITEMS];                   /* 0x2DC */
+    byte m_ps2Unk2F0[0x430 - 0x2F0];
     float m_flgeigerRange;                      /* 0x430 */
     byte m_ps2Unk434[0x468 - 0x434];
     BOOL m_fWeapon;                             /* 0x468 */
-    byte m_ps2Unk46C[0x490 - 0x46C];
+    byte m_ps2Unk46C[0x47C - 0x46C];
+    BOOL m_fLongJump;                           /* 0x47C */
+    byte m_ps2Unk480[0x490 - 0x480];
     int m_afPhysicsFlags;                       /* 0x490 */
     byte m_ps2Unk494[0x498 - 0x494];
     int m_iFOV;                                 /* 0x498 */

@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x0971D8, cpp, dlls/items]
       - [0x098798, cpp, dlls/leech]
       - [0x09A7F0, cpp, dlls/lights]
       - [0x09B2A0, cpp, dlls/maprules]
@@ -336,6 +337,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x25F088, .rodata, dlls/items]
       - [0x2603F8, .rodata, dlls/leech]
       - [0x2609B0, .rodata, dlls/lights]
       - [0x260EE8, .rodata, dlls/maprules]

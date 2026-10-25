@@ -171,6 +171,10 @@ D_00366858 = 0x00366858;
 D_00366A48 = 0x00366A48;
 D_00366A60 = 0x00366A60;
 func_002E58F8 = 0x002E58F8;
+/* dlls/items: início */
+D_0035F1D0 = 0x0035F1D0;
+D_0035F1E8 = 0x0035F1E8;
+/* dlls/items: fim */
 /* engine/sv_main: início */
 D_0038E8F8 = 0x0038E8F8;
 /* engine/sv_main: fim */

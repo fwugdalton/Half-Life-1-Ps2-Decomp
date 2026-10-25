@@ -7,6 +7,9 @@
    uma função inline e para a função-chave de uma classe (sem ela o gcc não emite a vtable).
    O splat acha o nome por causa do "INCLUDE_ASM(" no nome da macro.
    (o include/include_asm.h é gerado pelo splat, por isso a macro fica aqui) */
+/* o .include dos macros do asm (glabel...) vem do include_asm.h */
+#include "include_asm.h"
+
 #if !defined(M2CTX) && !defined(PERMUTER)
 #define INLINE_INCLUDE_ASM(FOLDER, NAME) __asm__("#INLINE_INCLUDE_ASM " FOLDER "/" #NAME ".s")
 #else
