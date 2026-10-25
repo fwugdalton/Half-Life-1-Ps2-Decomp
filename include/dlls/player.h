@@ -45,7 +45,9 @@ public:
     int m_iWeaponVolume;                        /* 0x2A8 */
     int m_iExtraSoundTypes;                     /* 0x2AC */
     int m_iWeaponFlash;                         /* 0x2B0 */
-    byte m_ps2Unk2B4[0x2C0 - 0x2B4];
+    float m_flStopExtraSoundTime;               /* 0x2B4 */
+    float m_flFlashLightTime;                   /* 0x2B8 */
+    int m_iFlashBattery;                        /* 0x2BC */
     int m_afButtonLast;                         /* 0x2C0 */
     int m_afButtonPressed;                      /* 0x2C4 */
     int m_afButtonReleased;                     /* 0x2C8 */
