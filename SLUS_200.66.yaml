@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x09D2C0, cpp, dlls/mtank]
       - [0x09F5F8, cpp, dlls/modeltrain]
       - [0x0A0E80, cpp, dlls/monstermaker]
       - [0x0A1828, cpp, dlls/monsters]
@@ -255,6 +256,7 @@ segments:
       - [0x1D0A68, asm, cod/1D0A68]
       - [0x1F5980, textbin, cod/1F5980] # .vutext
       - [0x201B00, data, cod/201B00] # .data
+      - [0x214710, .data, dlls/mtank]
       - [0x214830, .data, dlls/modeltrain]
       - [0x2148E0, .data, dlls/monstermaker]
       - [0x214970, .data, dlls/monsters]
@@ -328,6 +330,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x262BA8, .rodata, dlls/mtank]
       - [0x263468, .rodata, dlls/modeltrain]
       - [0x263840, .rodata, dlls/monstermaker]
       - [0x263E10, .rodata, dlls/monsters]

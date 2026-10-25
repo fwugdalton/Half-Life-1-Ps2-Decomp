@@ -23,6 +23,9 @@
   li de 0x80000000 (ObjectCaps que só devolve FCAP_DONT_SAVE).
 - nem com um acesso volatile (entre "#.set volatile" e "#.set novolatile"; o ee-gcc
   original emitia a diretiva de verdade e o ee-as a respeitava).
+- um objeto global zerado com nome de endereço (asm("D_XXXXXXXX"), ex. um array
+  estático com construtor que no original fica no .bss do asm) não é definido aqui:
+  o rótulo e o .space saem e o símbolo vem do asm.
 """
 import sys, re
 
@@ -245,4 +248,25 @@ for line in lines:
             pending_fpr = None
         prev_real = prev_prev = None
     out.append(line)
+ADDRSYM = re.compile(r'^D_[0-9A-F]{8}$')
+drop = set()
+for i, l in enumerate(out):
+    m = re.match(r'^(\S+):\s*$', l)
+    if m and ADDRSYM.match(m.group(1)) and i + 1 < len(out) and re.match(r'^\s+\.space\s+\d+\s*$', out[i + 1]):
+        drop.add(m.group(1))
+if drop:
+    def keep(l):
+        m = re.match(r'^(\S+):\s*$', l)
+        if m and m.group(1) in drop:
+            return False
+        m = re.match(r'^\s+\.(globl|type|size)\s+(D_[0-9A-F]{8})\b', l)
+        return not (m and m.group(2) in drop)
+    res = []
+    for i, l in enumerate(out):
+        if re.match(r'^\s+\.space\s+\d+\s*$', l) and i > 0 and re.match(r'^(\S+):\s*$', out[i - 1]) \
+                and out[i - 1][:-1].strip() in drop:
+            continue
+        if keep(l):
+            res.append(l)
+    out = res
 open(sys.argv[2], 'w').write('\n'.join(out))

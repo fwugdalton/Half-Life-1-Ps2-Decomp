@@ -10,6 +10,8 @@ D_0038D660 = 0x0038D660; /* "\n" (pmove.c) */
 D_00363930 = 0x00363930; /* "monstercount" (monstermaker), citado por engano em D_00347BA8 */
 D_00363630 = 0x00363630; /* "182" (modeltrain), citado por engano no rodata em asm */
 D_00363530 = 0x00363530; /* meio de "m_iszRunningSequence" (modeltrain), citado no rodata do gl_rmisc */
+D_00362E30 = 0x00362E30; /* ptr-to-member do ActiveThink (mtank), citado por engano no .rodata do view.c/snd_dma.c */
+D_00363330 = 0x00363330; /* meio da vtable do CTankShell (mtank), citado no rodata em asm */
 D_0038E478 = 0x0038E478; /* "Non-sprite set to glow!\n" (r_trans.c) */
 /* engine/sv_phys: início */
 D_0038FA20 = 0x0038FA20;
