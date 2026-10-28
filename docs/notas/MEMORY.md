@@ -1,0 +1,57 @@
+- [hl1ps2-project-setup](hl1ps2-project-setup.md): pasta, build e fatos do binário do decomp HL1 PS2
+- [hl1ps2-next-steps](hl1ps2-next-steps.md): compilador confirmado, pegadinhas do build e estado do decomp
+- [hl1ps2-github-repo](hl1ps2-github-repo.md): repo GitHub do projeto e rotina de push
+- [hl1ps2-matching-lessons](hl1ps2-matching-lessons.md): padrões de C que fazem o ee-gcc 2.95 casar com o asm
+- [hl1ps2-matching-lessons-2](hl1ps2-matching-lessons-2.md): mais padrões de C para o ee-gcc 2.95 (laços, pilha, retorno de struct)
+- [hl1ps2-file-status](hl1ps2-file-status.md): estado de cada arquivo .c, faixas e próximo arquivo a separar
+- [hl1ps2-file-status-2](hl1ps2-file-status-2.md): estado de view.c em diante (cl_parse.c, ui.c) e próximo arquivo
+- [hl1ps2-matching-lessons-3](hl1ps2-matching-lessons-3.md): lições do cl_parse.c (ordem de cases, delay slot, constantes em laço)
+- [hl1ps2-compiler-flags](hl1ps2-compiler-flags.md): flags por arquivo (-ffast-math, -fmove-all-movables) e como testar
+- [hl1ps2-matching-lessons-4](hl1ps2-matching-lessons-4.md): lições do gl_rsurf.c (li.d, a = b = expr, índices)
+- [hl1ps2-file-status-3](hl1ps2-file-status-3.md): estado de gl_rsurf/gl_rmain/gl_rlight e próximo arquivo (gl_screen)
+- [hl1ps2-matching-lessons-5](hl1ps2-matching-lessons-5.md): lições do r_part2.c (trybody vs protótipo, variável de bloco, ordem de args)
+- [hl1ps2-file-status-4](hl1ps2-file-status-4.md): estado de gl_rmisc, r_part, r_part2 e próximo (r_studio)
+- [hl1ps2-file-status-5](hl1ps2-file-status-5.md): r_studio.c e gl_studio.c (faixas, globais, fronteira)
+- [hl1ps2-file-status-6](hl1ps2-file-status-6.md): som (snd_dma.c, snd_mix_gbx.c) e próximo arquivo (common/filesystem)
+- [hl1ps2-matching-lessons-6](hl1ps2-matching-lessons-6.md): lições do r_studio (INCLUDE_RODATA, retorno int, break vs return)
+- [hl1ps2-matching-lessons-7](hl1ps2-matching-lessons-7.md): lições do som (volatile shm e delay slot, if/else que casam, INCLUDE_RODATA de cvars)
+- [hl1ps2-matching-lessons-8](hl1ps2-matching-lessons-8.md): lições do cl_tent.c (pilha, 0.01f, unsigned→float, permute)
+- [hl1ps2-file-status-9](hl1ps2-file-status-9.md): in_camera, chase, cl_draw, cdll_int e próximo (build.c)
+- [hl1ps2-file-status-7](hl1ps2-file-status-7.md): arquivos do cliente (cl_tent, cl_cam, cl_pred, Cl_main) e próximo (cl_input)
+- [hl1ps2-file-status-8](hl1ps2-file-status-8.md): cl_ents.c (tipos novos, NON_MATCHING) e próximo arquivo
+- [hl1ps2-matching-lessons-9](hl1ps2-matching-lessons-9.md): lições do cl_ents.c (memcpy inline, lw em dois shorts, opd.py)
+- [hl1ps2-file-status-10](hl1ps2-file-status-10.md): build.c e common.c (flags, NON_MATCHING) e próximo arquivo
+- [hl1ps2-matching-lessons-10](hl1ps2-matching-lessons-10.md): lições do common.c (if redundante do QW, strlen unsigned, fabsf, put.py e rótulos)
+- [hl1ps2-zlib-inflate](hl1ps2-zlib-inflate.md): zlib 1.1.3 inteiro em src/zlib (faixas, -fno-strict-aliasing, alinhamentos, NON_MATCHING)
+- [hl1ps2-gbx-kernel](hl1ps2-gbx-kernel.md): Gbx/Kernel.c em C (faixas, NON_MATCHING, lições) e próximos blocos Gbx
+- [hl1ps2-gbx-cpp](hl1ps2-gbx-cpp.md): regra de build C++ (cc1plus), mangling do gcc 2.95 e estado do KeyStateManager.cpp
+- [hl1ps2-gbx-memorycard](hl1ps2-gbx-memorycard.md): Gbx/MemoryCard.cpp (libmc) e truques de switch/struct que casaram
+- [hl1ps2-gbx-gamesave](hl1ps2-gbx-gamesave.md): Gbx/GameSave.cpp (structs de save, lições) e próximo arquivo a partir de 0x2307D8
+- [hl1ps2-gbx-save-sound](hl1ps2-gbx-save-sound.md): SaveInfo, SaveIconTitle, Mouse, GuiSound e SPUMemory (faixas, NON_MATCHING, truques)
+- [hl1ps2-gbx-cd-iop](hl1ps2-gbx-cd-iop.md): StreamZip, AsyncRead, Iop, CdAudio e MethodPointerTable (faixas, NON_MATCHING) e próximo arquivo
+- [hl1ps2-gbx-gl](hl1ps2-gbx-gl.md): Cheats.c, gl.c, Texture.cpp (faixas, rodata, cmpfunc rígido, lições do gl)
+- [hl1ps2-gbx-jade](hl1ps2-gbx-jade.md): GbxMain.c e Gbx/Jade (Buffer, Membank, SmallMembank, String, HashTable): faixas e truques
+- [hl1ps2-pad-compress](hl1ps2-pad-compress.md): compress.c, compress_dict.c e pad_ps2.c (libpad) e truques (r=0 nos else)
+- [hl1ps2-gbx-hl1save](hl1ps2-gbx-hl1save.md): Gbx/HL1Input/Compress/Decompress/Read (save do PS2): faixas, NON_MATCHING e truques
+- [hl1ps2-dlls](hl1ps2-dlls.md): dlls do jogo em C++ (zombie.cpp feito), headers HLSDK, flags e como integrar um .cpp
+- [hl1ps2-dlls-done](hl1ps2-dlls-done.md): lista dos .cpp das dlls já feitos (endereço e commit)
+- [hl1ps2-dlls-weapons](hl1ps2-dlls-weapons.md): lições do weapons.cpp (player.h, g_vecZero_dll, registro void, gpGlobals local)
+- [hl1ps2-dlls-islave](hl1ps2-dlls-islave.md): weapon_islave.cpp e warpball.cpp (faixas, NON_MATCHING em C++, rodata de função em asm)
+- [hl1ps2-dlls-util](hl1ps2-dlls-util.md): dlls/util.cpp (faixas, -fmove-all-movables, diferenças do PS2, slots do CGameRules)
+- [hl1ps2-dlls-turret](hl1ps2-dlls-turret.md): dlls/turret.cpp (faixas, diferenças do PS2 da sentry, truques)
+- [hl1ps2-dlls-tripmine](hl1ps2-dlls-tripmine.md): tripmine.cpp (faixas, mudanças do PS2, string do .rodata com função NON_MATCHING)
+- [hl1ps2-dlls-triggers](hl1ps2-dlls-triggers.md): triggers.cpp (faixas, entidades do Decay, strings mescladas, cópias weak) e lições
+- [hl1ps2-dlls-teamplay](hl1ps2-dlls-teamplay.md): teamplay_gamerules, talkmonster e subs.cpp (faixas, flags, diferenças do PS2)
+- [hl1ps2-dlls-tentacle](hl1ps2-dlls-tentacle.md): tentacle_decay.cpp (CTentacleDecay, faixas, lições) e dicas para o tentacle.cpp
+- [hl1ps2-dlls-squeak](hl1ps2-dlls-squeak.md): squeakgrenade, squadmonster, spectator e soundent.cpp (faixas, diferenças do PS2, gSkillData em 0x318618)
+- [hl1ps2-dlls-sound](hl1ps2-dlls-sound.md): sound, slave_collar, coopplay_gamerules e skill.cpp (layout real do skilldata_t, NON_MATCHING de WRITE_* com float)
+- [hl1ps2-dlls-shotgun](hl1ps2-dlls-shotgun.md): shotgun.cpp, scripted.cpp e scientist.cpp (faixas, diferenças do PS2, truques)
+- [hl1ps2-dlls-schedule](hl1ps2-dlls-schedule.md): schedule.cpp, satchel.cpp e rpg.cpp (faixas, campos do PS2, truque da seção descartada no Explode)
+- [hl1ps2-dlls-rosenberg](hl1ps2-dlls-rosenberg.md): rosenberg.cpp e roach.cpp (faixas, diferenças do PS2, rodata alinhada a 16)
+- [hl1ps2-dlls-osprey](hl1ps2-dlls-osprey.md): osprey.cpp e pathcorner.cpp (faixas, mudanças do PS2) e regras do fixasm sobre mtc1/mfc1
+- [hl1ps2-dlls-nodes](hl1ps2-dlls-nodes.md): nodes.cpp (faixas, CNode/CGraph do PS2, NON_MATCHING, strings deduplicadas, force_not_migration)
+- [hl1ps2-dlls-nihilanth](hl1ps2-dlls-nihilanth.md): nihilanth.cpp (attachments -2, switch reordenado, div com trap depois, opi vs opP do EHANDLE)
+- [hl1ps2-dlls-multiplay](hl1ps2-dlls-multiplay.md): multiplay_gamerules.cpp (coop no IsMultiplayer, coopswitch, DeathNotice morto, slot 0x1C)
+- [hl1ps2-dlls-monsters](hl1ps2-dlls-monsters.md): monsters.cpp (CBaseMonster, -fmove-all-movables, info_aievent do PS2, triangulate)
+- [hl1ps2-dlls-maprules](hl1ps2-dlls-maprules.md): maprules.cpp (game_*), conversões float->int NON_MATCHING e a macro INLINE_INCLUDE_ASM
+- [hl1ps2-dlls-done-2](hl1ps2-dlls-done-2.md): continuação da lista de .cpp das dlls feitos (lights, leech, items em diante)

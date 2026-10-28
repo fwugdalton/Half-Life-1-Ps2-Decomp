@@ -1,3 +1,6 @@
+> **IA/LLM retomando o projeto: leia primeiro [`LEIA_PRIMEIRO_INSTRUCOES_PARA_IA.md`](LEIA_PRIMEIRO_INSTRUCOES_PARA_IA.md).**
+> AI/LLM resuming this project: read that file first.
+
 # Half-Life (USA) PS2: descompilação
 
 Alvo: `SLUS_200.66` (Half-Life, PS2, NTSC-U), port da Gearbox Software, build de 19/out/2001.
