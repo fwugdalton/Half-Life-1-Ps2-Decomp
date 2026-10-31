@@ -11,4 +11,6 @@ Continuação de [[hl1ps2-dlls-done-8]]. Formato: arquivo (endereço do texto, c
 
 - decay_gamerules (0x151B58, e17001f, 52/52): arquivo só do PS2, nomes inventados (CHalfLifeDecay : CHalfLifeMultiplay, "HL Coopplay", 0x5C bytes; ctor 0x152E20 chamado pelo InstallGameRules como func_00152E20, definido no linker_script_extra.ld). Sem .data, .rodata 0x345440 (vtable 0x3456D8). Detalhes e truques em [[hl1ps2-dlls-decay]].
 
-Próximo: o arquivo do "ps2controller_hud" (CControllerHud): .text termina em 0x151B58 e começa por volta de 0x1517C8 (o controller.cpp termina em 0x1517C8, static init 0x151748), .rodata 0x3451B0–0x345440, .data com "m_iHoldTime" em 0x30EE50 (TYPEDESCRIPTION).
+- controller_hud (0x1517C8, c2358a5, 11/11): ps2controller_hud (CControllerHud : CPointEntity, 0x38 bytes, campo sem uso em 0x30, m_iHoldTime 0x34), .data 0x30EE50 (m_SaveData), .rodata 0x3451B0 (vtable 0x345248). HudUse manda D_00317D20 ao jogador 1 com spawnflags e holdtime. Truque: o "Half-Life" vem logo depois do "target" porque o gamerules.h é incluído ANTES do cbase.h (o "" do TeamID sai depois). Precisa de `_GLOBAL_$I$ps2controller_hud` no symbol_addrs (a tabela de construtores do .data cita).
+
+Próximo: controller.cpp (monster_alien_controller do HLSDK): .text termina em 0x1517C8 (static init 0x151748 registra monster_alien_controller, D_003442D8 e D_00344338), .rodata termina em 0x3451B0 ("monster_alien_controller" em 0x345190).
