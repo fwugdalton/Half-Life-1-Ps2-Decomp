@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x04D630, cpp, dlls/controller]
       - [0x0517C8, cpp, dlls/controller_hud]
       - [0x051B58, cpp, dlls/decay_gamerules]
       - [0x054480, cpp, dlls/crossbow]
@@ -300,6 +301,7 @@ segments:
       - [0x1D0A68, asm, cod/1D0A68]
       - [0x1F5980, textbin, cod/1F5980] # .vutext
       - [0x201B00, data, cod/201B00] # .data
+      - [0x20ECC0, .data, dlls/controller]
       - [0x20EE50, .data, dlls/controller_hud]
       - [0x20EE60, .data, dlls/crossbow]
       - [0x20EE70, .data, dlls/defaultai]
@@ -407,6 +409,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x244040, .rodata, dlls/controller]
       - [0x2451B0, .rodata, dlls/controller_hud]
       - [0x245440, .rodata, dlls/decay_gamerules]
       - [0x245910, .rodata, dlls/crossbow]
