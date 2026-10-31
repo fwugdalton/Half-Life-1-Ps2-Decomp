@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x038728, cpp, dlls/bigmomma]
       - [0x03BE98, cpp, dlls/bloater]
       - [0x03C240, cpp, dlls/bmodels]
       - [0x03E8C0, cpp, dlls/bullsquid]
@@ -308,6 +309,7 @@ segments:
       - [0x1D0A68, asm, cod/1D0A68]
       - [0x1F5980, textbin, cod/1F5980] # .vutext
       - [0x201B00, data, cod/201B00] # .data
+      - [0x20E478, .data, dlls/bigmomma]
       - [0x20E620, .data, dlls/bmodels]
       - [0x20E6F0, .data, dlls/bullsquid]
       - [0x20EA68, .data, dlls/buttons]
@@ -420,6 +422,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x23E7F0, .rodata, dlls/bigmomma]
       - [0x23F788, .rodata, dlls/bloater]
       - [0x23FBF0, .rodata, dlls/bmodels]
       - [0x240C40, .rodata, dlls/bullsquid]
