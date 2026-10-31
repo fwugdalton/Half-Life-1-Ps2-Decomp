@@ -15,4 +15,6 @@ Continuação de [[hl1ps2-dlls-done-6]]. Formato: arquivo (início .text, commit
 
 - func_break (0x167630, 2ff3f08, 36/38): .data 0x30FB18 (0x12C), .rodata 0x34BB60 (vtables CPushable 0x34C330, CBreakable 0x34C510). PS2: sem o bloco playerclass no Spawn, Move do SDK antigo (IN_FORWARD|IN_USE, sqrtf vira sqrt.s), Die manda WRITE_BYTE(m_iszSpawnObject ? 10 : 0) escrito como if/else, fabsf(pev->health), .mdl→.dol. Registro func_001698A8: 111 Die, 112 SUB_Remove, 113 BreakTouch (func_002397F0). NON_MATCHING: CPushable Spawn (pev->skin float→int) e KeyValue (s0/s1; o corpo C fica no #else porque o asm define "size"/"buoyancy").
 
-Próximo: item_focusemitter (Decay; nome do .cpp desconhecido): .text termina em 0x167630 (_GLOBAL_ em 0x167610); .data termina em 0x30FB18; .rodata termina em 0x34BB60 (strings a partir de ~0x34B3C8).
+- focus_emitter (0x165CA8, cf87a0a, 21/22): arquivo só do Decay, escrito do zero; ver [[hl1ps2-dlls-focus]].
+
+Próximo: flyingmonster.cpp (.text 0x164F78–0x165CA8, termina com os inline SetFlyingMomentum/FlapSound/Speed em 0x165C90; sem .data, .data termina em 0x30FB18; .rodata termina em 0x34B3C8, vtable em ~0x34AFC0 com 8 bytes de padding no fim).
