@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x054480, cpp, dlls/crossbow]
       - [0x056970, cpp, dlls/crowbar]
       - [0x057AE0, cpp, dlls/defaultai]
       - [0x057ED0, cpp, dlls/doors]
@@ -297,6 +298,7 @@ segments:
       - [0x1D0A68, asm, cod/1D0A68]
       - [0x1F5980, textbin, cod/1F5980] # .vutext
       - [0x201B00, data, cod/201B00] # .data
+      - [0x20EE60, .data, dlls/crossbow]
       - [0x20EE70, .data, dlls/defaultai]
       - [0x20F790, .data, dlls/doors]
       - [0x20F810, .data, dlls/effects]
@@ -402,6 +404,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x245910, .rodata, dlls/crossbow]
       - [0x246230, .rodata, dlls/crowbar]
       - [0x246670, .rodata, dlls/defaultai]
       - [0x246A70, .rodata, dlls/doors]
