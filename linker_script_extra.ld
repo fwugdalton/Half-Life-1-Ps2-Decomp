@@ -181,6 +181,12 @@ D_0035EB50 = 0x0035EB50;
 D_0035EB60 = 0x0035EB60;
 /* dlls/islave: fim */
 fptoui = 0x002E0F18; /* func_002E0F18 (float -> unsigned do ee-gcc), chamado pelo hgrunt.cpp */
+/* dlls/healthkit: início */
+D_00359DD8 = 0x00359DD8;
+D_00359E90 = 0x00359E90;
+D_00359FB0 = 0x00359FB0;
+D_00359FD0 = 0x00359FD0;
+/* dlls/healthkit: fim */
 /* engine/sv_main: início */
 D_0038E8F8 = 0x0038E8F8;
 /* engine/sv_main: fim */

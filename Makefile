@@ -62,6 +62,7 @@ $(BUILD_DIR)/src/gbx/GamePak.o: CFLAGS += -fmove-all-movables
 $(BUILD_DIR)/src/dlls/teamplay_gamerules.o: CFLAGS += -fmove-all-movables
 $(BUILD_DIR)/src/dlls/util.o: CFLAGS += -fmove-all-movables
 $(BUILD_DIR)/src/dlls/monsters.o: CFLAGS += -fmove-all-movables
+$(BUILD_DIR)/src/dlls/healthkit.o: CFLAGS += -fmove-all-movables
 $(BUILD_DIR)/src/gbx/StreamZip.o: CFLAGS += -fmove-all-movables
 $(BUILD_DIR)/src/gbx/HL1Read.o: CFLAGS += -fmove-all-movables
 # as dlls do jogo (HLSDK) usam sqrt.s direto
@@ -75,6 +76,7 @@ $(BUILD_DIR)/src/dlls/rosenberg.o: OBJCOPY_EXTRA := -R .bss --set-section-alignm
 $(BUILD_DIR)/src/dlls/islave.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8 --set-section-alignment .rodata=16
 $(BUILD_DIR)/src/dlls/ichthyosaur.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8 --set-section-alignment .rodata=16
 $(BUILD_DIR)/src/dlls/houndeye.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8 --set-section-alignment .rodata=16
+$(BUILD_DIR)/src/dlls/hgrunt.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8 --set-section-alignment .rodata=16
 $(BUILD_DIR)/src/dlls/roach.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .rodata=16
 $(BUILD_DIR)/src/dlls/talkmonster.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .rodata=16
 $(BUILD_DIR)/src/dlls/plats.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8 --set-section-alignment .rodata=16
