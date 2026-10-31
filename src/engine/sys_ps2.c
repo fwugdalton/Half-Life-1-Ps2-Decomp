@@ -95,7 +95,7 @@ int atoi(const char *);
 void *func_0021D8D0(char *pClassName);
 void func_0027D340(void);
 int func_00144E98(DLL_FUNCTIONS *pFunctionTable, int interfaceVersion); /* GetEntityAPI */
-void func_00180760(void *pengfuncsFromEngine, globalvars_t *pGlobals); /* GiveFnptrsToDll */
+void GiveFnptrsToDll(void *pengfuncsFromEngine, globalvars_t *pGlobals); /* GiveFnptrsToDll */
 extern char D_0053DDF8[0x40];
 
 /* funções vindas do lançador */
@@ -615,7 +615,7 @@ void func_002C6A20(void)
 {
     extensiondll_t *pextdll;
 
-    func_00180760(&D_00334550, &gGlobalVariables);
+    GiveFnptrsToDll(&D_00334550, &gGlobalVariables);
 
     pextdll = &D_0053D8E0[D_00334734++];
     memset(pextdll, 0, sizeof(*pextdll));
