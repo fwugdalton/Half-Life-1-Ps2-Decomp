@@ -12,4 +12,6 @@ Continuação de [[hl1ps2-dlls-done-7]] (ordem alfabética reversa).
 
 - effects (0x15A6C0, 27983de, 207/212): ver [[hl1ps2-dlls-effects]].
 
-Próximo: doors.cpp (.text termina em 0x15A6C0, _GLOBAL_ em 0x15A6A0; .data termina em 0x30F810; .rodata termina em 0x347560, "momentary_door" em 0x347548).
+- doors (0x157ED0, c7ad726, 35/35): .data 0x30F790 (m_SaveData CBaseDoor, CMomentaryDoor 0x30F800), .rodata 0x346A70 (vtables CMomentaryDoor 0x346F80, CRotDoor 0x347168, CBaseDoor 0x347350). HLSDK + mudanças do PS2: KeyValue com atoi (só WaveHeight usa atof*(1.0/8.0) em double); Use com flag 0x10000 (USE_ON só abre em TS_AT_BOTTOM, USE_OFF só em TS_AT_TOP, sem m_hActivator); DoorTouch com targetname: se !IsMultiplayer() || pev->flags & 0x20000, retorna quando há m_sMaster; DoorGoUp/GoDown tocam o som sem checar o estado; Blocked sem STOP_SOUND no laço; CMomentaryDoor sem DoorMoveDone, Use sem clamp de 0 e sem teste do m_vecFinalDest, speed = Length()*10. ButtonSound__Fi = 0x1426A8. Registro func_0015A3E8 "077"–"081" (MOVEPTR = func_00239830). A .rodata do effects.o passou a precisar de alinhamento 16 no Makefile (doors acaba em 0x347557).
+
+Próximo: defaultai.cpp (.text 0x157AE0–0x157ED0: ScheduleFromName, ScheduleInList, GetScheduleOfType; o _GLOBAL_ do crowbar está em 0x157AC0; .data termina em 0x30F790; .rodata termina em 0x346A70).
