@@ -60,3 +60,5 @@
 - [hl1ps2-dlls-hgrunt](hl1ps2-dlls-hgrunt.md): hgrunt.cpp do PS2 (granadas pegas do chão, GetIdealState, opP do EHANDLE) e truques
 - [hl1ps2-dlls-healthkit](hl1ps2-dlls-healthkit.md): healthkit.cpp (carregador novo do PS2, NON_MATCHING do trunc+mfc1, cadeia de atribuições)
 - [hl1ps2-dlls-done-4](hl1ps2-dlls-done-4.md): continuação da lista de .cpp das dlls feitos (hassassin em diante)
+- [hl1ps2-dlls-done-6](hl1ps2-dlls-done-6.md): continuação da lista de .cpp das dlls feitos (item_generic em diante)
+- [hl1ps2-dlls-done-7](hl1ps2-dlls-done-7.md): continuação da lista de .cpp das dlls feitos (gamerules em diante) e próximo arquivo

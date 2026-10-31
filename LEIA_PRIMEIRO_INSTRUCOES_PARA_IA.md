@@ -42,7 +42,7 @@ arquivo ou tipo de código já tratado.
 
 ## 3. Estado atual (2026-10-28)
 
-Últimos arquivos feitos: `hgrunt.cpp`, `healthkit.cpp`, `headcrab.cpp`, `hassassin.cpp`, `handgrenade.cpp`, `h_export.cpp`, `h_cycler.cpp`, `h_cine.cpp`, `h_battery.cpp`, `h_ai.cpp`, `gman.cpp`, `glock.cpp`, `globals.cpp`, `ggrenade.cpp`, `genericmonster.cpp`, `item_generic.cpp`, `gauss.cpp` e `gargantua.cpp` (2026-10-31, ver `docs/notas/hl1ps2-dlls-done-3.md`, `hl1ps2-dlls-done-4.md`, `hl1ps2-dlls-done-5.md`, `hl1ps2-dlls-done-6.md`, `hl1ps2-dlls-hgrunt.md` e `hl1ps2-dlls-healthkit.md`).
+Últimos arquivos feitos: `hgrunt.cpp`, `healthkit.cpp`, `headcrab.cpp`, `hassassin.cpp`, `handgrenade.cpp`, `h_export.cpp`, `h_cycler.cpp`, `h_cine.cpp`, `h_battery.cpp`, `h_ai.cpp`, `gman.cpp`, `glock.cpp`, `globals.cpp`, `ggrenade.cpp`, `genericmonster.cpp`, `item_generic.cpp`, `gauss.cpp`, `gargantua.cpp` e `gamerules.cpp` (2026-10-31, ver `docs/notas/hl1ps2-dlls-done-3.md`, `hl1ps2-dlls-done-4.md`, `hl1ps2-dlls-done-5.md`, `hl1ps2-dlls-done-6.md`, `hl1ps2-dlls-hgrunt.md` e `hl1ps2-dlls-healthkit.md`).
 
 Segmentos de `.text` no `SLUS_200.66.yaml` que **ainda são asm**:
 
@@ -61,17 +61,17 @@ usa o asm original via `INCLUDE_ASM`); são candidatas a melhorar depois. Para l
 ## 4. O que eu estava fazendo e qual é o próximo passo
 
 Eu estava descompilando as **dlls de trás para frente** (de `zombie.cpp` para trás, em ordem
-alfabética invertida). Os últimos arquivos feitos foram `item_generic.cpp`, `gauss.cpp` e
-`gargantua.cpp` (detalhes em `docs/notas/hl1ps2-dlls-done-5.md` e `hl1ps2-dlls-done-6.md`). Nada ficou pela metade: o último
+alfabética invertida). Os últimos arquivos feitos foram `gauss.cpp`, `gargantua.cpp` e
+`gamerules.cpp` (detalhes em `docs/notas/hl1ps2-dlls-done-5.md` e `hl1ps2-dlls-done-6.md` e `hl1ps2-dlls-done-7.md`). Nada ficou pela metade: o último
 arquivo foi commitado e a ROM bate.
 
-**Próximo arquivo: `gamerules.cpp`** (começa em 0x16F258; depois `game.cpp`, … até o
+**Próximo arquivo: `game.cpp`** (depois `func_*.cpp`, … até o
 início do bloco em 0x100000). A ordem real na ROM pode ter arquivos só do PS2 no meio
 (ex.: `modeltrain.cpp`, `mtank.cpp`), por isso confirme sempre pelas strings da `.rodata`.
 
 Fronteiras conhecidas do próximo arquivo:
-- `.text` termina em **0x16FCF8** (vram), onde começa o `gargantua.cpp`.
-- `.data` termina em **0x312990**; `.rodata` termina em **0x350C50**.
+- `.text` termina em **0x16F258** (vram), onde começa o `gamerules.cpp`.
+- `.data` termina em **0x31298C**; `.rodata` termina em **0x350218**.
 - `.rodata` termina em **0x35A850** (o `"classname"` em 0x35A850 já é do hgrunt). Tem a classe
   nova do PS2 `CWallHealthNew` (`item_healthchargercan`, `models/health_charger_body.dol`).
 - Chamadas a `EHANDLE`: a ROM às vezes usa `operator CBaseEntity*` onde o código natural chama
