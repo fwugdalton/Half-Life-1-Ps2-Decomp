@@ -82,6 +82,7 @@ public:
     }
     inline void SetFlags(int flags) { pev->rendermode = (pev->rendermode & 0x0F) | (flags & 0xF0); }
     inline void SetBrightness(int brightness) { pev->renderamt = brightness; }
+    inline void SetWidth(int width) { pev->scale = width; }
     inline void SetNoise(int amplitude) { pev->body = amplitude; }
     inline void SetScrollRate(int speed) { pev->animtime = speed; }
     inline int GetBrightness(void) { return pev->renderamt; }
@@ -90,6 +91,7 @@ public:
     void PointsInit(const Vector &start, const Vector &end);
     void PointEntInit(const Vector &start, int endIndex);
     void EntsInit(int startIndex, int endIndex);
+    void RelinkBeam(void);
 
     inline void LiveForTime(float time)
     {
