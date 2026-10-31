@@ -198,6 +198,9 @@ public:
     static CGrenade *ShootContact(entvars_t *pevOwner, Vector vecStart, Vector vecVelocity);
     static CGrenade *ShootSatchelCharge(entvars_t *pevOwner, Vector vecStart, Vector vecVelocity);
     static void UseSatchelCharges(entvars_t *pevOwner, SATCHELCODE code);
+    /* PS2: devolver/largar uma granada que um soldado pegou do chão */
+    void ThrowPickedUp(entvars_t *pevOwner, Vector vecStart, Vector vecVelocity, float time);
+    void DropPickedUp(entvars_t *pevOwner, Vector vecVelocity, float time);
 
     void Explode(Vector vecSrc, Vector vecAim);
     virtual void Explode(TraceResult *pTrace, int bitsDamageType);  /* virtual no PS2 (slot 128) */
