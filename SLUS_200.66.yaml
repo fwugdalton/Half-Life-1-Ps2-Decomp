@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x0811D8, cpp, dlls/hassassin]
       - [0x082BC8, cpp, dlls/headcrab]
       - [0x084280, cpp, dlls/healthkit]
       - [0x086E08, cpp, dlls/hgrunt]
@@ -269,6 +270,7 @@ segments:
       - [0x1D0A68, asm, cod/1D0A68]
       - [0x1F5980, textbin, cod/1F5980] # .vutext
       - [0x201B00, data, cod/201B00] # .data
+      - [0x213010, .data, dlls/hassassin]
       - [0x213388, .data, dlls/headcrab]
       - [0x213468, .data, dlls/healthkit]
       - [0x2135D8, .data, dlls/hgrunt]
@@ -354,6 +356,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x258A70, .rodata, dlls/hassassin]
       - [0x259210, .rodata, dlls/headcrab]
       - [0x259CE0, .rodata, dlls/healthkit]
       - [0x25A850, .rodata, dlls/hgrunt]
