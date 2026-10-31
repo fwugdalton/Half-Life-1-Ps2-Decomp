@@ -71,4 +71,4 @@
 - [hl1ps2-dlls-combat](hl1ps2-dlls-combat.md): combat.cpp do PS2 (gibs, TakeDamage, FVisible func_wall, sem -fmove-all-movables, 5 NON_MATCHING)
 - [hl1ps2-dlls-done-10](hl1ps2-dlls-done-10.md): client.cpp e cbase.cpp feitos (SDK antigo, inlines de CBaseEntity, ctor de entvars) e próximo arquivo (buttons.cpp)
 - [hl1ps2-dlls-done-11](hl1ps2-dlls-done-11.md): buttons, bullsquid e bmodels feitos (trava de fim do momentary, schedules novos do squid, registros)
-- [hl1ps2-dlls-done-12](hl1ps2-dlls-done-12.md): bloater, bigmomma e barney feitos (cmpfunc não vê alvo de jal: TraceLineNoEnts) e próximo arquivo (barnacle.cpp)
+- [hl1ps2-dlls-done-12](hl1ps2-dlls-done-12.md): bloater, bigmomma, barney e barnacle feitos (cmpfunc não vê alvo de jal: TraceLineNoEnts) e próximo arquivo (apache.cpp)

@@ -1,6 +1,6 @@
 ---
 name: hl1ps2-dlls-done-12
-description: continuação da lista de .cpp das dlls feitos (bloater, bigmomma, barney) e próximo arquivo (barnacle.cpp)
+description: continuação da lista de .cpp das dlls feitos (bloater, bigmomma, barney, barnacle) e próximo arquivo (apache.cpp)
 metadata:
   type: project
 ---
@@ -14,4 +14,6 @@ Continuação de [[hl1ps2-dlls-done-11]]. Formato: arquivo (endereço do texto, 
 
 - barney (0x136CC0, 8252aee, 37/37): .data 0x30E340, .rodata 0x33DC48–0x33E7E4 (bigmomma.o ganhou .rodata=16). Precisa de DLLS_MONSTERS_CPP (HasConditions inline). Mudanças do PS2: arma por SetBodygroup(1, x) em vez de pev->body (saque e coldre usam ambos 1; Killed testa GetBodygroup(1) < 2 e põe 2); pev->effects |= EF_MUZZLEFLASH; Spawn só faz SetUse(FollowerUse) se !(spawnflags & 0x10000), senão SetUse(NULL); CheckRangeAttack1 usa UTIL_TraceLineNoEnts. Registro func_00138510: use "026" FollowerUse.
 
-Próximo: barnacle.cpp ("monster_barnacle" em 0x33DC30). .text termina em 0x136CC0 (static init 0x136C68, _GLOBAL_$I 0x136CA0), .rodata termina em 0x33DC48, .data termina em 0x30E340.
+- barnacle (0x135BF0, 6bd6ecf, 17/17): .data 0x30E2E0, .rodata 0x33D698. cos/sin→cosf/sinf e M_PI float; CGib::SpawnRandomGibs tem 4 args (fBig=0). PS2: TongueTouchEnt não pega jogador com m_pActiveItem->m_iId == 16 (escrito como um `||` só). Registro func_00136B48: "024" BarnacleThink, "025" WaitTillDead.
+
+Próximo: apache.cpp (monster_apache 0x131F00 e hvr_rocket 0x1352B0). .text termina em 0x135BF0 (static init 0x135A88, _GLOBAL_$I 0x135BD0), .rodata termina em 0x33D698, .data termina em 0x30E2E0.
