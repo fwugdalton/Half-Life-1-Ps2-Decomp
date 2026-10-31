@@ -16,4 +16,6 @@ Continuação de [[hl1ps2-dlls-done-7]] (ordem alfabética reversa).
 
 - defaultai (0x157AE0, 5f70934, 3/3): .data 0x30EE70–0x30F790 (tabelas tl*/sl*; Schedule_t ocupa 0x18 por causa do alinhamento 8 de cada array), .rodata 0x346670. HLSDK puro; só precisou definir bits_MEMORY_INCOVER/FLINCHED, TARGET_MOVE_SCRIPTED e bits_COND_CAN_ATTACK (0x3C00) e tirar nodes.h. doors.o passou a precisar de .rodata=16 no Makefile.
 
-Próximo: crowbar.cpp (.text 0x156970–0x157AE0, "weapon_crowbar" em 0x156970, _GLOBAL_ 0x157AC0; sem .data própria — a .data do crossbow termina em 0x30EE70 com o m_SaveData "m_fInZoom"; .rodata 0x346230–0x346670, registro "075"/"076").
+- crowbar (0x156970, 50d5b2c, 16/16): sem .data, .rodata 0x346230 (vtable 0x346388). SDK antigo (sem eventos, miss com m_iSwing%3 e cbar_miss1). PS2: Smack vibra (120,50 em criatura ou parede; 170,25 em CLASS_NONE/MACHINE), WeaponIdle só GetAutoaimVector, dano cheio com Ps2Virt07 (slot 0x38), hitbod no CHAN_WEAPON, `!PlayTextureSounds()` (slot 0x1D8) dá fvolbar = 1, m_trHit = tr fora do if, SetThink/nextthink antes do m_iWeaponVolume.
+
+Próximo: crossbow.cpp (.text termina em 0x156970, _GLOBAL_ em 0x156950; .data termina em 0x30EE70 com m_SaveData "m_fInZoom"; .rodata termina em 0x346230, "ammo_crossbow" em 0x346220). A lista continua em [[hl1ps2-dlls-done-9]].
