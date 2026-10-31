@@ -1,6 +1,6 @@
 ---
 name: hl1ps2-dlls-done-12
-description: continuação da lista de .cpp das dlls feitos (bloater, bigmomma, barney, barnacle) e próximo arquivo (apache.cpp)
+description: continuação da lista de .cpp das dlls feitos (bloater, bigmomma, barney, barnacle, apache) e próximo arquivo (animation.cpp)
 metadata:
   type: project
 ---
@@ -16,4 +16,7 @@ Continuação de [[hl1ps2-dlls-done-11]]. Formato: arquivo (endereço do texto, 
 
 - barnacle (0x135BF0, 6bd6ecf, 17/17): .data 0x30E2E0, .rodata 0x33D698. cos/sin→cosf/sinf e M_PI float; CGib::SpawnRandomGibs tem 4 args (fBig=0). PS2: TongueTouchEnt não pega jogador com m_pActiveItem->m_iId == 16 (escrito como um `||` só). Registro func_00136B48: "024" BarnacleThink, "025" WaitTillDead.
 
-Próximo: apache.cpp (monster_apache 0x131F00 e hvr_rocket 0x1352B0). .text termina em 0x135BF0 (static init 0x135A88, _GLOBAL_$I 0x135BD0), .rodata termina em 0x33D698, .data termina em 0x30E2E0.
+- apache (0x131F00, 94d0df4, 33/35): .data 0x30E1E8, .rodata 0x33CB10–0x33D697. PS2: IgniteThink sem EF_LIGHT; Killed dispara m_iszTriggerTarget se m_iTriggerCondition == 4 e zera; Flight sem o cálculo de flVol. NON_MATCHING: Flight (pitch, igual osprey) e TraceAttack (trunc+swc1); D_0033CC78 no linker_script_extra.ld. Registro func_00135828 "015".."023" com friend.
+- ATENÇÃO: o regex do sufixo f não pega literais sem dígito antes do ponto (`.965`): procure com `grep -nP '(?<![\w.])\.\d+(?![\w.f])'`.
+
+Próximo: animation.cpp (strings "Bad sound event", "error in transition graph", ACT_FLINCH_* antes de 0x33CB10). .text termina em 0x131F00 (static init 0x131E08), .rodata termina antes de 0x33CB10, .data antes de 0x30E1E8.
