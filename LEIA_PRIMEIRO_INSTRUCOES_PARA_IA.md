@@ -65,7 +65,7 @@ alfabética invertida). Os últimos arquivos feitos foram `item_generic.cpp`, `g
 `gargantua.cpp` (detalhes em `docs/notas/hl1ps2-dlls-done-5.md` e `hl1ps2-dlls-done-6.md`). Nada ficou pela metade: o último
 arquivo foi commitado e a ROM bate.
 
-**Próximo arquivo: `game.cpp`** (depois `gamerules.cpp`, … até o
+**Próximo arquivo: `gamerules.cpp`** (começa em 0x16F258; depois `game.cpp`, … até o
 início do bloco em 0x100000). A ordem real na ROM pode ter arquivos só do PS2 no meio
 (ex.: `modeltrain.cpp`, `mtank.cpp`), por isso confirme sempre pelas strings da `.rodata`.
 
