@@ -42,7 +42,7 @@ arquivo ou tipo de código já tratado.
 
 ## 3. Estado atual (2026-10-28)
 
-Últimos arquivos feitos: `hgrunt.cpp`, `healthkit.cpp`, `headcrab.cpp`, `hassassin.cpp`, `handgrenade.cpp`, `h_export.cpp` e `h_cycler.cpp` (2026-10-31, ver `docs/notas/hl1ps2-dlls-done-3.md`, `hl1ps2-dlls-done-4.md`, `hl1ps2-dlls-hgrunt.md` e `hl1ps2-dlls-healthkit.md`).
+Últimos arquivos feitos: `hgrunt.cpp`, `healthkit.cpp`, `headcrab.cpp`, `hassassin.cpp`, `handgrenade.cpp`, `h_export.cpp`, `h_cycler.cpp` e `h_cine.cpp` (2026-10-31, ver `docs/notas/hl1ps2-dlls-done-3.md`, `hl1ps2-dlls-done-4.md`, `hl1ps2-dlls-hgrunt.md` e `hl1ps2-dlls-healthkit.md`).
 
 Segmentos de `.text` no `SLUS_200.66.yaml` que **ainda são asm**:
 
@@ -61,12 +61,12 @@ usa o asm original via `INCLUDE_ASM`); são candidatas a melhorar depois. Para l
 ## 4. O que eu estava fazendo e qual é o próximo passo
 
 Eu estava descompilando as **dlls de trás para frente** (de `zombie.cpp` para trás, em ordem
-alfabética invertida). Os últimos arquivos feitos foram `handgrenade.cpp`, `h_export.cpp` e
-`h_cycler.cpp` (detalhes em `docs/notas/hl1ps2-dlls-done-3.md` e `hl1ps2-dlls-done-4.md`). Nada ficou pela metade: o último
+alfabética invertida). Os últimos arquivos feitos foram `h_export.cpp`, `h_cycler.cpp` e
+`h_cine.cpp` (detalhes em `docs/notas/hl1ps2-dlls-done-3.md` e `hl1ps2-dlls-done-4.md`). Nada ficou pela metade: o último
 arquivo foi commitado e a ROM bate.
 
-**Próximo arquivo: `h_cine.cpp`** (depois
-`h_battery.cpp`, `h_ai.cpp`, `gman.cpp`, `glock.cpp`, `globals.cpp`, `ggrenade.cpp`, … até o
+**Próximo arquivo: `h_battery.cpp`** (depois
+`h_ai.cpp`, `gman.cpp`, `glock.cpp`, `globals.cpp`, `ggrenade.cpp`, … até o
 início do bloco em 0x100000). A ordem real na ROM pode ter arquivos só do PS2 no meio
 (ex.: `modeltrain.cpp`, `mtank.cpp`), por isso confirme sempre pelas strings da `.rodata`.
 
