@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x08BC18, cpp, dlls/hlg_world]
       - [0x08D600, cpp, dlls/hornet]
       - [0x08EDA0, cpp, dlls/hornetgun]
       - [0x08FEF0, cpp, dlls/houndeye]
@@ -265,6 +266,7 @@ segments:
       - [0x1D0A68, asm, cod/1D0A68]
       - [0x1F5980, textbin, cod/1F5980] # .vutext
       - [0x201B00, data, cod/201B00] # .data
+      - [0x213E88, .data, dlls/hlg_world]
       - [0x214038, .data, dlls/hornet]
       - [0x214070, .data, dlls/houndeye]
       - [0x214350, .data, dlls/ichthyosaur]
@@ -346,6 +348,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x25BFD8, .rodata, dlls/hlg_world]
       - [0x25CDA0, .rodata, dlls/hornet]
       - [0x25D3C0, .rodata, dlls/hornetgun]
       - [0x25D790, .rodata, dlls/houndeye]
