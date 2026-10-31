@@ -20,4 +20,4 @@ Continuação de [[hl1ps2-dlls-done-6]]. Formato: arquivo (início .text, commit
 - flyingmonster (0x164F78, b131f0e, 16/16): HLSDK com o ChangeYaw antigo (220 * frametime, sem m_flLastZYawTime); só .rodata 0x34AF90 (vtable 0x34AFC0).
 - eyescanner (0x164570, c92ab4c, 14/14): item_eyescanner do Decay, sem fonte; CEyeScanner : CBaseToggle (0xEC) com campos da tabela de save (.data 0x30FAA8), .rodata 0x34AC30 (vtable 0x34AD98). Use: `if (m_flNextUseTime < time) { ... }` em bloco (o return antecipado inverte o c.lt). Registro func_00164C68: 106 AnimateThink.
 
-Próximo: explode.cpp (.text termina em 0x164570, _GLOBAL_ em 0x164550; .data termina em 0x30FAA8; .rodata termina em 0x34AC30).
+Continua em [[hl1ps2-dlls-done-8]].
