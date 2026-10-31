@@ -725,6 +725,7 @@ D_00343CC0 = 0x00343CC0;
 D_00343CD8 = 0x00343CD8;
 D_00343D08 = 0x00343D08;
 D_00343DB8 = 0x00343DB8;
+D_00343430 = 0x00343430;
 /* engine/sv_main: início */
 D_0038E8F8 = 0x0038E8F8;
 /* engine/sv_main: fim */

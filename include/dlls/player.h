@@ -62,7 +62,9 @@ public:
     float m_flSndRange; /* 0x2D4 */
     float m_flFallVelocity; /* 0x2D8 */
     int m_rgItems[MAX_ITEMS];                   /* 0x2DC */
-    byte m_ps2Unk2F0[0x430 - 0x2F0];
+    byte m_ps2Unk2F0[0x2F8 - 0x2F0];
+    float m_fNextSuicideTime;                   /* 0x2F8 */
+    byte m_ps2Unk2FC[0x430 - 0x2FC];
     float m_flgeigerRange;                      /* 0x430 */
     byte m_ps2Unk434[0x468 - 0x434];
     BOOL m_fWeapon;                             /* 0x468 */
@@ -122,8 +124,8 @@ public:
     /* virtuais novos do CBasePlayer a partir do slot 128 (só o que já é usado) */
     virtual void Ps2Virt128(void);
     virtual void Ps2Virt129(void);
-    virtual void Ps2Virt130(void);
-    virtual void Ps2Virt131(void);
+    virtual void PreThink(void);                        /* slot 130 */
+    virtual void PostThink(void);                       /* slot 131 */
     virtual void Ps2Virt132(void);
     virtual void Ps2Virt133(void);
     virtual Vector GetAutoaimVector(float flDelta);     /* slot 134 */
@@ -138,6 +140,10 @@ public:
     BOOL IsOnLadder(void);
     BOOL HasNamedPlayerItem(const char *pszItemName);
     BOOL SwitchWeapon(CBasePlayerItem *pWeapon);
+    void SetCustomDecalFrames(int nFrames);
+    void DropPlayerItem(char *pszItemName);
+    void SelectItem(const char *pstr);
+    void SelectLastItem(void);
     void Ps2AIThink(void);                      /* 0x1270E0: think do parceiro da IA (registro "068") */
     void Ps2AITouch(CBaseEntity *pOther);       /* 0x12BFB8: touch do parceiro da IA (registro "069") */
 };

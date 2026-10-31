@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x0470F8, cpp, dlls/client]
       - [0x0487C0, cpp, dlls/combat]
       - [0x04D630, cpp, dlls/controller]
       - [0x0517C8, cpp, dlls/controller_hud]
@@ -410,6 +411,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x243338, .rodata, dlls/client]
       - [0x243C60, .rodata, dlls/combat]
       - [0x244040, .rodata, dlls/controller]
       - [0x2451B0, .rodata, dlls/controller_hud]

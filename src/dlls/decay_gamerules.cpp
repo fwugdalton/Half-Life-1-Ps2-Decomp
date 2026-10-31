@@ -52,7 +52,7 @@ extern "C" int cl_numlocal;
 extern "C" int D_00317D28;			/* mensagem do InitHUD (cor do HUD) */
 extern "C" void func_001CDE70( CBasePlayer *pPlayer );
 /* client.cpp: ClientConnect */
-extern "C" BOOL func_00147160( edict_t *pEntity, const char *pszName, const char *pszAddress, char szRejectReason[ 128 ] );
+BOOL ClientConnect( edict_t *pEntity, const char *pszName, const char *pszAddress, char szRejectReason[ 128 ] );
 /* inicialização do jogador da IA (arquivo ainda em asm) */
 extern "C" void func_00126F80( CBasePlayer *pPlayer );
 /* lanterna do CBasePlayer (player.cpp) */
@@ -235,9 +235,9 @@ void CHalfLifeDecay :: CreateAIPlayer( void )
 		(*g_engfuncs.pfnSetClientKeyValue)( index, infobuffer, "model", "ginacol" );
 
 	if ( coopslave.value > 0 )
-		func_00147160( pPlayer->edict(), "R-4913", "127.0.0.1", szRejectReason );
+		ClientConnect( pPlayer->edict(), "R-4913", "127.0.0.1", szRejectReason );
 	else
-		func_00147160( pPlayer->edict(), "Colette", "127.0.0.1", szRejectReason );
+		ClientConnect( pPlayer->edict(), "Colette", "127.0.0.1", szRejectReason );
 
 	DispatchSpawn( pPlayer->edict() );
 	func_00126F80( pPlayer );
