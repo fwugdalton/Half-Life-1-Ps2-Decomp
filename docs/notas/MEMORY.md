@@ -69,4 +69,4 @@
 - [hl1ps2-dlls-decay](hl1ps2-dlls-decay.md): decay_gamerules.cpp (co-op do Decay só no PS2): campos, registro de funções externas e truques
 - [hl1ps2-dlls-controller](hl1ps2-dlls-controller.md): controller.cpp do PS2 (sons MP, ELIGHT fora do MP, attachments -1, RunAI NON_MATCHING, fabsf misto)
 - [hl1ps2-dlls-combat](hl1ps2-dlls-combat.md): combat.cpp do PS2 (gibs, TakeDamage, FVisible func_wall, sem -fmove-all-movables, 5 NON_MATCHING)
-- [hl1ps2-dlls-done-10](hl1ps2-dlls-done-10.md): client.cpp feito (SDK antigo, mudanças do PS2, alinhamento do combat) e próximo arquivo (cbase.cpp)
+- [hl1ps2-dlls-done-10](hl1ps2-dlls-done-10.md): client.cpp e cbase.cpp feitos (SDK antigo, inlines de CBaseEntity, ctor de entvars) e próximo arquivo (buttons.cpp)
