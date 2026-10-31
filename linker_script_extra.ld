@@ -711,6 +711,9 @@ D_00351EA0 = 0x00351EA0;
 D_0034CB00 = 0x0034CB00;
 /* dlls/focus_emitter: "monster_alienflyer" citado pelo TraceAttack (NON_MATCHING, em asm) */
 D_0034B520 = 0x0034B520;
+/* dlls/explode: ponteiro do Smoke e "spark_shower" citados pelo Use (NON_MATCHING, em asm) */
+D_0034A610 = 0x0034A610;
+D_0034A618 = 0x0034A618;
 /* engine/sv_main: início */
 D_0038E8F8 = 0x0038E8F8;
 /* engine/sv_main: fim */
