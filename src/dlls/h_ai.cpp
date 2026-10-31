@@ -36,6 +36,8 @@ enum { ignore_glass = 1, dont_ignore_glass = 0 };
 void UTIL_TraceLine( const Vector &vecStart, const Vector &vecEnd, int igmon, int ignoreGlass, edict_t *pentIgnore, TraceResult *ptr );
 void UTIL_TraceLineNoEnts( const Vector &vecStart, const Vector &vecEnd, int igmon, edict_t *pentIgnore, TraceResult *ptr );
 
+BOOL	g_fDrawLines = FALSE;
+
 //=========================================================
 // FBoxVisible - a more accurate ( and slower ) version
 // of FVisible. 
