@@ -138,6 +138,8 @@ public:
     BOOL IsOnLadder(void);
     BOOL HasNamedPlayerItem(const char *pszItemName);
     BOOL SwitchWeapon(CBasePlayerItem *pWeapon);
+    void Ps2AIThink(void);                      /* 0x1270E0: think do parceiro da IA (registro "068") */
+    void Ps2AITouch(CBaseEntity *pOther);       /* 0x12BFB8: touch do parceiro da IA (registro "069") */
 };
 
 extern BOOL gEvilImpulse101;
