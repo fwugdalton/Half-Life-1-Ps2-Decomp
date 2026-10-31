@@ -61,11 +61,11 @@ usa o asm original via `INCLUDE_ASM`); são candidatas a melhorar depois. Para l
 ## 4. O que eu estava fazendo e qual é o próximo passo
 
 Eu estava descompilando as **dlls de trás para frente** (de `zombie.cpp` para trás, em ordem
-alfabética invertida). Os últimos arquivos feitos foram `hornet.cpp`, `hlg_world.cpp` e
-`hgrunt.cpp` (detalhes em `docs/notas/hl1ps2-dlls-done-3.md`). Nada ficou pela metade: o último
+alfabética invertida). Os últimos arquivos feitos foram `hlg_world.cpp`, `hgrunt.cpp` e
+`healthkit.cpp` (detalhes em `docs/notas/hl1ps2-dlls-done-3.md`). Nada ficou pela metade: o último
 arquivo foi commitado e a ROM bate.
 
-**Próximo arquivo: `healthkit.cpp`** (depois `headcrab.cpp`, `hassassin.cpp`, `handgrenade.cpp`, `h_export.cpp`, `h_cycler.cpp`, `h_cine.cpp`,
+**Próximo arquivo: `headcrab.cpp`** (depois `hassassin.cpp`, `handgrenade.cpp`, `h_export.cpp`, `h_cycler.cpp`, `h_cine.cpp`,
 `h_battery.cpp`, `h_ai.cpp`, `gman.cpp`, `glock.cpp`, `globals.cpp`, `ggrenade.cpp`, … até o
 início do bloco em 0x100000). A ordem real na ROM pode ter arquivos só do PS2 no meio
 (ex.: `modeltrain.cpp`, `mtank.cpp`), por isso confirme sempre pelas strings da `.rodata`.

@@ -57,3 +57,5 @@
 - [hl1ps2-dlls-done-2](hl1ps2-dlls-done-2.md): continuação da lista de .cpp das dlls feitos (lights, leech, items em diante)
 - [hl1ps2-dlls-done-3](hl1ps2-dlls-done-3.md): continuação da lista de .cpp das dlls feitos (hornetgun em diante)
 - [hl1ps2-handoff](hl1ps2-handoff.md): projeto pausado em 2026-10-28; ler LEIA_PRIMEIRO_INSTRUCOES_PARA_IA.md do repo antes de retomar
+- [hl1ps2-dlls-hgrunt](hl1ps2-dlls-hgrunt.md): hgrunt.cpp do PS2 (granadas pegas do chão, GetIdealState, opP do EHANDLE) e truques
+- [hl1ps2-dlls-healthkit](hl1ps2-dlls-healthkit.md): healthkit.cpp (carregador novo do PS2, NON_MATCHING do trunc+mfc1, cadeia de atribuições)
