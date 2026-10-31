@@ -63,9 +63,15 @@ public:
 #define SF_BEAM_SPARKEND    0x0020
 #define SF_BEAM_TEMPORARY   0x8000
 
+#define BEAM_FSINE          0x10
+#define BEAM_FSOLID         0x20
+#define BEAM_FSHADEIN       0x40
+#define BEAM_FSHADEOUT      0x80
+
 class CBeam : public CBaseEntity
 {
 public:
+    inline void SetStartPos(const Vector &pos) { pev->origin = pos; }
     inline void SetStartAttachment(int attachment) { pev->sequence = (pev->sequence & 0x0FFF) | ((attachment & 0xF) << 12); }
     inline void SetEndAttachment(int attachment) { pev->skin = (pev->skin & 0x0FFF) | ((attachment & 0xF) << 12); }
     inline void SetColor(int r, int g, int b)

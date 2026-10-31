@@ -229,11 +229,20 @@ D_00352E90 = 0x00352E90; /* ponteiro para CGrenade::Smoke (Explode em asm) */
 D_00352E98 = 0x00352E98; /* "spark_shower" (Explode em asm) */
 D_00353230 = 0x00353230; /* ponteiro falso do cl_input */
 /* dlls/ggrenade: fim */
-/* engine/sv_main: início */
-D_0038E8F8 = 0x0038E8F8;
-/* engine/sv_main: fim */
+/* dlls/gargantua: início (dados usados pelo asm das funções NON_MATCHING) */
+D_00312994 = 0x00312994;
+D_00350C88 = 0x00350C88;
+D_00350CA0 = 0x00350CA0;
+D_00350CB0 = 0x00350CB0;
+D_00350CC8 = 0x00350CC8;
+D_00351068 = 0x00351068;
+D_00351120 = 0x00351120;
+/* dlls/gargantua: fim */
 /* dlls/gauss: início (strings usadas pelo asm do SecondaryAttack) */
 D_00351E58 = 0x00351E58;
 D_00351E88 = 0x00351E88;
 D_00351EA0 = 0x00351EA0;
 /* dlls/gauss: fim */
+/* engine/sv_main: início */
+D_0038E8F8 = 0x0038E8F8;
+/* engine/sv_main: fim */
