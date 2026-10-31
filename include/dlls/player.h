@@ -66,10 +66,14 @@ public:
     float m_flgeigerRange;                      /* 0x430 */
     byte m_ps2Unk434[0x468 - 0x434];
     BOOL m_fWeapon;                             /* 0x468 */
-    byte m_ps2Unk46C[0x47C - 0x46C];
+    EHANDLE m_pTank;                            /* 0x46C */
+    byte m_ps2Unk474[0x47C - 0x474];
     BOOL m_fLongJump;                           /* 0x47C */
     byte m_ps2Unk480[0x490 - 0x480];
-    int m_afPhysicsFlags;                       /* 0x490 */
+    union {                                     /* 0x490: no HLSDK é o m_iHideHUD (o func_tank liga o HIDEHUD_WEAPONS aqui) */
+        int m_afPhysicsFlags;
+        int m_iHideHUD;
+    };
     byte m_ps2Unk494[0x498 - 0x494];
     int m_iFOV;                                 /* 0x498 */
     int m_iClientFOV;                           /* 0x49C */

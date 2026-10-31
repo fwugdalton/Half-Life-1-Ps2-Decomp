@@ -98,4 +98,27 @@ public:
     }
 };
 
+class CLaser : public CBeam
+{
+public:
+    void Spawn(void);
+    void Precache(void);
+    void KeyValue(KeyValueData *pkvd);
+
+    void TurnOn(void);
+    void TurnOff(void);
+    int IsOn(void);
+
+    void FireAtPoint(TraceResult &point);
+
+    void EXPORT StrikeThink(void);
+    virtual int Save(CSave &save);
+    virtual int Restore(CRestore &restore);
+    static TYPEDESCRIPTION m_SaveData[];
+
+    CSprite *m_pSprite;
+    int m_iszSpriteName;
+    Vector m_firePosition;
+};
+
 #endif

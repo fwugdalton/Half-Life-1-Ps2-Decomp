@@ -707,6 +707,8 @@ D_00351E58 = 0x00351E58;
 D_00351E88 = 0x00351E88;
 D_00351EA0 = 0x00351EA0;
 /* dlls/gauss: fim */
+/* dlls/func_tank: "rpg_rocket" citado pelo Fire do foguete (NON_MATCHING, em asm) */
+D_0034CB00 = 0x0034CB00;
 /* engine/sv_main: início */
 D_0038E8F8 = 0x0038E8F8;
 /* engine/sv_main: fim */
