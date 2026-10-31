@@ -15,4 +15,6 @@ Continuação de [[hl1ps2-dlls-done-8]]. Formato: arquivo (endereço do texto, c
 
 - controller (0x14D630, 26d644d, 52/53): monster_alien_controller do HLSDK com mudanças do PS2; RunAI NON_MATCHING. Detalhes em [[hl1ps2-dlls-controller]].
 
-Próximo: combat.cpp (CGib, CBaseMonster dano/morte; ObjectCaps__4CGib é o último glabel do asm): .text termina em 0x14D630, .rodata termina em 0x344040, .data termina em 0x30ECC0.
+- combat (0x1487C0, d1a8404, 38/43): dano, morte e gibs; 5 NON_MATCHING. Detalhes em [[hl1ps2-dlls-combat]].
+
+Próximo: client.cpp (ClientPrecache, CBasePlayer ctor etc.; GetClassPtr<CBasePlayer> 0x148748 é a última função): .text termina em 0x1487C0, .rodata termina em 0x343C60.

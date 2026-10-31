@@ -68,3 +68,4 @@
 - [hl1ps2-dlls-done-9](hl1ps2-dlls-done-9.md): continuação da lista de .cpp das dlls feitos (crossbow em diante) e próximo arquivo
 - [hl1ps2-dlls-decay](hl1ps2-dlls-decay.md): decay_gamerules.cpp (co-op do Decay só no PS2): campos, registro de funções externas e truques
 - [hl1ps2-dlls-controller](hl1ps2-dlls-controller.md): controller.cpp do PS2 (sons MP, ELIGHT fora do MP, attachments -1, RunAI NON_MATCHING, fabsf misto)
+- [hl1ps2-dlls-combat](hl1ps2-dlls-combat.md): combat.cpp do PS2 (gibs, TakeDamage, FVisible func_wall, sem -fmove-all-movables, 5 NON_MATCHING)

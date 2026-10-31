@@ -42,7 +42,7 @@ arquivo ou tipo de código já tratado.
 
 ## 3. Estado atual (2026-10-28)
 
-Últimos arquivos feitos: `hgrunt.cpp`, `healthkit.cpp`, `headcrab.cpp`, `hassassin.cpp`, `handgrenade.cpp`, `h_export.cpp`, `h_cycler.cpp`, `h_cine.cpp`, `h_battery.cpp`, `h_ai.cpp`, `gman.cpp`, `glock.cpp`, `globals.cpp`, `ggrenade.cpp`, `genericmonster.cpp`, `item_generic.cpp`, `gauss.cpp`, `gargantua.cpp`, `gamerules.cpp`, `game.cpp`, `func_tank.cpp`, `func_break.cpp`, `focus_emitter.cpp`, `flyingmonster.cpp`, `eyescanner.cpp`, `explode.cpp`, `egon.cpp`, `effects.cpp`, `doors.cpp`, `defaultai.cpp`, `crowbar.cpp`, `crossbow.cpp`, `decay_gamerules.cpp`, `controller_hud.cpp` e `controller.cpp` (2026-10-31, ver `docs/notas/hl1ps2-dlls-done-3.md`, `hl1ps2-dlls-done-4.md`, `hl1ps2-dlls-done-5.md`, `hl1ps2-dlls-done-6.md`, `hl1ps2-dlls-hgrunt.md` e `hl1ps2-dlls-healthkit.md`).
+Últimos arquivos feitos: `hgrunt.cpp`, `healthkit.cpp`, `headcrab.cpp`, `hassassin.cpp`, `handgrenade.cpp`, `h_export.cpp`, `h_cycler.cpp`, `h_cine.cpp`, `h_battery.cpp`, `h_ai.cpp`, `gman.cpp`, `glock.cpp`, `globals.cpp`, `ggrenade.cpp`, `genericmonster.cpp`, `item_generic.cpp`, `gauss.cpp`, `gargantua.cpp`, `gamerules.cpp`, `game.cpp`, `func_tank.cpp`, `func_break.cpp`, `focus_emitter.cpp`, `flyingmonster.cpp`, `eyescanner.cpp`, `explode.cpp`, `egon.cpp`, `effects.cpp`, `doors.cpp`, `defaultai.cpp`, `crowbar.cpp`, `crossbow.cpp`, `decay_gamerules.cpp`, `controller_hud.cpp`, `controller.cpp` e `combat.cpp` (2026-10-31, ver `docs/notas/hl1ps2-dlls-done-3.md`, `hl1ps2-dlls-done-4.md`, `hl1ps2-dlls-done-5.md`, `hl1ps2-dlls-done-6.md`, `hl1ps2-dlls-hgrunt.md` e `hl1ps2-dlls-healthkit.md`).
 
 Segmentos de `.text` no `SLUS_200.66.yaml` que **ainda são asm**:
 
@@ -62,16 +62,16 @@ usa o asm original via `INCLUDE_ASM`); são candidatas a melhorar depois. Para l
 
 Eu estava descompilando as **dlls de trás para frente** (de `zombie.cpp` para trás, em ordem
 alfabética invertida). Os últimos arquivos feitos foram `gamerules.cpp`, `game.cpp` e
-`func_tank.cpp`, `func_break.cpp`, `focus_emitter.cpp`, `flyingmonster.cpp`, `eyescanner.cpp`, `explode.cpp`, `egon.cpp`, `effects.cpp`, `doors.cpp`, `defaultai.cpp`, `crowbar.cpp`, `crossbow.cpp`, `decay_gamerules.cpp` e `controller_hud.cpp` (só do PS2, nomes inventados; ver `docs/notas/hl1ps2-dlls-decay.md`), `controller.cpp` (RunAI NON_MATCHING; ver `docs/notas/hl1ps2-dlls-controller.md`) (detalhes em `docs/notas/hl1ps2-dlls-done-5.md` e `hl1ps2-dlls-done-6.md` e `hl1ps2-dlls-done-7.md` e `hl1ps2-dlls-done-8.md` e `hl1ps2-dlls-done-9.md`). Nada ficou pela metade: o último
+`func_tank.cpp`, `func_break.cpp`, `focus_emitter.cpp`, `flyingmonster.cpp`, `eyescanner.cpp`, `explode.cpp`, `egon.cpp`, `effects.cpp`, `doors.cpp`, `defaultai.cpp`, `crowbar.cpp`, `crossbow.cpp`, `decay_gamerules.cpp` e `controller_hud.cpp` (só do PS2, nomes inventados; ver `docs/notas/hl1ps2-dlls-decay.md`), `controller.cpp` (RunAI NON_MATCHING; ver `docs/notas/hl1ps2-dlls-controller.md`), `combat.cpp` (5 NON_MATCHING; ver `docs/notas/hl1ps2-dlls-combat.md`) (detalhes em `docs/notas/hl1ps2-dlls-done-5.md` e `hl1ps2-dlls-done-6.md` e `hl1ps2-dlls-done-7.md` e `hl1ps2-dlls-done-8.md` e `hl1ps2-dlls-done-9.md`). Nada ficou pela metade: o último
 arquivo foi commitado e a ROM bate.
 
-**Próximo arquivo: `combat.cpp`** (CGib e dano/morte do CBaseMonster; ver `docs/notas/hl1ps2-dlls-done-9.md`) (depois os outros, … até o
+**Próximo arquivo: `client.cpp`** (ClientPrecache, CBasePlayer etc.; ver `docs/notas/hl1ps2-dlls-done-9.md`) (depois os outros, … até o
 início do bloco em 0x100000). A ordem real na ROM pode ter arquivos só do PS2 no meio
 (ex.: `modeltrain.cpp`, `mtank.cpp`), por isso confirme sempre pelas strings da `.rodata`.
 
 Fronteiras conhecidas do próximo arquivo:
-- `.text` termina em **0x14D630** (vram), onde começa o `controller.cpp` (ObjectCaps__4CGib é o último glabel do asm/cod/000000.s).
-- `.rodata` termina em **0x344040**; `.data` termina em 0x30ECC0.
+- `.text` termina em **0x1487C0** (vram), onde começa o `combat.cpp` (GetClassPtr<CBasePlayer> em 0x148748 é a última função do asm/cod/000000.s).
+- `.rodata` termina em **0x343C60**; `.data` termina em 0x30ECC0 (o combat.cpp não tem .data).
 - `.rodata` termina em **0x35A850** (o `"classname"` em 0x35A850 já é do hgrunt). Tem a classe
   nova do PS2 `CWallHealthNew` (`item_healthchargercan`, `models/health_charger_body.dol`).
 - Chamadas a `EHANDLE`: a ROM às vezes usa `operator CBaseEntity*` onde o código natural chama
