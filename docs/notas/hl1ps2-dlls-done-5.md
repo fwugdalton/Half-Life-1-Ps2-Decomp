@@ -1,0 +1,10 @@
+---
+name: hl1ps2-dlls-done-5
+description: continuação da lista de .cpp das dlls feitos (glock em diante)
+metadata:
+  type: project
+---
+
+Continuação de [[hl1ps2-dlls-done-4]]. Formato: arquivo (início do .text, commit, funções casadas): detalhes.
+
+- glock (0x179DA8, ca810f5, 21/21): sem .data, .rodata 0x353420. Versão antiga do SDK (OLD_WEAPONS: SendWeaponAnim, EjectBrass com m_pPlayer->pev->origin, EMIT_SOUND_DYN pl_gun3 no servidor, punchangle -2), sem silenciador (só o ramo NORMAL_GUN) e sem eventos/m_usFireGlock (classe com 0x90 bytes, m_iShell em 0x8C). PS2: rumble func_002071C8(m_pPlayer,1,120,50) antes do FireBullets, munição infinita (m_ps2InfiniteAmmo) no aviso !HEV_AMO0; Reload com iResult = 0, DefaultReload(17, RELOAD) com pente vazio e DefaultReload(18, RELOAD_NOT_EMPTY) só se m_iClip != 17. Casou de primeira. Um ponteiro falso D_00353730 do gl_rmisc foi para linker_script_extra.ld.
