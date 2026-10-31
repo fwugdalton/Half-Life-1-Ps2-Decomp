@@ -124,6 +124,10 @@ typedef struct entvars_s
     float pain_finished;        /* 0x1E0 */
     float radsuit_finished;     /* 0x1E4 */
     edict_t *pContainingEntity; /* 0x1E8 */
+#ifdef ENTVARS_CTOR_OUTOFLINE
+    /* só no cbase.cpp: o construtor implícito (vazio) saiu fora de linha logo antes do DispatchRestore */
+    entvars_s();
+#endif
 } entvars_t; /* 0x1EC */
 
 struct edict_s

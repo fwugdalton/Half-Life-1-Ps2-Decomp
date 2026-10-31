@@ -94,7 +94,7 @@ int strcmp(const char *, const char *);
 int atoi(const char *);
 void *func_0021D8D0(char *pClassName);
 void func_0027D340(void);
-int func_00144E98(DLL_FUNCTIONS *pFunctionTable, int interfaceVersion); /* GetEntityAPI */
+int GetEntityAPI__FP13DLL_FUNCTIONSi(DLL_FUNCTIONS *pFunctionTable, int interfaceVersion); /* GetEntityAPI */
 void GiveFnptrsToDll(void *pengfuncsFromEngine, globalvars_t *pGlobals); /* GiveFnptrsToDll */
 extern char D_0053DDF8[0x40];
 
@@ -582,7 +582,7 @@ void func_002C68B0(void)
 
     func_002C6A20();
 
-    if (!func_00144E98(&gEntityInterface, 0x8A))
+    if (!GetEntityAPI__FP13DLL_FUNCTIONSi(&gEntityInterface, 0x8A))
     {
         Sys_Error("Invalid DLL version!");
         return;

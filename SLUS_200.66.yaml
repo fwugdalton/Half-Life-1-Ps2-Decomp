@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x044E98, cpp, dlls/cbase]
       - [0x0470F8, cpp, dlls/client]
       - [0x0487C0, cpp, dlls/combat]
       - [0x04D630, cpp, dlls/controller]
@@ -303,6 +304,7 @@ segments:
       - [0x1D0A68, asm, cod/1D0A68]
       - [0x1F5980, textbin, cod/1F5980] # .vutext
       - [0x201B00, data, cod/201B00] # .data
+      - [0x20EBE8, .data, dlls/cbase]
       - [0x20ECC0, .data, dlls/controller]
       - [0x20EE50, .data, dlls/controller_hud]
       - [0x20EE60, .data, dlls/crossbow]
@@ -411,6 +413,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x242FF0, .rodata, dlls/cbase]
       - [0x243338, .rodata, dlls/client]
       - [0x243C60, .rodata, dlls/combat]
       - [0x244040, .rodata, dlls/controller]
