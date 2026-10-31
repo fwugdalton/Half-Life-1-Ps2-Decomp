@@ -5376,6 +5376,7 @@ GetSchedule__9CHoundeye = 0x00191C40; // type:func
 GetClassPtr__H1Z9CHoundeye_PX01_PX01 = 0x00191E58; // type:func
 _GLOBAL_$I$monster_houndeye = 0x00191F28; // type:func
 m_SaveData__9CHoundeye = 0x00314070;
+GameDLLInit__Fv = 0x0016D4E8; // type:func
 InstallGameRules__Fv = 0x0016FAC0; // type:func
 AllowAutoTargetCrosshair__10CGameRules = 0x0016FC60; // type:func
 ClientCommand__10CGameRulesP11CBasePlayerPCc = 0x0016FC68; // type:func
