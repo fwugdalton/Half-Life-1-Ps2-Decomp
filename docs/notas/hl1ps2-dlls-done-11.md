@@ -1,6 +1,6 @@
 ---
 name: hl1ps2-dlls-done-11
-description: continuação da lista de .cpp das dlls feitos (buttons em diante), mudanças do PS2 no buttons.cpp e próximo arquivo (bullsquid.cpp)
+description: continuação da lista de .cpp das dlls feitos (buttons, bullsquid), mudanças do PS2 e próximo arquivo (bmodels.cpp)
 metadata:
   type: project
 ---
@@ -15,4 +15,6 @@ Continuação de [[hl1ps2-dlls-done-10]]. Formato: arquivo (endereço do texto, 
   - Registro de funções extern "C" func_001446D8 (move-done, think, touch, use).
   - _GLOBAL_$I$_10CEnvGlobal$m_SaveData = 0x144E78 precisa estar no symbol_addrs (o .data em asm cita).
 
-Próximo: bullsquid.cpp. .text termina em 0x1412F0 (static init em 0x141288/0x1412D0), .rodata termina em 0x341810, .data termina em 0x30EA68.
+- bullsquid (0x13E8C0, f426bd3, 41/41): .data 0x30E6F0–0x30EA68, .rodata 0x340C40–0x341810 (começa com "classname"/"targetname"/"target" das inlines). Aqui os LINK_ENTITY_TO_CLASS ficam no meio (logo após cada classe), não no fim. Mudanças do PS2: campo novo m_flAttackTime (0x2AC, salvo); TE_SPRITE_SPRAY vale 110; Touch do cuspe usa RANDOM_LONG(90,110) e UTIL_TraceLineNoEnts; .spz/.dol; ChaseEnemy sem COND_CAN_RANGE_ATTACK1; schedules novos SquidSniff (fareja virando 30/60/30) e IdleStand (WAIT 1, conds do slIdleStand + CAN_RANGE1/MELEE1/MELEE2), tipos 49/50; GetSchedule no combate termina com: time < m_flNextSpitTime → IdleStand; time - m_flAttackTime > 5 → guarda o tempo e Chase; senão Sniff. fabs→fabsf, sufixo f em todos os floats, m_maxFrame sem (float). Registro func_001410E0: "038" Animate, "039" SUB_Remove.
+
+Próximo: bmodels.cpp. .text termina em 0x13E8C0 (static init 0x13E7C8, inlines de 8 bytes e _GLOBAL_$I em 0x13E8A0), .rodata termina em 0x340C40, .data termina em 0x30E6F0.
