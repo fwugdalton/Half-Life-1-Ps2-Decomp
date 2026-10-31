@@ -42,7 +42,7 @@ arquivo ou tipo de código já tratado.
 
 ## 3. Estado atual (2026-10-28)
 
-Últimos arquivos feitos: `hgrunt.cpp`, `healthkit.cpp`, `headcrab.cpp`, `hassassin.cpp`, `handgrenade.cpp`, `h_export.cpp`, `h_cycler.cpp`, `h_cine.cpp`, `h_battery.cpp`, `h_ai.cpp`, `gman.cpp`, `glock.cpp`, `globals.cpp`, `ggrenade.cpp`, `genericmonster.cpp`, `item_generic.cpp`, `gauss.cpp`, `gargantua.cpp`, `gamerules.cpp`, `game.cpp` e `func_tank.cpp` (2026-10-31, ver `docs/notas/hl1ps2-dlls-done-3.md`, `hl1ps2-dlls-done-4.md`, `hl1ps2-dlls-done-5.md`, `hl1ps2-dlls-done-6.md`, `hl1ps2-dlls-hgrunt.md` e `hl1ps2-dlls-healthkit.md`).
+Últimos arquivos feitos: `hgrunt.cpp`, `healthkit.cpp`, `headcrab.cpp`, `hassassin.cpp`, `handgrenade.cpp`, `h_export.cpp`, `h_cycler.cpp`, `h_cine.cpp`, `h_battery.cpp`, `h_ai.cpp`, `gman.cpp`, `glock.cpp`, `globals.cpp`, `ggrenade.cpp`, `genericmonster.cpp`, `item_generic.cpp`, `gauss.cpp`, `gargantua.cpp`, `gamerules.cpp`, `game.cpp`, `func_tank.cpp` e `func_break.cpp` (2026-10-31, ver `docs/notas/hl1ps2-dlls-done-3.md`, `hl1ps2-dlls-done-4.md`, `hl1ps2-dlls-done-5.md`, `hl1ps2-dlls-done-6.md`, `hl1ps2-dlls-hgrunt.md` e `hl1ps2-dlls-healthkit.md`).
 
 Segmentos de `.text` no `SLUS_200.66.yaml` que **ainda são asm**:
 
@@ -62,7 +62,7 @@ usa o asm original via `INCLUDE_ASM`); são candidatas a melhorar depois. Para l
 
 Eu estava descompilando as **dlls de trás para frente** (de `zombie.cpp` para trás, em ordem
 alfabética invertida). Os últimos arquivos feitos foram `gamerules.cpp`, `game.cpp` e
-`func_tank.cpp` (detalhes em `docs/notas/hl1ps2-dlls-done-5.md` e `hl1ps2-dlls-done-6.md` e `hl1ps2-dlls-done-7.md`). Nada ficou pela metade: o último
+`func_tank.cpp` e `func_break.cpp` (detalhes em `docs/notas/hl1ps2-dlls-done-5.md` e `hl1ps2-dlls-done-6.md` e `hl1ps2-dlls-done-7.md`). Nada ficou pela metade: o último
 arquivo foi commitado e a ROM bate.
 
 **Próximo arquivo: o do `item_focusemitter`** (entidade do Decay, nome do .cpp desconhecido; depois os outros, … até o
