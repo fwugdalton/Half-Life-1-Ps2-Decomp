@@ -42,18 +42,18 @@ arquivo ou tipo de código já tratado.
 
 ## 3. Estado atual (2026-10-28)
 
-Últimos arquivos feitos: `hornetgun.cpp`, `hornet.cpp` e `hlg_world.cpp` (2026-10-31, ver `docs/notas/hl1ps2-dlls-done-3.md`).
+Últimos arquivos feitos: `hornetgun.cpp`, `hornet.cpp`, `hlg_world.cpp` e `hgrunt.cpp` (2026-10-31, ver `docs/notas/hl1ps2-dlls-done-3.md` e `docs/notas/hl1ps2-dlls-hgrunt.md`).
 
 Segmentos de `.text` no `SLUS_200.66.yaml` que **ainda são asm**:
 
 | Faixa (offset na rom → vram = offset + 0x100000) | Conteúdo | Situação |
 |---|---|---|
-| `0x000000`–`0x08FEF0` (`asm/cod/000000.s`) | início do bloco das **dlls do jogo** (HLSDK C++), arquivos em ordem alfabética | **trabalho em andamento** (ver seção 4) |
+| `0x000000`–`0x086E08` (`asm/cod/000000.s`) | início do bloco das **dlls do jogo** (HLSDK C++), arquivos em ordem alfabética | **trabalho em andamento** (ver seção 4) |
 | `0x0C3350`–`0x0D3508` (`asm/cod/0C3350.s`) | `player.cpp` (~180 funções, `.rodata` 0x36AF40–0x36DCC8) | adiado por ser enorme |
 | `0x1D0A68` em diante (`asm/cod/1D0A68.s`) | SDK da Sony (libgraph, libpad, libcdvd, libmc, libscf), libm, libstdc++ | **não descompilar** (bibliotecas) |
 
 Já feito (está em `src/`): praticamente todo o engine em C (`src/engine`), o código da Gearbox
-(`src/gbx`, C e C++), a zlib 1.1.3 (`src/zlib`) e as dlls de `hlg_world.cpp` até `zombie.cpp`
+(`src/gbx`, C e C++), a zlib 1.1.3 (`src/zlib`) e as dlls de `hgrunt.cpp` até `zombie.cpp`
 (`src/dlls`, ~57 arquivos). Algumas funções ficaram `NON_MATCHING` (código C presente, mas o build
 usa o asm original via `INCLUDE_ASM`); são candidatas a melhorar depois. Para listar:
 `grep -rn "NON_MATCHING" src | wc -l`.
@@ -61,21 +61,22 @@ usa o asm original via `INCLUDE_ASM`); são candidatas a melhorar depois. Para l
 ## 4. O que eu estava fazendo e qual é o próximo passo
 
 Eu estava descompilando as **dlls de trás para frente** (de `zombie.cpp` para trás, em ordem
-alfabética invertida). Os últimos arquivos feitos foram `islave.cpp`, `ichthyosaur.cpp` e
-`houndeye.cpp` (detalhes em `docs/notas/hl1ps2-dlls-done-2.md`). Nada ficou pela metade: o último
+alfabética invertida). Os últimos arquivos feitos foram `hornet.cpp`, `hlg_world.cpp` e
+`hgrunt.cpp` (detalhes em `docs/notas/hl1ps2-dlls-done-3.md`). Nada ficou pela metade: o último
 arquivo foi commitado e a ROM bate.
 
-**Próximo arquivo: `hgrunt.cpp`** (depois `headcrab.cpp`,
-`healthkit.cpp`, `hassassin.cpp`, `handgrenade.cpp`, `h_export.cpp`, `h_cycler.cpp`, `h_cine.cpp`,
+**Próximo arquivo: `healthkit.cpp`** (depois `headcrab.cpp`, `hassassin.cpp`, `handgrenade.cpp`, `h_export.cpp`, `h_cycler.cpp`, `h_cine.cpp`,
 `h_battery.cpp`, `h_ai.cpp`, `gman.cpp`, `glock.cpp`, `globals.cpp`, `ggrenade.cpp`, … até o
 início do bloco em 0x100000). A ordem real na ROM pode ter arquivos só do PS2 no meio
 (ex.: `modeltrain.cpp`, `mtank.cpp`), por isso confirme sempre pelas strings da `.rodata`.
 
 Fronteiras conhecidas do próximo arquivo:
-- `.text` termina em **0x18BC18** (vram), onde começa o `hlg_world.cpp`.
-- `.data` termina em **0x313E88** (os 8 bytes zerados em 0x313E80, sem referência, devem ser dele).
-- `.rodata` termina em **0x35BFD8** (as strings `monster_grunt_repel`/`monster_hgrunt_dead` em
-  0x35BFA8/0x35BFC0 são as últimas dele).
+- `.text` termina em **0x186E08** (vram), onde começa o `hgrunt.cpp`.
+- `.data` termina em **0x3135D8** (início do `m_SaveData` do CHGrunt).
+- `.rodata` termina em **0x35A850** (o `"classname"` em 0x35A850 já é do hgrunt). Tem a classe
+  nova do PS2 `CWallHealthNew` (`item_healthchargercan`, `models/health_charger_body.dol`).
+- Chamadas a `EHANDLE`: a ROM às vezes usa `operator CBaseEntity*` onde o código natural chama
+  `operator int`; o `cmpfile.sh` não vê (só o cmp da ROM). Ver `docs/notas/hl1ps2-dlls-hgrunt.md`.
 - O `cmpfile.sh` pode dizer que tudo bate mesmo com uma constante float errada (ignora o `lui`
   do imediato); só o build completo garante.
 
