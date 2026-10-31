@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x035BF0, cpp, dlls/barnacle]
       - [0x036CC0, cpp, dlls/barney]
       - [0x038728, cpp, dlls/bigmomma]
       - [0x03BE98, cpp, dlls/bloater]
@@ -310,6 +311,7 @@ segments:
       - [0x1D0A68, asm, cod/1D0A68]
       - [0x1F5980, textbin, cod/1F5980] # .vutext
       - [0x201B00, data, cod/201B00] # .data
+      - [0x20E2E0, .data, dlls/barnacle]
       - [0x20E340, .data, dlls/barney]
       - [0x20E478, .data, dlls/bigmomma]
       - [0x20E620, .data, dlls/bmodels]
@@ -424,6 +426,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x23D698, .rodata, dlls/barnacle]
       - [0x23DC48, .rodata, dlls/barney]
       - [0x23E7F0, .rodata, dlls/bigmomma]
       - [0x23F788, .rodata, dlls/bloater]
