@@ -74,6 +74,7 @@ $(BUILD_DIR)/src/dlls/tentacle_decay.o: OBJCOPY_EXTRA := -R .bss --set-section-a
 $(BUILD_DIR)/src/dlls/rosenberg.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8 --set-section-alignment .rodata=16
 $(BUILD_DIR)/src/dlls/islave.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8 --set-section-alignment .rodata=16
 $(BUILD_DIR)/src/dlls/ichthyosaur.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8 --set-section-alignment .rodata=16
+$(BUILD_DIR)/src/dlls/houndeye.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8 --set-section-alignment .rodata=16
 $(BUILD_DIR)/src/dlls/roach.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .rodata=16
 $(BUILD_DIR)/src/dlls/talkmonster.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .rodata=16
 $(BUILD_DIR)/src/dlls/plats.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8 --set-section-alignment .rodata=16

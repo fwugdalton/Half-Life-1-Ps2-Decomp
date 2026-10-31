@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x08EDA0, cpp, dlls/hornetgun]
       - [0x08FEF0, cpp, dlls/houndeye]
       - [0x091F48, cpp, dlls/ichthyosaur]
       - [0x095050, cpp, dlls/islave]
@@ -343,6 +344,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x25D3C0, .rodata, dlls/hornetgun]
       - [0x25D790, .rodata, dlls/houndeye]
       - [0x25E200, .rodata, dlls/ichthyosaur]
       - [0x25E990, .rodata, dlls/islave]
