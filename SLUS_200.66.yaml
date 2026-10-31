@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x07B200, cpp, dlls/h_ai]
       - [0x07BAB8, cpp, dlls/h_battery]
       - [0x07E2C0, cpp, dlls/h_cine]
       - [0x07F270, cpp, dlls/h_cycler]
@@ -364,6 +365,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x253EC8, .rodata, dlls/h_ai]
       - [0x253EF8, .rodata, dlls/h_battery]
       - [0x2547F0, .rodata, dlls/h_cine]
       - [0x257058, .rodata, dlls/h_cycler]
