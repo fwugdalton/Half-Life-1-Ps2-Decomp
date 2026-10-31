@@ -55,3 +55,5 @@
 - [hl1ps2-dlls-monsters](hl1ps2-dlls-monsters.md): monsters.cpp (CBaseMonster, -fmove-all-movables, info_aievent do PS2, triangulate)
 - [hl1ps2-dlls-maprules](hl1ps2-dlls-maprules.md): maprules.cpp (game_*), conversões float->int NON_MATCHING e a macro INLINE_INCLUDE_ASM
 - [hl1ps2-dlls-done-2](hl1ps2-dlls-done-2.md): continuação da lista de .cpp das dlls feitos (lights, leech, items em diante)
+- [hl1ps2-dlls-done-3](hl1ps2-dlls-done-3.md): continuação da lista de .cpp das dlls feitos (hornetgun em diante)
+- [hl1ps2-handoff](hl1ps2-handoff.md): projeto pausado em 2026-10-28; ler LEIA_PRIMEIRO_INSTRUCOES_PARA_IA.md do repo antes de retomar

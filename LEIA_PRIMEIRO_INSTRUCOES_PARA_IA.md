@@ -42,7 +42,7 @@ arquivo ou tipo de código já tratado.
 
 ## 3. Estado atual (2026-10-28)
 
-Último commit: `e5e7bf0` — `dlls: houndeye.cpp ... 29/30`.
+Último arquivo feito: `hornetgun.cpp` (2026-10-31, ver `docs/notas/hl1ps2-dlls-done-3.md`).
 
 Segmentos de `.text` no `SLUS_200.66.yaml` que **ainda são asm**:
 
@@ -53,7 +53,7 @@ Segmentos de `.text` no `SLUS_200.66.yaml` que **ainda são asm**:
 | `0x1D0A68` em diante (`asm/cod/1D0A68.s`) | SDK da Sony (libgraph, libpad, libcdvd, libmc, libscf), libm, libstdc++ | **não descompilar** (bibliotecas) |
 
 Já feito (está em `src/`): praticamente todo o engine em C (`src/engine`), o código da Gearbox
-(`src/gbx`, C e C++), a zlib 1.1.3 (`src/zlib`) e as dlls de `houndeye.cpp` até `zombie.cpp`
+(`src/gbx`, C e C++), a zlib 1.1.3 (`src/zlib`) e as dlls de `hornetgun.cpp` até `zombie.cpp`
 (`src/dlls`, ~57 arquivos). Algumas funções ficaram `NON_MATCHING` (código C presente, mas o build
 usa o asm original via `INCLUDE_ASM`); são candidatas a melhorar depois. Para listar:
 `grep -rn "NON_MATCHING" src | wc -l`.
@@ -65,17 +65,19 @@ alfabética invertida). Os últimos arquivos feitos foram `islave.cpp`, `ichthyo
 `houndeye.cpp` (detalhes em `docs/notas/hl1ps2-dlls-done-2.md`). Nada ficou pela metade: o último
 arquivo foi commitado e a ROM bate.
 
-**Próximo arquivo: `hornetgun.cpp`** (e depois `hornet.cpp`, `hgrunt.cpp`, `headcrab.cpp`,
+**Próximo arquivo: `hornet.cpp`** (e depois `hgrunt.cpp`, `headcrab.cpp`,
 `healthkit.cpp`, `hassassin.cpp`, `handgrenade.cpp`, `h_export.cpp`, `h_cycler.cpp`, `h_cine.cpp`,
 `h_battery.cpp`, `h_ai.cpp`, `gman.cpp`, `glock.cpp`, `globals.cpp`, `ggrenade.cpp`, … até o
 início do bloco em 0x100000). A ordem real na ROM pode ter arquivos só do PS2 no meio
 (ex.: `modeltrain.cpp`, `mtank.cpp`), por isso confirme sempre pelas strings da `.rodata`.
 
 Fronteiras conhecidas do próximo arquivo:
-- `.text` termina em **0x18FEF0** (vram), onde começa o `houndeye.cpp`.
-- `.data` termina em **0x314070**.
-- `.rodata` termina em **0x35D790** (há strings `hornet`, `models/w_hgun.dol`, `weapon_hornetgun`
-  logo antes).
+- `.text` termina em **0x18EDA0** (vram), onde começa o `hornetgun.cpp`; o registro de ponteiros
+  do hornet é `func_0018EBC8`.
+- `.data` termina em **0x314070** (o hornetgun não tem `.data`).
+- `.rodata` termina em **0x35D3C0** (a string `hornet` em 0x35D3B8 já é do hornet.cpp).
+- O `cmpfile.sh` pode dizer que tudo bate mesmo com uma constante float errada (ignora o `lui`
+  do imediato); só o build completo garante.
 
 ## 5. Receita para descompilar um arquivo das dlls
 

@@ -5,7 +5,7 @@ metadata:
   type: project
   modified: 2026-10-20T01:20:59.937Z
 ---
-Código do jogo (dlls HLSDK, gcc 2.95 C++) fica no bloco asm cod/000000 (rom 0x0–0x117280), arquivos em ordem alfabética, feitos de trás pra frente a partir do zombie.cpp; lista dos arquivos feitos em [[hl1ps2-dlls-done]]. Próximo: hornetgun.cpp (texto termina em 0x18FEF0, .data em 0x314070, .rodata em 0x35D790). Fonte do HLSDK que falta em /tmp/claude-0/hlsdk: baixar de raw.githubusercontent.com/ValveSoftware/halflife/master/dlls/. Lições por arquivo: [[hl1ps2-dlls-osprey]], [[hl1ps2-dlls-nodes]], [[hl1ps2-dlls-nihilanth]], [[hl1ps2-dlls-multiplay]]. player.cpp (0x1C3350–0x1D3508, ~180 funções, .rodata 0x36AF40–0x36DCC8) ficou para depois por ser enorme; seu asm está em asm/cod/0C3350.s.
+Código do jogo (dlls HLSDK, gcc 2.95 C++) fica no bloco asm cod/000000 (rom 0x0–0x117280), arquivos em ordem alfabética, feitos de trás pra frente a partir do zombie.cpp; lista dos arquivos feitos em [[hl1ps2-dlls-done]]. Próximo: hornet.cpp (texto termina em 0x18EDA0, registro em func_0018EBC8, .data termina em 0x314070, .rodata em 0x35D3C0). Fonte do HLSDK que falta em /tmp/claude-0/hlsdk: baixar de raw.githubusercontent.com/ValveSoftware/halflife/master/dlls/. Lições por arquivo: [[hl1ps2-dlls-osprey]], [[hl1ps2-dlls-nodes]], [[hl1ps2-dlls-nihilanth]], [[hl1ps2-dlls-multiplay]]. player.cpp (0x1C3350–0x1D3508, ~180 funções, .rodata 0x36AF40–0x36DCC8) ficou para depois por ser enorme; seu asm está em asm/cod/0C3350.s.
 
 Headers em include/dlls (extdll, vector, util, cbase, basemonster, monsters, skill, gamerules...).
 - `long` é 64 bits no ee-gcc: no enginefuncs use `int` (RandomLong etc.), senão aparece dsll32/dsra32.
