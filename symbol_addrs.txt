@@ -4744,6 +4744,7 @@ _vt$12CIchthyosaur = 0x0035E568;
 m_SaveData__12CIchthyosaur = 0x00314350;
 _GLOBAL_$I$monster_ichthyosaur = 0x00195030; // type:func
 monster_human_grunt = 0x00186E08; // type:func
+GiveFnptrsToDll = 0x00180760; // type:func
 weapon_handgrenade = 0x00180810; // type:func
 Spawn__12CHandGrenade = 0x00180830; // type:func
 Precache__12CHandGrenade = 0x001808A8; // type:func

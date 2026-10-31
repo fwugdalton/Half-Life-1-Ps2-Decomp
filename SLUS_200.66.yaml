@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x080760, cpp, dlls/h_export]
       - [0x080810, cpp, dlls/handgrenade]
       - [0x0811D8, cpp, dlls/hassassin]
       - [0x082BC8, cpp, dlls/headcrab]
@@ -357,6 +358,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x258698, .rodata, dlls/h_export]
       - [0x2586C8, .rodata, dlls/handgrenade]
       - [0x258A70, .rodata, dlls/hassassin]
       - [0x259210, .rodata, dlls/headcrab]
