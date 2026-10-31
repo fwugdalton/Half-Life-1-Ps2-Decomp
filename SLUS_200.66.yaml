@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x076FA0, cpp, dlls/genericmonster]
       - [0x077C58, cpp, dlls/ggrenade]
       - [0x079D58, cpp, dlls/globals]
       - [0x079DA8, cpp, dlls/glock]
@@ -280,6 +281,7 @@ segments:
       - [0x1D0A68, asm, cod/1D0A68]
       - [0x1F5980, textbin, cod/1F5980] # .vutext
       - [0x201B00, data, cod/201B00] # .data
+      - [0x212B88, .data, dlls/genericmonster]
       - [0x212C18, .data, dlls/globals]
       - [0x212C50, .data, dlls/gman]
       - [0x212C70, .data, dlls/h_ai]
@@ -372,6 +374,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x2526C0, .rodata, dlls/genericmonster]
       - [0x252E18, .rodata, dlls/ggrenade]
       - [0x2533F0, .rodata, dlls/globals]
       - [0x253420, .rodata, dlls/glock]
