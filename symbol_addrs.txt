@@ -5527,3 +5527,7 @@ SetTransparency__13CFocusEmitteriiiiii = 0x001675A8; // type:func
 _GLOBAL_$I$info_emittertarget = 0x00167610; // type:func
 _vt$13CFocusEmitter = 0x0034B568;
 _vt$14CEmitterTarget = 0x0034B970;
+SetFlyingMomentum__14CFlyingMonsterf = 0x00165C90; // type:func
+SetFlyingFlapSound__14CFlyingMonsterPCc = 0x00165C98; // type:func
+SetFlyingSpeed__14CFlyingMonsterf = 0x00165CA0; // type:func
+_vt$14CFlyingMonster = 0x0034AFC0;
