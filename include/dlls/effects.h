@@ -66,6 +66,7 @@ public:
 class CBeam : public CBaseEntity
 {
 public:
+    inline void SetStartAttachment(int attachment) { pev->sequence = (pev->sequence & 0x0FFF) | ((attachment & 0xF) << 12); }
     inline void SetEndAttachment(int attachment) { pev->skin = (pev->skin & 0x0FFF) | ((attachment & 0xF) << 12); }
     inline void SetColor(int r, int g, int b)
     {
@@ -82,6 +83,7 @@ public:
     static CBeam *BeamCreate(const char *pSpriteName, int width);
     void PointsInit(const Vector &start, const Vector &end);
     void PointEntInit(const Vector &start, int endIndex);
+    void EntsInit(int startIndex, int endIndex);
 
     inline void LiveForTime(float time)
     {

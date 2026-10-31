@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x07BAB8, cpp, dlls/h_battery]
       - [0x07E2C0, cpp, dlls/h_cine]
       - [0x07F270, cpp, dlls/h_cycler]
       - [0x080760, cpp, dlls/h_export]
@@ -274,6 +275,7 @@ segments:
       - [0x1D0A68, asm, cod/1D0A68]
       - [0x1F5980, textbin, cod/1F5980] # .vutext
       - [0x201B00, data, cod/201B00] # .data
+      - [0x212C78, .data, dlls/h_battery]
       - [0x212DD8, .data, dlls/h_cycler]
       - [0x212E28, .data, dlls/h_export]
       - [0x213010, .data, dlls/hassassin]
@@ -362,6 +364,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x253EF8, .rodata, dlls/h_battery]
       - [0x2547F0, .rodata, dlls/h_cine]
       - [0x257058, .rodata, dlls/h_cycler]
       - [0x258698, .rodata, dlls/h_export]

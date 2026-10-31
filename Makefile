@@ -63,6 +63,7 @@ $(BUILD_DIR)/src/dlls/teamplay_gamerules.o: CFLAGS += -fmove-all-movables
 $(BUILD_DIR)/src/dlls/util.o: CFLAGS += -fmove-all-movables
 $(BUILD_DIR)/src/dlls/monsters.o: CFLAGS += -fmove-all-movables
 $(BUILD_DIR)/src/dlls/healthkit.o: CFLAGS += -fmove-all-movables
+$(BUILD_DIR)/src/dlls/h_battery.o: CFLAGS += -fmove-all-movables
 $(BUILD_DIR)/src/gbx/StreamZip.o: CFLAGS += -fmove-all-movables
 $(BUILD_DIR)/src/gbx/HL1Read.o: CFLAGS += -fmove-all-movables
 # as dlls do jogo (HLSDK) usam sqrt.s direto
