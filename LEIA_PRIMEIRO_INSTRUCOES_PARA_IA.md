@@ -62,16 +62,16 @@ usa o asm original via `INCLUDE_ASM`); são candidatas a melhorar depois. Para l
 
 Eu estava descompilando as **dlls de trás para frente** (de `zombie.cpp` para trás, em ordem
 alfabética invertida). Os últimos arquivos feitos foram `gamerules.cpp`, `game.cpp` e
-`func_tank.cpp`, `func_break.cpp`, `focus_emitter.cpp`, `flyingmonster.cpp`, `eyescanner.cpp`, `explode.cpp`, `egon.cpp`, `effects.cpp`, `doors.cpp`, `defaultai.cpp`, `crowbar.cpp`, `crossbow.cpp`, `decay_gamerules.cpp` e `controller_hud.cpp` (só do PS2, nomes inventados; ver `docs/notas/hl1ps2-dlls-decay.md`), `controller.cpp` (RunAI NON_MATCHING; ver `docs/notas/hl1ps2-dlls-controller.md`), `combat.cpp` (5 NON_MATCHING; ver `docs/notas/hl1ps2-dlls-combat.md`), `client.cpp` e `cbase.cpp` (tudo casa; ver `docs/notas/hl1ps2-dlls-done-10.md`) (detalhes em `docs/notas/hl1ps2-dlls-done-5.md` e `hl1ps2-dlls-done-6.md` e `hl1ps2-dlls-done-7.md` e `hl1ps2-dlls-done-8.md` e `hl1ps2-dlls-done-9.md` e `hl1ps2-dlls-done-10.md`). Nada ficou pela metade: o último
+`func_tank.cpp`, `func_break.cpp`, `focus_emitter.cpp`, `flyingmonster.cpp`, `eyescanner.cpp`, `explode.cpp`, `egon.cpp`, `effects.cpp`, `doors.cpp`, `defaultai.cpp`, `crowbar.cpp`, `crossbow.cpp`, `decay_gamerules.cpp` e `controller_hud.cpp` (só do PS2, nomes inventados; ver `docs/notas/hl1ps2-dlls-decay.md`), `controller.cpp` (RunAI NON_MATCHING; ver `docs/notas/hl1ps2-dlls-controller.md`), `combat.cpp` (5 NON_MATCHING; ver `docs/notas/hl1ps2-dlls-combat.md`), `client.cpp` e `cbase.cpp` (tudo casa; ver `docs/notas/hl1ps2-dlls-done-10.md`), `buttons.cpp` (tudo casa; ver `docs/notas/hl1ps2-dlls-done-11.md`) (detalhes em `docs/notas/hl1ps2-dlls-done-5.md` e `hl1ps2-dlls-done-6.md` e `hl1ps2-dlls-done-7.md` e `hl1ps2-dlls-done-8.md` e `hl1ps2-dlls-done-9.md` e `hl1ps2-dlls-done-10.md`). Nada ficou pela metade: o último
 arquivo foi commitado e a ROM bate.
 
-**Próximo arquivo: `buttons.cpp`** (ver `docs/notas/hl1ps2-dlls-done-10.md`) (depois os outros, … até o
+**Próximo arquivo: `bullsquid.cpp`** (ver `docs/notas/hl1ps2-dlls-done-11.md`) (depois os outros, … até o
 início do bloco em 0x100000). A ordem real na ROM pode ter arquivos só do PS2 no meio
 (ex.: `modeltrain.cpp`, `mtank.cpp`), por isso confirme sempre pelas strings da `.rodata`.
 
 Fronteiras conhecidas do próximo arquivo:
-- `.text` termina em **0x144E98** (vram), onde começa o `cbase.cpp` (func_00144E78 é a última função do asm/cod/000000.s).
-- `.rodata` termina em **0x342FF0**; `.data` termina em 0x30EBE8.
+- `.text` termina em **0x1412F0** (vram), onde começa o `buttons.cpp` (static init em 0x141288/0x1412D0).
+- `.rodata` termina em **0x341810**; `.data` termina em 0x30EA68.
 - `.rodata` termina em **0x35A850** (o `"classname"` em 0x35A850 já é do hgrunt). Tem a classe
   nova do PS2 `CWallHealthNew` (`item_healthchargercan`, `models/health_charger_body.dol`).
 - Chamadas a `EHANDLE`: a ROM às vezes usa `operator CBaseEntity*` onde o código natural chama

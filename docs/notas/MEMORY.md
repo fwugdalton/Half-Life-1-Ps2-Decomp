@@ -70,3 +70,4 @@
 - [hl1ps2-dlls-controller](hl1ps2-dlls-controller.md): controller.cpp do PS2 (sons MP, ELIGHT fora do MP, attachments -1, RunAI NON_MATCHING, fabsf misto)
 - [hl1ps2-dlls-combat](hl1ps2-dlls-combat.md): combat.cpp do PS2 (gibs, TakeDamage, FVisible func_wall, sem -fmove-all-movables, 5 NON_MATCHING)
 - [hl1ps2-dlls-done-10](hl1ps2-dlls-done-10.md): client.cpp e cbase.cpp feitos (SDK antigo, inlines de CBaseEntity, ctor de entvars) e próximo arquivo (buttons.cpp)
+- [hl1ps2-dlls-done-11](hl1ps2-dlls-done-11.md): buttons.cpp feito (momentary com trava de fim, button_toggle_indicator) e próximo arquivo (bullsquid.cpp)
