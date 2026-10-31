@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x06F258, cpp, dlls/gamerules]
       - [0x06FCF8, cpp, dlls/gargantua]
       - [0x0741C8, cpp, dlls/gauss]
       - [0x076970, cpp, dlls/item_generic]
@@ -284,6 +285,7 @@ segments:
       - [0x1D0A68, asm, cod/1D0A68]
       - [0x1F5980, textbin, cod/1F5980] # .vutext
       - [0x201B00, data, cod/201B00] # .data
+      - [0x21298C, .data, dlls/gamerules]
       - [0x212990, .data, dlls/gargantua]
       - [0x212B38, .data, dlls/gauss]
       - [0x212B88, .data, dlls/genericmonster]
@@ -379,6 +381,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x250218, .rodata, dlls/gamerules]
       - [0x250C50, .rodata, dlls/gargantua]
       - [0x251D28, .rodata, dlls/gauss]
       - [0x252420, .rodata, dlls/item_generic]

@@ -79,6 +79,7 @@ $(BUILD_DIR)/src/dlls/islave.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment
 $(BUILD_DIR)/src/dlls/ichthyosaur.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8 --set-section-alignment .rodata=16
 $(BUILD_DIR)/src/dlls/houndeye.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8 --set-section-alignment .rodata=16
 $(BUILD_DIR)/src/dlls/hgrunt.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8 --set-section-alignment .rodata=16
+$(BUILD_DIR)/src/dlls/gamerules.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=4
 $(BUILD_DIR)/src/dlls/hassassin.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8 --set-section-alignment .rodata=16
 $(BUILD_DIR)/src/dlls/roach.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .rodata=16
 $(BUILD_DIR)/src/dlls/talkmonster.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .rodata=16
