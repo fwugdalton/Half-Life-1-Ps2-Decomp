@@ -220,6 +220,10 @@ D_00313008 = 0x00313008;
 /* dlls/glock: início */
 D_00353730 = 0x00353730;
 /* dlls/glock: fim */
+/* dlls/globals: início */
+D_00312C44 = 0x00312C44;
+D_00312C48 = 0x00312C48;
+/* dlls/globals: fim */
 /* engine/sv_main: início */
 D_0038E8F8 = 0x0038E8F8;
 /* engine/sv_main: fim */
