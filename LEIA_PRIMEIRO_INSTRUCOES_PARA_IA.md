@@ -42,7 +42,7 @@ arquivo ou tipo de código já tratado.
 
 ## 3. Estado atual (2026-10-28)
 
-Últimos arquivos feitos: `hornetgun.cpp`, `hornet.cpp`, `hlg_world.cpp` e `hgrunt.cpp` (2026-10-31, ver `docs/notas/hl1ps2-dlls-done-3.md` e `docs/notas/hl1ps2-dlls-hgrunt.md`).
+Últimos arquivos feitos: `hgrunt.cpp`, `healthkit.cpp`, `headcrab.cpp` e `hassassin.cpp` (2026-10-31, ver `docs/notas/hl1ps2-dlls-done-3.md`, `hl1ps2-dlls-done-4.md`, `hl1ps2-dlls-hgrunt.md` e `hl1ps2-dlls-healthkit.md`).
 
 Segmentos de `.text` no `SLUS_200.66.yaml` que **ainda são asm**:
 
@@ -61,11 +61,11 @@ usa o asm original via `INCLUDE_ASM`); são candidatas a melhorar depois. Para l
 ## 4. O que eu estava fazendo e qual é o próximo passo
 
 Eu estava descompilando as **dlls de trás para frente** (de `zombie.cpp` para trás, em ordem
-alfabética invertida). Os últimos arquivos feitos foram `hgrunt.cpp`, `healthkit.cpp` e
-`headcrab.cpp` (detalhes em `docs/notas/hl1ps2-dlls-done-3.md`). Nada ficou pela metade: o último
+alfabética invertida). Os últimos arquivos feitos foram `healthkit.cpp`, `headcrab.cpp` e
+`hassassin.cpp` (detalhes em `docs/notas/hl1ps2-dlls-done-3.md` e `hl1ps2-dlls-done-4.md`). Nada ficou pela metade: o último
 arquivo foi commitado e a ROM bate.
 
-**Próximo arquivo: `hassassin.cpp`** (depois `handgrenade.cpp`, `h_export.cpp`, `h_cycler.cpp`, `h_cine.cpp`,
+**Próximo arquivo: `handgrenade.cpp`** (depois `h_export.cpp`, `h_cycler.cpp`, `h_cine.cpp`,
 `h_battery.cpp`, `h_ai.cpp`, `gman.cpp`, `glock.cpp`, `globals.cpp`, `ggrenade.cpp`, … até o
 início do bloco em 0x100000). A ordem real na ROM pode ter arquivos só do PS2 no meio
 (ex.: `modeltrain.cpp`, `mtank.cpp`), por isso confirme sempre pelas strings da `.rodata`.
@@ -124,7 +124,7 @@ Fronteiras conhecidas do próximo arquivo:
    Se a ROM falhar, ache o byte diferente com `cmp -l build/SLUS_200.66.rom SLUS_200.66.rom`
    (offset da rom + 0x100000 = vram). O `cmpfunc` ignora o alvo de `jal`, então um `jal` para a
    função errada só aparece nesse `cmp` (ex.: `UTIL_TraceLine` vs `UTIL_TraceLineNoEnts`).
-8. **Atualizar as notas** em `docs/notas/` (uma linha no `hl1ps2-dlls-done-2.md` e o "Próximo" em
+8. **Atualizar as notas** em `docs/notas/` (uma linha no `hl1ps2-dlls-done-4.md` e o "Próximo" em
    `hl1ps2-dlls.md`).
 
 ## 6. Ferramentas

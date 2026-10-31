@@ -1,0 +1,9 @@
+---
+name: hl1ps2-dlls-done-4
+description: continuação da lista de .cpp das dlls feitos (hassassin em diante), com faixas e diferenças do PS2
+metadata:
+  type: project
+---
+Continuação de [[hl1ps2-dlls-done-3]] (formato: arquivo (texto, commit, funções casadas)).
+
+- hassassin (0x1811D8, f8248ff, 24/24): .data 0x313010 (m_SaveData com 10 campos; termina com o static iStep em 0x313380), .rodata 0x358A70. PS2: campo novo float m_flCoverTime (+0x2D8, salvo como FIELD_FLOAT, depois do m_iShell) que limita a 3 s as fugas TAKE_COVER_FROM_BEST_SOUND (idle/alert e combate) e TAKE_COVER_FROM_ENEMY (inimigo novo); CheckMeleeAttack1 e CheckRangeAttack1 usam UTIL_TraceLineNoEnts (0x207F18) em vez de TraceHull/TraceLine; CheckRangeAttack2 põe m_flNextGrenadeCheck = time + 6 quando o VecCheckThrow dá zero; sqrtf no pulo. HasConditions inline definido no topo do arquivo (o TaskComplete do header continua chamando a cópia fora de linha). Pegadinha: o cmpfile.sh ignora o alvo do jal; só o cmp da ROM pegou o UTIL_TraceLine errado.
