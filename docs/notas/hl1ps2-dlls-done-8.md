@@ -18,4 +18,4 @@ Continuação de [[hl1ps2-dlls-done-7]] (ordem alfabética reversa).
 
 - crowbar (0x156970, 50d5b2c, 16/16): sem .data, .rodata 0x346230 (vtable 0x346388). SDK antigo (sem eventos, miss com m_iSwing%3 e cbar_miss1). PS2: Smack vibra (120,50 em criatura ou parede; 170,25 em CLASS_NONE/MACHINE), WeaponIdle só GetAutoaimVector, dano cheio com Ps2Virt07 (slot 0x38), hitbod no CHAN_WEAPON, `!PlayTextureSounds()` (slot 0x1D8) dá fvolbar = 1, m_trHit = tr fora do if, SetThink/nextthink antes do m_iWeaponVolume.
 
-Próximo: crossbow.cpp (.text termina em 0x156970, _GLOBAL_ em 0x156950; .data termina em 0x30EE70 com m_SaveData "m_fInZoom"; .rodata termina em 0x346230, "ammo_crossbow" em 0x346220). A lista continua em [[hl1ps2-dlls-done-9]].
+A lista continua em [[hl1ps2-dlls-done-9]].
