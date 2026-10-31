@@ -232,3 +232,8 @@ D_00353230 = 0x00353230; /* ponteiro falso do cl_input */
 /* engine/sv_main: início */
 D_0038E8F8 = 0x0038E8F8;
 /* engine/sv_main: fim */
+/* dlls/gauss: início (strings usadas pelo asm do SecondaryAttack) */
+D_00351E58 = 0x00351E58;
+D_00351E88 = 0x00351E88;
+D_00351EA0 = 0x00351EA0;
+/* dlls/gauss: fim */
