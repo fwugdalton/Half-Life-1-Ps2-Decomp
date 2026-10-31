@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x077C58, cpp, dlls/ggrenade]
       - [0x079D58, cpp, dlls/globals]
       - [0x079DA8, cpp, dlls/glock]
       - [0x07AB50, cpp, dlls/gman]
@@ -371,6 +372,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x252E18, .rodata, dlls/ggrenade]
       - [0x2533F0, .rodata, dlls/globals]
       - [0x253420, .rodata, dlls/glock]
       - [0x253A40, .rodata, dlls/gman]

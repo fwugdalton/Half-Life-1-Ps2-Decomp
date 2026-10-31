@@ -224,6 +224,11 @@ D_00353730 = 0x00353730;
 D_00312C44 = 0x00312C44;
 D_00312C48 = 0x00312C48;
 /* dlls/globals: fim */
+/* dlls/ggrenade: início */
+D_00352E90 = 0x00352E90; /* ponteiro para CGrenade::Smoke (Explode em asm) */
+D_00352E98 = 0x00352E98; /* "spark_shower" (Explode em asm) */
+D_00353230 = 0x00353230; /* ponteiro falso do cl_input */
+/* dlls/ggrenade: fim */
 /* engine/sv_main: início */
 D_0038E8F8 = 0x0038E8F8;
 /* engine/sv_main: fim */
