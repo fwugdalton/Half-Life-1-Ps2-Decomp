@@ -65,3 +65,5 @@
 - [hl1ps2-dlls-focus](hl1ps2-dlls-focus.md): focus_emitter.cpp do Decay escrito sem fonte (como achar classes/campos pelo asm, truques de ordem de stores)
 - [hl1ps2-dlls-done-8](hl1ps2-dlls-done-8.md): continuação da lista de .cpp das dlls feitos (explode em diante) e próximo arquivo
 - [hl1ps2-dlls-effects](hl1ps2-dlls-effects.md): effects.cpp (faixas, diferenças do PS2, env_extremefunnel, ordem de vtables e inlines)
+- [hl1ps2-dlls-done-9](hl1ps2-dlls-done-9.md): continuação da lista de .cpp das dlls feitos (crossbow em diante) e próximo arquivo
+- [hl1ps2-dlls-decay](hl1ps2-dlls-decay.md): decay_gamerules.cpp (co-op do Decay só no PS2): campos, registro de funções externas e truques
