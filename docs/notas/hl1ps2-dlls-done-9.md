@@ -17,4 +17,4 @@ Continuação de [[hl1ps2-dlls-done-8]]. Formato: arquivo (endereço do texto, c
 
 - combat (0x1487C0, d1a8404, 38/43): dano, morte e gibs; 5 NON_MATCHING. Detalhes em [[hl1ps2-dlls-combat]].
 
-Próximo: client.cpp (ClientPrecache, CBasePlayer ctor etc.; GetClassPtr<CBasePlayer> 0x148748 é a última função): .text termina em 0x1487C0, .rodata termina em 0x343C60.
+Continua em [[hl1ps2-dlls-done-10]] (client.cpp em diante).
