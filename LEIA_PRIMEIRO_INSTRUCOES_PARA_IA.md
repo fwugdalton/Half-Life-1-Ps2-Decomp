@@ -42,7 +42,7 @@ arquivo ou tipo de código já tratado.
 
 ## 3. Estado atual (2026-10-28)
 
-Últimos arquivos feitos: `hgrunt.cpp`, `healthkit.cpp`, `headcrab.cpp`, `hassassin.cpp`, `handgrenade.cpp`, `h_export.cpp`, `h_cycler.cpp`, `h_cine.cpp` e `h_battery.cpp` (2026-10-31, ver `docs/notas/hl1ps2-dlls-done-3.md`, `hl1ps2-dlls-done-4.md`, `hl1ps2-dlls-hgrunt.md` e `hl1ps2-dlls-healthkit.md`).
+Últimos arquivos feitos: `hgrunt.cpp`, `healthkit.cpp`, `headcrab.cpp`, `hassassin.cpp`, `handgrenade.cpp`, `h_export.cpp`, `h_cycler.cpp`, `h_cine.cpp`, `h_battery.cpp` e `h_ai.cpp` (2026-10-31, ver `docs/notas/hl1ps2-dlls-done-3.md`, `hl1ps2-dlls-done-4.md`, `hl1ps2-dlls-hgrunt.md` e `hl1ps2-dlls-healthkit.md`).
 
 Segmentos de `.text` no `SLUS_200.66.yaml` que **ainda são asm**:
 
@@ -61,18 +61,18 @@ usa o asm original via `INCLUDE_ASM`); são candidatas a melhorar depois. Para l
 ## 4. O que eu estava fazendo e qual é o próximo passo
 
 Eu estava descompilando as **dlls de trás para frente** (de `zombie.cpp` para trás, em ordem
-alfabética invertida). Os últimos arquivos feitos foram `h_cycler.cpp`, `h_cine.cpp` e
-`h_battery.cpp` (detalhes em `docs/notas/hl1ps2-dlls-done-3.md` e `hl1ps2-dlls-done-4.md`). Nada ficou pela metade: o último
+alfabética invertida). Os últimos arquivos feitos foram `h_cine.cpp`, `h_battery.cpp` e
+`h_ai.cpp` (detalhes em `docs/notas/hl1ps2-dlls-done-3.md` e `hl1ps2-dlls-done-4.md`). Nada ficou pela metade: o último
 arquivo foi commitado e a ROM bate.
 
-**Próximo arquivo: `h_ai.cpp`** (depois
-`gman.cpp`, `glock.cpp`, `globals.cpp`, `ggrenade.cpp`, … até o
+**Próximo arquivo: `gman.cpp`** (depois
+`glock.cpp`, `globals.cpp`, `ggrenade.cpp`, … até o
 início do bloco em 0x100000). A ordem real na ROM pode ter arquivos só do PS2 no meio
 (ex.: `modeltrain.cpp`, `mtank.cpp`), por isso confirme sempre pelas strings da `.rodata`.
 
 Fronteiras conhecidas do próximo arquivo:
-- `.text` termina em **0x17BAB8** (vram), onde começa o `h_battery.cpp`.
-- `.data` termina em **0x312C78**; `.rodata` termina em **0x353EF8**.
+- `.text` termina em **0x17B200** (vram), onde começa o `h_ai.cpp`.
+- `.data` termina em **0x312C78**; `.rodata` termina em **0x353EC8**.
 - `.rodata` termina em **0x35A850** (o `"classname"` em 0x35A850 já é do hgrunt). Tem a classe
   nova do PS2 `CWallHealthNew` (`item_healthchargercan`, `models/health_charger_body.dol`).
 - Chamadas a `EHANDLE`: a ROM às vezes usa `operator CBaseEntity*` onde o código natural chama
