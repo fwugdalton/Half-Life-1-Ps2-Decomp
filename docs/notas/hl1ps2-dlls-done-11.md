@@ -1,6 +1,6 @@
 ---
 name: hl1ps2-dlls-done-11
-description: continuação da lista de .cpp das dlls feitos (buttons, bullsquid), mudanças do PS2 e próximo arquivo (bmodels.cpp)
+description: continuação da lista de .cpp das dlls feitos (buttons, bullsquid, bmodels), mudanças do PS2 e próximo arquivo (bloater.cpp)
 metadata:
   type: project
 ---
@@ -17,4 +17,6 @@ Continuação de [[hl1ps2-dlls-done-10]]. Formato: arquivo (endereço do texto, 
 
 - bullsquid (0x13E8C0, f426bd3, 41/41): .data 0x30E6F0–0x30EA68, .rodata 0x340C40–0x341810 (começa com "classname"/"targetname"/"target" das inlines). Aqui os LINK_ENTITY_TO_CLASS ficam no meio (logo após cada classe), não no fim. Mudanças do PS2: campo novo m_flAttackTime (0x2AC, salvo); TE_SPRITE_SPRAY vale 110; Touch do cuspe usa RANDOM_LONG(90,110) e UTIL_TraceLineNoEnts; .spz/.dol; ChaseEnemy sem COND_CAN_RANGE_ATTACK1; schedules novos SquidSniff (fareja virando 30/60/30) e IdleStand (WAIT 1, conds do slIdleStand + CAN_RANGE1/MELEE1/MELEE2), tipos 49/50; GetSchedule no combate termina com: time < m_flNextSpitTime → IdleStand; time - m_flAttackTime > 5 → guarda o tempo e Chase; senão Sniff. fabs→fabsf, sufixo f em todos os floats, m_maxFrame sem (float). Registro func_001410E0: "038" Animate, "039" SUB_Remove.
 
-Próximo: bmodels.cpp. .text termina em 0x13E8C0 (static init 0x13E7C8, inlines de 8 bytes e _GLOBAL_$I em 0x13E8A0), .rodata termina em 0x340C40, .data termina em 0x30E6F0.
+- bmodels (0x13C240, c50e489, 56/58): .data 0x30E620, .rodata 0x33FBF0–0x340C36 (por isso o bullsquid.o ganhou `--set-section-alignment .rodata=16`; mudar o Makefile não refaz o .o, dar touch no .cpp). HLSDK com abs()→fabsf em tudo, vec3_t m_center/m_start → Vector, CFuncIllusionary::KeyValue usa atoi no skin. Registro func_0013E308 entre RopeTouch e as cópias de GetClassPtr: think 028 SpinDown, 029 SpinUp, 030 Rotate, 031 SUB_CallUseToggle, 032 Stop, 033 Swing; touch 034 RopeTouch, 035 HurtTouch; use 036 RotatingUse, 037 PendulumUse. NON_MATCHING: UpdateSpeed (o alvo converte o speedCode antes do compare e faz um store só) e SpinDown (alocação nos args do EMIT_SOUND_DYN); o .s do SpinDown cita D_0033FD68 (pmf do Rotate), definido no linker_script_extra.ld. Cuidado: compilar à mão com -DNON_MATCHING deixa o .o velho para o fullbuild (dar touch).
+
+Próximo: bloater.cpp ("monster_bloater" em 0x33FBD8). .text termina em 0x13C240 (static init 0x13C1D8, inlines 0x13C210/0x13C218, _GLOBAL_$I 0x13C220), .rodata termina em 0x33FBF0, .data termina em 0x30E620.
