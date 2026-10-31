@@ -85,6 +85,7 @@ $(BUILD_DIR)/src/dlls/func_break.o: OBJCOPY_EXTRA := -R .bss --set-section-align
 $(BUILD_DIR)/src/dlls/gamerules.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=4
 $(BUILD_DIR)/src/dlls/hassassin.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8 --set-section-alignment .rodata=16
 $(BUILD_DIR)/src/dlls/roach.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .rodata=16
+$(BUILD_DIR)/src/dlls/controller.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8 --set-section-alignment .rodata=16
 $(BUILD_DIR)/src/dlls/talkmonster.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .rodata=16
 $(BUILD_DIR)/src/dlls/plats.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8 --set-section-alignment .rodata=16
 $(BUILD_DIR)/src/dlls/monsters.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8 --set-section-alignment .rodata=16

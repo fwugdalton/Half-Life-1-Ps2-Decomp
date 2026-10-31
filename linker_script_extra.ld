@@ -719,6 +719,12 @@ D_003475E8 = 0x003475E8;
 /* construtor do CHalfLifeDecay (decay_gamerules.cpp), chamado pelo InstallGameRules do gamerules.cpp */
 func_00152E20 = 0x00152E20;
 D_00344320 = 0x00344320;
+func_00149170 = 0x00149170;
+D_00343CB8 = 0x00343CB8;
+D_00343CC0 = 0x00343CC0;
+D_00343CD8 = 0x00343CD8;
+D_00343D08 = 0x00343D08;
+D_00343DB8 = 0x00343DB8;
 /* engine/sv_main: início */
 D_0038E8F8 = 0x0038E8F8;
 /* engine/sv_main: fim */

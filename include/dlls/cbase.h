@@ -149,6 +149,7 @@ public:
     void EXPORT SUB_StartFadeOut(void);
     void SUB_StartFadeOutLater(void); /* PS2: igual, mas o fade começa em 5 s */
     void EXPORT SUB_FadeOut(void);
+    void EXPORT SUB_FadeOutFast(void); /* PS2: SUB_FadeOut com passo 21 */
     void EXPORT SUB_CallUseToggle(void) { this->Use(this, this, USE_TOGGLE, 0); }
     int ShouldToggle(USE_TYPE useType, BOOL currentState);
     void FireBullets(unsigned int cShots, Vector vecSrc, Vector vecDirShooting, Vector vecSpread, float flDistance, int iBulletType, int iTracerFreq = 4, int iDamage = 0, entvars_t *pevAttacker = NULL);
