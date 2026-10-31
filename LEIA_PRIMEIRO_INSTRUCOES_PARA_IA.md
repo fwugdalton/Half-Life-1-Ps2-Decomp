@@ -42,7 +42,7 @@ arquivo ou tipo de código já tratado.
 
 ## 3. Estado atual (2026-10-28)
 
-Últimos arquivos feitos: `hornetgun.cpp` e `hornet.cpp` (2026-10-31, ver `docs/notas/hl1ps2-dlls-done-3.md`).
+Últimos arquivos feitos: `hornetgun.cpp`, `hornet.cpp` e `hlg_world.cpp` (2026-10-31, ver `docs/notas/hl1ps2-dlls-done-3.md`).
 
 Segmentos de `.text` no `SLUS_200.66.yaml` que **ainda são asm**:
 
@@ -53,7 +53,7 @@ Segmentos de `.text` no `SLUS_200.66.yaml` que **ainda são asm**:
 | `0x1D0A68` em diante (`asm/cod/1D0A68.s`) | SDK da Sony (libgraph, libpad, libcdvd, libmc, libscf), libm, libstdc++ | **não descompilar** (bibliotecas) |
 
 Já feito (está em `src/`): praticamente todo o engine em C (`src/engine`), o código da Gearbox
-(`src/gbx`, C e C++), a zlib 1.1.3 (`src/zlib`) e as dlls de `hornet.cpp` até `zombie.cpp`
+(`src/gbx`, C e C++), a zlib 1.1.3 (`src/zlib`) e as dlls de `hlg_world.cpp` até `zombie.cpp`
 (`src/dlls`, ~57 arquivos). Algumas funções ficaram `NON_MATCHING` (código C presente, mas o build
 usa o asm original via `INCLUDE_ASM`); são candidatas a melhorar depois. Para listar:
 `grep -rn "NON_MATCHING" src | wc -l`.
@@ -65,17 +65,17 @@ alfabética invertida). Os últimos arquivos feitos foram `islave.cpp`, `ichthyo
 `houndeye.cpp` (detalhes em `docs/notas/hl1ps2-dlls-done-2.md`). Nada ficou pela metade: o último
 arquivo foi commitado e a ROM bate.
 
-**Próximo arquivo: `hlg_world.cpp`** (o `world.cpp` do SDK com outro nome no PS2; depois `hgrunt.cpp`, `headcrab.cpp`,
+**Próximo arquivo: `hgrunt.cpp`** (depois `headcrab.cpp`,
 `healthkit.cpp`, `hassassin.cpp`, `handgrenade.cpp`, `h_export.cpp`, `h_cycler.cpp`, `h_cine.cpp`,
 `h_battery.cpp`, `h_ai.cpp`, `gman.cpp`, `glock.cpp`, `globals.cpp`, `ggrenade.cpp`, … até o
 início do bloco em 0x100000). A ordem real na ROM pode ter arquivos só do PS2 no meio
 (ex.: `modeltrain.cpp`, `mtank.cpp`), por isso confirme sempre pelas strings da `.rodata`.
 
 Fronteiras conhecidas do próximo arquivo:
-- `.text` termina em **0x18D600** (vram), onde começa o `hornet.cpp`.
-- `.data` termina em **0x314038**.
-- `.rodata` termina em **0x35CDA0** (as strings `infodecal`/`worldspawn` em 0x35CD80/90 são dele;
-  a string `dlls/hlg_world.cpp` fica em 0x35C2C8).
+- `.text` termina em **0x18BC18** (vram), onde começa o `hlg_world.cpp`.
+- `.data` termina em **0x313E88** (os 8 bytes zerados em 0x313E80, sem referência, devem ser dele).
+- `.rodata` termina em **0x35BFD8** (as strings `monster_grunt_repel`/`monster_hgrunt_dead` em
+  0x35BFA8/0x35BFC0 são as últimas dele).
 - O `cmpfile.sh` pode dizer que tudo bate mesmo com uma constante float errada (ignora o `lui`
   do imediato); só o build completo garante.
 
