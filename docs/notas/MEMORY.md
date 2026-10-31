@@ -62,3 +62,6 @@
 - [hl1ps2-dlls-done-4](hl1ps2-dlls-done-4.md): continuação da lista de .cpp das dlls feitos (hassassin em diante)
 - [hl1ps2-dlls-done-6](hl1ps2-dlls-done-6.md): continuação da lista de .cpp das dlls feitos (item_generic em diante)
 - [hl1ps2-dlls-done-7](hl1ps2-dlls-done-7.md): continuação da lista de .cpp das dlls feitos (gamerules em diante) e próximo arquivo
+- [hl1ps2-dlls-focus](hl1ps2-dlls-focus.md): focus_emitter.cpp do Decay escrito sem fonte (como achar classes/campos pelo asm, truques de ordem de stores)
+- [hl1ps2-dlls-done-8](hl1ps2-dlls-done-8.md): continuação da lista de .cpp das dlls feitos (explode em diante) e próximo arquivo
+- [hl1ps2-dlls-effects](hl1ps2-dlls-effects.md): effects.cpp (faixas, diferenças do PS2, env_extremefunnel, ordem de vtables e inlines)
