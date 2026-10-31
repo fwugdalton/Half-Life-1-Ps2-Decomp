@@ -65,13 +65,13 @@ alfabética invertida). Os últimos arquivos feitos foram `gamerules.cpp`, `game
 `func_tank.cpp` (detalhes em `docs/notas/hl1ps2-dlls-done-5.md` e `hl1ps2-dlls-done-6.md` e `hl1ps2-dlls-done-7.md`). Nada ficou pela metade: o último
 arquivo foi commitado e a ROM bate.
 
-**Próximo arquivo: `func_break.cpp`** (depois os outros `func_*`, … até o
+**Próximo arquivo: o do `item_focusemitter`** (entidade do Decay, nome do .cpp desconhecido; depois os outros, … até o
 início do bloco em 0x100000). A ordem real na ROM pode ter arquivos só do PS2 no meio
 (ex.: `modeltrain.cpp`, `mtank.cpp`), por isso confirme sempre pelas strings da `.rodata`.
 
 Fronteiras conhecidas do próximo arquivo:
-- `.text` termina em **0x169AD8** (vram), onde começa o `func_tank.cpp`.
-- `.data` termina em **0x30FC48**; `.rodata` termina em **0x34C710** (`"func_pushable"` em 0x34C700).
+- `.text` termina em **0x167630** (vram), onde começa o `func_break.cpp` (o `_GLOBAL_$I$` dele fica em 0x167610).
+- `.data` termina em **0x30FB18**; `.rodata` termina em **0x34BB60** (strings `"item_focusemitter"`, `models/focus_emitter.dol` a partir de ~0x34B3C8).
 - `.rodata` termina em **0x35A850** (o `"classname"` em 0x35A850 já é do hgrunt). Tem a classe
   nova do PS2 `CWallHealthNew` (`item_healthchargercan`, `models/health_charger_body.dol`).
 - Chamadas a `EHANDLE`: a ROM às vezes usa `operator CBaseEntity*` onde o código natural chama
