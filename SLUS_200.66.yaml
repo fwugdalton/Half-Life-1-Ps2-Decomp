@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x065CA8, cpp, dlls/focus_emitter]
       - [0x067630, cpp, dlls/func_break]
       - [0x069AD8, cpp, dlls/func_tank]
       - [0x06D4E8, cpp, dlls/game]
@@ -387,6 +388,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x24B3C8, .rodata, dlls/focus_emitter]
       - [0x24BB60, .rodata, dlls/func_break]
       - [0x24C710, .rodata, dlls/func_tank]
       - [0x24D738, .rodata, dlls/game]
