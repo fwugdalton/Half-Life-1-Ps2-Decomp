@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x01C4E0, cpp, cl_dll/parsemsg]
       - [0x01C858, cpp, cl_dll/saytext]
       - [0x01CF98, cpp, cl_dll/scoreboard]
       - [0x01E870, cpp, cl_dll/status_icons]
