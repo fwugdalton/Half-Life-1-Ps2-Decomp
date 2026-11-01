@@ -40,7 +40,7 @@ void func_002353C0(pakfile_t *pak, const char *name);
 int func_00228C48(const char *a, const char *b);
 void func_00228CF0(char *dst, const char *src);
 int func_00228E60(const char *a, const char *b);
-void func_00114E58(void);
+void InitWeaponsResources(void);	/* cl_dll/ammohistory.cpp */
 void func_0022EC50(void);
 void func_00235A50(void);
 void func_00235AA0(const char *game);
@@ -248,7 +248,7 @@ void func_00235500(void) {
     if (func_00228E60(D_00328A10, "VALVE") != 0) {
         func_002CF6F8(D_00328A10);
     }
-    func_00114E58();
+    InitWeaponsResources();
     func_002CA018();
     func_0028BD90();
     func_00235B08();
