@@ -48,7 +48,7 @@ Segmentos de `.text` no `SLUS_200.66.yaml` que **ainda são asm**:
 
 | Faixa (offset na rom → vram = offset + 0x100000) | Conteúdo | Situação |
 |---|---|---|
-| `0x000000`–`0x022138` (`asm/cod/000000.s`) | _start, Launcher da Gearbox (GUI) e HUD do cliente, sem fonte | **próximo** (ver seção 4) |
+| `0x000000`–`0x01CF98` (`asm/cod/000000.s`) | _start, Launcher da Gearbox (GUI) e o resto do HUD do cliente (cl_dll) | **próximo** (ver seção 4) |
 | `0x026F80`–`0x02CF18` (`asm/cod/026F80.s`) | IA do parceiro do Decay (métodos Ps2AI* do CBasePlayer) | adiado (layout do CBasePlayer) |
 | `0x0C3350`–`0x0D3508` (`asm/cod/0C3350.s`) | `player.cpp` (~180 funções, `.rodata` 0x36AF40–0x36DCC8) | adiado por ser enorme |
 | `0x1D0A68` em diante (`asm/cod/1D0A68.s`) | SDK da Sony (libgraph, libpad, libcdvd, libmc, libscf), libm, libstdc++ | **não descompilar** (bibliotecas) |
@@ -66,7 +66,7 @@ alfabética invertida). Os últimos arquivos feitos foram `gamerules.cpp`, `game
 `func_tank.cpp`, `func_break.cpp`, `focus_emitter.cpp`, `flyingmonster.cpp`, `eyescanner.cpp`, `explode.cpp`, `egon.cpp`, `effects.cpp`, `doors.cpp`, `defaultai.cpp`, `crowbar.cpp`, `crossbow.cpp`, `decay_gamerules.cpp` e `controller_hud.cpp` (só do PS2, nomes inventados; ver `docs/notas/hl1ps2-dlls-decay.md`), `controller.cpp` (RunAI NON_MATCHING; ver `docs/notas/hl1ps2-dlls-controller.md`), `combat.cpp` (5 NON_MATCHING; ver `docs/notas/hl1ps2-dlls-combat.md`), `client.cpp` e `cbase.cpp` (tudo casa; ver `docs/notas/hl1ps2-dlls-done-10.md`), `buttons.cpp`, `bullsquid.cpp` e `bmodels.cpp` (2 NON_MATCHING no bmodels; ver `docs/notas/hl1ps2-dlls-done-11.md`), `bloater.cpp`, `bigmomma.cpp`, `barney.cpp`, `barnacle.cpp`, `apache.cpp`, `animation.cpp` e `animating.cpp` (poucos NON_MATCHING; ver `docs/notas/hl1ps2-dlls-done-12.md`), `alienflyer.cpp` (só do Decay, tudo casa), `airtank.cpp`, `aievent.cpp`, `agrunt.cpp` e `aflock.cpp` (info_aievent do PS2; a IA do parceiro entre eles ficou adiada) (ver `docs/notas/hl1ps2-dlls-done-13.md`) (detalhes em `docs/notas/hl1ps2-dlls-done-5.md` e `hl1ps2-dlls-done-6.md` e `hl1ps2-dlls-done-7.md` e `hl1ps2-dlls-done-8.md` e `hl1ps2-dlls-done-9.md` e `hl1ps2-dlls-done-10.md`). Nada ficou pela metade: o último
 arquivo foi commitado e a ROM bate.
 
-**As dlls acabaram (fora o player.cpp e a IA do parceiro, adiados). Próximo: o código antes de 0x122138 (Launcher da Gearbox e HUD do cliente, sem fonte; ver `docs/notas/hl1ps2-dlls-done-13.md`)** (a IA do parceiro do Decay, 0x126F80–0x12CF18, ficou adiada como o player.cpp) (ver `docs/notas/hl1ps2-dlls-done-13.md`) (depois os outros, … até o
+**Agora: HUD do cliente (`src/cl_dll`), de trás para frente: button_hud, islave_hud, train, text_message, statusbar, status_icons e scoreboard feitos (ver `docs/notas/hl1ps2-cldll.md` e `hl1ps2-cldll-2.md`). Próximo: saytext.cpp (texto antes de 0x11CF98).** As dlls acabaram (fora o player.cpp e a IA do parceiro, adiados). Depois do cl_dll: o código antes de 0x122138 (Launcher da Gearbox e HUD do cliente, sem fonte; ver `docs/notas/hl1ps2-dlls-done-13.md`)** (a IA do parceiro do Decay, 0x126F80–0x12CF18, ficou adiada como o player.cpp) (ver `docs/notas/hl1ps2-dlls-done-13.md`) (depois os outros, … até o
 início do bloco em 0x100000). A ordem real na ROM pode ter arquivos só do PS2 no meio
 (ex.: `modeltrain.cpp`, `mtank.cpp`), por isso confirme sempre pelas strings da `.rodata`.
 
