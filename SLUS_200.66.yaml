@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x01AD90, cpp, cl_dll/message]
       - [0x01C010, cpp, cl_dll/motd]
       - [0x01C4E0, cpp, cl_dll/parsemsg]
       - [0x01C858, cpp, cl_dll/saytext]
@@ -454,6 +455,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x239228, .rodata, cl_dll/message]
       - [0x2392B0, .rodata, cl_dll/motd]
       - [0x239318, .rodata, cl_dll/saytext]
       - [0x239398, .rodata, cl_dll/scoreboard]

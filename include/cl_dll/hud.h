@@ -58,7 +58,7 @@ typedef struct cl_enginefuncs_s
 	void	(*pfnPlaySoundByName)( char *szSound, float volume, int clientId );	/* 0x60 */
 	void	*pfnPs2Unk64[3];												/* 0x64 */
 	struct client_textmessage_s *(*pfnTextMessageGet)( const char *pName );	/* 0x70 */
-	void	*pfnPs2Unk74;													/* 0x74 */
+	int		(*pfnDrawCharacter)( int x, int y, int number, int r, int g, int b );	/* 0x74: TextMessageDrawChar */
 	int		(*pfnDrawConsoleString)( int x, int y, char *string );			/* 0x78 */
 	void	(*pfnDrawConsoleStringLen)( const char *string, int *length, int *height );	/* 0x7C */
 	void	(*pfnConsolePrint)( const char *string );						/* 0x80 */
@@ -396,6 +396,56 @@ protected:
 	int m_iLines;			/* 0x10C */
 };
 
+typedef struct
+{
+	client_textmessage_t *pMessage;	/* 0x0 */
+	float time;			/* 0x4 */
+	int x, y;			/* 0x8 */
+	int totalWidth, totalHeight;	/* 0x10 */
+	int width;			/* 0x18 */
+	int lines;			/* 0x1C */
+	int lineLength;		/* 0x20 */
+	int length;			/* 0x24 */
+	int r, g, b;		/* 0x28 */
+	int text;			/* 0x34 */
+	int fadeBlend;		/* 0x38 */
+	float charTime;		/* 0x3C */
+	float fadeTime;		/* 0x40 */
+} message_parms_t;
+
+#define maxHUDMessages 16
+
+/* PS2: m_gameTitleTime vem antes da lista e não existe m_bEndAfterMessage */
+class CHudMessage: public CHudBase
+{
+public:
+	int Init( int clientId );
+	int VidInit( int clientId );
+	int Draw( float flTime, int clientId, int iDrawFlags );
+	int MsgFunc_HudText( int clientId, const char *pszName, int iSize, void *pbuf );
+	int MsgFunc_GameTitle( int clientId, const char *pszName, int iSize, void *pbuf );
+
+	float FadeBlend( float fadein, float fadeout, float hold, float localTime );
+	int XPosition( float x, int width, int lineWidth, int clientId );
+	int YPosition( float y, int height, int clientId );
+
+	void MessageAdd( const char *pName, float time );
+	void MessageDrawScan( client_textmessage_t *pMessage, float time, int clientId );
+	void MessageScanStart( void );
+	void MessageScanNextChar( int clientId );
+	void Reset( int clientId );
+
+private:
+	float m_gameTitleTime;	/* 0x14 */
+	client_textmessage_t *m_pMessages[maxHUDMessages];	/* 0x18 */
+	float m_startTime[maxHUDMessages];	/* 0x58 */
+	message_parms_t m_parms;	/* 0x98 */
+	client_textmessage_t *m_pGameTitle;	/* 0xDC */
+
+	int m_HUD_title_life;	/* 0xE0 */
+	int m_HUD_title_half;	/* 0xE4 */
+};
+
 class CHud
 {
 public:
@@ -416,7 +466,8 @@ public:
 	int m_iPs2Health;		/* 0xCC: vida mostrada pelo HUD do vortigaunt */
 	byte m_ps2Unk0D0[0x200 - 0xD0];
 	CHudTrain m_Train;		/* 0x200 */
-	byte m_ps2Unk21C[0x378 - 0x21C];
+	byte m_ps2Unk21C[0x290 - 0x21C];
+	CHudMessage m_Message;	/* 0x290 */
 	CHudScoreboard m_Scoreboard;	/* 0x378 */
 	CHudMOTD m_MOTD;		/* 0x1978 */
 	CHudStatusBar m_StatusBar;	/* 0x1A88 */
