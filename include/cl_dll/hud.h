@@ -46,14 +46,18 @@ typedef struct cl_enginefuncs_s
 	void	(*pfnFillRGBA)( int x, int y, int width, int height, int r, int g, int b, int a );	/* 0x2C */
 	int		(*pfnGetScreenInfo)( SCREENINFO *pscrinfo );					/* 0x30 */
 	void	*pfnSetCrosshair;												/* 0x34 */
-	void	*pfnRegisterVariable;											/* 0x38 */
+	struct cvar_s *(*pfnRegisterVariable)( char *szName, char *szValue, int flags );	/* 0x38 */
 	float	(*pfnGetCvarFloat)( char *szName );								/* 0x3C */
 	char*	(*pfnGetCvarString)( char *szName );							/* 0x40 */
 	int		(*pfnAddCommand)( char *cmd_name, void (*function)(void) );		/* 0x44 */
 	int		(*pfnHookUserMsg)( char *szMsgName, pfnUserMsgHook pfn, int clientId );	/* 0x48 */
-	void	*pfnPs2Unk4C[9];												/* 0x4C */
+	void	*pfnPs2Unk4C[4];												/* 0x4C */
+	void	(*pfnGetPlayerInfo)( int ent_num, struct hud_player_info_s *pinfo, int iPs2Unk );	/* 0x5C */
+	void	*pfnPs2Unk60[4];												/* 0x60 */
 	struct client_textmessage_s *(*pfnTextMessageGet)( const char *pName );	/* 0x70 */
-	void	*pfnPs2Unk74[3];												/* 0x74 */
+	void	*pfnPs2Unk74;													/* 0x74 */
+	int		(*pfnDrawConsoleString)( int x, int y, char *string );			/* 0x78 */
+	void	(*pfnDrawConsoleStringLen)( const char *string, int *length, int *height );	/* 0x7C */
 	void	(*pfnConsolePrint)( const char *string );						/* 0x80 */
 	void	(*pfnCenterPrint)( const char *string, int clientId );			/* 0x84 */
 } cl_enginefunc_t;
@@ -75,7 +79,32 @@ typedef struct client_textmessage_s
 	const char *pMessage;
 } client_textmessage_t;
 
+/* PS2: 0x18 bytes */
+typedef struct hud_player_info_s
+{
+	char *name;
+	short ping;
+	byte thisplayer;
+	byte spectator;
+	byte packetloss;
+	char *model;
+	short topcolor;
+	short bottomcolor;
+	int iPs2Unk14;
+} hud_player_info_t;
+
 #define TextMessageGet (*gEngfuncs.pfnTextMessageGet)
+/* cl_util.h */
+inline int DrawConsoleString( int x, int y, const char *string )
+{
+	return gEngfuncs.pfnDrawConsoleString( x, y, (char*) string );
+}
+
+inline void GetConsoleStringSize( const char *string, int *width, int *height )
+{
+	gEngfuncs.pfnDrawConsoleStringLen( string, width, height );
+}
+#define CVAR_GET_FLOAT (*gEngfuncs.pfnGetCvarFloat)
 #define ConsolePrint (*gEngfuncs.pfnConsolePrint)
 #define CenterPrint (*gEngfuncs.pfnCenterPrint)
 
@@ -119,6 +148,32 @@ public:
 	virtual void Think( int clientId ) {return;}
 	virtual void Reset( int clientId ) {return;}
 	virtual void InitHUDData( int clientId ) {}
+};
+
+class CHudStatusBar: public CHudBase
+{
+public:
+	int Init( int clientId );
+	int VidInit( int clientId );
+	int Draw( float flTime, int clientId, int iDrawFlags );
+	void Reset( int clientId );
+	void ParseStatusString( int line_num, int clientId );
+
+	int MsgFunc_StatusText( int clientId, const char *pszName, int iSize, void *pbuf );
+	int MsgFunc_StatusValue( int clientId, const char *pszName, int iSize, void *pbuf );
+
+protected:
+	enum {
+		MAX_STATUSTEXT_LENGTH = 128,
+		MAX_STATUSBAR_VALUES = 8,
+		MAX_STATUSBAR_LINES = 2,	/* PS2: 2 */
+	};
+
+	char m_szStatusText[MAX_STATUSBAR_LINES][MAX_STATUSTEXT_LENGTH];	/* 0x14 */
+	char m_szStatusBar[MAX_STATUSBAR_LINES][MAX_STATUSTEXT_LENGTH];		/* 0x114 */
+	int m_iStatusValues[MAX_STATUSBAR_VALUES];	/* 0x214 */
+
+	int m_bReparseString;	/* 0x234 */
 };
 
 class CHudSayText: public CHudBase
@@ -229,7 +284,15 @@ public:
 	int m_iPs2Health;		/* 0xCC: vida mostrada pelo HUD do vortigaunt */
 	byte m_ps2Unk0D0[0x200 - 0xD0];
 	CHudTrain m_Train;		/* 0x200 */
-	byte m_ps2Unk21C[0x1CD8 - 0x21C];
+	byte m_ps2Unk21C[0x378 - 0x21C];
+	struct
+	{
+		byte unk00[0x14];
+		hud_player_info_t list[33];	/* 0x38C: g_PlayerInfoList do HLSDK, por jogador (tamanho suposto) */
+	} m_ps2PlayerInfo;		/* 0x378 */
+	byte m_ps2Unk6A4[0x1A88 - 0x6A4];
+	CHudStatusBar m_StatusBar;	/* 0x1A88 */
+	byte m_ps2Unk1CC0[0x1CD8 - 0x1CC0];
 	CHudSayText m_SayText;	/* 0x1CD8 */
 	byte m_ps2Unk1CD8[0x1D3C - 0x1CD8 - sizeof(CHudSayText)];
 	CHudTextMessage m_TextMessage;	/* 0x1D3C */

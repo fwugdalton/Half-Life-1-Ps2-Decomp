@@ -74,3 +74,4 @@
 - [hl1ps2-dlls-done-12](hl1ps2-dlls-done-12.md): bloater, bigmomma, barney, barnacle, apache, animation e animating feitos (cmpfunc não vê alvo de jal; literal .965 sem f; LOD do studiohdr; jogador sem modelo) e próximo arquivo (alienflyer)
 - [hl1ps2-dlls-done-13](hl1ps2-dlls-done-13.md): alienflyer, airtank, aievent, agrunt, aflock feitos (fim das dlls); IA do parceiro adiada; regra do fixasm; próximo: Launcher/HUD antes de 0x122138
 - [hl1ps2-cldll](hl1ps2-cldll.md): HUD do cliente (cl_dll do PS2, HUD por jogador): layout do CHud, vtable, infra e arquivos feitos
+- [hl1ps2-cldll-2](hl1ps2-cldll-2.md): HUD do cliente, statusbar.cpp em diante (gEngfuncs do PS2, flags, NON_MATCHING) e próximo arquivo
