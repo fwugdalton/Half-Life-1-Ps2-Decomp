@@ -4,7 +4,7 @@
    de fora (telas, widgets, variáveis, tokenizador, lista de ações) ficam como funções
    func_XXXXXXXX porque os outros arquivos (PauseMenu, DiscFail, GameSave) já as citam assim. */
 
-#include "common.h"
+#include "launcher/GUI.h"
 #include "inline_include_asm.h"
 
 extern "C" {
@@ -18,7 +18,6 @@ typedef struct {
 extern viddef_t vid;
 extern int D_0032EF68, D_0032EF6C, D_0032EF74;
 extern int D_0032EF78, D_0032EF7C, D_0032EF80, D_0032EF84;
-extern const char *D_003029E8;	/* nome do tipo float das variáveis do GUI */
 
 void *__builtin_new(int size);
 void *Mem_DbgMalloc(int size, const char *file, int line);
@@ -30,7 +29,6 @@ int func_00228DC0(const char *s);					/* strlen */
 char *func_00228EC0(const char *s, const char *find);	/* strstr */
 char *func_00228E80(const char *s, int c);			/* strchr */
 void func_00228CF0(char *dst, const char *src);		/* strcpy */
-int func_00228C00(const char *a, const char *b);		/* 1 se iguais */
 int func_00228EE0(char *buf, const char *fmt, ...);	/* sprintf */
 char *func_00228FA0(int value, char *buf, int radix);	/* itoa */
 void func_00228BD0(void);
@@ -55,39 +53,6 @@ void glBlendFunc(int s, int d);
 void glColor4f(float r, float g, float b, float a);
 }
 
-/* variável do GUI (vptr em 0x64) */
-class CGUIVariable
-{
-public:
-	char m_pad[0x64];
-	virtual void V0( void );
-	virtual int IsType( const char *type );
-	virtual void V2( void );
-	virtual void SetString( const char *value );
-};
-
-/* elemento de tela (vptr em 0x34) */
-class CGUIWidget
-{
-public:
-	char m_pad[0x34];
-	virtual void V0( void );
-	virtual void V1( void );
-	virtual void V2( void );
-	virtual void Activate( void );
-	virtual void Deactivate( void );
-};
-
-/* GUI_ACTION_* (vptr em 0x8) */
-class CGUIAction
-{
-public:
-	char m_pad[0x8];
-	virtual void V0( void );
-	virtual void Init( void *tokenizer );
-};
-
-struct CGUIScreen;
 
 extern "C" {
 /* telas (0x44 bytes) */
@@ -109,20 +74,6 @@ const char *func_00105890(CGUIWidget *w);
 void *func_001066C0(void *mem);
 void func_001066D0(void *p, int flags);
 void func_00106758(void *p, pakfile_t *pak);
-/* variáveis */
-float func_00107000(CGUIVariable *v);
-void *func_00107C10(void *mem);
-void func_00107C20(void *p, int flags);
-void func_00107CE0(void *p);
-void func_00107CF8(void *p, const char *token, void *tokenizer);
-CGUIVariable *func_00107EE0(void *p, const char *name);
-int func_00107F00(void *p, const char *name);
-/* tokenizador (0x14 bytes) */
-void *func_00108008(void *mem);
-void func_00108018(void *p, int flags);
-void func_00108070(void *p);
-void func_00108120(void *p, char *text, int len);
-char *func_00108148(void *p, int a, int b);
 /* lista de ações */
 void *func_00108890(void *mem);
 void func_001088A0(void *p, int flags);
@@ -160,63 +111,6 @@ CGUIAction *func_0010B8D8(void *mem);
 int D_00302A58 = 1;
 int D_00302A5C = 1;
 
-class CGUI
-{
-public:
-	CGUI();
-	~CGUI();
-	void Init( pakfile_t *pak, const char *name, int bInPlace );
-	void BeginDraw( void );
-	void EndDraw( void );
-	void SetColor( float r, float g, float b );
-	void Update( void );
-	void HandleKey( int key );
-	float GetAlpha( void );
-	void Set04( int v );
-	void Set08( int v );
-	int Get04( void );
-	int Get08( void );
-	void SetFocus( const char *name );
-	CGUIWidget *FindWidget( const char *name );
-	void *GetActions( void );
-	void *GetTokenizer( void );
-	void *GetRenderer( void );
-	void *GetVariables( void );
-	void SetVariable( const char *name, const char *value );
-	void ReadFile( const char *name, char *dst );
-	int GetFileSize( const char *name );
-	void LoadFile( const char *name, char **pText, int bInPlace );
-	void FreeFile( char **pText, int bInPlace );
-	void ProcessIncludes( char **pText );
-	void ProcessDefines( char **pText );
-	void RegisterActions( void );
-	void ParseScreens( void );
-	void UpdateFade( void );
-	void AddScreen( CGUIScreen *s );
-	void AddAction( CGUIAction *a );
-	void SetKeyNumber( int key );
-	void UpdateFocusVariable( void );
-
-	int m_bInitialized;			/* 0x00 */
-	int m_i04;
-	int m_i08;
-	int m_iCurrentScreen;		/* 0x0C */
-	int m_iMaxScreens;			/* 0x10 */
-	int m_iNumScreens;			/* 0x14 */
-	CGUIScreen **m_pScreens;	/* 0x18 */
-	unsigned int m_i1C;
-	unsigned int m_iFadeInStart;	/* 0x20 */
-	float m_flFadeOutTime;		/* 0x24 */
-	unsigned int m_iFadeOutStart;	/* 0x28 */
-	int m_bFadingOut;			/* 0x2C */
-	int m_iNextScreen;			/* 0x30 */
-	float m_flAlpha;			/* 0x34 */
-	void *m_pActions;			/* 0x38 */
-	void *m_pTokenizer;			/* 0x3C */
-	void *m_pRenderer;			/* 0x40 */
-	void *m_pVariables;			/* 0x44 */
-	pakfile_t m_Pak;			/* 0x48 */
-};
 
 static char *FindToken( int bStart, char *text, const char *token );
 

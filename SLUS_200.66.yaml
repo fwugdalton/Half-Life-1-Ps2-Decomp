@@ -70,6 +70,10 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x00E540, cpp, launcher/GUIActionSetVolume]
+      - [0x00E6A8, cpp, launcher/GUIActionMemorySave]
+      - [0x00E8F8, cpp, launcher/GUIActionDisplayMode]
+      - [0x00EA58, cpp, launcher/GUIActionVibrate]
       - [0x00EC68, cpp, launcher/GUI]
       - [0x010680, cpp, cl_dll/ammo]
       - [0x0148B0, cpp, cl_dll/ammo_secondary]
@@ -479,6 +483,10 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x2387A0, .rodata, launcher/GUIActionSetVolume]
+      - [0x238808, .rodata, launcher/GUIActionMemorySave]
+      - [0x2388B8, .rodata, launcher/GUIActionDisplayMode]
+      - [0x238910, .rodata, launcher/GUIActionVibrate]
       - [0x238970, .rodata, launcher/GUI]
       - [0x238A20, .rodata, cl_dll/ammo]
       - [0x238CD0, .rodata, cl_dll/ammo_secondary]
