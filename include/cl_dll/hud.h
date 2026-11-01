@@ -55,7 +55,8 @@ typedef struct cl_enginefuncs_s
 	char	*(*pfnCmd_Argv)( int arg );										/* 0x54 */
 	void	*pfnPs2Unk58;													/* 0x58 */
 	void	(*pfnGetPlayerInfo)( int ent_num, struct hud_player_info_s *pinfo, int iPs2Unk );	/* 0x5C */
-	void	*pfnPs2Unk60[4];												/* 0x60 */
+	void	(*pfnPlaySoundByName)( char *szSound, float volume, int clientId );	/* 0x60 */
+	void	*pfnPs2Unk64[3];												/* 0x64 */
 	struct client_textmessage_s *(*pfnTextMessageGet)( const char *pName );	/* 0x70 */
 	void	*pfnPs2Unk74;													/* 0x74 */
 	int		(*pfnDrawConsoleString)( int x, int y, char *string );			/* 0x78 */
@@ -111,6 +112,7 @@ inline void GetConsoleStringSize( const char *string, int *width, int *height )
 #define CVAR_GET_FLOAT (*gEngfuncs.pfnGetCvarFloat)
 #define ConsolePrint (*gEngfuncs.pfnConsolePrint)
 #define CenterPrint (*gEngfuncs.pfnCenterPrint)
+#define PlaySound (*gEngfuncs.pfnPlaySoundByName)
 
 #define SPR_Load (*gEngfuncs.pfnSPR_Load)
 #define SPR_Set (*gEngfuncs.pfnSPR_Set)
@@ -192,7 +194,13 @@ protected:
 class CHudSayText: public CHudBase
 {
 public:
-	int SayTextPrint( const char *pszBuf, int iBufSize, int clientId );
+	int Init( int clientId );
+	void InitHUDData( int clientId );
+	int VidInit( int clientId );
+	int Draw( float flTime, int clientId, int iDrawFlags );
+	int MsgFunc_SayText( int clientId, const char *pszName, int iSize, void *pbuf );
+	void SayTextPrint( const char *pszBuf, int iBufSize, int clientId );
+	void EnsureTextFitsInOneLineAndWrapIfHaveTo( int line, int clientId );
 };
 
 class CHudTextMessage: public CHudBase
