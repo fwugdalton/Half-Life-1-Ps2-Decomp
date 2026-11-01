@@ -1,6 +1,6 @@
 ---
 name: hl1ps2-dlls-done-12
-description: continuação da lista de .cpp das dlls feitos (bloater, bigmomma, barney, barnacle, apache) e próximo arquivo (animation.cpp)
+description: continuação da lista de .cpp das dlls feitos (bloater, bigmomma, barney, barnacle, apache, animation) e próximo arquivo (animating.cpp)
 metadata:
   type: project
 ---
@@ -19,4 +19,6 @@ Continuação de [[hl1ps2-dlls-done-11]]. Formato: arquivo (endereço do texto, 
 - apache (0x131F00, 94d0df4, 33/35): .data 0x30E1E8, .rodata 0x33CB10–0x33D697. PS2: IgniteThink sem EF_LIGHT; Killed dispara m_iszTriggerTarget se m_iTriggerCondition == 4 e zera; Flight sem o cálculo de flVol. NON_MATCHING: Flight (pitch, igual osprey) e TraceAttack (trunc+swc1); D_0033CC78 no linker_script_extra.ld. Registro func_00135828 "015".."023" com friend.
 - ATENÇÃO: o regex do sufixo f não pega literais sem dígito antes do ponto (`.965`): procure com `grep -nP '(?<![\w.])\.\d+(?![\w.f])'`.
 
-Próximo: animation.cpp (strings "Bad sound event", "error in transition graph", ACT_FLINCH_* antes de 0x33CB10). .text termina em 0x131F00 (static init 0x131E08), .rodata termina antes de 0x33CB10, .data antes de 0x30E1E8.
+- animation (0x131148, 9d7ec58, 14/16): .data 0x30DF80 (activity_map), .rodata 0x33C510–0x33CB02 (apache.o ganhou .rodata=16). Não incluir util.h (as inline põem "classname"/"targetname"/"target" na .rodata): macros do g_engfuncs locais. PS2: GetSequenceInfo usa sqrtf; função nova GetMaxAttachment (0x131CB8, nome inventado); Set/GetBodygroup com a tabela de LOD do studiohdr (0xF4 índice, 0xF8 e 0xF9 bytes; igual func_002C2B68 do r_studio), cada ramo do SetBodygroup completo, laço com `if (i == iValue) break;` e `total += 1 + p[...].unk00`. NON_MATCHING: SetController e SetBlending (agendamento depois do cvt.w.s do setting).
+
+Próximo: animating.cpp (CBaseAnimating; Save 0x12FC80 … HandleAnimEvent 0x131140); conferir o início (func_0012FC60 e anteriores) e as faixas de .data/.rodata antes de 0x30DF80/0x33C510.
