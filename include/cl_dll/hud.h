@@ -51,7 +51,8 @@ typedef struct cl_enginefuncs_s
 	char*	(*pfnGetCvarString)( char *szName );							/* 0x40 */
 	int		(*pfnAddCommand)( char *cmd_name, void (*function)(void) );		/* 0x44 */
 	int		(*pfnHookUserMsg)( char *szMsgName, pfnUserMsgHook pfn, int clientId );	/* 0x48 */
-	void	*pfnPs2Unk4C[2];												/* 0x4C */
+	int		(*pfnServerCmd)( char *szCmdString );							/* 0x4C */
+	int		(*pfnClientCmd)( char *szCmdString );							/* 0x50 */
 	char	*(*pfnCmd_Argv)( int arg );										/* 0x54 */
 	void	*pfnPs2Unk58;													/* 0x58 */
 	void	(*pfnGetPlayerInfo)( int ent_num, struct hud_player_info_s *pinfo, int iPs2Unk );	/* 0x5C */
@@ -110,6 +111,7 @@ inline void GetConsoleStringSize( const char *string, int *width, int *height )
 	gEngfuncs.pfnDrawConsoleStringLen( string, width, height );
 }
 #define CVAR_GET_FLOAT (*gEngfuncs.pfnGetCvarFloat)
+#define ClientCmd (*gEngfuncs.pfnClientCmd)
 #define ConsolePrint (*gEngfuncs.pfnConsolePrint)
 #define CenterPrint (*gEngfuncs.pfnCenterPrint)
 #define PlaySound (*gEngfuncs.pfnPlaySoundByName)
@@ -446,6 +448,24 @@ private:
 	int m_HUD_title_half;	/* 0xE4 */
 };
 
+class CHudMenu : public CHudBase
+{
+public:
+	int Init( int clientId );
+	void InitHUDData( int clientId );
+	int VidInit( int clientId );
+	void Reset( int clientId );
+	int Draw( float flTime, int clientId, int iDrawFlags );
+	int MsgFunc_ShowMenu( int clientId, const char *pszName, int iSize, void *pbuf );
+
+	void SelectMenuItem( int menu_item );
+
+	int m_fMenuDisplayed;	/* 0x14 */
+	int m_bitsValidSlots;	/* 0x18 */
+	float m_flShutoffTime;	/* 0x1C */
+	int m_fWaitingForMore;	/* 0x20 */
+};
+
 class CHud
 {
 public:
@@ -473,7 +493,8 @@ public:
 	CHudStatusBar m_StatusBar;	/* 0x1A88 */
 	byte m_ps2Unk1CC0[0x1CD8 - 0x1CC0];
 	CHudSayText m_SayText;	/* 0x1CD8 */
-	byte m_ps2Unk1CD8[0x1D3C - 0x1CD8 - sizeof(CHudSayText)];
+	CHudMenu m_Menu;		/* 0x1CEC */
+	byte m_ps2Unk1D10[0x1D3C - 0x1CEC - sizeof(CHudMenu)];
 	CHudTextMessage m_TextMessage;	/* 0x1D3C */
 	CHudStatusIcons m_StatusIcons;	/* 0x1D50 */
 	CHudISlave m_ISlave;	/* 0x1E24 */
