@@ -184,6 +184,12 @@ for line in lines:
             out.append(line)
             out.append('\t.set\treorder')
             continue
+    if (m or m2) and reorder and prev_real == len(out) - 1 and re.match(r'^\s+c\.\w+\.s\s', out[prev_real]):
+        # o gas põe um nop entre o c.cond.s e um .word que ele não conhece; o ee-as não
+        out.insert(prev_real, '\t.set\tnoreorder')
+        out.append(line)
+        out.append('\t.set\treorder')
+        continue
     m3 = re.match(r'^(\s+)(uld|usd)\s+(\$\w+),\s*%lo\(([^)]+)\)\((\$\w+)\)\s*$', line)
     if m3:
         # o ee-as expande uld/usd com %lo() direto em ldl/ldr (sdl/sdr), sem passar por $at
