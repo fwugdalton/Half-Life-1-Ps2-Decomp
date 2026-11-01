@@ -280,6 +280,8 @@ public:
     void GetAutomovement(Vector &origin, Vector &angles, float flInterval = 0.1);
     int FindTransition(int iEndingSequence, int iGoalSequence, int *piDir);
     void GetAttachment(int iAttachment, Vector &origin, Vector &angles);
+    int GetLastAttachment(Vector &origin);       /* PS2 */
+    int GetLastAttachmentIndex(void);              /* PS2 */
     void SetBodygroup(int iGroup, int iValue);
     int GetBodygroup(int iGroup);
     int ExtractBbox(int sequence, float *mins, float *maxs);
