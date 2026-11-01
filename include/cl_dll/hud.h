@@ -443,6 +443,20 @@ private:
 	int m_iWidth;			/* 0x3C */
 };
 
+class CHudDeathNotice: public CHudBase
+{
+public:
+	int Init( int clientId );
+	void InitHUDData( void );	/* PS2: sem clientId, não sobrescreve o virtual */
+	int VidInit( int clientId );
+	void Reset( int clientId );
+	int Draw( float flTime, int clientId, int iDrawFlags );
+	int MsgFunc_DeathMsg( int clientId, const char *pszName, int iSize, void *pbuf );
+
+private:
+	int m_HUD_d_skull;		/* 0x14 */
+};
+
 class CHudGeiger: public CHudBase
 {
 public:
@@ -603,7 +617,7 @@ public:
 	CHudScoreboard m_Scoreboard;	/* 0x378 */
 	CHudMOTD m_MOTD;		/* 0x1978 */
 	CHudStatusBar m_StatusBar;	/* 0x1A88 */
-	byte m_ps2Unk1CC0[0x1CD8 - 0x1CC0];
+	CHudDeathNotice m_DeathNotice;	/* 0x1CC0 */
 	CHudSayText m_SayText;	/* 0x1CD8 */
 	CHudMenu m_Menu;		/* 0x1CEC */
 	byte m_ps2Unk1D10[0x1D3C - 0x1CEC - sizeof(CHudMenu)];
