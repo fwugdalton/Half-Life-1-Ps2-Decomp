@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x01F5B8, cpp, cl_dll/text_message]
       - [0x01FC08, cpp, cl_dll/train]
       - [0x01FE90, cpp, cl_dll/islave_hud]
       - [0x0207C8, cpp, cl_dll/button_hud]
@@ -446,6 +447,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x239568, .rodata, cl_dll/text_message]
       - [0x2395B8, .rodata, cl_dll/train]
       - [0x239618, .rodata, cl_dll/islave_hud]
       - [0x2396C0, .rodata, cl_dll/button_hud]

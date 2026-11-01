@@ -10,6 +10,7 @@
 #endif
 
 typedef int HSPRITE;
+typedef unsigned char byte;
 
 typedef struct rect_s
 {
@@ -25,8 +26,6 @@ typedef struct
 	int iCharHeight;
 	short charWidths[256];
 } SCREENINFO;
-
-typedef unsigned char byte;
 
 /* cl_enginefunc_t do HLSDK (cópia do cliente em 0x30CB70, gEngfuncs) */
 typedef int (*pfnUserMsgHook)( int clientId, const char *pszName, int iSize, void *pbuf );
@@ -52,9 +51,33 @@ typedef struct cl_enginefuncs_s
 	char*	(*pfnGetCvarString)( char *szName );							/* 0x40 */
 	int		(*pfnAddCommand)( char *cmd_name, void (*function)(void) );		/* 0x44 */
 	int		(*pfnHookUserMsg)( char *szMsgName, pfnUserMsgHook pfn, int clientId );	/* 0x48 */
+	void	*pfnPs2Unk4C[9];												/* 0x4C */
+	struct client_textmessage_s *(*pfnTextMessageGet)( const char *pName );	/* 0x70 */
+	void	*pfnPs2Unk74[3];												/* 0x74 */
+	void	(*pfnConsolePrint)( const char *string );						/* 0x80 */
+	void	(*pfnCenterPrint)( const char *string, int clientId );			/* 0x84 */
 } cl_enginefunc_t;
 
 extern cl_enginefunc_t gEngfuncs;
+
+typedef struct client_textmessage_s
+{
+	int		effect;
+	byte	r1, g1, b1, a1;
+	byte	r2, g2, b2, a2;
+	float	x;
+	float	y;
+	float	fadein;
+	float	fadeout;
+	float	holdtime;
+	float	fxtime;
+	const char *pName;
+	const char *pMessage;
+} client_textmessage_t;
+
+#define TextMessageGet (*gEngfuncs.pfnTextMessageGet)
+#define ConsolePrint (*gEngfuncs.pfnConsolePrint)
+#define CenterPrint (*gEngfuncs.pfnCenterPrint)
 
 #define SPR_Load (*gEngfuncs.pfnSPR_Load)
 #define SPR_Set (*gEngfuncs.pfnSPR_Set)
@@ -96,6 +119,22 @@ public:
 	virtual void Think( int clientId ) {return;}
 	virtual void Reset( int clientId ) {return;}
 	virtual void InitHUDData( int clientId ) {}
+};
+
+class CHudSayText: public CHudBase
+{
+public:
+	int SayTextPrint( const char *pszBuf, int iBufSize, int clientId );
+};
+
+class CHudTextMessage: public CHudBase
+{
+public:
+	int Init( int clientId );
+	char *LocaliseTextString( const char *msg, char *dst_buffer, int buffer_size );
+	char *BufferedLocaliseTextString( const char *msg );
+	char *LookupString( const char *msg_name, int *msg_dest = NULL );
+	int MsgFunc_TextMsg( int clientId, const char *pszName, int iSize, void *pbuf );
 };
 
 class CHudTrain: public CHudBase
@@ -190,7 +229,11 @@ public:
 	int m_iPs2Health;		/* 0xCC: vida mostrada pelo HUD do vortigaunt */
 	byte m_ps2Unk0D0[0x200 - 0xD0];
 	CHudTrain m_Train;		/* 0x200 */
-	byte m_ps2Unk21C[0x1E24 - 0x21C];
+	byte m_ps2Unk21C[0x1CD8 - 0x21C];
+	CHudSayText m_SayText;	/* 0x1CD8 */
+	byte m_ps2Unk1CD8[0x1D3C - 0x1CD8 - sizeof(CHudSayText)];
+	CHudTextMessage m_TextMessage;	/* 0x1D3C */
+	byte m_ps2Unk1D50[0x1E24 - 0x1D50];
 	CHudISlave m_ISlave;	/* 0x1E24 */
 	CHudButton m_Button;	/* 0x1E58 */
 	SCREENINFO m_scrinfo;	/* 0x1ED0 */
@@ -217,5 +260,6 @@ HSPRITE LoadSprite( const char *pszName );
 void BEGIN_READ( void *buf, int size );
 int READ_BYTE( void );
 int READ_SHORT( void );
+char *READ_STRING( void );
 
 #endif
