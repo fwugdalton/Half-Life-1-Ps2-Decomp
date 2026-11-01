@@ -377,6 +377,25 @@ public:
 	void GetAllPlayersInfo( int clientId );
 };
 
+#define MAX_MOTD_LENGTH   241
+
+class CHudMOTD : public CHudBase
+{
+public:
+	int Init( int clientId );
+	int VidInit( int clientId );
+	int Draw( float flTime, int clientId, int iDrawFlags );
+	void Reset( int clientId );
+
+	int MsgFunc_MOTD( int clientId, const char *pszName, int iSize, void *pbuf );
+
+protected:
+	static int MOTD_DISPLAY_TIME;
+	char m_szMOTD[ MAX_MOTD_LENGTH ];	/* 0x14 */
+	float m_flActiveTill;	/* 0x108 */
+	int m_iLines;			/* 0x10C */
+};
+
 class CHud
 {
 public:
@@ -399,7 +418,7 @@ public:
 	CHudTrain m_Train;		/* 0x200 */
 	byte m_ps2Unk21C[0x378 - 0x21C];
 	CHudScoreboard m_Scoreboard;	/* 0x378 */
-	byte m_ps2Unk1978[0x1A88 - 0x1978];
+	CHudMOTD m_MOTD;		/* 0x1978 */
 	CHudStatusBar m_StatusBar;	/* 0x1A88 */
 	byte m_ps2Unk1CC0[0x1CD8 - 0x1CC0];
 	CHudSayText m_SayText;	/* 0x1CD8 */
