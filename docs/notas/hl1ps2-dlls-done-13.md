@@ -13,4 +13,6 @@ Continua [[hl1ps2-dlls-done-12]].
 - fixasm (mesmo commit): o gas punha um nop entre `c.cond.s` e um sqrt.s/cvt.w.s convertido em .word; agora os dois vão dentro de `.set noreorder`. Depois de mudar o fixasm, apagar todos os .o (o Makefile não depende dele).
 - `_GLOBAL_$I$monster_x` precisa estar no symbol_addrs (a lista de ctors da .data referencia func_ do endereço).
 
-Próximo: airtank.cpp (item_airtank). .text termina em 0x12D4A8 (_GLOBAL_$I 0x12D488, static init 0x12D448); .rodata provavelmente 0x33B630 ("classname", "CAirtank", "models/w_oxygen.dol", "doors/aliendoor3.wav", "player/pl_swim2.wav", "008"/"009") até 0x33BB08; antes vêm GINA_STOP/COL_DIE (outro arquivo).
+- airtank (0x12CF18, 5d1315b, 14/14): .data 0x30DE10, .rodata 0x33B630–0x33BB05. Igual ao HLSDK com .dol e o registro func_0012D328 ("008" TankThink, "009" TankTouch, com friend).
+
+Próximo: o arquivo da IA do parceiro do Decay (métodos de CBasePlayer: Ps2AIThink 0x1270E0, Ps2AITouch 0x12BFB8; nome de arquivo inventado). .text 0x126F80–0x12CF18 (_GLOBAL_$I 0x126F60 e static init 0x126F28 são do arquivo anterior, o do info_aievent 0x126C00–0x126F80); .rodata 0x33B2E0 ("classname", "Half-Life", ammo_*, GINA_*/COL_*, func_ladder, func_healthcharger…, "007") até 0x33B630; registro "007" em 0x12CEE8.
