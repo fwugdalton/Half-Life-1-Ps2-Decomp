@@ -478,6 +478,43 @@ private:
 	int m_iWidth;			/* 0x30 */
 };
 
+/* ammo.cpp, ammo_secondary.cpp e battery.cpp ainda não decompilados: só o tamanho e os virtuais */
+class CHudAmmo: public CHudBase
+{
+public:
+	int Init( int clientId );
+	int VidInit( int clientId );
+	int Draw( float flTime, int clientId, int iDrawFlags );
+	void Think( int clientId );
+	void Reset( int clientId );
+
+private:
+	byte m_ps2Unk14[0x44 - 0x14];
+};
+
+class CHudAmmoSecondary: public CHudBase
+{
+public:
+	int Init( int clientId );
+	int VidInit( int clientId );
+	int Draw( float flTime, int clientId, int iDrawFlags );
+	void Reset( int clientId );
+
+private:
+	byte m_ps2Unk14[0x2C - 0x14];
+};
+
+class CHudBattery: public CHudBase
+{
+public:
+	int Init( int clientId );
+	int VidInit( int clientId );
+	int Draw( float flTime, int clientId, int iDrawFlags );
+
+private:
+	byte m_ps2Unk14[0x30 - 0x14];
+};
+
 class CHudGeiger: public CHudBase
 {
 public:
@@ -608,7 +645,9 @@ public:
 	HUDLIST *m_pHudList;	/* 0x0 */
 	HSPRITE m_hsprLogo;		/* 0x4 */
 	int m_iLogo;			/* 0x8 */
-	byte m_ps2Unk00C[0x18 - 0xC];
+	byte m_ps2Unk00C[0x10 - 0xC];
+	int m_iSpriteCount;	/* 0x10 */
+	byte m_ps2Unk014[0x18 - 0x14];
 	float m_flMouseSensitivity;	/* 0x18 */
 	int m_iConcussionEffect;	/* 0x1C */
 	float m_flTime;			/* 0x20 */
@@ -627,10 +666,11 @@ public:
 	int m_iFontHeight;		/* 0x64 */
 	HSPRITE *m_rghSprites;	/* 0x68 */
 	wrect_t *m_rgrcRects;	/* 0x6C */
-	byte m_ps2Unk070[0xB8 - 0x70];
+	byte m_ps2Unk070[0x74 - 0x70];
+	CHudAmmo m_Ammo;		/* 0x74 */
 	CHudHealth m_Health;	/* 0xB8 */
 	CHudGeiger m_Geiger;	/* 0x1B8 */
-	byte m_ps2Unk1D0[0x200 - 0x1D0];
+	CHudBattery m_Battery;	/* 0x1D0 */
 	CHudTrain m_Train;		/* 0x200 */
 	CHudFlashlight m_Flash;	/* 0x21C */
 	CHudCrouch m_Crouch;	/* 0x25C */
@@ -641,7 +681,7 @@ public:
 	CHudDeathNotice m_DeathNotice;	/* 0x1CC0 */
 	CHudSayText m_SayText;	/* 0x1CD8 */
 	CHudMenu m_Menu;		/* 0x1CEC */
-	byte m_ps2Unk1D10[0x1D3C - 0x1CEC - sizeof(CHudMenu)];
+	CHudAmmoSecondary m_AmmoSecondary;	/* 0x1D10 */
 	CHudTextMessage m_TextMessage;	/* 0x1D3C */
 	CHudStatusIcons m_StatusIcons;	/* 0x1D50 */
 	CHudISlave m_ISlave;	/* 0x1E24 */
@@ -652,6 +692,11 @@ public:
 	int m_iIntermission;	/* 0x20EC */
 	int m_HUD_number_0;		/* 0x20F0 */
 
+	CHud() : m_pHudList(0), m_iSpriteCount(0) {}
+	~CHud();
+
+	void Init( int clientId );
+	void VidInit( int clientId );
 	void Think( int clientId );
 	int Redraw( float flTime, int intermission, int clientId, int iDrawFlags );
 	int UpdateClientData( client_data_t *cdata, int clientId );

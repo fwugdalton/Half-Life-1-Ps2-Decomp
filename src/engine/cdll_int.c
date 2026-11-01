@@ -62,12 +62,12 @@ typedef struct
 
 extern cldll_func_t D_0046E4F8; /* cl_funcs */
 extern byte D_003315B8[];       /* cl_enginefuncs */
-void func_00115D18(void *pEnginefuncs, int iVersion); /* Initialize (DLL do cliente) */
-int func_00115E90(int clientId);
-int func_00115EC8(int clientId);
-int func_00115F00(float flTime, int intermission, int clientId, int unk);
-int func_00115F40(client_data_t *pcldata, float flTime, int clientId);
-int func_00115F78(int clientId);
+void Initialize__FP16cl_enginefuncs_si(void *pEnginefuncs, int iVersion); /* Initialize (DLL do cliente) */
+int HUD_VidInit__Fi(int clientId);
+int HUD_Init__Fi(int clientId);
+int HUD_Redraw__Ffiii(float flTime, int intermission, int clientId, int unk);
+int HUD_UpdateClientData__FP13client_data_si(client_data_t *pcldata, float flTime, int clientId);
+int HUD_Reset__Fi(int clientId);
 int V_ScreenShake(int clientId, const char *pszName, int iSize, void *pbuf);
 int V_ScreenFade(int clientId, const char *pszName, int iSize, void *pbuf);
 int func_0021C240(int clientId, const char *pszName, int iSize, void *pbuf); /* SetActuator */
@@ -328,12 +328,12 @@ void func_00246E78(void)
 {
     int i;
 
-    D_0046E4F8.pInitFunc = func_00115D18;
-    D_0046E4F8.pHudVidInitFunc = func_00115E90;
-    D_0046E4F8.pHudInitFunc = func_00115EC8;
-    D_0046E4F8.pHudRedrawFunc = func_00115F00;
-    D_0046E4F8.pHudUpdateClientDataFunc = func_00115F40;
-    D_0046E4F8.pHudResetFunc = func_00115F78;
+    D_0046E4F8.pInitFunc = Initialize__FP16cl_enginefuncs_si;
+    D_0046E4F8.pHudVidInitFunc = HUD_VidInit__Fi;
+    D_0046E4F8.pHudInitFunc = HUD_Init__Fi;
+    D_0046E4F8.pHudRedrawFunc = HUD_Redraw__Ffiii;
+    D_0046E4F8.pHudUpdateClientDataFunc = HUD_UpdateClientData__FP13client_data_si;
+    D_0046E4F8.pHudResetFunc = HUD_Reset__Fi;
     for (i = 0; i < 2; i++)
         HookServerMsg("ScreenShake", (pfnUserMsgHook)V_ScreenShake, i);
     for (i = 0; i < 2; i++)

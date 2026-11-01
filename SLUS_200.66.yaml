@@ -70,6 +70,8 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x015D18, cpp, cl_dll/cdll_int]
+      - [0x016188, asm, cod/016188]
       - [0x016E70, cpp, cl_dll/crouch]
       - [0x017300, cpp, cl_dll/death]
       - [0x017D50, cpp, cl_dll/flashlight]
@@ -340,6 +342,7 @@ segments:
       - [0x1D0A68, asm, cod/1D0A68]
       - [0x1F5980, textbin, cod/1F5980] # .vutext
       - [0x201B00, data, cod/201B00] # .data
+      - [0x208988, .data, cl_dll/cdll_int]
       - [0x20CBF8, .data, cl_dll/death]
       - [0x20CF48, .data, cl_dll/health]
       - [0x20CF80, .data, cl_dll/hud_redraw]

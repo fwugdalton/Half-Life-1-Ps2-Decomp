@@ -729,6 +729,31 @@ D_00343430 = 0x00343430;
 D_00343030 = 0x00343030;
 D_0033FD68 = 0x0033FD68;
 D_0033CC78 = 0x0033CC78;
+/* cl_dll/cdll_int: campos de gHUD[] e gEngfuncs citados pelo asm */
+D_003089FC = 0x003089FC; /* gHUD[0].m_Ammo */
+D_0030A85C = 0x0030A85C; /* gHUD[0] + 0x1ED4 (m_scrinfo.iWidth) */
+D_0030CBC4 = 0x0030CBC4; /* gEngfuncs + 0x54 */
+D_003089E0 = 0x003089E0; /* campo de gHUD[]/gEngfuncs (cdll_int) */
+D_003089E4 = 0x003089E4; /* campo de gHUD[]/gEngfuncs (cdll_int) */
+D_003089E8 = 0x003089E8; /* campo de gHUD[]/gEngfuncs (cdll_int) */
+D_0030CB9C = 0x0030CB9C; /* campo de gHUD[]/gEngfuncs (cdll_int) */
+D_0030CBA4 = 0x0030CBA4; /* campo de gHUD[]/gEngfuncs (cdll_int) */
+D_0030CBC0 = 0x0030CBC0; /* campo de gHUD[]/gEngfuncs (cdll_int) */
+D_0030CBD0 = 0x0030CBD0; /* campo de gHUD[]/gEngfuncs (cdll_int) */
+D_003089EC = 0x003089EC; /* campo de gHUD[]/gEngfuncs (cdll_int) */
+D_00308B58 = 0x00308B58; /* campo de gHUD[]/gEngfuncs (cdll_int) */
+D_0030A698 = 0x0030A698; /* campo de gHUD[]/gEngfuncs (cdll_int) */
+D_0030A860 = 0x0030A860; /* campo de gHUD[]/gEngfuncs (cdll_int) */
+D_0030CBAC = 0x0030CBAC; /* campo de gHUD[]/gEngfuncs (cdll_int) */
+D_0030CBB8 = 0x0030CBB8; /* campo de gHUD[]/gEngfuncs (cdll_int) */
+D_003089A8 = 0x003089A8; /* campo de gHUD[]/gEngfuncs (cdll_int) */
+D_003089B4 = 0x003089B4; /* campo de gHUD[]/gEngfuncs (cdll_int) */
+D_00308D00 = 0x00308D00; /* campo de gHUD[]/gEngfuncs (cdll_int) */
+D_0030A6C4 = 0x0030A6C4; /* campo de gHUD[]/gEngfuncs (cdll_int) */
+D_0030A86C = 0x0030A86C; /* campo de gHUD[]/gEngfuncs (cdll_int) */
+D_0030CBD4 = 0x0030CBD4; /* campo de gHUD[]/gEngfuncs (cdll_int) */
+D_0030CBDC = 0x0030CBDC; /* campo de gHUD[]/gEngfuncs (cdll_int) */
+D_00308D14 = 0x00308D14; /* campo de gHUD[]/gEngfuncs (cdll_int) */
 /* engine/sv_main: início */
 D_0038E8F8 = 0x0038E8F8;
 /* engine/sv_main: fim */
