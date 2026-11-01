@@ -1,0 +1,145 @@
+#ifndef CL_DLL_HUD_H
+#define CL_DLL_HUD_H
+
+/* hud.h do cl_dll do HLSDK, versão do PS2 (tela dividida): um CHud por jogador
+   (gHUD[clientId], 0x20F4 bytes cada, em 0x308988). Os elementos recebem o clientId
+   em Init/Draw/MsgFunc_*. Só os campos já usados têm nome; o resto é preenchimento. */
+
+#ifndef NULL
+#define NULL 0
+#endif
+
+typedef int HSPRITE;
+
+typedef struct rect_s
+{
+	int left, right, top, bottom;
+} wrect_t;
+
+typedef struct
+{
+	int iSize;
+	int iWidth;
+	int iHeight;
+	int iFlags;
+	int iCharHeight;
+	short charWidths[256];
+} SCREENINFO;
+
+typedef unsigned char byte;
+
+/* cl_enginefunc_t do HLSDK (cópia do cliente em 0x30CB70, gEngfuncs) */
+typedef int (*pfnUserMsgHook)( int clientId, const char *pszName, int iSize, void *pbuf );
+
+typedef struct cl_enginefuncs_s
+{
+	HSPRITE	(*pfnSPR_Load)( const char *szPicName );						/* 0x00 */
+	int		(*pfnSPR_Frames)( HSPRITE hPic );								/* 0x04 */
+	int		(*pfnSPR_Height)( HSPRITE hPic, int frame );					/* 0x08 */
+	int		(*pfnSPR_Width)( HSPRITE hPic, int frame );						/* 0x0C */
+	void	(*pfnSPR_Set)( HSPRITE hPic, int r, int g, int b );				/* 0x10 */
+	void	(*pfnSPR_Draw)( int frame, int x, int y, const wrect_t *prc );	/* 0x14 */
+	void	(*pfnSPR_DrawHoles)( int frame, int x, int y, const wrect_t *prc );	/* 0x18 */
+	void	(*pfnSPR_DrawAdditive)( int frame, int x, int y, const wrect_t *prc );	/* 0x1C */
+	void	(*pfnSPR_EnableScissor)( int x, int y, int width, int height );	/* 0x20 */
+	void	(*pfnSPR_DisableScissor)( void );								/* 0x24 */
+	void	*pfnSPR_GetList;												/* 0x28 */
+	void	(*pfnFillRGBA)( int x, int y, int width, int height, int r, int g, int b, int a );	/* 0x2C */
+	int		(*pfnGetScreenInfo)( SCREENINFO *pscrinfo );					/* 0x30 */
+	void	*pfnSetCrosshair;												/* 0x34 */
+	void	*pfnRegisterVariable;											/* 0x38 */
+	float	(*pfnGetCvarFloat)( char *szName );								/* 0x3C */
+	char*	(*pfnGetCvarString)( char *szName );							/* 0x40 */
+	int		(*pfnAddCommand)( char *cmd_name, void (*function)(void) );		/* 0x44 */
+	int		(*pfnHookUserMsg)( char *szMsgName, pfnUserMsgHook pfn, int clientId );	/* 0x48 */
+} cl_enginefunc_t;
+
+extern cl_enginefunc_t gEngfuncs;
+
+#define SPR_Load (*gEngfuncs.pfnSPR_Load)
+#define SPR_Set (*gEngfuncs.pfnSPR_Set)
+#define SPR_Frames (*gEngfuncs.pfnSPR_Frames)
+#define SPR_Height (*gEngfuncs.pfnSPR_Height)
+#define SPR_Width (*gEngfuncs.pfnSPR_Width)
+#define SPR_Draw (*gEngfuncs.pfnSPR_Draw)
+#define SPR_DrawHoles (*gEngfuncs.pfnSPR_DrawHoles)
+#define SPR_DrawAdditive (*gEngfuncs.pfnSPR_DrawAdditive)
+#define FillRGBA (*gEngfuncs.pfnFillRGBA)
+#define HOOK_MESSAGE(x) gEngfuncs.pfnHookUserMsg( #x, __MsgFunc_##x, clientId );
+
+/* PS2: o gancho recebe o clientId e chama o elemento do HUD daquele jogador */
+#define DECLARE_MESSAGE(y, x) int __MsgFunc_##x( int clientId, const char *pszName, int iSize, void *pbuf ) \
+	{ \
+		return gHUD[clientId].y.MsgFunc_##x( clientId, pszName, iSize, pbuf ); \
+	}
+
+#define HUD_ACTIVE		1
+#define HUD_INTERMISSION	2
+
+#define MAX_PLAYER_NAME_LENGTH	32
+
+typedef struct {
+	int x, y;
+} POSITION;
+
+/* sem destrutor virtual no PS2: o vtable é {0,0}, Init, VidInit, Draw, Think, Reset, InitHUDData */
+class CHudBase
+{
+public:
+	POSITION  m_pos;		/* 0x0 */
+	int   m_type;			/* 0x8 */
+	int	  m_iFlags;			/* 0xC */
+	/* vptr em 0x10 */
+	virtual int Init( int clientId ) {return 0;}
+	virtual int VidInit( int clientId ) {return 0;}
+	virtual int Draw( float flTime, int clientId, int iDrawFlags ) {return 0;}
+	virtual void Think( int clientId ) {return;}
+	virtual void Reset( int clientId ) {return;}
+	virtual void InitHUDData( int clientId ) {}
+};
+
+class CHudTrain: public CHudBase
+{
+public:
+	int Init( int clientId );
+	int VidInit( int clientId );
+	int Draw( float flTime, int clientId, int iDrawFlags );
+	int MsgFunc_Train( int clientId, const char *pszName, int iSize, void *pbuf );
+
+private:
+	HSPRITE m_hSprite;		/* 0x14 */
+	int m_iPos;				/* 0x18 */
+};
+
+class CHud
+{
+public:
+	byte m_ps2Unk000[0x58];
+	int m_iColorR;			/* 0x58: cor do HUD (no lugar do UnpackRGB(RGB_YELLOWISH)) */
+	int m_iColorG;			/* 0x5C */
+	int m_iColorB;			/* 0x60 */
+	int m_iFontHeight;		/* 0x64 */
+	HSPRITE *m_rghSprites;	/* 0x68 */
+	wrect_t *m_rgrcRects;	/* 0x6C */
+	byte m_ps2Unk070[0x200 - 0x70];
+	CHudTrain m_Train;		/* 0x200 */
+	byte m_ps2Unk21C[0x1ED0 - 0x21C];
+	SCREENINFO m_scrinfo;	/* 0x1ED0 */
+	byte m_ps2UnkPad[0x20F4 - 0x1ED0 - sizeof(SCREENINFO)];
+
+	void AddHudElem( CHudBase *p );
+};
+
+extern CHud gHUD[];
+
+/* cl_util.h */
+HSPRITE LoadSprite( const char *pszName );
+
+#define ScreenHeight (gHUD[clientId].m_scrinfo.iHeight)
+#define ScreenWidth (gHUD[clientId].m_scrinfo.iWidth)
+
+/* parsemsg.h */
+void BEGIN_READ( void *buf, int size );
+int READ_BYTE( void );
+
+#endif

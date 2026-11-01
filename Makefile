@@ -73,6 +73,8 @@ $(BUILD_DIR)/src/dlls/%.o: CFLAGS += -ffast-math
 # o objeto estático do LINK_ENTITY_TO_CLASS (1 byte de .bss) já está no .bss em asm;
 # o .data das dlls é alinhado em 8
 $(BUILD_DIR)/src/dlls/%.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8
+$(BUILD_DIR)/src/cl_dll/%.o: CFLAGS += -ffast-math
+$(BUILD_DIR)/src/cl_dll/%.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8
 # o .rodata do tentacle_decay começa alinhado em 16 (o tentacle.cpp termina com 0xC de padding)
 $(BUILD_DIR)/src/dlls/tentacle_decay.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8 --set-section-alignment .rodata=16
 $(BUILD_DIR)/src/dlls/doors.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8 --set-section-alignment .rodata=16
