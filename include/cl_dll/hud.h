@@ -457,6 +457,27 @@ private:
 	int m_HUD_d_skull;		/* 0x14 */
 };
 
+/* PS2: ícone de agachar/andar/correr (sem equivalente no HLSDK) */
+class CHudCrouch: public CHudBase
+{
+public:
+	int Init( int clientId );
+	void Reset( int clientId );
+	int VidInit( int clientId );
+	int MsgFunc_CrouchState( int clientId, const char *pszName, int iSize, void *pbuf );
+	int Draw( float flTime, int clientId, int iDrawFlags );
+
+private:
+	HSPRITE m_hCrouch;		/* 0x14 */
+	HSPRITE m_hWalk;		/* 0x18 */
+	HSPRITE m_hRun;			/* 0x1C */
+	wrect_t *m_prcCrouch;	/* 0x20 */
+	wrect_t *m_prcWalk;		/* 0x24 */
+	wrect_t *m_prcRun;		/* 0x28 */
+	int m_iState;			/* 0x2C: 1 correndo, 2 agachado, senão andando */
+	int m_iWidth;			/* 0x30 */
+};
+
 class CHudGeiger: public CHudBase
 {
 public:
@@ -612,7 +633,7 @@ public:
 	byte m_ps2Unk1D0[0x200 - 0x1D0];
 	CHudTrain m_Train;		/* 0x200 */
 	CHudFlashlight m_Flash;	/* 0x21C */
-	byte m_ps2Unk25C[0x290 - 0x25C];
+	CHudCrouch m_Crouch;	/* 0x25C */
 	CHudMessage m_Message;	/* 0x290 */
 	CHudScoreboard m_Scoreboard;	/* 0x378 */
 	CHudMOTD m_MOTD;		/* 0x1978 */
