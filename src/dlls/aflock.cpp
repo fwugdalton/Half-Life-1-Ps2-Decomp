@@ -23,10 +23,6 @@
 #include	"dlls/squadmonster.h"
 #include	"include_asm.h"
 
-/* PS2: duas funções vazias sem referência nenhuma no começo do arquivo (nomes inventados) */
-extern "C" void func_00122138( void ) {}
-extern "C" void func_00122140( void ) {}
-
 extern "C" void func_00124218( void );
 
 #define		AFLOCK_MAX_RECRUIT_RADIUS	1024

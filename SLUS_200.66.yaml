@@ -72,8 +72,8 @@ segments:
       - [0x000000, asm, cod/000000] # .text
       - [0x01FC08, cpp, cl_dll/train]
       - [0x01FE90, cpp, cl_dll/islave_hud]
-      - [0x0207C8, asm, cod/0207C8]
-      - [0x022138, cpp, dlls/aflock]
+      - [0x0207C8, cpp, cl_dll/button_hud]
+      - [0x022148, cpp, dlls/aflock]
       - [0x0244A0, cpp, dlls/agrunt]
       - [0x026C00, cpp, dlls/aievent]
       - [0x026F80, asm, cod/026F80]
@@ -448,7 +448,7 @@ segments:
       - [0x236C80, rodata, cod/236C80] # .rodata
       - [0x2395B8, .rodata, cl_dll/train]
       - [0x239618, .rodata, cl_dll/islave_hud]
-      - [0x2396B8, rodata, cod/2396B8]
+      - [0x2396C0, .rodata, cl_dll/button_hud]
       - [0x2399B0, .rodata, dlls/aflock]
       - [0x23A420, .rodata, dlls/agrunt]
       - [0x23AE10, .rodata, dlls/aievent]

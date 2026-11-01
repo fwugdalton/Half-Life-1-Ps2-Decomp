@@ -4,7 +4,7 @@ description: HUD do cliente (cl_dll do HLSDK, versão do PS2 com HUD por jogador
 metadata:
   type: project
 ---
-Depois das dlls ([[hl1ps2-dlls-done-13]]), o bloco vram 0x100000–0x122138 tem _start, o Launcher da Gearbox e o HUD do cliente (cl_dll). Os arquivos do HUD vão do fim para o começo: ButtonHud (0x1207B8?–0x122138, só PS2), ISlaveHud (0x11FE90–?, só PS2), train, text_message, statusbar, status_icons, scoreboard, saytext, motd, message, menu, health, geiger, flashlight…
+Depois das dlls ([[hl1ps2-dlls-done-13]]), o bloco vram 0x100000–0x122138 tem _start, o Launcher da Gearbox e o HUD do cliente (cl_dll). Os arquivos do HUD vão do fim para o começo: ButtonHud, ISlaveHud, train, text_message, statusbar, status_icons, scoreboard, saytext, motd, message, menu, health, geiger, flashlight…
 
 Infra (commit 8e42a92):
 - include/cl_dll/hud.h: CHud por jogador `gHUD[clientId]` (0x20F4 bytes, gHUD = 0x308988); cor do HUD em 0x58/0x5C/0x60 (no lugar do UnpackRGB), m_iFontHeight 0x64, m_rghSprites 0x68, m_rgrcRects 0x6C, m_Train em 0x200, m_scrinfo em 0x1ED0 (iWidth 0x1ED4, iHeight 0x1ED8).
@@ -15,3 +15,5 @@ Infra (commit 8e42a92):
 - Vtable referenciado pelo asm (construtor do CHud): pôr `_vt$9CHudTrain = 0x3395D8;` no symbol_addrs.
 
 Feitos: train.cpp (0x11FC08–0x11FE90, .rodata 0x3395B8–0x339618; Draw sai cedo se !(iDrawFlags & 0x24); y = altura − SPR_Height − fonte − 24; x = largura/3 + SPR_Width/4 + 8).
+- islave_hud.cpp (ef8aac2, 8/9): CHudISlave (nome inventado), membro m_ISlave em gHUD+0x1E24; .rodata 0x339618–0x3396B8 (o .rodata de cada arquivo termina com 8 bytes zerados depois do vtable). CHud: m_iPs2Flags 0x48 (0x40 = jogador vortigaunt), m_iPs2Health 0xCC; GetSpriteIndex 0x116738, GetSprite/GetSpriteRect inline. Truques: `y = ...; y -= 2;` (não `... - 2`) acerta os registradores; `r = 255; b = 0; g = 0;`. Draw NON_MATCHING (o alvo repete o (int)flCut três vezes). INLINE_INCLUDE_ASM com pasta asm/nonmatchings/cl_dll/<arquivo>.
+- button_hud.cpp (9/9): CHudButton (nome inventado), m_Button em gHUD+0x1E58 (vai até 0x1ED0); texto 0x1207C8–0x122148 (as cópias weak 0x122138/40 são dele, não do aflock), .rodata 0x3396C0–0x3399B0 alinhada a 16 (jtbl; regra no Makefile). CHud::m_flTime float 0x20; READ_SHORT 0x11C598; FindKey estático usa Key_FindBinding (teclas do PS2 0xD2–0xE9). Truques: `m_flTime = gHUD[...].m_flTime + READ_SHORT() * 0.01f` direto; ordem dos stores sai invertida/içada (testar ordens); contador separado (j) no laço que zera keys[13].

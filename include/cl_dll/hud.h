@@ -133,10 +133,51 @@ private:
 	int m_iPs2Unk30;		/* 0x30 */
 };
 
+/* PS2: figura do controle com os botões ligados aos comandos pedidos piscando (tutorial
+   do Hazard Course), sem fonte; nome inventado */
+class CHudButton: public CHudBase
+{
+public:
+	int Init( int clientId );
+	int VidInit( int clientId );
+	int Draw( float flTime, int clientId, int iDrawFlags );
+	void Reset( int clientId );
+	int MsgFunc_ButtonHud( int clientId, const char *pszName, int iSize, void *pbuf );
+
+private:
+	int m_iButtons;			/* 0x14: bits dos comandos (+attack, +attack2, ...) */
+	int m_HUD_controller;	/* 0x18 */
+	int m_HUD_select;		/* 0x1C */
+	int m_HUD_start;		/* 0x20 */
+	int m_HUD_up;			/* 0x24 */
+	int m_HUD_left;			/* 0x28 */
+	int m_HUD_right;		/* 0x2C */
+	int m_HUD_down;			/* 0x30 */
+	int m_HUD_top2;			/* 0x34 */
+	int m_HUD_top1;			/* 0x38 */
+	int m_HUD_analog_up;	/* 0x3C */
+	int m_HUD_analog_down;	/* 0x40 */
+	int m_HUD_analog_right;	/* 0x44 */
+	int m_HUD_analog_left;	/* 0x48 */
+	int m_HUD_analog_up_small;		/* 0x4C */
+	int m_HUD_analog_down_small;	/* 0x50 */
+	int m_HUD_analog_right_small;	/* 0x54 */
+	int m_HUD_analog_left_small;	/* 0x58 */
+	int m_HUD_analog_move;	/* 0x5C */
+	int m_HUD_analog_press;	/* 0x60 */
+	int m_HUD_button;		/* 0x64 */
+	int m_HUD_controller_top;	/* 0x68 */
+	float m_flTime;			/* 0x6C: some depois deste tempo */
+	float m_flBlinkTime;	/* 0x70 */
+	int m_iBlink;			/* 0x74: 0..2 */
+};
+
 class CHud
 {
 public:
-	byte m_ps2Unk000[0x48];
+	byte m_ps2Unk000[0x20];
+	float m_flTime;			/* 0x20 */
+	byte m_ps2Unk024[0x48 - 0x24];
 	int m_iPs2Flags;		/* 0x48: 0x40 = jogador é vortigaunt */
 	byte m_ps2Unk04C[0x58 - 0x4C];
 	int m_iColorR;			/* 0x58: cor do HUD (no lugar do UnpackRGB(RGB_YELLOWISH)) */
@@ -151,7 +192,7 @@ public:
 	CHudTrain m_Train;		/* 0x200 */
 	byte m_ps2Unk21C[0x1E24 - 0x21C];
 	CHudISlave m_ISlave;	/* 0x1E24 */
-	byte m_ps2Unk1E58[0x1ED0 - 0x1E58];
+	CHudButton m_Button;	/* 0x1E58 */
 	SCREENINFO m_scrinfo;	/* 0x1ED0 */
 	byte m_ps2UnkPad[0x20F4 - 0x1ED0 - sizeof(SCREENINFO)];
 
@@ -163,6 +204,9 @@ public:
 
 extern CHud gHUD[];
 
+/* keys.c do motor */
+extern "C" int Key_FindBinding( char *binding, int max, int skip, int *count, int *keys );
+
 /* cl_util.h */
 HSPRITE LoadSprite( const char *pszName );
 
@@ -172,5 +216,6 @@ HSPRITE LoadSprite( const char *pszName );
 /* parsemsg.h */
 void BEGIN_READ( void *buf, int size );
 int READ_BYTE( void );
+int READ_SHORT( void );
 
 #endif
