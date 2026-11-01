@@ -89,6 +89,7 @@ $(BUILD_DIR)/src/dlls/controller.o: OBJCOPY_EXTRA := -R .bss --set-section-align
 $(BUILD_DIR)/src/dlls/bigmomma.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8 --set-section-alignment .rodata=16
 $(BUILD_DIR)/src/dlls/bmodels.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8 --set-section-alignment .rodata=16
 $(BUILD_DIR)/src/dlls/bullsquid.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8 --set-section-alignment .rodata=16
+$(BUILD_DIR)/src/dlls/apache.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8 --set-section-alignment .rodata=16
 $(BUILD_DIR)/src/dlls/combat.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8 --set-section-alignment .rodata=16
 $(BUILD_DIR)/src/dlls/talkmonster.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .rodata=16
 $(BUILD_DIR)/src/dlls/plats.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8 --set-section-alignment .rodata=16
