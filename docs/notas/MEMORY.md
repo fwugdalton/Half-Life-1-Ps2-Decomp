@@ -72,4 +72,4 @@
 - [hl1ps2-dlls-done-10](hl1ps2-dlls-done-10.md): client.cpp e cbase.cpp feitos (SDK antigo, inlines de CBaseEntity, ctor de entvars) e próximo arquivo (buttons.cpp)
 - [hl1ps2-dlls-done-11](hl1ps2-dlls-done-11.md): buttons, bullsquid e bmodels feitos (trava de fim do momentary, schedules novos do squid, registros)
 - [hl1ps2-dlls-done-12](hl1ps2-dlls-done-12.md): bloater, bigmomma, barney, barnacle, apache, animation e animating feitos (cmpfunc não vê alvo de jal; literal .965 sem f; LOD do studiohdr; jogador sem modelo) e próximo arquivo (alienflyer)
-- [hl1ps2-dlls-done-13](hl1ps2-dlls-done-13.md): alienflyer, airtank, aievent feitos; IA do parceiro adiada; regra do fixasm c.cond.s+sqrt; próximo agrunt
+- [hl1ps2-dlls-done-13](hl1ps2-dlls-done-13.md): alienflyer, airtank, aievent, agrunt feitos; IA do parceiro adiada; regra do fixasm c.cond.s+sqrt; próximo aflock
