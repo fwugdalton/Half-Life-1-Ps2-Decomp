@@ -1,6 +1,6 @@
 ---
 name: hl1ps2-dlls-done-12
-description: continuação da lista de .cpp das dlls feitos (bloater, bigmomma, barney, barnacle, apache, animation) e próximo arquivo (animating.cpp)
+description: continuação da lista de .cpp das dlls feitos (bloater, bigmomma, barney, barnacle, apache, animation, animating) e próximo arquivo (alienflyer)
 metadata:
   type: project
 ---
@@ -21,4 +21,6 @@ Continuação de [[hl1ps2-dlls-done-11]]. Formato: arquivo (endereço do texto, 
 
 - animation (0x131148, 9d7ec58, 14/16): .data 0x30DF80 (activity_map), .rodata 0x33C510–0x33CB02 (apache.o ganhou .rodata=16). Não incluir util.h (as inline põem "classname"/"targetname"/"target" na .rodata): macros do g_engfuncs locais. PS2: GetSequenceInfo usa sqrtf; função nova GetMaxAttachment (0x131CB8, nome inventado); Set/GetBodygroup com a tabela de LOD do studiohdr (0xF4 índice, 0xF8 e 0xF9 bytes; igual func_002C2B68 do r_studio), cada ramo do SetBodygroup completo, laço com `if (i == iValue) break;` e `total += 1 + p[...].unk00`. NON_MATCHING: SetController e SetBlending (agendamento depois do cvt.w.s do setting).
 
-Próximo: animating.cpp (CBaseAnimating; Save 0x12FC80 … HandleAnimEvent 0x131140); conferir o início (func_0012FC60 e anteriores) e as faixas de .data/.rodata antes de 0x30DF80/0x33C510.
+- animating (0x12FC80, 2cae327, 22/23): .data 0x30DF30, .rodata 0x33C250–0x33C510. PS2: quase todo método começa com `if (IsPlayer() && !g_pGameRules->IsMultiplayer() && !g_pGameRules->Ps2Virt07()) return X;` (macro NO_PLAYER_MODEL; X = 1 nos Lookup*/FindTransition, 0 nos outros); 2 métodos novos depois do GetBonePosition (nomes inventados, declarados no cbase.h): GetLastAttachment(Vector&) 0x130800 e GetLastAttachmentIndex() 0x130960. `STRING(x)[0]` precisa de parênteses: `(STRING(x))[0]`. NON_MATCHING: SetSequenceBox (o alvo relê xvector/base da pilha no laço).
+
+Próximo: alienflyer (monster_alienflyer, só do Decay, sem fonte do HLSDK; ver [[hl1ps2-dlls-focus]]). Static init 0x12FC10, _GLOBAL_$I 0x12FC60; registro "010".."014" na .rodata 0x33BE08; .rodata termina em 0x33C250, .data em 0x30DF30.
