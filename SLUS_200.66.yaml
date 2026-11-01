@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x02CF18, cpp, dlls/airtank]
       - [0x02D4A8, cpp, dlls/alienflyer]
       - [0x02FC80, cpp, dlls/animating]
       - [0x031148, cpp, dlls/animation]
@@ -315,6 +316,7 @@ segments:
       - [0x1D0A68, asm, cod/1D0A68]
       - [0x1F5980, textbin, cod/1F5980] # .vutext
       - [0x201B00, data, cod/201B00] # .data
+      - [0x20DE10, .data, dlls/airtank]
       - [0x20DE20, .data, dlls/alienflyer]
       - [0x20DF30, .data, dlls/animating]
       - [0x20DF80, .data, dlls/animation]
@@ -434,6 +436,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x23B630, .rodata, dlls/airtank]
       - [0x23BB08, .rodata, dlls/alienflyer]
       - [0x23C250, .rodata, dlls/animating]
       - [0x23C510, .rodata, dlls/animation]
