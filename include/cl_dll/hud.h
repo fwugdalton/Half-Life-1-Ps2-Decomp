@@ -192,6 +192,38 @@ public:
 	int MsgFunc_TextMsg( int clientId, const char *pszName, int iSize, void *pbuf );
 };
 
+#define MAX_SPRITE_NAME_LENGTH	24
+
+class CHudStatusIcons: public CHudBase
+{
+public:
+	int Init( int clientId );
+	int VidInit( int clientId );
+	void Reset( int clientId );
+	int Draw( float flTime, int clientId, int iDrawFlags );
+	int MsgFunc_StatusIcon( int clientId, const char *pszName, int iSize, void *pbuf );
+
+	enum {
+		MAX_ICONSPRITENAME_LENGTH = MAX_SPRITE_NAME_LENGTH,
+		MAX_ICONSPRITES = 4,
+	};
+
+	void EnableIcon( char *pszIconName, unsigned char red, unsigned char green, unsigned char blue, int clientId );
+	void DisableIcon( char *pszIconName );
+
+private:
+
+	typedef struct
+	{
+		char szSpriteName[MAX_ICONSPRITENAME_LENGTH];
+		HSPRITE spr;
+		wrect_t rc;
+		unsigned char r, g, b;
+	} icon_sprite_t;
+
+	icon_sprite_t m_IconList[MAX_ICONSPRITES];	/* 0x14 */
+};
+
 class CHudTrain: public CHudBase
 {
 public:
@@ -296,7 +328,7 @@ public:
 	CHudSayText m_SayText;	/* 0x1CD8 */
 	byte m_ps2Unk1CD8[0x1D3C - 0x1CD8 - sizeof(CHudSayText)];
 	CHudTextMessage m_TextMessage;	/* 0x1D3C */
-	byte m_ps2Unk1D50[0x1E24 - 0x1D50];
+	CHudStatusIcons m_StatusIcons;	/* 0x1D50 */
 	CHudISlave m_ISlave;	/* 0x1E24 */
 	CHudButton m_Button;	/* 0x1E58 */
 	SCREENINFO m_scrinfo;	/* 0x1ED0 */

@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x01E870, cpp, cl_dll/status_icons]
       - [0x01ED50, cpp, cl_dll/statusbar]
       - [0x01F5B8, cpp, cl_dll/text_message]
       - [0x01FC08, cpp, cl_dll/train]
@@ -448,6 +449,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x239490, .rodata, cl_dll/status_icons]
       - [0x2394E0, .rodata, cl_dll/statusbar]
       - [0x239568, .rodata, cl_dll/text_message]
       - [0x2395B8, .rodata, cl_dll/train]
