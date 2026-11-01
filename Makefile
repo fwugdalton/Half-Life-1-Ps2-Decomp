@@ -57,6 +57,7 @@ $(BUILD_DIR)/src/zlib/%.o: CFLAGS += -fno-strict-aliasing
 $(BUILD_DIR)/src/zlib/adler32.o: CFLAGS += -fmove-all-movables
 $(BUILD_DIR)/src/gbx/SystemSaveInitialize.o: CFLAGS += -fmove-all-movables
 $(BUILD_DIR)/src/gbx/MemCardSlot.o: CFLAGS += -fmove-all-movables
+$(BUILD_DIR)/src/launcher/GUI.o: CFLAGS += -fmove-all-movables
 $(BUILD_DIR)/src/gbx/GlobalPak.o: CFLAGS += -fmove-all-movables
 $(BUILD_DIR)/src/gbx/GamePak.o: CFLAGS += -fmove-all-movables
 $(BUILD_DIR)/src/dlls/teamplay_gamerules.o: CFLAGS += -fmove-all-movables

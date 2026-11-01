@@ -14,8 +14,8 @@ void func_00231680(void);
 unsigned int func_00231800(void);
 void func_00236990(int a);
 void func_002369C0(int a);
-int func_0010F390(void *p);
-void func_0010F310(void *p, int key);
+int Get04__4CGUI(void *p);
+void HandleKey__4CGUIi(void *p, int key);
 int memcmp(void);
 int func_002E4480(void);
 int func_002256E0(int key);
@@ -127,8 +127,8 @@ void func_00225610(int key) {
     }
     if (ok == 1) {
         p = D_003A63E0[D_003A6408];
-        if (p != 0 && func_0010F390(p) == 0) {
-            func_0010F310(p, key);
+        if (p != 0 && Get04__4CGUI(p) == 0) {
+            HandleKey__4CGUIi(p, key);
         }
     }
 }

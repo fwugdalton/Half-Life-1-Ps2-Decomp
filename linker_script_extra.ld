@@ -754,6 +754,23 @@ D_0030A86C = 0x0030A86C; /* campo de gHUD[]/gEngfuncs (cdll_int) */
 D_0030CBD4 = 0x0030CBD4; /* campo de gHUD[]/gEngfuncs (cdll_int) */
 D_0030CBDC = 0x0030CBDC; /* campo de gHUD[]/gEngfuncs (cdll_int) */
 D_00308D14 = 0x00308D14; /* campo de gHUD[]/gEngfuncs (cdll_int) */
+/* launcher/GUI.cpp: nomes antigos que o PauseMenu, DiscFail e GameSave ainda usam */
+func_0010EC68 = 0x0010EC68;
+func_0010EC78 = 0x0010EC78;
+func_0010EE50 = 0x0010EE50;
+func_0010F0B0 = 0x0010F0B0;
+func_0010F1E0 = 0x0010F1E0;
+func_0010F2B8 = 0x0010F2B8;
+func_0010F390 = 0x0010F390;
+func_0010F3A0 = 0x0010F3A0;
+func_0010F5E8 = 0x0010F5E8;
+func_0010F5F0 = 0x0010F5F0;
+
+/* launcher/GUI.cpp: strings citadas pelas funções NON_MATCHING */
+D_00338990 = 0x00338990;
+D_003389B8 = 0x003389B8;
+D_003389C0 = 0x003389C0;
+D_00338A18 = 0x00338A18;
 /* engine/sv_main: início */
 D_0038E8F8 = 0x0038E8F8;
 /* engine/sv_main: fim */
