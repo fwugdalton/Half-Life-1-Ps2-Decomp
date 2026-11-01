@@ -15,4 +15,7 @@ Continua [[hl1ps2-dlls-done-12]].
 
 - airtank (0x12CF18, 5d1315b, 14/14): .data 0x30DE10, .rodata 0x33B630–0x33BB05. Igual ao HLSDK com .dol e o registro func_0012D328 ("008" TankThink, "009" TankTouch, com friend).
 
-Próximo: o arquivo da IA do parceiro do Decay (métodos de CBasePlayer: Ps2AIThink 0x1270E0, Ps2AITouch 0x12BFB8; nome de arquivo inventado). .text 0x126F80–0x12CF18 (_GLOBAL_$I 0x126F60 e static init 0x126F28 são do arquivo anterior, o do info_aievent 0x126C00–0x126F80); .rodata 0x33B2E0 ("classname", "Half-Life", ammo_*, GINA_*/COL_*, func_ladder, func_healthcharger…, "007") até 0x33B630; registro "007" em 0x12CEE8.
+- aievent (0x126C00, fc79732, 9/9): info_aievent do PS2, `CAIEvent : CCineAI` (o vtable usa as versões do CCineAI; scripted.h ganhou `public:` no CCineAI). Chaves eventtype 0x2D4, anglerange 0x2D8, animcount 0x2DC (contador 0x2E0), probability 0x2E4, usetarget 0x2E8 (ALLOC_STRING); Spawn só põe pev->classname; SequenceDone volta cedo se tipo 2 e ++cont < animcount. .rodata 0x33AE10–0x33B2E0, sem .data. Registro "006" SUB_Remove.
+- IA do parceiro (métodos Ps2AI* de CBasePlayer, .text 0x126F80–0x12CF18, .rodata 0x33B2E0–0x33B630, provavelmente .data até 0x30DE10): ADIADA como o player.cpp (precisa do layout 0x6CC–0x748 do CBasePlayer, que mexe nos Vector de preenchimento do player.h). Fica como asm cod/026F80 e rodata cod/23B2E0 no yaml.
+
+Próximo: agrunt.cpp (.text termina em 0x126C00; _GLOBAL_$I do arquivo anterior em 0x124480, então começa por volta de 0x1244A0; .rodata termina em 0x33AE10).
