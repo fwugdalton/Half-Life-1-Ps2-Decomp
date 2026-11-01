@@ -501,16 +501,23 @@ private:
 	byte m_ps2Unk14[0x44 - 0x14];
 };
 
+#define MAX_SEC_AMMO_VALUES	4
+
 class CHudAmmoSecondary: public CHudBase
 {
 public:
 	int Init( int clientId );
+	void Reset( int clientId );
 	int VidInit( int clientId );
 	int Draw( float flTime, int clientId, int iDrawFlags );
-	void Reset( int clientId );
+
+	int MsgFunc_SecAmmoVal( int clientId, const char *pszName, int iSize, void *pbuf );
+	int MsgFunc_SecAmmoIcon( int clientId, const char *pszName, int iSize, void *pbuf );
 
 private:
-	byte m_ps2Unk14[0x2C - 0x14];
+	int m_HUD_ammoicon;		/* 0x14: sprite indices */
+	int m_iAmmoAmounts[MAX_SEC_AMMO_VALUES];	/* 0x18 */
+	float m_fFade;			/* 0x28 */
 };
 
 class CHudBattery: public CHudBase
