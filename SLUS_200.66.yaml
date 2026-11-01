@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x015730, cpp, cl_dll/battery]
       - [0x015D18, cpp, cl_dll/cdll_int]
       - [0x016188, cpp, cl_dll/cl_hud]
       - [0x016E70, cpp, cl_dll/crouch]
@@ -471,6 +472,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x238D48, .rodata, cl_dll/battery]
       - [0x238DB0, .rodata, cl_dll/cl_hud]
       - [0x238E90, .rodata, cl_dll/crouch]
       - [0x238F00, .rodata, cl_dll/death]

@@ -6860,3 +6860,6 @@ VidInit__17CHudAmmoSecondaryi = 0x00114A18; // type:func
 Init__11CHudBatteryi = 0x00115778; // type:func
 VidInit__11CHudBatteryi = 0x001157F0; // type:func
 __builtin_vec_delete = 0x002E2138; // type:func
+__MsgFunc_Battery__FiPCciPv = 0x00115730; // type:func
+MsgFunc_Battery__11CHudBatteryiPCciPv = 0x00115898; // type:func
+Draw__11CHudBatteryfii = 0x001158F8; // type:func

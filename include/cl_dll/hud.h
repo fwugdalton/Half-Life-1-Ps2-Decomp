@@ -519,9 +519,16 @@ public:
 	int Init( int clientId );
 	int VidInit( int clientId );
 	int Draw( float flTime, int clientId, int iDrawFlags );
+	int MsgFunc_Battery( int clientId, const char *pszName, int iSize, void *pbuf );
 
 private:
-	byte m_ps2Unk14[0x30 - 0x14];
+	HSPRITE m_hSprite1;		/* 0x14 */
+	HSPRITE m_hSprite2;		/* 0x18 */
+	wrect_t *m_prc1;		/* 0x1C */
+	wrect_t *m_prc2;		/* 0x20 */
+	int m_iBat;				/* 0x24 */
+	float m_fFade;			/* 0x28 */
+	int m_iHeight;			/* 0x2C */
 };
 
 class CHudGeiger: public CHudBase
