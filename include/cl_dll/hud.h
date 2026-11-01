@@ -111,23 +111,54 @@ private:
 	int m_iPos;				/* 0x18 */
 };
 
+/* PS2: HUD do vortigaunt jogável (energia do ataque e vida), sem fonte; nome inventado */
+class CHudISlave: public CHudBase
+{
+public:
+	int Init( int clientId );
+	int VidInit( int clientId );
+	int Draw( float flTime, int clientId, int iDrawFlags );
+	void Reset( int clientId );
+	void DrawCharge( int clientId );
+	int MsgFunc_ISlaveHud( int clientId, const char *pszName, int iSize, void *pbuf );
+
+private:
+	int m_HUD_center;		/* 0x14 */
+	int m_HUD_charged;		/* 0x18 */
+	int m_HUD_outer;		/* 0x1C */
+	int m_HUD_inner;		/* 0x20 */
+	int m_iState;			/* 0x24 */
+	int m_HUD_health;		/* 0x28 */
+	int m_iHealth;			/* 0x2C */
+	int m_iPs2Unk30;		/* 0x30 */
+};
+
 class CHud
 {
 public:
-	byte m_ps2Unk000[0x58];
+	byte m_ps2Unk000[0x48];
+	int m_iPs2Flags;		/* 0x48: 0x40 = jogador é vortigaunt */
+	byte m_ps2Unk04C[0x58 - 0x4C];
 	int m_iColorR;			/* 0x58: cor do HUD (no lugar do UnpackRGB(RGB_YELLOWISH)) */
 	int m_iColorG;			/* 0x5C */
 	int m_iColorB;			/* 0x60 */
 	int m_iFontHeight;		/* 0x64 */
 	HSPRITE *m_rghSprites;	/* 0x68 */
 	wrect_t *m_rgrcRects;	/* 0x6C */
-	byte m_ps2Unk070[0x200 - 0x70];
+	byte m_ps2Unk070[0xCC - 0x70];
+	int m_iPs2Health;		/* 0xCC: vida mostrada pelo HUD do vortigaunt */
+	byte m_ps2Unk0D0[0x200 - 0xD0];
 	CHudTrain m_Train;		/* 0x200 */
-	byte m_ps2Unk21C[0x1ED0 - 0x21C];
+	byte m_ps2Unk21C[0x1E24 - 0x21C];
+	CHudISlave m_ISlave;	/* 0x1E24 */
+	byte m_ps2Unk1E58[0x1ED0 - 0x1E58];
 	SCREENINFO m_scrinfo;	/* 0x1ED0 */
 	byte m_ps2UnkPad[0x20F4 - 0x1ED0 - sizeof(SCREENINFO)];
 
 	void AddHudElem( CHudBase *p );
+	int GetSpriteIndex( const char *SpriteName );
+	HSPRITE GetSprite( int index ) { return (index < 0) ? 0 : m_rghSprites[index]; }
+	wrect_t& GetSpriteRect( int index ) { return m_rgrcRects[index]; }
 };
 
 extern CHud gHUD[];
