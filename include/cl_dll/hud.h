@@ -57,7 +57,8 @@ typedef struct cl_enginefuncs_s
 	void	*pfnPs2Unk58;													/* 0x58 */
 	void	(*pfnGetPlayerInfo)( int ent_num, struct hud_player_info_s *pinfo, int iPs2Unk );	/* 0x5C */
 	void	(*pfnPlaySoundByName)( char *szSound, float volume, int clientId );	/* 0x60 */
-	void	*pfnPs2Unk64[2];												/* 0x64 */
+	void	(*pfnPlaySoundPs2)( char *szSound, float volume, int clientId );	/* 0x64: som com volume (geiger) */
+	void	*pfnPs2Unk68;													/* 0x68 */
 	void	(*pfnAngleVectors)( const float *vecAngles, float *forward, float *right, float *up );	/* 0x6C */
 	struct client_textmessage_s *(*pfnTextMessageGet)( const char *pName );	/* 0x70 */
 	int		(*pfnDrawCharacter)( int x, int y, int number, int r, int g, int b );	/* 0x74: TextMessageDrawChar */
@@ -418,6 +419,18 @@ typedef struct
 
 #define maxHUDMessages 16
 
+class CHudGeiger: public CHudBase
+{
+public:
+	int Init( int clientId );
+	int VidInit( int clientId );
+	int Draw( float flTime, int clientId, int iDrawFlags );
+	int MsgFunc_Geiger( int clientId, const char *pszName, int iSize, void *pbuf );
+
+private:
+	int m_iGeigerRange;		/* 0x14 */
+};
+
 #define NUM_DMG_TYPES 12
 
 typedef struct
@@ -557,7 +570,8 @@ public:
 	wrect_t *m_rgrcRects;	/* 0x6C */
 	byte m_ps2Unk070[0xB8 - 0x70];
 	CHudHealth m_Health;	/* 0xB8 */
-	byte m_ps2Unk1B8[0x200 - 0x1B8];
+	CHudGeiger m_Geiger;	/* 0x1B8 */
+	byte m_ps2Unk1D0[0x200 - 0x1D0];
 	CHudTrain m_Train;		/* 0x200 */
 	byte m_ps2Unk21C[0x290 - 0x21C];
 	CHudMessage m_Message;	/* 0x290 */
