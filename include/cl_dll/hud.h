@@ -27,6 +27,15 @@ typedef struct
 	short charWidths[256];
 } SCREENINFO;
 
+typedef struct client_sprite_s
+{
+	char szName[64];
+	char szSprite[64];
+	int hspr;
+	int iRes;
+	wrect_t rc;
+} client_sprite_t;
+
 /* cl_enginefunc_t do HLSDK (cópia do cliente em 0x30CB70, gEngfuncs) */
 typedef int (*pfnUserMsgHook)( int clientId, const char *pszName, int iSize, void *pbuf );
 
@@ -42,7 +51,7 @@ typedef struct cl_enginefuncs_s
 	void	(*pfnSPR_DrawAdditive)( int frame, int x, int y, const wrect_t *prc );	/* 0x1C */
 	void	(*pfnSPR_EnableScissor)( int x, int y, int width, int height );	/* 0x20 */
 	void	(*pfnSPR_DisableScissor)( void );								/* 0x24 */
-	void	*pfnSPR_GetList;												/* 0x28 */
+	struct client_sprite_s *(*pfnSPR_GetList)( char *psz, int *piCount );	/* 0x28 */
 	void	(*pfnFillRGBA)( int x, int y, int width, int height, int r, int g, int b, int a );	/* 0x2C */
 	int		(*pfnGetScreenInfo)( SCREENINFO *pscrinfo );					/* 0x30 */
 	void	*pfnSetCrosshair;												/* 0x34 */
@@ -645,9 +654,9 @@ public:
 	HUDLIST *m_pHudList;	/* 0x0 */
 	HSPRITE m_hsprLogo;		/* 0x4 */
 	int m_iLogo;			/* 0x8 */
-	byte m_ps2Unk00C[0x10 - 0xC];
+	client_sprite_t *m_pSpriteList;	/* 0xC */
 	int m_iSpriteCount;	/* 0x10 */
-	byte m_ps2Unk014[0x18 - 0x14];
+	int m_iSpriteCountAllRes;	/* 0x14 */
 	float m_flMouseSensitivity;	/* 0x18 */
 	int m_iConcussionEffect;	/* 0x1C */
 	float m_flTime;			/* 0x20 */
@@ -659,14 +668,14 @@ public:
 	int m_iPs2Flags;		/* 0x48: 0x40 = jogador é vortigaunt, 4 = esconde o HUD */
 	int m_iFOV;				/* 0x4C */
 	int m_Teamplay;			/* 0x50 */
-	byte m_ps2Unk054[0x58 - 0x54];
+	int m_iRes;				/* 0x54 */
 	int m_iColorR;			/* 0x58: cor do HUD (no lugar do UnpackRGB(RGB_YELLOWISH)) */
 	int m_iColorG;			/* 0x5C */
 	int m_iColorB;			/* 0x60 */
 	int m_iFontHeight;		/* 0x64 */
 	HSPRITE *m_rghSprites;	/* 0x68 */
 	wrect_t *m_rgrcRects;	/* 0x6C */
-	byte m_ps2Unk070[0x74 - 0x70];
+	char *m_rgszSpriteNames;	/* 0x70 */
 	CHudAmmo m_Ammo;		/* 0x74 */
 	CHudHealth m_Health;	/* 0xB8 */
 	CHudGeiger m_Geiger;	/* 0x1B8 */
@@ -715,6 +724,8 @@ public:
 	int MsgFunc_Damage( int clientId, const char *pszName, int iSize, void *pbuf );
 	int MsgFunc_Concuss( int clientId, const char *pszName, int iSize, void *pbuf );
 	int MsgFunc_HudColor( int clientId, const char *pszName, int iSize, void *pbuf );
+	int MsgFunc_Logo( int clientId, const char *pszName, int iSize, void *pbuf );
+	int MsgFunc_SetFOV( int clientId, const char *pszName, int iSize, void *pbuf );
 	HSPRITE GetSprite( int index ) { return (index < 0) ? 0 : m_rghSprites[index]; }
 	wrect_t& GetSpriteRect( int index ) { return m_rgrcRects[index]; }
 };

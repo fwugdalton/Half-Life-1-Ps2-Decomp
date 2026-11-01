@@ -71,7 +71,7 @@ segments:
     subsegments:
       - [0x000000, asm, cod/000000] # .text
       - [0x015D18, cpp, cl_dll/cdll_int]
-      - [0x016188, asm, cod/016188]
+      - [0x016188, cpp, cl_dll/cl_hud]
       - [0x016E70, cpp, cl_dll/crouch]
       - [0x017300, cpp, cl_dll/death]
       - [0x017D50, cpp, cl_dll/flashlight]
@@ -471,6 +471,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x238DB0, .rodata, cl_dll/cl_hud]
       - [0x238E90, .rodata, cl_dll/crouch]
       - [0x238F00, .rodata, cl_dll/death]
       - [0x239020, .rodata, cl_dll/flashlight]
