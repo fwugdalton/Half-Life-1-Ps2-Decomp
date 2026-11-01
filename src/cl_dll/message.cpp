@@ -13,11 +13,6 @@ int func_002E5340( void );	/* rand */
 
 extern "C" int cl_numlocal;
 
-/* cl_util.h */
-inline int TextMessageDrawChar( int x, int y, int number, int r, int g, int b )
-{
-	return gEngfuncs.pfnDrawCharacter( x, y, number, r, g, b );
-}
 
 DECLARE_MESSAGE( m_Message, HudText )
 DECLARE_MESSAGE( m_Message, GameTitle )

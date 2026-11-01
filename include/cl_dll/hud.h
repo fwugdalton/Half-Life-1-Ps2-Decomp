@@ -466,14 +466,44 @@ public:
 	int m_fWaitingForMore;	/* 0x20 */
 };
 
+struct HUDLIST {
+	CHudBase *p;
+	HUDLIST *pNext;
+};
+
+typedef float vec3_t[3];
+
+/* client_data_t do PS2 (0x40 bytes?) */
+typedef struct client_data_s
+{
+	vec3_t origin;			/* 0x0 */
+	byte ps2Unk0C[0x14 - 0xC];
+	vec3_t viewangles;		/* 0x14 */
+	byte ps2Unk20[0x2C - 0x20];
+	int iWeaponBits;		/* 0x2C */
+	int iPs2Unk30;			/* 0x30 */
+	float fov;				/* 0x34 */
+	float idlescale;		/* 0x38 */
+	float mouse_sensitivity;	/* 0x3C */
+} client_data_t;
+
 class CHud
 {
 public:
-	byte m_ps2Unk000[0x20];
+	HUDLIST *m_pHudList;	/* 0x0 */
+	HSPRITE m_hsprLogo;		/* 0x4 */
+	int m_iLogo;			/* 0x8 */
+	byte m_ps2Unk00C[0x18 - 0xC];
+	float m_flMouseSensitivity;	/* 0x18 */
+	int m_iConcussionEffect;	/* 0x1C */
 	float m_flTime;			/* 0x20 */
-	byte m_ps2Unk024[0x48 - 0x24];
-	int m_iPs2Flags;		/* 0x48: 0x40 = jogador é vortigaunt */
-	byte m_ps2Unk04C[0x50 - 0x4C];
+	float m_fOldTime;		/* 0x24 */
+	float m_flTimeDelta;	/* 0x28 */
+	vec3_t m_vecOrigin;		/* 0x2C */
+	vec3_t m_vecAngles;		/* 0x38 */
+	int m_iWeaponBits;		/* 0x44 */
+	int m_iPs2Flags;		/* 0x48: 0x40 = jogador é vortigaunt, 4 = esconde o HUD */
+	int m_iFOV;				/* 0x4C */
 	int m_Teamplay;			/* 0x50 */
 	byte m_ps2Unk054[0x58 - 0x54];
 	int m_iColorR;			/* 0x58: cor do HUD (no lugar do UnpackRGB(RGB_YELLOWISH)) */
@@ -500,9 +530,14 @@ public:
 	CHudISlave m_ISlave;	/* 0x1E24 */
 	CHudButton m_Button;	/* 0x1E58 */
 	SCREENINFO m_scrinfo;	/* 0x1ED0 */
-	byte m_ps2UnkPad[0x20EC - 0x1ED0 - sizeof(SCREENINFO)];
+	int m_iPs2Unk20E4;		/* 0x20E4: copiado do client_data_t (0x30) */
+	int m_iPs2Unk20E8;
 	int m_iIntermission;	/* 0x20EC */
 	int m_HUD_number_0;		/* 0x20F0 */
+
+	void Think( int clientId );
+	int Redraw( float flTime, int intermission, int clientId, int iDrawFlags );
+	int UpdateClientData( client_data_t *cdata, int clientId );
 
 	void AddHudElem( CHudBase *p );
 	int GetSpriteIndex( const char *SpriteName );
@@ -510,6 +545,14 @@ public:
 	int DrawHudNumberString( int xpos, int ypos, int iMinX, int iNumber, int r, int g, int b, int clientId );
 	int DrawHudStringReverse( int xpos, int ypos, int iMinX, char *szString, int r, int g, int b, int clientId );
 	int DrawHudNumber( int x, int y, int iFlags, int iNumber, int r, int g, int b );
+	int GetNumWidth( int iNumber, int iFlags );
+
+	int MsgFunc_ResetHUD( int clientId, const char *pszName, int iSize, void *pbuf );
+	void MsgFunc_InitHUD( int clientId, const char *pszName, int iSize, void *pbuf );
+	int MsgFunc_GameMode( int clientId, const char *pszName, int iSize, void *pbuf );
+	int MsgFunc_Damage( int clientId, const char *pszName, int iSize, void *pbuf );
+	int MsgFunc_Concuss( int clientId, const char *pszName, int iSize, void *pbuf );
+	int MsgFunc_HudColor( int clientId, const char *pszName, int iSize, void *pbuf );
 	HSPRITE GetSprite( int index ) { return (index < 0) ? 0 : m_rghSprites[index]; }
 	wrect_t& GetSpriteRect( int index ) { return m_rgrcRects[index]; }
 };
@@ -521,6 +564,17 @@ extern "C" int Key_FindBinding( char *binding, int max, int skip, int *count, in
 
 /* cl_util.h */
 HSPRITE LoadSprite( const char *pszName );
+void ScaleColors( int &r, int &g, int &b, int a );
+
+inline int TextMessageDrawChar( int x, int y, int number, int r, int g, int b )
+{
+	return gEngfuncs.pfnDrawCharacter( x, y, number, r, g, b );
+}
+
+#define DHN_DRAWZERO 1
+#define DHN_2DIGITS  2
+#define DHN_3DIGITS  4
+#define DHN_4DIGITS  8	/* PS2 */
 
 #define ScreenHeight (gHUD[clientId].m_scrinfo.iHeight)
 #define ScreenWidth (gHUD[clientId].m_scrinfo.iWidth)

@@ -20,7 +20,6 @@ int strcasecmp( const char *a, const char *b );
 
 #define max(a,b)	(((a) > (b)) ? (a) : (b))
 
-#define DHN_DRAWZERO 1
 
 extern "C" int cl_numlocal;
 
