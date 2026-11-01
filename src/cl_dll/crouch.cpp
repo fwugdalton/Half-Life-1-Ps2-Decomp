@@ -65,7 +65,7 @@ int CHudCrouch::Draw( float flTime, int clientId, int iDrawFlags )
 	if ( gHUD[0].m_Message.m_gameTitleTime > 0 )
 		return 1;
 
-	if ( gHUD[clientId].m_iPs2Unk20E4 >= 0 )
+	if ( gHUD[clientId].m_iWeaponBits >= 0 )
 		return 1;
 
 	if ( gHUD[clientId].m_iPs2Flags & 0x40 )

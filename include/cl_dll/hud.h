@@ -54,13 +54,13 @@ typedef struct cl_enginefuncs_s
 	struct client_sprite_s *(*pfnSPR_GetList)( char *psz, int *piCount );	/* 0x28 */
 	void	(*pfnFillRGBA)( int x, int y, int width, int height, int r, int g, int b, int a );	/* 0x2C */
 	int		(*pfnGetScreenInfo)( SCREENINFO *pscrinfo );					/* 0x30 */
-	void	*pfnSetCrosshair;												/* 0x34 */
+	void	(*pfnSetCrosshair)( HSPRITE hspr, wrect_t rc, int r, int g, int b, int clientId );	/* 0x34 */
 	struct cvar_s *(*pfnRegisterVariable)( char *szName, char *szValue, int flags );	/* 0x38 */
 	float	(*pfnGetCvarFloat)( char *szName );								/* 0x3C */
 	char*	(*pfnGetCvarString)( char *szName );							/* 0x40 */
 	int		(*pfnAddCommand)( char *cmd_name, void (*function)(void) );		/* 0x44 */
 	int		(*pfnHookUserMsg)( char *szMsgName, pfnUserMsgHook pfn, int clientId );	/* 0x48 */
-	int		(*pfnServerCmd)( char *szCmdString );							/* 0x4C */
+	int		(*pfnServerCmd)( char *szCmdString, int clientId );			/* 0x4C */
 	int		(*pfnClientCmd)( char *szCmdString );							/* 0x50 */
 	char	*(*pfnCmd_Argv)( int arg );										/* 0x54 */
 	void	*pfnPs2Unk58;													/* 0x58 */
@@ -487,7 +487,9 @@ private:
 	int m_iWidth;			/* 0x30 */
 };
 
-/* ammo.cpp, ammo_secondary.cpp e battery.cpp ainda não decompilados: só o tamanho e os virtuais */
+struct WEAPON_s;
+
+/* ammo.cpp do PS2: estado de tanque (func_tank) por jogador local */
 class CHudAmmo: public CHudBase
 {
 public:
@@ -496,9 +498,44 @@ public:
 	int Draw( float flTime, int clientId, int iDrawFlags );
 	void Think( int clientId );
 	void Reset( int clientId );
+	void DrawReloadBar( float flTime, int clientId );
+	int DrawWList( float flTime, int clientId );
+	int MsgFunc_CurWeapon( int clientId, const char *pszName, int iSize, void *pbuf );
+	int MsgFunc_WeaponList( int clientId, const char *pszName, int iSize, void *pbuf );
+	int MsgFunc_AmmoX( int clientId, const char *pszName, int iSize, void *pbuf );
+	int MsgFunc_AmmoPickup( int clientId, const char *pszName, int iSize, void *pbuf );
+	int MsgFunc_WeapPickup( int clientId, const char *pszName, int iSize, void *pbuf );
+	int MsgFunc_ItemPickup( int clientId, const char *pszName, int iSize, void *pbuf );
+	int MsgFunc_HideWeapon( int clientId, const char *pszName, int iSize, void *pbuf );
+	int MsgFunc_TankUse( int clientId, const char *pszName, int iSize, void *pbuf );
+	int MsgFunc_TankAmmo( int clientId, const char *pszName, int iSize, void *pbuf );
 
-private:
-	byte m_ps2Unk14[0x44 - 0x14];
+	void UserCmd_Slot1( int clientId );
+	void UserCmd_Slot2( int clientId );
+	void UserCmd_Slot3( int clientId );
+	void UserCmd_Slot4( int clientId );
+	void UserCmd_Slot5( int clientId );
+	void UserCmd_Slot6( int clientId );
+	void UserCmd_Slot7( int clientId );
+	void UserCmd_Slot8( int clientId );
+	void UserCmd_Slot9( int clientId );
+	void UserCmd_Slot10( int clientId );
+	void UserCmd_Close( int clientId );
+	void UserCmd_NextWeapon( int clientId );
+	void UserCmd_PrevWeapon( int clientId );
+	void UserCmd_NextSlot( int clientId );
+	void UserCmd_PrevSlot( int clientId );
+
+	float m_flReloadStart;	/* 0x14: PS2, barra de recarga (func_00113D08) */
+	float m_flReloadTime;	/* 0x18 */
+	float m_fFade;			/* 0x1C */
+	int m_iPs2Unk20;		/* 0x20 */
+	struct WEAPON_s *m_pWeapon;	/* 0x24 */
+	int m_HUD_bucket0;		/* 0x28 */
+	int m_HUD_selection;	/* 0x2C */
+	byte m_bTankUse[2];		/* 0x30: PS2, um por jogador */
+	int m_iTankAmmo[2];		/* 0x34 */
+	int m_iTankAmmo2[2];	/* 0x3C */
 };
 
 #define MAX_SEC_AMMO_VALUES	4
@@ -678,7 +715,7 @@ public:
 	float m_flTimeDelta;	/* 0x28 */
 	vec3_t m_vecOrigin;		/* 0x2C */
 	vec3_t m_vecAngles;		/* 0x38 */
-	int m_iWeaponBits;		/* 0x44 */
+	int m_iKeyBits;			/* 0x44: no HLSDK é o m_iWeaponBits; o PS2 testa IN_ATTACK aqui */
 	int m_iPs2Flags;		/* 0x48: 0x40 = jogador é vortigaunt, 4 = esconde o HUD */
 	int m_iFOV;				/* 0x4C */
 	int m_Teamplay;			/* 0x50 */
@@ -710,8 +747,8 @@ public:
 	CHudISlave m_ISlave;	/* 0x1E24 */
 	CHudButton m_Button;	/* 0x1E58 */
 	SCREENINFO m_scrinfo;	/* 0x1ED0 */
-	int m_iPs2Unk20E4;		/* 0x20E4: copiado do client_data_t (0x30) */
-	int m_iPs2Unk20E8;
+	int m_iWeaponBits;		/* 0x20E4: copiado do client_data_t (0x30); bit 31 = traje */
+	int m_fPlayerDead;		/* 0x20E8 */
 	int m_iIntermission;	/* 0x20EC */
 	int m_HUD_number_0;		/* 0x20F0 */
 

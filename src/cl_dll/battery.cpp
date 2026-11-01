@@ -1,5 +1,5 @@
 /* cl_dll/battery.cpp: CHudBattery do HLSDK, versão do PS2 (só com os flags 0x14 do Draw;
-   some com m_iPs2Flags & 8, o título do jogo ou m_iPs2Unk20E4 >= 0; cor do HUD do
+   some com m_iPs2Flags & 8, o título do jogo ou m_iWeaponBits >= 0; cor do HUD do
    jogador; posição na tela dividida igual ao health.cpp). */
 
 #include "cl_dll/hud.h"
@@ -78,7 +78,7 @@ int CHudBattery::Draw( float flTime, int clientId, int iDrawFlags )
 	g = gHUD[clientId].m_iColorG;
 	b = gHUD[clientId].m_iColorB;
 
-	if ( gHUD[clientId].m_iPs2Unk20E4 >= 0 )
+	if ( gHUD[clientId].m_iWeaponBits >= 0 )
 		return 1;
 
 	// Has health changed? Flash the health #

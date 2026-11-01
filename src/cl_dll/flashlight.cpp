@@ -1,5 +1,5 @@
 /* cl_dll/flashlight.cpp: CHudFlashlight do HLSDK, versão do PS2 (só desenha com os flags
-   0xA do Draw, esconde com os bits 6 e 0x40 do m_iPs2Flags ou com m_iPs2Unk20E4 >= 0,
+   0xA do Draw, esconde com os bits 6 e 0x40 do m_iPs2Flags ou com m_iWeaponBits >= 0,
    cor do HUD do jogador no lugar do RGB_YELLOWISH e 8/24 pixels de margem). */
 
 #include "cl_dll/hud.h"
@@ -80,7 +80,7 @@ int CHudFlashlight::Draw( float flTime, int clientId, int iDrawFlags )
 	if ( gHUD[clientId].m_iPs2Flags & 0x40 )
 		return 1;
 
-	if ( gHUD[clientId].m_iPs2Unk20E4 >= 0 )
+	if ( gHUD[clientId].m_iWeaponBits >= 0 )
 		return 1;
 
 	if (m_fOn)

@@ -14,7 +14,7 @@ extern "C" void *memset( void *dst, int c, unsigned int n );
 
 typedef int AMMO;
 
-typedef struct
+typedef struct WEAPON_s
 {
 	char	szName[MAX_WEAPON_NAME];	/* 0x0 */
 	int		iAmmoType;			/* 0x80 */
@@ -36,15 +36,18 @@ typedef struct
 	wrect_t rcAmmo;
 	HSPRITE hAmmo2;
 	wrect_t rcAmmo2;
-	HSPRITE hCrosshair;
+	HSPRITE hCrosshair;			/* 0xF8: "crosshair" */
 	wrect_t rcCrosshair;
-	HSPRITE hAutoaim;
+	HSPRITE hAutoaimOld;		/* 0x10C: PS2, "autoaimold" */
+	wrect_t rcAutoaimOld;
+	HSPRITE hAutoaim;			/* 0x120: "autoaim" (a mira que o PS2 usa) */
 	wrect_t rcAutoaim;
-	HSPRITE hZoomedCrosshair;
+	HSPRITE hZoomedCrosshair;	/* 0x134 */
 	wrect_t rcZoomedCrosshair;
-	HSPRITE hZoomedAutoaim;
-	wrect_t rcZoomedAutoaim;	/* 0x138 */
-	byte	ps2Unk148[0x170 - 0x148];
+	HSPRITE hZoomedAutoaim;		/* 0x148 */
+	wrect_t rcZoomedAutoaim;
+	HSPRITE hSCrosshair;		/* 0x15C: PS2, "scrosshair" */
+	wrect_t rcSCrosshair;
 } WEAPON;
 
 #define MAX_WEAPON_POSITIONS		MAX_WEAPON_SLOTS
@@ -76,8 +79,38 @@ public:
 	int			iOldWeaponBits;		/* 0x2F10 */
 
 	WEAPON *GetWeapon( int iId ) { return &rgWeapons[iId]; }
+	void AddWeapon( WEAPON *wp ) 
+	{ 
+		rgWeapons[ wp->iId ] = *wp;	
+		LoadWeaponSprites( &rgWeapons[ wp->iId ] );
+	}
+
+	void PickupWeapon( WEAPON *wp )
+	{
+		rgSlots[ wp->iSlot ][ wp->iSlotPos ] = wp;
+	}
+
+	void DropWeapon( WEAPON *wp )
+	{
+		rgSlots[ wp->iSlot ][ wp->iSlotPos ] = NULL;
+	}
+
+	WEAPON *GetWeaponSlot( int slot, int pos ) { return rgSlots[slot][pos]; }
+
+	void LoadWeaponSprites( WEAPON* wp );
+	void LoadAllWeaponSprites( void );
+	WEAPON* GetFirstPos( int iSlot );
+	void SelectSlot( int clientId, int iSlot, int fAdvance, int iDirection );
+	WEAPON* GetNextActivePos( int iSlot, int iSlotPos );
 
 	int HasAmmo( WEAPON *p );
+
+	///// AMMO /////
+	AMMO GetAmmo( int iId ) { return iId; }
+
+	void SetAmmo( int iId, int iCount ) { riAmmo[ iId ] = iCount;	}
+
+	int CountAmmo( int iId );
 
 	HSPRITE* GetAmmoPicFromWeapon( int iAmmoId, wrect_t& rect );
 };

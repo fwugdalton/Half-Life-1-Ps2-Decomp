@@ -10,12 +10,12 @@ int CHud::UpdateClientData( client_data_t *cdata, int clientId )
 	memcpy( m_vecOrigin, cdata->origin, sizeof(vec3_t) );
 	memcpy( m_vecAngles, cdata->viewangles, sizeof(vec3_t) );
 
-	m_iWeaponBits = cdata->iWeaponBits;
-	m_iPs2Unk20E4 = cdata->iPs2Unk30;
+	m_iKeyBits = cdata->iWeaponBits;
+	m_iWeaponBits = cdata->iPs2Unk30;
 
 	gHUD[clientId].Think( clientId );
 
-	cdata->iWeaponBits = m_iWeaponBits;
+	cdata->iWeaponBits = m_iKeyBits;
 	cdata->fov = m_iFOV;
 	cdata->idlescale = m_iConcussionEffect;
 

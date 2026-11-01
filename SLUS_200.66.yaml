@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x010680, cpp, cl_dll/ammo]
       - [0x0148B0, cpp, cl_dll/ammo_secondary]
       - [0x014E58, cpp, cl_dll/ammohistory]
       - [0x015730, cpp, cl_dll/battery]
@@ -345,6 +346,7 @@ segments:
       - [0x1D0A68, asm, cod/1D0A68]
       - [0x1F5980, textbin, cod/1F5980] # .vutext
       - [0x201B00, data, cod/201B00] # .data
+      - [0x202A60, .data, cl_dll/ammo]
       - [0x2088B0, .data, cl_dll/ammohistory]
       - [0x208988, .data, cl_dll/cdll_int]
       - [0x20CBF8, .data, cl_dll/death]
@@ -475,6 +477,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x238A20, .rodata, cl_dll/ammo]
       - [0x238CD0, .rodata, cl_dll/ammo_secondary]
       - [0x238D30, .rodata, cl_dll/ammohistory]
       - [0x238D48, .rodata, cl_dll/battery]
