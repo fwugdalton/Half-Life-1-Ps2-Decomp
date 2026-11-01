@@ -81,6 +81,7 @@ public:
 
 class CCineAI : public CCineMonster
 {
+public:	/* PS2: o CAIEvent (aievent.cpp) herda daqui */
 	BOOL StartSequence( CBaseMonster *pTarget, int iszSeq, BOOL completeOnEmpty );
 	void PossessEntity( void );
 	BOOL FCanOverrideState ( void );
