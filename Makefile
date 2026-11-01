@@ -78,6 +78,7 @@ $(BUILD_DIR)/src/cl_dll/%.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .d
 $(BUILD_DIR)/src/cl_dll/button_hud.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8 --set-section-alignment .rodata=16
 $(BUILD_DIR)/src/cl_dll/text_message.o: CFLAGS += -fmove-all-movables
 $(BUILD_DIR)/src/cl_dll/statusbar.o: CFLAGS += -fmove-all-movables
+$(BUILD_DIR)/src/cl_dll/scoreboard.o: CFLAGS += -fmove-all-movables
 # o .rodata do tentacle_decay começa alinhado em 16 (o tentacle.cpp termina com 0xC de padding)
 $(BUILD_DIR)/src/dlls/tentacle_decay.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8 --set-section-alignment .rodata=16
 $(BUILD_DIR)/src/dlls/doors.o: OBJCOPY_EXTRA := -R .bss --set-section-alignment .data=8 --set-section-alignment .rodata=16

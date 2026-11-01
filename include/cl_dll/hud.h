@@ -51,7 +51,9 @@ typedef struct cl_enginefuncs_s
 	char*	(*pfnGetCvarString)( char *szName );							/* 0x40 */
 	int		(*pfnAddCommand)( char *cmd_name, void (*function)(void) );		/* 0x44 */
 	int		(*pfnHookUserMsg)( char *szMsgName, pfnUserMsgHook pfn, int clientId );	/* 0x48 */
-	void	*pfnPs2Unk4C[4];												/* 0x4C */
+	void	*pfnPs2Unk4C[2];												/* 0x4C */
+	char	*(*pfnCmd_Argv)( int arg );										/* 0x54 */
+	void	*pfnPs2Unk58;													/* 0x58 */
 	void	(*pfnGetPlayerInfo)( int ent_num, struct hud_player_info_s *pinfo, int iPs2Unk );	/* 0x5C */
 	void	*pfnPs2Unk60[4];												/* 0x60 */
 	struct client_textmessage_s *(*pfnTextMessageGet)( const char *pName );	/* 0x70 */
@@ -85,12 +87,14 @@ typedef struct hud_player_info_s
 	char *name;
 	short ping;
 	byte thisplayer;
+	byte bPs2Unk07;
+	int iClient;		/* 0x8: PS2, jogador local (clientId) dono desta entrada */
 	byte spectator;
-	byte packetloss;
+	byte packetloss;	/* 0xD */
+	short sPs2Unk0E;
 	char *model;
 	short topcolor;
 	short bottomcolor;
-	int iPs2Unk14;
 } hud_player_info_t;
 
 #define TextMessageGet (*gEngfuncs.pfnTextMessageGet)
@@ -123,6 +127,15 @@ inline void GetConsoleStringSize( const char *string, int *width, int *height )
 #define DECLARE_MESSAGE(y, x) int __MsgFunc_##x( int clientId, const char *pszName, int iSize, void *pbuf ) \
 	{ \
 		return gHUD[clientId].y.MsgFunc_##x( clientId, pszName, iSize, pbuf ); \
+	}
+
+#define HOOK_COMMAND(x, y) gEngfuncs.pfnAddCommand( x, __CmdFunc_##y );
+
+/* PS2: o comando recebe o clientId como 1º argumento */
+#define DECLARE_COMMAND(y, x) void __CmdFunc_##x( void ) \
+	{ \
+		int clientId = atoi( gEngfuncs.pfnCmd_Argv( 1 ) ); \
+		gHUD[clientId].y.UserCmd_##x( clientId ); \
 	}
 
 #define HUD_ACTIVE		1
@@ -298,6 +311,64 @@ private:
 	int m_iBlink;			/* 0x74: 0..2 */
 };
 
+#define MAX_PLAYERS		64
+#define MAX_TEAMS		64
+#define MAX_TEAM_NAME	16
+
+/* PS2: 0x1A bytes; os nomes de damage/shots/hits vêm das colunas SCORE_* do placar */
+struct extra_player_info_t
+{
+	short frags;		/* 0x0 */
+	short deaths;		/* 0x2 */
+	short damage;		/* 0x4 */
+	short shots;		/* 0x6 */
+	short hits;			/* 0x8 */
+	char teamname[MAX_TEAM_NAME];	/* 0xA */
+};
+
+struct team_info_t
+{
+	char name[MAX_TEAM_NAME];	/* 0x0 */
+	short frags;		/* 0x10 */
+	short deaths;		/* 0x12 */
+	short ping;			/* 0x14 */
+	short packetloss;	/* 0x16 */
+	short ownteam;		/* 0x18 */
+	short players;		/* 0x1A */
+	int already_drawn;	/* 0x1C */
+	int scores_overriden;	/* 0x20 */
+};
+
+/* PS2: as listas g_PlayerInfoList/g_PlayerExtraInfo/g_TeamInfo do HLSDK ficam dentro
+   do placar de cada jogador */
+class CHudScoreboard: public CHudBase
+{
+public:
+	int Init( int clientId );
+	void InitHUDData( int clientId );
+	int VidInit( int clientId );
+	int Draw( float flTime, int clientId, int iDrawFlags );
+	int DrawPlayers( int clientId, int iDrawFlags, int xoffset, float listslot, int nameoffset = 0, char *team = NULL );
+	void UserCmd_ShowScores( int clientId );
+	void UserCmd_HideScores( int clientId );
+	int MsgFunc_ScoreInfo( int clientId, const char *pszName, int iSize, void *pbuf );
+	int MsgFunc_TeamInfo( int clientId, const char *pszName, int iSize, void *pbuf );
+	int MsgFunc_TeamScore( int clientId, const char *pszName, int iSize, void *pbuf );
+	void DeathMsg( int killer, int victim, int clientId );
+
+	hud_player_info_t m_PlayerInfoList[MAX_PLAYERS+1];		/* 0x14 */
+	extra_player_info_t m_PlayerExtraInfo[MAX_PLAYERS+1];	/* 0x62C */
+	team_info_t m_TeamInfo[MAX_TEAMS+1];	/* 0xCC8 */
+
+	int m_iNumTeams;		/* 0x15EC */
+	int m_iLastKilledBy;	/* 0x15F0 */
+	int m_fLastKillTime;	/* 0x15F4: int no PS2 */
+	int m_iPlayerNum;		/* 0x15F8 */
+	int m_iShowscoresHeld;	/* 0x15FC */
+
+	void GetAllPlayersInfo( int clientId );
+};
+
 class CHud
 {
 public:
@@ -305,7 +376,9 @@ public:
 	float m_flTime;			/* 0x20 */
 	byte m_ps2Unk024[0x48 - 0x24];
 	int m_iPs2Flags;		/* 0x48: 0x40 = jogador é vortigaunt */
-	byte m_ps2Unk04C[0x58 - 0x4C];
+	byte m_ps2Unk04C[0x50 - 0x4C];
+	int m_Teamplay;			/* 0x50 */
+	byte m_ps2Unk054[0x58 - 0x54];
 	int m_iColorR;			/* 0x58: cor do HUD (no lugar do UnpackRGB(RGB_YELLOWISH)) */
 	int m_iColorG;			/* 0x5C */
 	int m_iColorB;			/* 0x60 */
@@ -317,12 +390,8 @@ public:
 	byte m_ps2Unk0D0[0x200 - 0xD0];
 	CHudTrain m_Train;		/* 0x200 */
 	byte m_ps2Unk21C[0x378 - 0x21C];
-	struct
-	{
-		byte unk00[0x14];
-		hud_player_info_t list[33];	/* 0x38C: g_PlayerInfoList do HLSDK, por jogador (tamanho suposto) */
-	} m_ps2PlayerInfo;		/* 0x378 */
-	byte m_ps2Unk6A4[0x1A88 - 0x6A4];
+	CHudScoreboard m_Scoreboard;	/* 0x378 */
+	byte m_ps2Unk1978[0x1A88 - 0x1978];
 	CHudStatusBar m_StatusBar;	/* 0x1A88 */
 	byte m_ps2Unk1CC0[0x1CD8 - 0x1CC0];
 	CHudSayText m_SayText;	/* 0x1CD8 */
@@ -332,10 +401,16 @@ public:
 	CHudISlave m_ISlave;	/* 0x1E24 */
 	CHudButton m_Button;	/* 0x1E58 */
 	SCREENINFO m_scrinfo;	/* 0x1ED0 */
-	byte m_ps2UnkPad[0x20F4 - 0x1ED0 - sizeof(SCREENINFO)];
+	byte m_ps2UnkPad[0x20EC - 0x1ED0 - sizeof(SCREENINFO)];
+	int m_iIntermission;	/* 0x20EC */
+	int m_HUD_number_0;		/* 0x20F0 */
 
 	void AddHudElem( CHudBase *p );
 	int GetSpriteIndex( const char *SpriteName );
+	int DrawHudString( int x, int y, int iMaxX, char *szString, int r, int g, int b, int clientId );
+	int DrawHudNumberString( int xpos, int ypos, int iMinX, int iNumber, int r, int g, int b, int clientId );
+	int DrawHudStringReverse( int xpos, int ypos, int iMinX, char *szString, int r, int g, int b, int clientId );
+	int DrawHudNumber( int x, int y, int iFlags, int iNumber, int r, int g, int b );
 	HSPRITE GetSprite( int index ) { return (index < 0) ? 0 : m_rghSprites[index]; }
 	wrect_t& GetSpriteRect( int index ) { return m_rgrcRects[index]; }
 };

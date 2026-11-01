@@ -132,10 +132,10 @@ void CHudStatusBar :: ParseStatusString( int line_num, int clientId )
 						switch ( valtype )
 						{
 						case 'p':  // player name
-							gEngfuncs.pfnGetPlayerInfo( indexval, &gHUD[clientId].m_ps2PlayerInfo.list[indexval], 0 );
-							if ( gHUD[clientId].m_ps2PlayerInfo.list[indexval].name != NULL )
+							gEngfuncs.pfnGetPlayerInfo( indexval, &gHUD[clientId].m_Scoreboard.m_PlayerInfoList[indexval], 0 );
+							if ( gHUD[clientId].m_Scoreboard.m_PlayerInfoList[indexval].name != NULL )
 							{
-								strncpy( szRepString, gHUD[clientId].m_ps2PlayerInfo.list[indexval].name, MAX_PLAYER_NAME_LENGTH );
+								strncpy( szRepString, gHUD[clientId].m_Scoreboard.m_PlayerInfoList[indexval].name, MAX_PLAYER_NAME_LENGTH );
 							}
 							else
 							{
