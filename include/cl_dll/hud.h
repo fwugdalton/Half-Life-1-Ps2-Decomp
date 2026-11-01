@@ -419,6 +419,30 @@ typedef struct
 
 #define maxHUDMessages 16
 
+class CHudFlashlight: public CHudBase
+{
+public:
+	int Init( int clientId );
+	int VidInit( int clientId );
+	int Draw( float flTime, int clientId, int iDrawFlags );
+	void Reset( int clientId );
+	int MsgFunc_Flashlight( int clientId, const char *pszName, int iSize, void *pbuf );
+	int MsgFunc_FlashBat( int clientId, const char *pszName, int iSize, void *pbuf );
+
+private:
+	HSPRITE m_hSprite1;		/* 0x14 */
+	HSPRITE m_hSprite2;		/* 0x18 */
+	HSPRITE m_hBeam;		/* 0x1C */
+	wrect_t *m_prc1;		/* 0x20 */
+	wrect_t *m_prc2;		/* 0x24 */
+	wrect_t *m_prcBeam;		/* 0x28 */
+	float m_flBat;			/* 0x2C */
+	int m_iBat;				/* 0x30 */
+	int m_fOn;				/* 0x34 */
+	float m_fFade;			/* 0x38 */
+	int m_iWidth;			/* 0x3C */
+};
+
 class CHudGeiger: public CHudBase
 {
 public:
@@ -573,7 +597,8 @@ public:
 	CHudGeiger m_Geiger;	/* 0x1B8 */
 	byte m_ps2Unk1D0[0x200 - 0x1D0];
 	CHudTrain m_Train;		/* 0x200 */
-	byte m_ps2Unk21C[0x290 - 0x21C];
+	CHudFlashlight m_Flash;	/* 0x21C */
+	byte m_ps2Unk25C[0x290 - 0x25C];
 	CHudMessage m_Message;	/* 0x290 */
 	CHudScoreboard m_Scoreboard;	/* 0x378 */
 	CHudMOTD m_MOTD;		/* 0x1978 */

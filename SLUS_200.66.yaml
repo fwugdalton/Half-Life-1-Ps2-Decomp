@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x017D50, cpp, cl_dll/flashlight]
       - [0x018398, cpp, cl_dll/geiger]
       - [0x0187E8, cpp, cl_dll/health]
       - [0x019CF0, cpp, cl_dll/hud_msg]
@@ -464,6 +465,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x239020, .rodata, cl_dll/flashlight]
       - [0x2390B0, .rodata, cl_dll/geiger]
       - [0x239110, .rodata, cl_dll/health]
       - [0x239188, .rodata, cl_dll/hud_msg]
