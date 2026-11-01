@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x0187E8, cpp, cl_dll/health]
       - [0x019CF0, cpp, cl_dll/hud_msg]
       - [0x019F70, cpp, cl_dll/hud_redraw]
       - [0x01A9A8, cpp, cl_dll/hud_update]
@@ -335,6 +336,7 @@ segments:
       - [0x1D0A68, asm, cod/1D0A68]
       - [0x1F5980, textbin, cod/1F5980] # .vutext
       - [0x201B00, data, cod/201B00] # .data
+      - [0x20CF48, .data, cl_dll/health]
       - [0x20CF80, .data, cl_dll/hud_redraw]
       - [0x20D060, .data, cl_dll/menu]
       - [0x20D460, .data, cl_dll/saytext]
@@ -461,6 +463,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x239110, .rodata, cl_dll/health]
       - [0x239188, .rodata, cl_dll/hud_msg]
       - [0x239198, .rodata, cl_dll/hud_redraw]
       - [0x2391C8, .rodata, cl_dll/menu]

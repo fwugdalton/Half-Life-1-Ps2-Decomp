@@ -5,7 +5,6 @@
 
 float READ_COORD( void );
 
-typedef float Vector[3];
 
 int CHud :: MsgFunc_ResetHUD( int clientId, const char *pszName, int iSize, void *pbuf )
 {
@@ -52,7 +51,7 @@ int CHud :: MsgFunc_GameMode( int clientId, const char *pszName, int iSize, void
 int CHud :: MsgFunc_Damage( int clientId, const char *pszName, int iSize, void *pbuf )
 {
 	int		armor, blood;
-	Vector	from;
+	vec3_t	from;
 	int		i;
 	float	count;
 

@@ -23,7 +23,7 @@ int CHudISlave::Init( int clientId )
 void CHudISlave::Reset( int clientId )
 {
 	m_iFlags |= HUD_ACTIVE;
-	m_iHealth = gHUD[clientId].m_iPs2Health;
+	m_iHealth = gHUD[clientId].m_Health.m_iHealth;
 	m_iPs2Unk30 = 0;
 }
 
@@ -116,7 +116,7 @@ int CHudISlave::Draw( float fTime, int clientId, int iDrawFlags )
 	if ( !(iDrawFlags & 0x14) )
 		return 1;
 
-	m_iHealth = gHUD[clientId].m_iPs2Health;
+	m_iHealth = gHUD[clientId].m_Health.m_iHealth;
 
 	rc = gHUD[clientId].GetSpriteRect( m_HUD_health );
 	x = ScreenWidth / 2 - (rc.right - rc.left) / 2;

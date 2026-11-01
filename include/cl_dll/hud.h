@@ -57,7 +57,8 @@ typedef struct cl_enginefuncs_s
 	void	*pfnPs2Unk58;													/* 0x58 */
 	void	(*pfnGetPlayerInfo)( int ent_num, struct hud_player_info_s *pinfo, int iPs2Unk );	/* 0x5C */
 	void	(*pfnPlaySoundByName)( char *szSound, float volume, int clientId );	/* 0x60 */
-	void	*pfnPs2Unk64[3];												/* 0x64 */
+	void	*pfnPs2Unk64[2];												/* 0x64 */
+	void	(*pfnAngleVectors)( const float *vecAngles, float *forward, float *right, float *up );	/* 0x6C */
 	struct client_textmessage_s *(*pfnTextMessageGet)( const char *pName );	/* 0x70 */
 	int		(*pfnDrawCharacter)( int x, int y, int number, int r, int g, int b );	/* 0x74: TextMessageDrawChar */
 	int		(*pfnDrawConsoleString)( int x, int y, char *string );			/* 0x78 */
@@ -417,6 +418,47 @@ typedef struct
 
 #define maxHUDMessages 16
 
+#define NUM_DMG_TYPES 12
+
+typedef struct
+{
+	float fExpire;
+	float fBaseline;
+	int x, y;
+} DAMAGE_IMAGE;
+
+class Vector;
+
+class CHudHealth: public CHudBase
+{
+public:
+	virtual int Init( int clientId );
+	virtual int VidInit( int clientId );
+	virtual int Draw( float fTime, int clientId, int iDrawFlags );
+	virtual void Reset( int clientId );
+	int MsgFunc_Health( int clientId, const char *pszName, int iSize, void *pbuf );
+	int MsgFunc_Damage( int clientId, const char *pszName, int iSize, void *pbuf );
+	int m_iHealth;			/* 0x14 */
+	int m_HUD_dmg_bio;		/* 0x18 */
+	int m_HUD_cross;		/* 0x1C */
+	void GetPainColor( int &r, int &g, int &b, int clientId );
+
+private:
+	HSPRITE m_hSprite;		/* 0x20 */
+	HSPRITE m_hDamage;		/* 0x24 */
+
+	DAMAGE_IMAGE m_dmg[NUM_DMG_TYPES];	/* 0x28 */
+	int	m_bitsDamage;		/* 0xE8 */
+public:
+	float m_fFade;			/* 0xEC */
+	float m_fAttackFront, m_fAttackRear, m_fAttackLeft, m_fAttackRight;	/* 0xF0 */
+private:
+	int DrawPain( float fTime, int clientId );
+	int DrawDamage( float fTime, int clientId );
+	void CalcDamageDirection( Vector vecFrom, int clientId );
+	void UpdateTiles( float fTime, int bits, int clientId );
+};
+
 /* PS2: m_gameTitleTime vem antes da lista e não existe m_bEndAfterMessage */
 class CHudMessage: public CHudBase
 {
@@ -437,8 +479,9 @@ public:
 	void MessageScanNextChar( int clientId );
 	void Reset( int clientId );
 
-private:
+public:
 	float m_gameTitleTime;	/* 0x14 */
+private:
 	client_textmessage_t *m_pMessages[maxHUDMessages];	/* 0x18 */
 	float m_startTime[maxHUDMessages];	/* 0x58 */
 	message_parms_t m_parms;	/* 0x98 */
@@ -512,9 +555,9 @@ public:
 	int m_iFontHeight;		/* 0x64 */
 	HSPRITE *m_rghSprites;	/* 0x68 */
 	wrect_t *m_rgrcRects;	/* 0x6C */
-	byte m_ps2Unk070[0xCC - 0x70];
-	int m_iPs2Health;		/* 0xCC: vida mostrada pelo HUD do vortigaunt */
-	byte m_ps2Unk0D0[0x200 - 0xD0];
+	byte m_ps2Unk070[0xB8 - 0x70];
+	CHudHealth m_Health;	/* 0xB8 */
+	byte m_ps2Unk1B8[0x200 - 0x1B8];
 	CHudTrain m_Train;		/* 0x200 */
 	byte m_ps2Unk21C[0x290 - 0x21C];
 	CHudMessage m_Message;	/* 0x290 */

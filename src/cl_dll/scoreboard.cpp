@@ -105,7 +105,7 @@ int CHudScoreboard :: Draw( float flTime, int clientId, int iDrawFlags )
 	if ( !( iDrawFlags & 0xA4 ) )
 		return 1;
 
-	if ( !m_iShowscoresHeld && gHUD[clientId].m_iPs2Health > 0 && !gHUD[clientId].m_iIntermission )
+	if ( !m_iShowscoresHeld && gHUD[clientId].m_Health.m_iHealth > 0 && !gHUD[clientId].m_iIntermission )
 		return 1;
 
 	if ( !m_iShowscoresHeld && gHUD[clientId].m_Teamplay == 1 )
