@@ -64,6 +64,7 @@ $(BUILD_DIR)/src/dlls/util.o: CFLAGS += -fmove-all-movables
 $(BUILD_DIR)/src/dlls/monsters.o: CFLAGS += -fmove-all-movables
 $(BUILD_DIR)/src/dlls/healthkit.o: CFLAGS += -fmove-all-movables
 $(BUILD_DIR)/src/dlls/h_ai.o: CFLAGS += -fmove-all-movables
+$(BUILD_DIR)/src/dlls/aflock.o: CFLAGS += -fmove-all-movables
 $(BUILD_DIR)/src/dlls/h_battery.o: CFLAGS += -fmove-all-movables
 $(BUILD_DIR)/src/gbx/StreamZip.o: CFLAGS += -fmove-all-movables
 $(BUILD_DIR)/src/gbx/HL1Read.o: CFLAGS += -fmove-all-movables
