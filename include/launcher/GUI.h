@@ -23,7 +23,7 @@ public:
 	virtual int IsType( const char *type );
 	virtual void V2( void );
 	virtual void SetString( const char *value );
-	virtual void V4( void );
+	virtual void Copy( CGUIVariable *from );	/* GUI_ACTION_SET_VARIABLE_VARIABLE */
 	virtual void V5( void );
 	virtual void Add( const char *value );		/* GUI_ACTION_ADD_VARIABLE (tipo D_003029F0) */
 	virtual void AddAnim( const char *value );	/* GUI_ACTION_ADD_VARIABLE (tipo D_003029E4) */
