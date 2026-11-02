@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x00AA78, cpp, launcher/GUIActionSetFrontEnd]
       - [0x00AC08, cpp, launcher/GUIActionSetPauseMenu]
       - [0x00AD98, cpp, launcher/GUIActionGameSave]
       - [0x00B698, cpp, launcher/GUIActionSystemIdentifyState]
@@ -490,6 +491,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x237DC0, .rodata, launcher/GUIActionSetFrontEnd]
       - [0x237E28, .rodata, launcher/GUIActionSetPauseMenu]
       - [0x237E90, .rodata, launcher/GUIActionGameSave]
       - [0x238108, .rodata, launcher/GUIActionSystemIdentifyState]
