@@ -20,4 +20,5 @@ Continua [[hl1ps2-launcher-bindhelper]] (que lista BindHelper, IsDeviceConnected
 - GUIActionRefresh.cpp (texto 0x109498, .rodata 0x3379A0) 100%: gui->Set08(1); gui->Set04(1).
 - GUIActionExit.cpp (texto 0x1093E0, .rodata 0x337968) 100%: gui->Set04(1).
 - GUIActionAppString.cpp (texto 0x109240, .rodata 0x337908) 100%: junta $param0.. e manda para Cbuf_AddText. `if (...) {...; more = 1;} else more = 0;` (atribuir 0 antes deixa a variável num sN).
-- Próximo: ação com ctor em 0x1090A0 (depois 0x108F40, a última).
+- GUIActionSetFocus.cpp (texto 0x1090A0, .rodata 0x3378C0) 100%: ctor zera m_bInitialized; `focus` com if/else nos dois níveis (sem valor inicial).
+- Próximo: ação com ctor em 0x108F40 (a última da fábrica; strings "SOUND" em 0x337880).
