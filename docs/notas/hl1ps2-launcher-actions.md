@@ -18,4 +18,5 @@ Continua [[hl1ps2-launcher-bindhelper]] (que lista BindHelper, IsDeviceConnected
 - GUIActionSetVariableVariable.cpp (texto 0x109728, .rodata 0x337A40) 100%: CGUIVariable::Copy (slot 0x28, era V4); senão Cvar_VariableString. Chamada virtual com argumento que é outra chamada: guardar o argumento numa variável antes (senão a vtable é lida antes).
 - GUIActionSetVariable.cpp (texto 0x109568, .rodata 0x3379E0) 100%: "NULL" vira "".
 - GUIActionRefresh.cpp (texto 0x109498, .rodata 0x3379A0) 100%: gui->Set08(1); gui->Set04(1).
-- Próximo: ação com ctor em 0x1093E0 (depois 0x109240, 0x1090A0, 0x108F40).
+- GUIActionExit.cpp (texto 0x1093E0, .rodata 0x337968) 100%: gui->Set04(1).
+- Próximo: ação com ctor em 0x109240 (depois 0x1090A0, 0x108F40).
