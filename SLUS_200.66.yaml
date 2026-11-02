@@ -71,7 +71,7 @@ segments:
     subsegments:
       - [0x000000, asm, cod/000000] # .text
       - [0x006038, cpp, launcher/GUICommand]
-      - [0x0066C0, asm, cod/0066C0]
+      - [0x0066C0, cpp, launcher/GUIRenderer]
       - [0x006B58, cpp, launcher/GUIVariable]
       - [0x006C50, cpp, launcher/GUIVariableNumeric]
       - [0x006F90, cpp, launcher/GUIVariableFloat]
