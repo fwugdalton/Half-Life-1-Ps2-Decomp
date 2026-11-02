@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x009C30, cpp, launcher/GUIActionModifyViewport]
       - [0x00A010, cpp, launcher/GUIActionVcrVariable]
       - [0x00A220, cpp, launcher/GUIActionPrintf]
       - [0x00A330, cpp, launcher/GUIActionCopyAttribute]
@@ -362,6 +363,7 @@ segments:
       - [0x1D0A68, asm, cod/1D0A68]
       - [0x1F5980, textbin, cod/1F5980] # .vutext
       - [0x201B00, data, cod/201B00] # .data
+      - [0x202A04, .data, launcher/GUIActionModifyViewport]
       - [0x202A18, .data, launcher/GUIActionAddOnDisc]
       - [0x202A48, .data, launcher/GUIActionBindHelper]
       - [0x202A58, .data, launcher/GUI]
@@ -496,6 +498,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x237B40, .rodata, launcher/GUIActionModifyViewport]
       - [0x237B90, .rodata, launcher/GUIActionVcrVariable]
       - [0x237BF8, .rodata, launcher/GUIActionPrintf]
       - [0x237C40, .rodata, launcher/GUIActionCopyAttribute]
