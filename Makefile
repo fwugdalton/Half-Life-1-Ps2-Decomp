@@ -61,6 +61,7 @@ $(BUILD_DIR)/src/launcher/GUI.o: CFLAGS += -fmove-all-movables
 $(BUILD_DIR)/src/launcher/GUIActionBindHelper.o: CFLAGS += -fmove-all-movables
 # o .data do AddOnDisc começa alinhado em 8 (há 4 bytes de enchimento antes dele)
 $(BUILD_DIR)/src/launcher/GUIActionAddOnDisc.o: OBJCOPY_EXTRA := --set-section-alignment .data=8
+$(BUILD_DIR)/src/launcher/GUIParser.o: OBJCOPY_EXTRA := --set-section-alignment .data=8
 $(BUILD_DIR)/src/gbx/GlobalPak.o: CFLAGS += -fmove-all-movables
 $(BUILD_DIR)/src/gbx/GamePak.o: CFLAGS += -fmove-all-movables
 $(BUILD_DIR)/src/dlls/teamplay_gamerules.o: CFLAGS += -fmove-all-movables

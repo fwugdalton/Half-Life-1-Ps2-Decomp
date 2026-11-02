@@ -18,6 +18,7 @@ extern const char *D_003029E8;	/* nome do tipo float das variáveis do GUI */
 class CGUIVariable
 {
 public:
+	CGUIVariable();
 	char m_pad[0x64];
 	virtual ~CGUIVariable();
 	virtual int IsType( const char *type );
@@ -26,7 +27,13 @@ public:
 	virtual void Copy( CGUIVariable *from );	/* GUI_ACTION_SET_VARIABLE_VARIABLE */
 	virtual void V5( void );
 	virtual void Add( const char *value );		/* GUI_ACTION_ADD_VARIABLE (tipo D_003029F0) */
-	virtual void AddAnim( const char *value );	/* GUI_ACTION_ADD_VARIABLE (tipo D_003029E4) */
+};
+
+/* variável animada (tipo D_003029E4): base das numéricas, slot 7 novo */
+class CGUIVariableAnimated : public CGUIVariable
+{
+public:
+	virtual void AddAnim( const char *value );	/* GUI_ACTION_ADD_VARIABLE */
 };
 
 /* elemento de tela (vptr em 0x34) */
