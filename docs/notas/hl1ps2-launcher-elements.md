@@ -1,0 +1,11 @@
+---
+name: hl1ps2-launcher-elements
+description: partes dos elementos do Launcher (GUIElementCaption.cpp e próximos Input/Dependency): faixas, tabela de ícones, NON_MATCHING e truques
+metadata:
+  type: project
+---
+Continua [[hl1ps2-launcher-screen]].
+- GUIElementCaption.cpp (texto 0x103778–0x1048C0, .rodata 0x337168–0x3371E0 com vtable 0x3371C0, .data 0x301F78–0x3029E0) 10/11 em 2026-11-02. CGUIElementCaption 0x48 (deriva do CGUIWidgetPart): 0xC tem TEXT, 0x10 texto, 0x14/0x18 PARAMS (nº e lista), 0x1C/0x20 SCALE, 0x24 WRAP (-1 = sem quebra), 0x28 cor com foco, 0x38 cor sem foco. Copy ctor 0x1037B0 (usado pelo Dependency). Draw troca %f/%s pelas variáveis do GUI; DrawString desenha com Draw_GetAlphaFontChar e troca \X_BUTTON etc. pelos ícones da tabela D_00301F78 (18 × 0x94: id, nome[0x14], w, h, s, t, s2, t2 inteiros, textura[0x64] "buttons.psi"; id 17 encerra).
+- NON_MATCHING: DrawString (só registradores no bloco do ícone: id em v1, produto em a0; nada que tentei mexeu).
+- Truques: switch com o case de maior valor primeiro gera `beq 0 → fora; bne 17 → default` com o case 17 logo depois; `switch (type)` para 'f'/'s' gera os dois beq; ponteiro novo (`char *end = strchr(pos, type)`) em vez de reaproveitar pos acertou os registros; `if (pos[1] != '%') done = 1; else ...` vira beql; cópia local `const char *c = s` dentro do if acerta o delay slot; 9 stores de float casaram na 1ª ordem testada (perm_cap.py).
+- Próximo: GUIElementInput.cpp (ctor 0x102608, new 0x18) e GUIElementDependency.cpp (ctor 0x1014C0, new 0x8C, GetOverride 0x101778) antes de 0x103778.
