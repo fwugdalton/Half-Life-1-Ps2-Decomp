@@ -35,6 +35,7 @@ public:
 	virtual void V2( void );
 	virtual void Activate( void );
 	virtual void Deactivate( void );
+	virtual void CopyAttribute( const char *attr, CGUIWidget *from );	/* GUI_ACTION_COPY_ATTRIBUTE */
 };
 
 class CGUI;
