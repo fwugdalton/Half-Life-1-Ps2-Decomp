@@ -14,4 +14,5 @@ Feito em 2026-11-01 (depois de [[hl1ps2-launcher-gui]]). 21 funções, 16 batem.
 - GUIActionIsDeviceConnected.cpp (texto 0x10BFF8, .rodata 0x338430) feito 100% em 2026-11-02: lê D_00334FB8 DS1, FC0 teclado, FC4 mouse, FBC DS2; Init com m_bInitialized antes do strdup.
 - GUIActionSystemSaveManualUse.cpp (texto 0x10B8D8, .rodata 0x3381B0) 100% em 2026-11-02: MarkStartingSettings/HaveSettingsChanged (.cfg + Host_WriteControls) e funções do cartão 0x22E2E8…0x22E678; switch precisa de `case 0:` junto do default para sair tabela de saltos; variáveis por bloco (f, name) acertaram s0/s1.
 - GUIActionSystemIdentifyState.cpp (texto 0x10B698, .rodata 0x338108) 100%: m_iState em 0xC, Initialize/Run(func_0022DCC0)/Set, SetState grava "SystemSaveInitializeState".
-- Próximo: ação com ctor em 0x10AD98 (depois 0x10AC08, 0x10AA78, 0x10A4D8 ... 0x108F40).
+- GUIActionGameSave.cpp (texto 0x10AD98, .rodata 0x337E90) 100%: comandos ligam Gbx/GameSave.cpp (0x22E860…0x22F600), m_iCheckState em 0xC, "GameSaveCheckState". Switch: `case 6:` junto do default (sem case 0) dá a tabela 1..6. O cmpfunc não confere o conteúdo da tabela de saltos: errar o case só aparece no build (cmp -l).
+- Próximo: ação com ctor em 0x10AC08 (depois 0x10AA78, 0x10A4D8 ... 0x108F40).

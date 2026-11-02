@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x00AD98, cpp, launcher/GUIActionGameSave]
       - [0x00B698, cpp, launcher/GUIActionSystemIdentifyState]
       - [0x00B8D8, cpp, launcher/GUIActionSystemSaveManualUse]
       - [0x00BFF8, cpp, launcher/GUIActionIsDeviceConnected]
@@ -488,6 +489,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x237E90, .rodata, launcher/GUIActionGameSave]
       - [0x238108, .rodata, launcher/GUIActionSystemIdentifyState]
       - [0x2381B0, .rodata, launcher/GUIActionSystemSaveManualUse]
       - [0x238430, .rodata, launcher/GUIActionIsDeviceConnected]
