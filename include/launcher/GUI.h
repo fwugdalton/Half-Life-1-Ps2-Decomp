@@ -19,7 +19,7 @@ class CGUIVariable
 {
 public:
 	CGUIVariable();
-	char m_pad[0x64];
+	char m_szName[0x64];	/* NAME (é o nome da cvar) */
 	virtual ~CGUIVariable();
 	virtual int IsType( const char *type );
 	virtual int ParseAttribute( const char *token, void *parser );	/* linha do bloco GUI_VARIABLE_* */
@@ -29,11 +29,25 @@ public:
 	virtual void Add( const char *value );		/* GUI_ACTION_ADD_VARIABLE (tipo D_003029F0) */
 };
 
-/* variável animada (tipo D_003029E4): base das numéricas, slot 7 novo */
-class CGUIVariableAnimated : public CGUIVariable
+/* variável numérica ("Numeric", tipo D_003029E4): base das Integer/Float, com animação
+   (WRAP, LOOP, LERP_TIME, RUNNING); slots 7..9 novos */
+class CGUIVariableNumeric : public CGUIVariable
 {
 public:
-	virtual void AddAnim( const char *value );	/* GUI_ACTION_ADD_VARIABLE */
+	CGUIVariableNumeric();
+	virtual ~CGUIVariableNumeric();
+	virtual int IsType( const char *type );
+	virtual int ParseAttribute( const char *token, void *parser );
+	virtual void V5( void );
+	virtual void AddAnim( const char *value ) = 0;	/* GUI_ACTION_ADD_VARIABLE */
+	virtual void Reset( void ) = 0;
+	virtual void Restore( void ) = 0;
+
+	int m_bWrap;
+	int m_bRunning;
+	int m_bLoop;
+	unsigned int m_iLerpTime;
+	unsigned long m_iStartTime;
 };
 
 /* elemento de tela (vptr em 0x34) */
