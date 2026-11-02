@@ -755,6 +755,7 @@ D_0030CBD4 = 0x0030CBD4; /* campo de gHUD[]/gEngfuncs (cdll_int) */
 D_0030CBDC = 0x0030CBDC; /* campo de gHUD[]/gEngfuncs (cdll_int) */
 D_00308D14 = 0x00308D14; /* campo de gHUD[]/gEngfuncs (cdll_int) */
 /* launcher/GUI.cpp: nomes antigos que o PauseMenu, DiscFail e GameSave ainda usam */
+func_00109498 = 0x00109498;
 func_00109568 = 0x00109568;
 func_00109728 = 0x00109728;
 func_00109910 = 0x00109910;
