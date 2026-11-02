@@ -23,10 +23,27 @@ public:
 	virtual ~CGUIVariable();
 	virtual int IsType( const char *type );
 	virtual int ParseAttribute( const char *token, void *parser );	/* linha do bloco GUI_VARIABLE_* */
+	virtual void SetString( const char *value ) = 0;
+	virtual void Copy( CGUIVariable *from ) = 0;	/* GUI_ACTION_SET_VARIABLE_VARIABLE */
+	virtual void V5( void ) = 0;	/* chamado ao entrar na lista */
+	char *GetName( void );
+};
+
+/* variável de texto ("String", tipo D_003029F0; Launcher/GUIVariableString.cpp) */
+class CGUIVariableString : public CGUIVariable
+{
+public:
+	CGUIVariableString();
+	virtual ~CGUIVariableString();
+	char *GetValue( void );
+	virtual int IsType( const char *type );
+	virtual int ParseAttribute( const char *token, void *parser );
 	virtual void SetString( const char *value );
-	virtual void Copy( CGUIVariable *from );	/* GUI_ACTION_SET_VARIABLE_VARIABLE */
+	virtual void Copy( CGUIVariable *from );
 	virtual void V5( void );
-	virtual void Add( const char *value );		/* GUI_ACTION_ADD_VARIABLE (tipo D_003029F0) */
+	virtual void Add( const char *value );		/* GUI_ACTION_ADD_VARIABLE */
+
+	char m_szValue[0x100];
 };
 
 /* variável numérica ("Numeric", tipo D_003029E4): base das Integer/Float, com animação
@@ -39,15 +56,71 @@ public:
 	virtual int IsType( const char *type );
 	virtual int ParseAttribute( const char *token, void *parser );
 	virtual void V5( void );
+	virtual void SetMin( void ) = 0;
 	virtual void AddAnim( const char *value ) = 0;	/* GUI_ACTION_ADD_VARIABLE */
 	virtual void Reset( void ) = 0;
 	virtual void Restore( void ) = 0;
+	void Start( void );
+	void Restart( void );	/* GUI_ACTION_VCR_VARIABLE */
+	void Stop( void );
+	void Run( void );
 
 	int m_bWrap;
 	int m_bRunning;
 	int m_bLoop;
 	unsigned int m_iLerpTime;
 	unsigned long m_iStartTime;
+};
+
+/* "Float" (D_003029E8, 0x98 bytes) e "Integer" (D_003029EC, 0x90 bytes) */
+class CGUIVariableFloat : public CGUIVariableNumeric
+{
+public:
+	CGUIVariableFloat();
+	virtual ~CGUIVariableFloat();
+	float GetValue( void );
+	virtual int IsType( const char *type );
+	virtual int ParseAttribute( const char *token, void *parser );
+	virtual void SetString( const char *value );
+	virtual void Copy( CGUIVariable *from );
+	virtual void SetMin( void );
+	virtual void AddAnim( const char *value );
+	void SetValue( float value );
+	void UpdateCvar( void );
+	void ReadCvar( void );
+	virtual void Reset( void );
+	virtual void Restore( void );
+
+	float m_fInitialValue;
+	float m_fValue;
+	float m_fMaxValue;
+	float m_fMinValue;
+	int m_bCvar;
+	int m_iPad;
+};
+
+class CGUIVariableInteger : public CGUIVariableNumeric
+{
+public:
+	CGUIVariableInteger();
+	virtual ~CGUIVariableInteger();
+	int GetValue( void );
+	virtual int IsType( const char *type );
+	virtual int ParseAttribute( const char *token, void *parser );
+	virtual void SetString( const char *value );
+	virtual void Copy( CGUIVariable *from );
+	virtual void SetMin( void );
+	virtual void AddAnim( const char *value );
+	void SetValue( int value );
+	void UpdateCvar( void );
+	void ReadCvar( void );
+	virtual void Reset( void );
+	virtual void Restore( void );
+
+	int m_iInitialValue;
+	int m_iValue;
+	int m_iMaxValue;
+	int m_iMinValue;
 };
 
 /* elemento de tela (vptr em 0x34) */

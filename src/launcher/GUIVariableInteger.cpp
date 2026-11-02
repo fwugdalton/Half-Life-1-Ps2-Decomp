@@ -21,30 +21,6 @@ public:
 
 const char *D_003029EC = "Integer";
 
-class CGUIVariableInteger : public CGUIVariableNumeric
-{
-public:
-	CGUIVariableInteger();
-	virtual ~CGUIVariableInteger();
-	int GetValue( void );
-	virtual int IsType( const char *type );
-	virtual int ParseAttribute( const char *token, void *parser );
-	virtual void SetString( const char *value );
-	virtual void Copy( CGUIVariable *from );
-	virtual void Add( const char *value );
-	virtual void AddAnim( const char *value );
-	void SetValue( int value );
-	void UpdateCvar( void );
-	void ReadCvar( void );
-	virtual void Reset( void );
-	virtual void Restore( void );
-
-	int m_iInitialValue;
-	int m_iValue;
-	int m_iMaxValue;
-	int m_iMinValue;
-};
-
 CGUIVariableInteger :: CGUIVariableInteger()
 {
 	m_iMaxValue = 0;
@@ -130,7 +106,7 @@ void CGUIVariableInteger :: Copy( CGUIVariable *from )
 	}
 }
 
-void CGUIVariableInteger :: Add( const char *value )
+void CGUIVariableInteger :: SetMin( void )
 {
 	SetValue( m_iMinValue );
 }

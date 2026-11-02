@@ -20,32 +20,6 @@ public:
 
 const char *D_003029E8 = "Float";
 
-class CGUIVariableFloat : public CGUIVariableNumeric
-{
-public:
-	CGUIVariableFloat();
-	virtual ~CGUIVariableFloat();
-	float GetValue( void );
-	virtual int IsType( const char *type );
-	virtual int ParseAttribute( const char *token, void *parser );
-	virtual void SetString( const char *value );
-	virtual void Copy( CGUIVariable *from );
-	virtual void Add( const char *value );
-	virtual void AddAnim( const char *value );
-	void SetValue( float value );
-	void UpdateCvar( void );
-	void ReadCvar( void );
-	virtual void Reset( void );
-	virtual void Restore( void );
-
-	float m_fInitialValue;
-	float m_fValue;
-	float m_fMaxValue;
-	float m_fMinValue;
-	int m_bCvar;
-	int m_iPad;
-};
-
 CGUIVariableFloat :: CGUIVariableFloat()
 {
 	m_bCvar = 1;
@@ -132,7 +106,7 @@ void CGUIVariableFloat :: Copy( CGUIVariable *from )
 	}
 }
 
-void CGUIVariableFloat :: Add( const char *value )
+void CGUIVariableFloat :: SetMin( void )
 {
 	SetValue( m_fMinValue );
 }

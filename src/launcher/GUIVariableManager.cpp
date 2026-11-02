@@ -19,20 +19,6 @@ public:
 	char *NextToken( const char *delims, int toDelim );
 };
 
-class CGUIVariableFloat : public CGUIVariable
-{
-public:
-	CGUIVariableFloat();
-	char m_pad2[0x98 - 0x68];
-};
-
-class CGUIVariableString : public CGUIVariable
-{
-public:
-	CGUIVariableString();
-	char m_pad2[0x168 - 0x68];
-};
-
 class CGUIVariableManager
 {
 public:

@@ -17,22 +17,6 @@ public:
 
 const char *D_003029F0 = "String";
 
-class CGUIVariableString : public CGUIVariable
-{
-public:
-	CGUIVariableString();
-	virtual ~CGUIVariableString();
-	char *GetValue( void );
-	virtual int IsType( const char *type );
-	virtual int ParseAttribute( const char *token, void *parser );
-	virtual void SetString( const char *value );
-	virtual void Copy( CGUIVariable *from );
-	virtual void V5( void );
-	virtual void Add( const char *value );
-
-	char m_szValue[0x100];
-};
-
 CGUIVariableString :: CGUIVariableString()
 {
 	m_szValue[0] = 0;

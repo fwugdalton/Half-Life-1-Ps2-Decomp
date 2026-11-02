@@ -48,5 +48,5 @@ void CGUIActionAddVariable :: Execute( CGUI *gui )
 	if ( v->IsType( D_003029E4 ) == 1 )
 		( (CGUIVariableNumeric *)v )->AddAnim( value );
 	if ( v->IsType( D_003029F0 ) == 1 )
-		v->Add( value );
+		( (CGUIVariableString *)v )->Add( value );
 }
