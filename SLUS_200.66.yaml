@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x009910, cpp, launcher/GUIActionAddVariable]
       - [0x009B08, cpp, launcher/GUIActionSetGame]
       - [0x009C30, cpp, launcher/GUIActionModifyViewport]
       - [0x00A010, cpp, launcher/GUIActionVcrVariable]
@@ -499,6 +500,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x237AA0, .rodata, launcher/GUIActionAddVariable]
       - [0x237AF0, .rodata, launcher/GUIActionSetGame]
       - [0x237B40, .rodata, launcher/GUIActionModifyViewport]
       - [0x237B90, .rodata, launcher/GUIActionVcrVariable]

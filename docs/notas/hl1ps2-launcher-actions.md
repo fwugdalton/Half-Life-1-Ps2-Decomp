@@ -14,4 +14,5 @@ Continua [[hl1ps2-launcher-bindhelper]] (que lista BindHelper, IsDeviceConnected
 - GUIActionVcrVariable.cpp (texto 0x10A010, .rodata 0x337B90) 100%: PAUSE/PLAY/REWIND em variável do tipo D_003029E4 (func_00106D28/106D30/106CE8). Mesmo truque do token em variável antes do strcpy.
 - GUIActionModifyViewport.cpp (texto 0x109C30, .rodata 0x337B40, .data 0x302A04 = 4 flags de primeira vez; valores em .bss D_0039CFE0..EC como extern) 4/5: encolhe a área de desenho (vid, D_0032EF68/6C). Truques: `x = W / 10` antes de `flag = 1` põe o beql+break antes do div (como no ROM); w/h numa variável e uma chamada só. NON_MATCHING: SetViewport (registradores dos lui). AddOnDisc.o ganhou .data=8 no Makefile (4 bytes de enchimento em 0x302A14).
 - GUIActionSetGame.cpp (texto 0x109B08, .rodata 0x337AF0) 100%: func_002354D8(tok) do HLPak.
-- Próximo: ação com ctor em 0x109910 (depois 0x109728, 0x109568, 0x109498, 0x1093E0, 0x109240, 0x1090A0, 0x108F40).
+- GUIActionAddVariable.cpp (texto 0x109910, .rodata 0x337AA0) 100%: CGUIVariable ganhou V4, V5, Add (slot 0x38, tipo D_003029F0) e AddAnim (slot 0x40, tipo D_003029E4) no GUI.h.
+- Próximo: ação com ctor em 0x109728 (depois 0x109568, 0x109498, 0x1093E0, 0x109240, 0x1090A0, 0x108F40).
