@@ -19,9 +19,9 @@ class CGUIVariable
 {
 public:
 	char m_pad[0x64];
-	virtual void V0( void );
+	virtual ~CGUIVariable();
 	virtual int IsType( const char *type );
-	virtual void V2( void );
+	virtual int ParseAttribute( const char *token, void *parser );	/* linha do bloco GUI_VARIABLE_* */
 	virtual void SetString( const char *value );
 	virtual void Copy( CGUIVariable *from );	/* GUI_ACTION_SET_VARIABLE_VARIABLE */
 	virtual void V5( void );
