@@ -13,4 +13,5 @@ Feito em 2026-11-01 (depois de [[hl1ps2-launcher-gui]]). 21 funções, 16 batem.
 - Truques: `p = 0; ... if (v->IsType(f) == 1) p = v;` escrito à mão (inline deu movn ao contrário) e a mesma variável v para os dois Find; ordem dos stores: o gcc inverte (escrever `state` antes de `down[0]`; presets antes de value); first/last intercalados por tabela; `r = key; if (faixa) r = key - 100;` no TranslateKey; método inline na classe é emitido fora de linha no fim do .text (não usar). Script /tmp/claude-0/vb.py FUNC início fim variantes.
 - GUIActionIsDeviceConnected.cpp (texto 0x10BFF8, .rodata 0x338430) feito 100% em 2026-11-02: lê D_00334FB8 DS1, FC0 teclado, FC4 mouse, FBC DS2; Init com m_bInitialized antes do strdup.
 - GUIActionSystemSaveManualUse.cpp (texto 0x10B8D8, .rodata 0x3381B0) 100% em 2026-11-02: MarkStartingSettings/HaveSettingsChanged (.cfg + Host_WriteControls) e funções do cartão 0x22E2E8…0x22E678; switch precisa de `case 0:` junto do default para sair tabela de saltos; variáveis por bloco (f, name) acertaram s0/s1.
-- Próximo: a ação em 0x10B698 (e as outras da fábrica até 0x108F40).
+- GUIActionSystemIdentifyState.cpp (texto 0x10B698, .rodata 0x338108) 100%: m_iState em 0xC, Initialize/Run(func_0022DCC0)/Set, SetState grava "SystemSaveInitializeState".
+- Próximo: ação com ctor em 0x10AD98 (depois 0x10AC08, 0x10AA78, 0x10A4D8 ... 0x108F40).
