@@ -5,7 +5,7 @@ Uso: rename_syms.py   (roda em src/ e include/)
 import re, os, glob
 names = {}
 # endereços que os headers/fontes ainda chamam pelo nome func_ (aliases no linker_script_extra.ld)
-KEEP = {0x00107A40, 0x00107C10, 0x00107C20, 0x00107CE0, 0x00107CF8, 0x00107EE0, 0x00107F00, 0x00106F90, 0x001079E0, 0x00108008, 0x00108018, 0x00108070, 0x00108120, 0x00108148}
+KEEP = {0x00107000, 0x00107398, 0x00107A40, 0x00107C10, 0x00107C20, 0x00107CE0, 0x00107CF8, 0x00107EE0, 0x00107F00, 0x00106F90, 0x001079E0, 0x00108008, 0x00108018, 0x00108070, 0x00108120, 0x00108148}
 for line in open('symbol_addrs.txt'):
     m = re.match(r'\s*(\w+)\s*=\s*0x([0-9A-Fa-f]+);', line)
     if m and not re.match(r'(func|D)_[0-9A-F]{8}$', m.group(1)):

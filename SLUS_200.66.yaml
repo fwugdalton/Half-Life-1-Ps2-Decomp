@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x006F90, cpp, launcher/GUIVariableFloat]
       - [0x0074C8, cpp, launcher/GUIVariableInteger]
       - [0x0079E0, cpp, launcher/GUIVariableString]
       - [0x007C10, cpp, launcher/GUIVariableManager]
@@ -378,6 +379,7 @@ segments:
       - [0x1D0A68, asm, cod/1D0A68]
       - [0x1F5980, textbin, cod/1F5980] # .vutext
       - [0x201B00, data, cod/201B00] # .data
+      - [0x2029E8, .data, launcher/GUIVariableFloat]
       - [0x2029EC, .data, launcher/GUIVariableInteger]
       - [0x2029F0, .data, launcher/GUIVariableString]
       - [0x2029F8, .data, launcher/GUIParser]
@@ -516,6 +518,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x2375A8, .rodata, launcher/GUIVariableFloat]
       - [0x237640, .rodata, launcher/GUIVariableInteger]
       - [0x2376D8, .rodata, launcher/GUIVariableString]
       - [0x237730, .rodata, launcher/GUIVariableManager]
