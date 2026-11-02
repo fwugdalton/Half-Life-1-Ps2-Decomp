@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x00A220, cpp, launcher/GUIActionPrintf]
       - [0x00A330, cpp, launcher/GUIActionCopyAttribute]
       - [0x00A4D8, cpp, launcher/GUIActionAddOnDisc]
       - [0x00AA78, cpp, launcher/GUIActionSetFrontEnd]
@@ -494,6 +495,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x237BF8, .rodata, launcher/GUIActionPrintf]
       - [0x237C40, .rodata, launcher/GUIActionCopyAttribute]
       - [0x237CA0, .rodata, launcher/GUIActionAddOnDisc]
       - [0x237DC0, .rodata, launcher/GUIActionSetFrontEnd]
