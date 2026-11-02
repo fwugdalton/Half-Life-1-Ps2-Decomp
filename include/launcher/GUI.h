@@ -126,12 +126,18 @@ public:
 /* elemento de tela (vptr em 0x34) */
 class CGUI;
 
-/* objeto apagado pelo widget (vptr em 8, como o CGUIAction) */
+/* parte de um elemento (GUI_CAPTION, GUI_DEPENDENCY, GUI_INPUT; vptr em 8, ctor e vtable
+   em Launcher/GUIGeneric.cpp) */
+class CGUIScreen;
+
 class CGUIWidgetPart
 {
 public:
-	char m_pad[8];
+	CGUIWidgetPart( CGUIScreen *screen );
+	int m_i0;
+	CGUIScreen *m_p4;
 	virtual ~CGUIWidgetPart();
+	virtual void Parse( void ) = 0;	/* lê o bloco do script */
 	void HandleKey( int key );	/* 0x102AB8 */
 };
 
@@ -179,7 +185,7 @@ public:
 	int m_bInitialized;
 };
 
-struct CGUIScreen;
+class CGUIScreen;
 
 extern "C" {
 /* variáveis */
