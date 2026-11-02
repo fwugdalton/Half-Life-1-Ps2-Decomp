@@ -124,16 +124,42 @@ public:
 };
 
 /* elemento de tela (vptr em 0x34) */
+class CGUI;
+
+/* objeto apagado pelo widget (vptr em 8, como o CGUIAction) */
+class CGUIWidgetPart
+{
+public:
+	char m_pad[8];
+	virtual ~CGUIWidgetPart();
+	void HandleKey( int key );	/* 0x102AB8 */
+};
+
 class CGUIWidget
 {
 public:
-	char m_pad[0x34];
-	virtual void V0( void );
-	virtual void V1( void );
-	virtual void V2( void );
-	virtual void Activate( void );
-	virtual void Deactivate( void );
-	virtual void CopyAttribute( const char *attr, CGUIWidget *from );	/* GUI_ACTION_COPY_ATTRIBUTE */
+	CGUIWidget( CGUI *gui );
+	virtual ~CGUIWidget();
+	virtual int Parse( void ) = 0;	/* lê o bloco do script */
+	virtual void V2( void ) = 0;
+	virtual void Activate( void ) = 0;
+	virtual void Deactivate( void ) = 0;
+	virtual void CopyAttribute( const char *attr, CGUIWidget *from ) = 0;	/* GUI_ACTION_COPY_ATTRIBUTE */
+	void HandleKey( int key );
+	int Get8( void );
+	int IsNamed( const char *name );
+	char *GetName( void );
+
+	char *m_szName;
+	int m_i4;
+	int m_i8;
+	int m_bOwnKeys;
+	CGUIWidgetPart *m_pKeys;
+	int m_bOwn18;
+	CGUIWidgetPart *m_p18;
+	int m_i1C;
+	CGUIWidgetPart *m_pActions[4];
+	CGUI *m_pGUI;
 };
 
 class CGUI;
