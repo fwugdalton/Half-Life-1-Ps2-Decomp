@@ -11,4 +11,5 @@ Feito em 2026-11-01 (depois de [[hl1ps2-launcher-gui]]). 21 funções, 16 batem.
 - kbutton_t dos sticks (in_leftStickSideMove etc., [2] por jogador) e Key_SetBinding/Key_ClearBinding/Key_FindBinding do engine.
 - NON_MATCHING: SaveSettings (só ordem de 2 instruções antes do laço), FindPreset, UpdateCustomBinds, TranslateGlyphs (o original não reduz o i*160; com a flag o nosso reduz), FindStickPreset. O "= " só existe no TranslateGlyphs: definido com __asm__(".section .rodata ...") antes dele; D_00338670 e D_00338678 no linker_script_extra.ld.
 - Truques: `p = 0; ... if (v->IsType(f) == 1) p = v;` escrito à mão (inline deu movn ao contrário) e a mesma variável v para os dois Find; ordem dos stores: o gcc inverte (escrever `state` antes de `down[0]`; presets antes de value); first/last intercalados por tabela; `r = key; if (faixa) r = key - 100;` no TranslateKey; método inline na classe é emitido fora de linha no fim do .text (não usar). Script /tmp/claude-0/vb.py FUNC início fim variantes.
-- Próximo: as ações da fábrica 0x108F40…0x10C2E8 (antes desta).
+- GUIActionIsDeviceConnected.cpp (texto 0x10BFF8, .rodata 0x338430) feito 100% em 2026-11-02: lê D_00334FB8 DS1, FC0 teclado, FC4 mouse, FBC DS2; Init com m_bInitialized antes do strdup.
+- Próximo: a ação em 0x10B8D8 (e as outras da fábrica até 0x108F40).
