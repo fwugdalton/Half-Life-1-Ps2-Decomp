@@ -16,4 +16,5 @@ Continua [[hl1ps2-launcher-bindhelper]] (que lista BindHelper, IsDeviceConnected
 - GUIActionSetGame.cpp (texto 0x109B08, .rodata 0x337AF0) 100%: func_002354D8(tok) do HLPak.
 - GUIActionAddVariable.cpp (texto 0x109910, .rodata 0x337AA0) 100%: CGUIVariable ganhou V4, V5, Add (slot 0x38, tipo D_003029F0) e AddAnim (slot 0x40, tipo D_003029E4) no GUI.h.
 - GUIActionSetVariableVariable.cpp (texto 0x109728, .rodata 0x337A40) 100%: CGUIVariable::Copy (slot 0x28, era V4); senão Cvar_VariableString. Chamada virtual com argumento que é outra chamada: guardar o argumento numa variável antes (senão a vtable é lida antes).
-- Próximo: ação com ctor em 0x109568 (depois 0x109498, 0x1093E0, 0x109240, 0x1090A0, 0x108F40).
+- GUIActionSetVariable.cpp (texto 0x109568, .rodata 0x3379E0) 100%: "NULL" vira "".
+- Próximo: ação com ctor em 0x109498 (depois 0x1093E0, 0x109240, 0x1090A0, 0x108F40).
