@@ -22,4 +22,5 @@ Continua [[hl1ps2-launcher-bindhelper]] (que lista BindHelper, IsDeviceConnected
 - GUIActionAppString.cpp (texto 0x109240, .rodata 0x337908) 100%: junta $param0.. e manda para Cbuf_AddText. `if (...) {...; more = 1;} else more = 0;` (atribuir 0 antes deixa a variável num sN).
 - GUIActionSetFocus.cpp (texto 0x1090A0, .rodata 0x3378C0) 100%: ctor zera m_bInitialized; `focus` com if/else nos dois níveis (sem valor inicial).
 - GUIActionPlaySound.cpp (texto 0x108F40, .rodata 0x337870) 100%: func_00231A98(name, vol, vol) (o Gbx só usa o nome). Fim das ações da fábrica (2026-11-02).
-- Próximo: o que vem antes de 0x108F40 no cod/000000 (CGUIAction base 0x108890–0x108BD8, tokenizador 0x108008–0x108148, variáveis 0x107000–0x107F00...).
+- GUIActionUserDefined.cpp (nome real pela string; texto 0x108BD8, .rodata 0x3377F8) 100%: linhas do script até "END" em char** (0xC máx, 0x10 nº, 0x14 lista; realloc +3), Execute roda as GUI_COMMAND (objeto de comando 0x30 na pilha: 106038 ctor, 1060D0 parse, 1063D8 run, 106048 dtor). func_00108148(tok, (int)"\r\n", 1) lê o resto da linha. `t = tok(); while (t && ...) {...; t = tok();}` acertou s1/s2.
+- Próximo: GUIActionTable.cpp (string em 0x3377B0; CGUIAction base 0x108890–0x108BD8) e antes dele tokenizador/variáveis.
