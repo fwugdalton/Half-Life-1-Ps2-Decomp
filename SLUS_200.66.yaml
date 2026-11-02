@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x00C2E8, cpp, launcher/GUIActionBindHelper]
       - [0x00E540, cpp, launcher/GUIActionSetVolume]
       - [0x00E6A8, cpp, launcher/GUIActionMemorySave]
       - [0x00E8F8, cpp, launcher/GUIActionDisplayMode]
@@ -351,6 +352,7 @@ segments:
       - [0x1D0A68, asm, cod/1D0A68]
       - [0x1F5980, textbin, cod/1F5980] # .vutext
       - [0x201B00, data, cod/201B00] # .data
+      - [0x202A48, .data, launcher/GUIActionBindHelper]
       - [0x202A58, .data, launcher/GUI]
       - [0x202A60, .data, cl_dll/ammo]
       - [0x2088B0, .data, cl_dll/ammohistory]
@@ -483,6 +485,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x2384D8, .rodata, launcher/GUIActionBindHelper]
       - [0x2387A0, .rodata, launcher/GUIActionSetVolume]
       - [0x238808, .rodata, launcher/GUIActionMemorySave]
       - [0x2388B8, .rodata, launcher/GUIActionDisplayMode]
