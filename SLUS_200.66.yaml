@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x008890, cpp, launcher/GUIActionTable]
       - [0x008BD8, cpp, launcher/GUIActionUserDefined]
       - [0x008F40, cpp, launcher/GUIActionPlaySound]
       - [0x0090A0, cpp, launcher/GUIActionSetFocus]
@@ -508,6 +509,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x2377B0, .rodata, launcher/GUIActionTable]
       - [0x2377F8, .rodata, launcher/GUIActionUserDefined]
       - [0x237870, .rodata, launcher/GUIActionPlaySound]
       - [0x2378C0, .rodata, launcher/GUIActionSetFocus]

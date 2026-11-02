@@ -50,8 +50,10 @@ class CGUIAction
 public:
 	CGUIAction();
 	virtual ~CGUIAction();
-	virtual void Init( void *tokenizer );
-	virtual void Execute( CGUI *gui );
+	virtual void Init( void *tokenizer ) = 0;
+	virtual void Execute( CGUI *gui ) = 0;
+	int IsNamed( const char *name );
+	int Equals( CGUIAction *other );
 
 	char *m_szName;
 	int m_bInitialized;
