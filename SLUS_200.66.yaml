@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x008008, cpp, launcher/GUIParser]
       - [0x008890, cpp, launcher/GUIActionTable]
       - [0x008BD8, cpp, launcher/GUIActionUserDefined]
       - [0x008F40, cpp, launcher/GUIActionPlaySound]
@@ -374,6 +375,7 @@ segments:
       - [0x1D0A68, asm, cod/1D0A68]
       - [0x1F5980, textbin, cod/1F5980] # .vutext
       - [0x201B00, data, cod/201B00] # .data
+      - [0x2029F8, .data, launcher/GUIParser]
       - [0x202A04, .data, launcher/GUIActionModifyViewport]
       - [0x202A18, .data, launcher/GUIActionAddOnDisc]
       - [0x202A48, .data, launcher/GUIActionBindHelper]
@@ -509,6 +511,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x237788, .rodata, launcher/GUIParser]
       - [0x2377B0, .rodata, launcher/GUIActionTable]
       - [0x2377F8, .rodata, launcher/GUIActionUserDefined]
       - [0x237870, .rodata, launcher/GUIActionPlaySound]
