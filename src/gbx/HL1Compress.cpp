@@ -73,6 +73,23 @@ typedef struct {
     char style[64];
 } SAVELIGHTSTYLE;
 
+/* um campo gravado (12 bytes) */
+typedef struct {
+    short id;
+    short len;
+    void *data;
+    int owned;
+} SaveEntry;
+
+/* uma entidade do save (16 bytes) */
+typedef struct {
+    short token;
+    short unk02;
+    char *classname;
+    unsigned char count;
+    SaveEntry *entries;
+} SaveRecord;
+
 /* dados de um save já lidos (0xD8 bytes) */
 typedef struct {
     int id;                     /* 0x00 */
@@ -111,6 +128,7 @@ void func_00225860(void *dst, int c, int n);
 int func_00225790(const void *a, const void *b, int n);
 int func_00228DC0(const char *s);
 int func_00228E00(const char *a, const char *b);
+int func_00228C00(const char *a, const char *b);
 void *func_0022B118(const char *name, const char *mode);
 void func_0022B238(void *f);
 void func_0022B310(const char *name, int a1);
@@ -132,7 +150,7 @@ int func_0021DF50(void *f, int count, ENTITYTABLE *tab, int dictCount, ENTITYTAB
 int func_0021E190(void *f, SAVE_HEADER *h, SAVE_HEADER *dict);
 int func_0021E5F0(void *f, int size, void *data, int size2, int unk, int dictSize, int dictUnk);
 int func_0021E650(void *f, int count, SAVELIGHTSTYLE *ls, int dictCount, SAVELIGHTSTYLE *dict);
-int func_0021E880(void *f, int count, void *a, int dictCount, void *b);
+int func_0021E880(void *f, int count, SaveRecord *recs, int dictCount, SaveRecord *dict);
 
 void func_0021D8A8(const char *key, long value)
 {
@@ -221,7 +239,7 @@ void func_0021DA50(SaveData in, SaveData dict, const char *out)
     func_0021E190(f, &in.header, &dict.header);
     func_0021E5F0(f, in.dataSize, in.data, in.dataSize, in.unkB0, dict.dataSize, dict.unkB0);
     func_0021E650(f, in.header.lightStyleCount, in.lightStyles, dict.header.lightStyleCount, dict.lightStyles);
-    func_0021E880(f, in.unkC8, in.unkD0, dict.unkC8, dict.unkD0);
+    func_0021E880(f, in.unkC8, (SaveRecord *)in.unkD0, dict.unkC8, (SaveRecord *)dict.unkD0);
     func_0022B238(f);
     func_0022B310(out, 9);
 }
@@ -468,7 +486,191 @@ int func_0021E650(void *f, int count, SAVELIGHTSTYLE *ls, int dictCount, SAVELIG
     return size;
 }
 
+/* grava as entidades: para cada uma acha a do dicionário que dá menos bytes e grava só as diferenças
+   (4 = entidade, 1 = campo mudou, 2 = campo apagado, 3 = campo novo, 5 = fim) */
+#ifdef NON_MATCHING
+int func_0021E880(void *f, int count, SaveRecord *recs, int dictCount, SaveRecord *dict)
+{
+    unsigned char cmd;
+    short bestIdx;
+    unsigned char cmdChanged;
+    unsigned char cmdResized;
+    unsigned char cmdDeleted;
+    unsigned char cmdAdded;
+    unsigned char cmdNew;
+    unsigned char cmdEnd;
+    int *used;
+    unsigned char usedCount;
+    int size;
+    short i;
+
+    size = 0;
+    used = 0;
+    usedCount = 0;
+    for (i = 0; i < count; i++) {
+        unsigned int best;
+        short j;
+        short start;
+        unsigned char k;
+        unsigned char m;
+
+        best = 0xFFFFFFFF;
+        bestIdx = -1;
+        if (used == 0) {
+            used = (int *)Mem_DbgMalloc((recs[i].count + 10) * 4, D_003859E0, 0x233);
+            usedCount = recs[i].count + 10;
+        } else if (usedCount < recs[i].count) {
+            Mem_Free(used);
+            used = (int *)Mem_DbgMalloc((recs[i].count + 10) * 4, D_003859E0, 0x23B);
+            usedCount = recs[i].count + 10;
+        }
+        if (i < dictCount) {
+            start = j = i;
+        } else {
+            start = j = 0;
+        }
+        do {
+            unsigned int cost;
+
+            cost = 0;
+            if (recs[i].token == dict[j].token) {
+                int same;
+
+                same = recs[i].classname == 0 ? 1 : dict[j].classname == 0 ? 0 : func_00228C00(recs[i].classname, dict[j].classname) == 1;
+                if (same == 1) {
+                    int stop;
+
+                    stop = 0;
+                    for (k = 0; k < recs[i].count; k++) {
+                        used[k] = 0;
+                    }
+                    for (m = 0; m < dict[j].count; m++) {
+                        int found;
+
+                        found = 0;
+                        for (k = 0; k < recs[i].count; k++) {
+                            if (recs[i].entries[k].id == dict[j].entries[m].id) {
+                                used[k] = 1;
+                                found = 1;
+                                if (recs[i].entries[k].len == dict[j].entries[m].len) {
+                                    if (*(char *)recs[i].entries[k].data != *(char *)dict[j].entries[m].data) {
+                                        cost += 5 + recs[i].entries[k].len;
+                                    } else if (func_00225790(recs[i].entries[k].data, dict[j].entries[m].data,
+                                                             recs[i].entries[k].len)) {
+                                        cost += 5 + recs[i].entries[k].len;
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                        if (!found) {
+                            cost += 3;
+                        }
+                        if (cost > best) {
+                            stop = 1;
+                            break;
+                        }
+                    }
+                    if (!stop) {
+                        for (k = 0; k < recs[i].count; k++) {
+                            if (!used[k]) {
+                                cost += 5 + recs[i].entries[k].len;
+                            }
+                        }
+                        if (cost < best) {
+                            bestIdx = j;
+                            best = cost;
+                        }
+                    }
+                }
+            }
+            j++;
+            j %= dictCount;
+        } while (best >= 4 && j != start);
+
+        cmd = 4;
+        func_0022BD98(&cmd, 1, 1, f);
+        size++;
+        if (recs[i].token == 0xA26) {
+            bestIdx = -1;
+        }
+        if (bestIdx != -1) {
+            func_0022BD98(&bestIdx, 2, 1, f);
+            size += 2;
+            for (k = 0; k < recs[i].count; k++) {
+                used[k] = 0;
+            }
+            for (m = 0; m < dict[bestIdx].count; m++) {
+                int found;
+
+                found = 0;
+                for (k = 0; k < recs[i].count; k++) {
+                    if (recs[i].entries[k].id == dict[bestIdx].entries[m].id) {
+                        used[k] = 1;
+                        found = 1;
+                        if (recs[i].entries[k].len == dict[bestIdx].entries[m].len) {
+                            if (func_00225790(recs[i].entries[k].data, dict[bestIdx].entries[m].data,
+                                              recs[i].entries[k].len)) {
+                                cmdChanged = 1;
+                                func_0022BD98(&cmdChanged, 1, 1, f);
+                                func_0022BD98(&recs[i].entries[k].id, 2, 1, f);
+                                func_0022BD98(&recs[i].entries[k].len, 2, 1, f);
+                                func_0022BD98(recs[i].entries[k].data, recs[i].entries[k].len, 1, f);
+                                size += 5 + recs[i].entries[k].len;
+                            }
+                        } else {
+                            cmdResized = 1;
+                            func_0022BD98(&cmdResized, 1, 1, f);
+                            func_0022BD98(&recs[i].entries[k].id, 2, 1, f);
+                            func_0022BD98(&recs[i].entries[k].len, 2, 1, f);
+                            func_0022BD98(recs[i].entries[k].data, recs[i].entries[k].len, 1, f);
+                            size += 5 + recs[i].entries[k].len;
+                        }
+                        break;
+                    }
+                }
+                if (!found) {
+                    cmdDeleted = 2;
+                    func_0022BD98(&cmdDeleted, 1, 1, f);
+                    size += 3;
+                    func_0022BD98(&dict[bestIdx].entries[m].id, 2, 1, f);
+                }
+            }
+            for (k = 0; k < recs[i].count; k++) {
+                if (!used[k]) {
+                    cmdAdded = 3;
+                    func_0022BD98(&cmdAdded, 1, 1, f);
+                    func_0022BD98(&recs[i].entries[k].id, 2, 1, f);
+                    func_0022BD98(&recs[i].entries[k].len, 2, 1, f);
+                    func_0022BD98(recs[i].entries[k].data, 1, recs[i].entries[k].len, f);
+                    size += 5 + recs[i].entries[k].len;
+                }
+            }
+        } else {
+            func_0022BD98(&bestIdx, 2, 1, f);
+            size += 4;
+            func_0022BD98(&recs[i].token, 2, 1, f);
+            for (k = 0; k < recs[i].count; k++) {
+                cmdNew = 3;
+                func_0022BD98(&cmdNew, 1, 1, f);
+                func_0022BD98(&recs[i].entries[k].id, 2, 1, f);
+                func_0022BD98(&recs[i].entries[k].len, 2, 1, f);
+                func_0022BD98(recs[i].entries[k].data, 1, recs[i].entries[k].len, f);
+                size += 5 + recs[i].entries[k].len;
+            }
+        }
+    }
+    cmdEnd = 5;
+    func_0022BD98(&cmdEnd, 1, 1, f);
+    size++;
+    if (used != 0) {
+        Mem_Free(used);
+    }
+    return size;
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/gbx/HL1Compress", func_0021E880);
+#endif
 
 INCLUDE_RODATA("asm/nonmatchings/gbx/HL1Compress", D_003859E0);
 
