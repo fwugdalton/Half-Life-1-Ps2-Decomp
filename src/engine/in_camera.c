@@ -486,7 +486,6 @@ void func_002466B0(void)
 }
 
 /* CAM_StartMouseMove */
-#ifdef NON_MATCHING
 void func_00246768(void)
 {
     float flSensitivity;
@@ -496,7 +495,7 @@ void func_00246768(void)
         if (!D_00399110)
         {
             D_00399110 = 1;
-            iMouseInUse = 1;
+            *(volatile int *)&iMouseInUse = 1;
             flSensitivity = D_00331844;
             D_00399100 = D_00399118[0] * flSensitivity;
             D_00399108 = D_00399118[1] * flSensitivity;
@@ -505,12 +504,9 @@ void func_00246768(void)
     else
     {
         D_00399110 = 0;
-        iMouseInUse = 0;
+        *(volatile int *)&iMouseInUse = 0;
     }
 }
-#else
-INCLUDE_ASM("asm/nonmatchings/engine/in_camera", func_00246768);
-#endif
 
 /* CAM_EndMouseMove */
 void func_002467F0(void)
@@ -520,7 +516,6 @@ void func_002467F0(void)
 }
 
 /* CAM_StartDistance */
-#ifdef NON_MATCHING
 void func_00246808(void)
 {
     float flSensitivity;
@@ -531,7 +526,7 @@ void func_00246808(void)
         {
             D_00399104 = 1;
             D_00399110 = 1;
-            iMouseInUse = 1;
+            *(volatile int *)&iMouseInUse = 1;
             flSensitivity = D_00331844;
             D_00399100 = D_00399118[0] * flSensitivity;
             D_00399108 = D_00399118[1] * flSensitivity;
@@ -541,12 +536,9 @@ void func_00246808(void)
     {
         D_00399104 = 0;
         D_00399110 = 0;
-        iMouseInUse = 0;
+        *(volatile int *)&iMouseInUse = 0;
     }
 }
-#else
-INCLUDE_ASM("asm/nonmatchings/engine/in_camera", func_00246808);
-#endif
 
 /* CAM_EndDistance */
 void func_002468A0(void)
