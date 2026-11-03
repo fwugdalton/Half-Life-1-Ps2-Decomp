@@ -165,7 +165,22 @@ typedef struct {
     unsigned long PRIM : 11;
     unsigned long FLG : 2;
     unsigned long NREG : 4;
-    unsigned long REGS : 64;
+    unsigned long REGS0 : 4;
+    unsigned long REGS1 : 4;
+    unsigned long REGS2 : 4;
+    unsigned long REGS3 : 4;
+    unsigned long REGS4 : 4;
+    unsigned long REGS5 : 4;
+    unsigned long REGS6 : 4;
+    unsigned long REGS7 : 4;
+    unsigned long REGS8 : 4;
+    unsigned long REGS9 : 4;
+    unsigned long REGS10 : 4;
+    unsigned long REGS11 : 4;
+    unsigned long REGS12 : 4;
+    unsigned long REGS13 : 4;
+    unsigned long REGS14 : 4;
+    unsigned long REGS15 : 4;
 } __attribute__((aligned(16))) sceGifTag;
 
 /* ambiente de exibição (0x40 bytes) */
@@ -222,7 +237,7 @@ typedef struct {
 int func_00239D88(int n);
 void func_0023A150(GLScreen *s, short w, short h, short psm);
 void func_0023A2F0(GLScreen *s, short w, short h, short psm, short fbp0, short fbp1);
-void func_0023A4E8(GLScreen *s, short w, short h, short psm, short a, short b, short c, short zpsm, short a5, short a6);
+void func_0023A4E8(GLScreen *s, short w, short h, short psm, short fbp0, short fbp1, short zbp, short ztest, short zpsm, short a6);
 void func_002D0BF0(GLDispEnv *disp, short psm, short w, short h, short dx, short dy);
 void func_0023A1B0(GLScreen *s, short w, short h, short psm, short zpsm, short a5, short a6);
 void func_0023A2A8(GLScreen *s);

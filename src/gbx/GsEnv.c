@@ -15,7 +15,36 @@ int func_00239D88(int n) {
     return i;
 }
 
-INCLUDE_ASM("asm/nonmatchings/gbx/GsEnv", func_00239DB8);
+typedef int u_long128 __attribute__((mode(TI)));
+
+/* pacote A+D que limpa a tela com um sprite (como o sceGsSetDefClear) */
+void func_00239DB8(unsigned long *p, short fbp, short psm, short ztest, short x, short y, short w, short h,
+                   unsigned char r, unsigned char g, unsigned char b, unsigned char a, unsigned int z) {
+    p[0] = 0;
+    p[1] = 0;
+    p += 2;
+    p[0] = 0x30000;
+    p[1] = 0x47;
+    p += 2;
+    p[0] = 6;
+    p[1] = 0;
+    p += 2;
+    p[1] = 1;
+    p[0] = (unsigned long)r | ((unsigned long)g << 8) | ((unsigned long)b << 16) | ((unsigned long)a << 24) | ((unsigned long)1 << 32);
+    p += 2;
+    p[0] = (unsigned long)(x << 4) | ((unsigned long)(y << 4) << 16) | ((unsigned long)z << 32);
+    p[1] = 5;
+    p += 2;
+    p[1] = 5;
+    p[0] = (unsigned long)((x + w) << 4) | ((unsigned long)((y + h) << 4) << 16) | ((unsigned long)z << 32);
+    p += 2;
+    p[1] = 0x47;
+    p[0] = 0x10000 | ((unsigned long)ztest << 17);
+    p += 2;
+    p[1] = 0;
+    p[0] = 0;
+
+}
 
 void func_00239ED0(unsigned long *p, short fbp, short psm, int fbw) {
     unsigned long v;
@@ -28,7 +57,55 @@ void func_00239ED0(unsigned long *p, short fbp, short psm, int fbw) {
     p[0] = v;
 }
 
-INCLUDE_ASM("asm/nonmatchings/gbx/GsEnv", func_00239F28);
+/* registradores de desenho de um buffer (como o sceGsSetDefDrawEnv) */
+void func_00239F28(unsigned long *p, short psm, short fbp, short w, short h, short ztest, short zpsm, short zbp) {
+    int zmask;
+
+    zmask = 0;
+    if (ztest == 0) {
+        ztest = 1;
+        zmask = 1;
+    }
+    p[1] = 0x4C;
+    p[0] = (unsigned long)fbp | ((unsigned long)(func_00239D88(w) - 1) << 16) | ((unsigned long)psm << 24);
+    p += 2;
+    p[1] = 0x4D;
+    p[0] = (unsigned long)fbp | ((unsigned long)(func_00239D88(w) - 1) << 16) | ((unsigned long)psm << 24);
+    p += 2;
+    p[0] = (unsigned long)zbp | ((unsigned long)zpsm << 24) | ((unsigned long)zmask << 32);
+    p[1] = 0x4E;
+    p += 2;
+    p[1] = 0x4F;
+    p[0] = (unsigned long)zbp | ((unsigned long)zpsm << 24) | ((unsigned long)zmask << 32);
+    p += 2;
+    p[0] = (unsigned long)((0x800 - (w >> 1)) << 4) | ((unsigned long)((0x800 - (h >> 1)) << 4) << 32);
+    p[1] = 0x18;
+    p += 2;
+    p[0] = (unsigned long)((0x800 - (w >> 1)) << 4) | ((unsigned long)((0x800 - (h >> 1)) << 4) << 32);
+    p[1] = 0x19;
+    p += 2;
+    p[0] = ((unsigned long)(w - 1) << 16) | ((unsigned long)(h - 1) << 48);
+    p[1] = 0x40;
+    p += 2;
+    p[1] = 0x41;
+    p[0] = ((unsigned long)(w - 1) << 16) | ((unsigned long)(h - 1) << 48);
+    p += 2;
+    p[0] = 1;
+    p[1] = 0x1A;
+    p += 2;
+    p[1] = 0x46;
+    p[0] = 1;
+    p += 2;
+    p[0] = 0;
+    p[1] = 0x45;
+    p += 2;
+    p[0] = 0x10000 | ((unsigned long)ztest << 17);
+    p[1] = 0x47;
+    p += 2;
+    p[1] = 0x48;
+    p[0] = 0x10000 | ((unsigned long)ztest << 17);
+
+}
 
 void func_0023A150(GLScreen *s, short w, short h, short psm) {
     short x;
@@ -97,7 +174,23 @@ void func_0023A2F0(GLScreen *s, short w, short h, short psm, short fbp0, short f
 INCLUDE_ASM("asm/nonmatchings/gbx/GsEnv", func_0023A2F0);
 #endif
 
-INCLUDE_ASM("asm/nonmatchings/gbx/GsEnv", func_0023A4E8);
+/* os dois buffers de desenho: registradores, tag GIF e pacote de limpeza (como o sceGsSetDefDBuff) */
+void func_0023A4E8(GLScreen *s, short w, short h, short psm, short fbp0, short fbp1, short zbp, short ztest, short zpsm, short a6) {
+    func_00239F28((unsigned long *)s->pad90, psm, fbp0, w, h, ztest, zpsm, zbp);
+    *(u_long128 *)&s->tag0 = 0;
+    s->tag0.NLOOP = 0x15;
+    s->tag0.EOP = 1;
+    s->tag0.NREG = 1;
+    s->tag0.REGS0 = 0xE;
+    func_00239DB8((unsigned long *)s->pad160, fbp1, psm, ztest, 0x800 - (w >> 1), 0x800 - (h >> 1), w, h, 0, 0, 0, 0, 0);
+    func_00239F28((unsigned long *)s->pad1F0, psm, fbp1, w, h, ztest, zpsm, zbp);
+    *(u_long128 *)&s->tag1 = 0;
+    s->tag1.NLOOP = 0x15;
+    s->tag1.EOP = 1;
+    s->tag1.NREG = 1;
+    s->tag1.REGS0 = 0xE;
+    func_00239DB8((unsigned long *)s->pad2C0, fbp1, psm, ztest, 0x800 - (w >> 1), 0x800 - (h >> 1), w, h, 0, 0, 0, 0, 0);
+}
 
 void func_0023A708(GLScreen *s, int buf, int en1) {
     if (buf == 0) {
