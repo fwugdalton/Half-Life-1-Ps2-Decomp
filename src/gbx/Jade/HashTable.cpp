@@ -114,7 +114,6 @@ long func_002294D0(HashTable *t, const char *key) {
     return r;
 }
 
-#ifdef NON_MATCHING /* ordem dos blocos */
 const char *func_00229570(HashTable *t, long value) {
     HashNode *n;
     const char *r;
@@ -124,19 +123,16 @@ const char *func_00229570(HashTable *t, long value) {
     for (i = 0; i < t->numSlots; i++) {
         for (n = t->slots[i].head; n != 0; n = n->next) {
             if (n->value == value) {
+                r = n->key;
                 break;
             }
         }
         if (n != 0) {
-            r = n->key;
             break;
         }
     }
     return r;
 }
-#else
-INCLUDE_ASM("asm/nonmatchings/gbx/Jade/HashTable", func_00229570);
-#endif
 
 void func_002295C8(HashTable *t, const char *name) {
     int f;
