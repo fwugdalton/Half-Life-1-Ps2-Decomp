@@ -897,14 +897,14 @@ INCLUDE_RODATA("asm/nonmatchings/gbx/Jade/Membank", D_00386400);
 #ifdef NON_MATCHING /* contadores do relatório */
 void func_00226FC0(int f) {
     char buf[1000];
+    int unallocated;
+    int numTags;
+    int total;
     int numAllocs;
     int allocBytes;
     int tagBytes;
     int numFree;
     int numTracks;
-    int unallocated;
-    int numTags;
-    int total;
     int size;
     int i;
     char c;
@@ -935,7 +935,7 @@ void func_00226FC0(int f) {
             } else {
                 func_00228CF0(buf, "UNDESCRIBED");
             }
-            size = h->size + h->tagSize + 0x20;
+            size = h->size + (int)((char *)(h + 1) + h->tagSize - (char *)h);
             if (h->tag == 0) {
                 hint = "DONT_CARE";
             } else if (h->tag == 2) {
@@ -948,19 +948,22 @@ void func_00226FC0(int f) {
             total += size;
             if (h->size < 100) {
                 func_00222500(f, "  Data[");
-                for (i = 0; i < h->size - 1; i++) {
+                i = 0;
+            data:
+                if (i < h->size - 1) {
                     c = ((char *)(h + 1))[i];
-                    if (!func_00225958(c) && c != ' ') {
-                        break;
+                    if (func_00225958(c) || c == ' ') {
+                        func_00222500(f, "%c", c);
+                        i++;
+                        goto data;
                     }
-                    func_00222500(f, "%c", c);
                 }
                 func_00222500(f, "]");
             }
             func_00222500(f, "\r\n");
             allocBytes += h->size;
         } else {
-            size = h->size + h->tagSize + 0x20;
+            size = h->size + (int)((char *)(h + 1) + h->tagSize - (char *)h);
             total += size;
             func_00222500(f,
                           "  Free Memory:  Size[%7d]  TagSize[%7d]                                  "
@@ -978,7 +981,7 @@ void func_00226FC0(int f) {
         func_00222500(f,
                       "  Free Memory:  Size[%7d]  TagSize[%7d]  This[%p]  NextFree[%p]  LastFree[%p]  "
                       "TotalTrackSize[%7d]\r\n",
-                      h->size, h->tagSize, h, h->nextFree, h->prevFree, h->size + h->tagSize + 0x20);
+                      h->size, h->tagSize, h, h->nextFree, h->prevFree, h->size + (int)((char *)(h + 1) + h->tagSize - (char *)h));
     }
     func_00222500(f,
                   "----Total for pool [%d] allocations, taking up [%d] bytes.  Unallocated[%d].  Tags [%d] took "
@@ -1032,10 +1035,10 @@ void func_00227300(int f) {
             } else {
                 func_00228CF0(buf, "UNDESCRIBED");
             }
-            func_00222500(f, "1\t%d\t%s\t%d", h->size, buf, h->size + h->tagSize + 0x20);
+            func_00222500(f, "1\t%d\t%s\t%d", h->size, buf, h->size + (int)((char *)(h + 1) + h->tagSize - (char *)h));
             func_00222500(f, "\r\n");
         } else {
-            func_00222500(f, "0\t%d\t\t%d\r\n", h->size, h->size + h->tagSize + 0x20);
+            func_00222500(f, "0\t%d\t\t%d\r\n", h->size, h->size + (int)((char *)(h + 1) + h->tagSize - (char *)h));
         }
     }
 }

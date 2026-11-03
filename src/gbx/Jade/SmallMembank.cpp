@@ -70,6 +70,10 @@ extern int D_003281D0;              /* topo da pilha de tags */
 extern int D_003281D4;              /* trava ligada */
 extern Membank D_003A6430;
 extern const char D_003867D8[];     /* "Membank Corrupt" */
+extern const char D_00386888[];     /* "UNDESCRIBED" */
+extern const char D_00386938[];     /* "\r\n" */
+extern const char D_00386898[], D_003868A8[], D_003868B8[], D_003868C8[], D_00386920[], D_00386928[], D_00386930[];
+extern const char D_00386940[], D_003869A0[], D_003869D0[], D_00386A38[], D_00386AA8[], D_00386AE8[];
 
 int func_00227498(int poolSize) {
     int r;
@@ -703,7 +707,103 @@ INCLUDE_ASM("asm/nonmatchings/gbx/Jade/SmallMembank", func_00228540);
 
 INCLUDE_RODATA("asm/nonmatchings/gbx/Jade/SmallMembank", D_003867D8);
 
+/* relatório do membank pequeno: blocos, lista de livres e totais */
+#ifdef NON_MATCHING
+void func_002286D8(int f) {
+    char buf[1000];
+    int unallocated;
+    int numTags;
+    int total;
+    int numAllocs;
+    int allocBytes;
+    int tagBytes;
+    int numFree;
+    int numTracks;
+    int size;
+    int i;
+    char c;
+    const char *hint;
+    MemoryTrack *h;
+
+    unallocated = 0;
+    numTags = 0;
+    total = 0;
+    func_00222500(f, "---------------------------------------------------------------------------\r\n");
+    numAllocs = 0;
+    func_00222500(f, "BANK:  PoolSize[%d]  Allocated memory[%d]  sizeof(struct MemoryTrack)[%d]\r\n",
+                  D_003A6430.poolSize, D_003A6430.allocated, sizeof(MemoryTrack));
+    allocBytes = 0;
+    h = D_003A6430.start;
+    tagBytes = 0;
+    numFree = 0;
+    numTracks = 0;
+    for (; h != 0; h = h->next) {
+        numTracks++;
+        if (!(h->flags & 2)) {
+            numAllocs++;
+            if (h->tagSize > 0) {
+                numTags++;
+                Q_memcpy(buf, (char *)h + (h->size + 0x20), h->tagSize);
+                buf[h->tagSize] = 0;
+                tagBytes += h->tagSize;
+            } else {
+                func_00228CF0(buf, D_00386888);
+            }
+            size = h->size + (int)((char *)(h + 1) + h->tagSize - (char *)h);
+            if (h->tag == 0) {
+                hint = D_00386898;
+            } else if (h->tag == 2) {
+                hint = D_003868A8;
+            } else {
+                hint = D_003868B8;
+            }
+            func_00222500(f, D_003868C8,
+                          h->size, h->tagSize, buf, size, hint);
+            total += size;
+            if (h->size < 100) {
+                func_00222500(f, D_00386920);
+                i = 0;
+            data:
+                if (i < h->size - 1) {
+                    c = ((char *)(h + 1))[i];
+                    if (func_00225958(c) || c == ' ') {
+                        func_00222500(f, D_00386928, c);
+                        i++;
+                        goto data;
+                    }
+                }
+                func_00222500(f, D_00386930);
+            }
+            func_00222500(f, D_00386938);
+            allocBytes += h->size;
+        } else {
+            size = h->size + (int)((char *)(h + 1) + h->tagSize - (char *)h);
+            total += size;
+            func_00222500(f,
+                          D_00386940,
+                          h->size, h->tagSize, size);
+        }
+        if (h->flags & 2) {
+            unallocated += h->size;
+        }
+    }
+    h = D_00328148;
+    func_00222500(f, D_003869A0);
+    for (; h != 0; h = h->nextFree) {
+        numFree++;
+        func_00222500(f,
+                      D_003869D0,
+                      h->size, h->tagSize, h, h->nextFree, h->prevFree, h->size + (int)((char *)(h + 1) + h->tagSize - (char *)h));
+    }
+    func_00222500(f,
+                  D_00386A38,
+                  numAllocs, allocBytes, unallocated, numTags, tagBytes);
+    func_00222500(f, D_00386AA8, numFree, numTracks);
+    func_00222500(f, D_00386AE8, total);
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/gbx/Jade/SmallMembank", func_002286D8);
+#endif
 
 INCLUDE_RODATA("asm/nonmatchings/gbx/Jade/SmallMembank", D_00386888);
 
@@ -735,7 +835,30 @@ INCLUDE_RODATA("asm/nonmatchings/gbx/Jade/SmallMembank", D_00386AA8);
 
 INCLUDE_RODATA("asm/nonmatchings/gbx/Jade/SmallMembank", D_00386AE8);
 
+/* lista de blocos em formato de tabela (1 = usado, 0 = livre) */
+#ifdef NON_MATCHING
+void func_00228A18(int f) {
+    char buf[1000];
+    MemoryTrack *h;
+
+    for (h = D_003A6430.start; h != 0; h = h->next) {
+        if (!(h->flags & 2)) {
+            if (h->tagSize > 0) {
+                Q_memcpy(buf, (char *)h + (h->size + 0x20), h->tagSize);
+                buf[h->tagSize] = 0;
+            } else {
+                func_00228CF0(buf, D_00386888);
+            }
+            func_00222500(f, "1\t%d\t%s\t%d", h->size, buf, h->size + (int)((char *)(h + 1) + h->tagSize - (char *)h));
+            func_00222500(f, D_00386938);
+        } else {
+            func_00222500(f, "0\t%d\t\t%d\r\n", h->size, h->size + (int)((char *)(h + 1) + h->tagSize - (char *)h));
+        }
+    }
+}
+#else
 INCLUDE_ASM("asm/nonmatchings/gbx/Jade/SmallMembank", func_00228A18);
+#endif
 
 int func_00228B20(MemoryTrack *h) {
     int c;
