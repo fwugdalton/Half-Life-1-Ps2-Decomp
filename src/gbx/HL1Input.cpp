@@ -665,10 +665,46 @@ int func_0021D778(int key, int port)
     return key;
 }
 
-INCLUDE_ASM("asm/nonmatchings/gbx/HL1Input", func_0021D7A8);
+/* construtor e destrutor de KeyStateManager pelos nomes do gcc 2.95; o init estático de
+   D_003A6200 foi escrito à mão porque a tabela fica no .bss em asm */
+void __15KeyStateManager(KeyStateManager *p);
+void _$_15KeyStateManager(KeyStateManager *p, int flags);
 
-INCLUDE_ASM("asm/nonmatchings/gbx/HL1Input", func_0021D868);
+void func_0021D7A8(int initialize, int priority)
+{
+    if (priority == 0xFFFF) {
+        if (initialize) {
+            PadSlot *row = D_003A6200[0];
+            int i;
+            for (i = 1; i != -1; i--) {
+                PadSlot *p = row;
+                int j;
+                for (j = 3; j != -1; j--) {
+                    __15KeyStateManager(&p->keys);
+                    p++;
+                }
+                row += 4;
+            }
+        } else {
+            if (D_003A6200[0]) {
+                PadSlot *p = D_003A6200[0] + 8;
+                while (p != D_003A6200[0]) {
+                    p--;
+                    _$_15KeyStateManager(&p->keys, 2);
+                }
+            }
+        }
+    }
+}
 
-INCLUDE_ASM("asm/nonmatchings/gbx/HL1Input", func_0021D888);
+void func_0021D868(void)
+{
+    func_0021D7A8(1, 0xFFFF);
+}
+
+void func_0021D888(void)
+{
+    func_0021D7A8(0, 0xFFFF);
+}
 
 }
