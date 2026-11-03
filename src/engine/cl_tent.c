@@ -786,8 +786,8 @@ void func_00255DB8(vec3_t pos, vec3_t size, vec3_t dir, float random, float life
 
         if (type == BREAK_GLASS || (flags & BREAK_TRANS))
         {
-            pTemp->entity.rendermode = kRenderTransTexture;
             pTemp->entity.renderamt = pTemp->entity.baseline.renderamt = 128;
+            pTemp->entity.rendermode = kRenderTransTexture;
         }
         else
         {
@@ -865,7 +865,6 @@ TEMPENTITY *func_002561F0(vec3_t pos, vec3_t dir, vec3_t angles, float life, int
     return pTemp;
 }
 
-#ifdef NON_MATCHING
 TEMPENTITY *func_00256478(vec3_t pos, vec3_t dir, float scale, int modelIndex, int rendermode, int renderfx, float a, float life, int flags, int clientId)
 {
     TEMPENTITY *pTemp;
@@ -893,10 +892,10 @@ TEMPENTITY *func_00256478(vec3_t pos, vec3_t dir, float scale, int modelIndex, i
     pTemp->entity.rendermode = rendermode;
     pTemp->entity.renderfx = renderfx;
     pTemp->entity.scale = scale;
+    pTemp->entity.baseline.renderamt = pTemp->entity.renderamt = a * 255;
     pTemp->entity.rendercolor.r = 255;
     pTemp->entity.rendercolor.g = 255;
     pTemp->entity.rendercolor.b = 255;
-    pTemp->entity.renderamt = pTemp->entity.baseline.renderamt = a * 255;
     pTemp->flags |= flags;
     VectorCopy(dir, pTemp->entity.baseline.origin);
     VectorCopy(pos, pTemp->entity.origin);
@@ -909,9 +908,6 @@ TEMPENTITY *func_00256478(vec3_t pos, vec3_t dir, float scale, int modelIndex, i
     pTemp->entity.frame = 0;
     return pTemp;
 }
-#else
-INCLUDE_ASM("asm/nonmatchings/engine/cl_tent", func_00256478);
-#endif
 
 #ifdef NON_MATCHING
 void func_00256668(vec3_t pos, vec3_t dir, int modelIndex, int count, int speed, int iRand, int clientId)
