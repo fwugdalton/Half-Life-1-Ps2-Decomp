@@ -322,7 +322,6 @@ void Draw_BindAlphaFont(void)
     GL_Bind(D_00399638);
 }
 
-#ifdef NON_MATCHING
 void Draw_GetAlphaFontChar(int ch, int *width, int *height, float *s, float *t, float *s2, float *t2)
 {
     int c;
@@ -334,7 +333,8 @@ void Draw_GetAlphaFontChar(int ch, int *width, int *height, float *s, float *t, 
     code = D_0039964C->chars[c].x;
     *height = D_0039964C->height;
     fs = (code & 0xFF) * D_0050EF58[0];
-    ft = ((short)code >> 8) * D_0050EF58[1];
+    code = (short)code >> 8;
+    ft = code * D_0050EF58[1];
     fs2 = fs + *width * D_0050EF58[0];
     ft2 = ft + D_0039964C->height * D_0050EF58[1];
     *s = fs;
@@ -342,9 +342,6 @@ void Draw_GetAlphaFontChar(int ch, int *width, int *height, float *s, float *t, 
     *s2 = fs2;
     *t2 = ft2;
 }
-#else
-INCLUDE_ASM("asm/nonmatchings/engine/gl_draw", Draw_GetAlphaFontChar);
-#endif
 
 #ifdef NON_MATCHING
 int Draw_ScaledCharacter(int x, int y, int num, float sx, float sy)

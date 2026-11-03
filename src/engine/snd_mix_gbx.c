@@ -2201,7 +2201,6 @@ char *func_002CB1E8(char *pSentenceName, int *psentencenum)
     return NULL;
 }
 
-#ifdef NON_MATCHING
 void func_002CB290(channel_t *ch, sfxcache_t *sc)
 {
     float sstart;
@@ -2250,7 +2249,8 @@ void func_002CB290(channel_t *ch, sfxcache_t *sc)
     if (send > 0 && send < 100)
     {
         pdata = (signed char *)sc->data;
-        skiplen = sc->length * ((100 - send) / 100);
+        length = sc->length * ((100 - send) / 100);
+        skiplen = length;
         ch->end -= skiplen;
         srcsample = sc->length - skiplen;
 
@@ -2266,6 +2266,3 @@ void func_002CB290(channel_t *ch, sfxcache_t *sc)
         }
     }
 }
-#else
-INCLUDE_ASM("asm/nonmatchings/engine/snd_mix_gbx", func_002CB290);
-#endif
