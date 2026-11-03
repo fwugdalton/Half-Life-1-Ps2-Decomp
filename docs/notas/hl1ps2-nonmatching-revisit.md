@@ -16,4 +16,6 @@ Desde 2026-11-03 o código do jogo está todo em C/C++ (sobram em asm só o crt0
 - Lição: func_002CB290 casou com `length = ...; skiplen = length;`, e Draw_GetAlphaFontChar com `code = (short)code >> 8; ft = code * ...`.
 - Scripts no repo: tools/handoff/scan.sh, runq.sh (PERMUTER/PERMDIR) e unwrap2.py. Filas q1 (até 12 dif.), q2 (13 a 40) e q3 (41 a 100, nenhuma casou) já rodadas; o que sobrou nelas não casa com o permuter em 10 min.
 - Tentadas à mão sem sucesso (não repetir as mesmas variantes): Membank func_00225BD8 (ordem e forma do if), util EntityFromIndex (formas de indexar), SaveInfo func_00230E38 (ordem das locais, forma do laço e do ret), SystemSave func_0022DB88 (forma do argumento pak.data+filepos), apache TraceAttack (trunc+mfc1+sw: int temporário, cast, *0.2f).
-Commits 2e732cf, 9214e38 e 61a1c87. Ver [[hl1ps2-dlls-aiplayer]].
+- Protótipos: tools/handoff/protofix.py troca `void f()` pelo tipo da definição e mantém só se casar; já rodado em todo o src (6 a mais: Logger, HashTable, Mouse, S_StartStaticSound). Cuidado: erro de compilação parece "melhora" se o scan não for checado.
+- Membank/SmallMembank soma: `c = seed; c -= 0x20 + (int)h; c -= ...`. Sem sucesso: SPUMemory func_00232210, CDRead func_00236EF0 (todas as 24 ordens dos stores).
+Commits 2e732cf, 24810a9, 9214e38 e 61a1c87. Ver [[hl1ps2-dlls-aiplayer]].
