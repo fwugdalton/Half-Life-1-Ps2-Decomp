@@ -532,14 +532,14 @@ void R_SpriteBeginQuad(void)
     D_00331044 = 5;
     if (sprite_numverts > 0 && (n = sprite_numverts + 4) < SPRITE_BUFVERTS)
     {
-        D_00331038 = &sprite_st[sprite_buffer][sprite_numverts];
         sprite_vertptr = UNCACHED(&sprite_verts[sprite_buffer][sprite_numverts]);
         sprite_colorptr = UNCACHED(&sprite_colors[sprite_buffer][sprite_numverts]);
         D_0033103C = 4;
+        D_00331038 = &sprite_st[sprite_buffer][sprite_numverts];
         D_00331030 = &sprite_verts[sprite_buffer][sprite_numverts];
         D_00331034 = &sprite_colors[sprite_buffer][sprite_numverts];
-        sprite_numverts = n;
         D_0033102C = 1;
+        sprite_numverts = n;
         if (func_0023D5F0() == 1)
         {
             done = 1;
@@ -557,8 +557,8 @@ void R_SpriteBeginQuad(void)
         sprite_numverts = 4;
         D_0033102C = 1;
         D_00331030 = &sprite_verts[sprite_buffer][0];
-        D_00331034 = &sprite_colors[sprite_buffer][0];
         D_0033103C = 4;
+        D_00331034 = &sprite_colors[sprite_buffer][0];
         func_0023D618(0);
         D_0033102C = 0;
     }

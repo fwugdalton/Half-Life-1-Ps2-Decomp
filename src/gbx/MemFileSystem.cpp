@@ -199,8 +199,8 @@ extern "C" MemFile *func_0022B118(const char *name, const char *modeStr)
         f = func_0022BFD8(name);
         if (f == 0) {
             func_0022BC60(name);
-            f = func_0022BFD8(name);
             f->closed = 0;
+            f = func_0022BFD8(name);
             f->pos = 0;
         } else {
             func_0022BC60(name);

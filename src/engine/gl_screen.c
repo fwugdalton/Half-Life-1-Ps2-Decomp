@@ -609,8 +609,8 @@ void FillRGBA(vrect_t *rc, byte *color)
 void SCR_DrawConnectMessage(void)
 {
     vrect_t rcFill;
-    int pad[4];
     byte color[3];
+    int pad[4];
     int nWidth, nHeight;
     int xpos, ypos;
 

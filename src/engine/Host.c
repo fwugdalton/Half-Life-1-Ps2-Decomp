@@ -923,8 +923,8 @@ void Master_SetMaster_f(void)
         }
         else
         {
-            Con_Printf("Current:\n");
             i = 1;
+            Con_Printf("Current:\n");
             while (p)
             {
                 Con_Printf("  %i:  %s\n", i++, NET_AdrToString(p->adr));

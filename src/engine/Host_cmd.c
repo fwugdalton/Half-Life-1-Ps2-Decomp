@@ -2128,16 +2128,16 @@ int LoadGamestate(char *level, int createPlayers)
     {
         entity = pSaveData->pTable[i];
         pent = entity.pent;
-        pSaveData->currentIndex = i;
         pSaveData->size = entity.location;
+        pSaveData->currentIndex = i;
         pSaveData->pCurrentData = pSaveData->pBaseData + entity.location;
 
         if (pent)
         {
             if (gEntityInterface.pfnRestore(pent, pSaveData, 0) < 0)
             {
-                ED_Free(pent);
                 entity.pent = NULL;
+                ED_Free(pent);
             }
             else
             {

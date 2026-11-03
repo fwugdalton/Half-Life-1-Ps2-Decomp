@@ -611,7 +611,7 @@ void func_002C7FF8(int endtime, int clientId)
 
         D_00542D70[1] = D_00542D70[0];
         D_00542D70[0].left = (D_003347B8.left + D_00542D70[0].left) >> 1;
-        D_00542D70[0].right = (D_003347B8.right + D_00542D70[0].right) >> 1;
+        D_00542D70[0].right = (D_00542D70[0].right + D_003347B8.right) >> 1;
         D_003347B8 = D_00542D70[count2 - 1];
 
         if (hisound.value > 0)

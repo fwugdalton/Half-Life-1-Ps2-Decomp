@@ -363,8 +363,8 @@ void func_0021C520(void)
         case 0:
             D_003A62E0[i].state = 1;
             D_003A62E0[i].endtime = t + D_003A62E0[i].duration;
-            s = D_003A62E0[i].small;
             b = D_003A62E0[i].big;
+            s = D_003A62E0[i].small;
             break;
         case 1:
             if (D_003A62E0[i].endtime <= t) {

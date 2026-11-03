@@ -197,9 +197,9 @@ void func_00238C40(int id, int freeBuf) {
                 if (freeBuf == 1) {
                     func_00225DB8(D_003A9290[i].buf);
                 }
-                D_003A9290[i].size = 0;
                 D_003A9290[i].state = 0;
                 D_003A9290[i].used = 0;
+                D_003A9290[i].size = 0;
             }
             break;
         }

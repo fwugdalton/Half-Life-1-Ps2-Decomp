@@ -613,8 +613,8 @@ void func_00220B10(void *in, void *out, SaveData *dict)
     unsigned char n;
 
     rec.count = 0;
-    rec.entries = entries;
     func_0022BE50(&cmd, 1, 1, in);
+    rec.entries = entries;
     while (cmd == 4) {
         func_0022BE50(&idx, 2, 1, in);
         if (idx != -1) {

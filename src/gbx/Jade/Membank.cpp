@@ -817,7 +817,7 @@ void func_00226D00(MemoryTrack *h) {
         if (h->next) {
             h->next->prev = h->prev;
         }
-        h->prev->size += h->size + h->tagSize + 0x20;
+        h->prev->size += h->tagSize + h->size + 0x20;
         h = h->prev;
     }
     p = h->next;

@@ -455,7 +455,7 @@ void func_00254F40(cl_entity_t *pent, int modelIndex, int density, int clientId)
         pTemp->entity.baseline.origin[1] = yspeed;
         zspeed = RandomLong(80, 140);
         pTemp->entity.baseline.origin[2] = zspeed;
-        pTemp->die = cl[clientId].time + maxHeight / zspeed - 0.1f;
+        pTemp->die = maxHeight + cl[clientId].time / zspeed - 0.1f;
         pTemp->entity.frame = RandomLong(0, frameCount - 1);
         pTemp->entity.scale = 1.0f / RandomFloat(2, 5);
         pTemp->entity.rendermode = kRenderTransAlpha;
@@ -551,8 +551,8 @@ void func_00255460(vec3_t start, vec3_t end, float height, int modelIndex, int c
         pTemp->die = cl[clientId].time + (height - (origin[2] - start[2])) / zspeed - 0.1f;
         pTemp->entity.frame = RandomLong(0, frameCount - 1);
         pTemp->entity.scale = 1.0f / RandomFloat(2, 5);
-        pTemp->entity.rendermode = kRenderTransAlpha;
         pTemp->entity.renderamt = 255;
+        pTemp->entity.rendermode = kRenderTransAlpha;
     }
 }
 #else

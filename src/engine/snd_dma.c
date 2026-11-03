@@ -665,8 +665,8 @@ void func_002CC510(channel_t *ch, int clientId)
     else
     {
         lscale = (1.0f - dist) * lscale;
-        rscale = (1.0f - dist) * rscale;
         scale = (lscale + rscale) * 0.5f;
+        rscale = (1.0f - dist) * rscale;
         ch->leftvol = ch->rightvol = (int)(ch->master_vol * scale);
     }
 
