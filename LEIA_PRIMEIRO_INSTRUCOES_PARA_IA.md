@@ -48,9 +48,7 @@ Segmentos de `.text` no `SLUS_200.66.yaml` que **ainda são asm**:
 
 | Faixa (offset na rom → vram = offset + 0x100000) | Conteúdo | Situação |
 |---|---|---|
-| `0x000000`–`0x01CF98` (`asm/cod/000000.s`) | _start, Launcher da Gearbox (GUI) e o resto do HUD do cliente (cl_dll) | **próximo** (ver seção 4) |
-| `0x026F80`–`0x02CF18` (`asm/cod/026F80.s`) | IA do parceiro do Decay (métodos Ps2AI* do CBasePlayer) | adiado (layout do CBasePlayer) |
-| `0x0C3350`–`0x0D3508` (`asm/cod/0C3350.s`) | `player.cpp` (~180 funções, `.rodata` 0x36AF40–0x36DCC8) | adiado por ser enorme |
+| `0x000000`–`0x000138` (`asm/cod/000000.s`) | `_start` e o crt0 da Sony (escritos em asm) | **não descompilar** (crt0) |
 | `0x1D0A68` em diante (`asm/cod/1D0A68.s`) | SDK da Sony (libgraph, libpad, libcdvd, libmc, libscf), libm, libstdc++ | **não descompilar** (bibliotecas) |
 
 Já feito (está em `src/`): praticamente todo o engine em C (`src/engine`), o código da Gearbox
