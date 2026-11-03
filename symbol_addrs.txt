@@ -7321,3 +7321,7 @@ FindStates__21CGUIElementDependencyPiT1Pf = 0x00101860; // type:func
 Blend__21CGUIElementDependencyP13GUIOverride_tiif = 0x00101B28; // type:func
 _vt$21CGUIElementDependency = 0x00336D98;
 BlendCommand__FP11CGUICommandT0f = 0x00101A90; // type:func
+func_001007C0 = 0x001007C0; // type:func
+func_00100990 = 0x00100990; // type:func
+func_00100B48 = 0x00100B48; // type:func
+func_00101078 = 0x00101078; // type:func

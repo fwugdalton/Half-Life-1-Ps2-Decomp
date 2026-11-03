@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x000138, cpp, launcher/HalfLife]
       - [0x001450, cpp, launcher/GUIImage]
       - [0x0014C0, cpp, launcher/GUIElementDependency]
       - [0x002090, cpp, launcher/GUIElementState]
@@ -392,6 +393,7 @@ segments:
       - [0x1D0A68, asm, cod/1D0A68]
       - [0x1F5980, textbin, cod/1F5980] # .vutext
       - [0x201B00, data, cod/201B00] # .data
+      - [0x201CC0, .data, launcher/HalfLife]
       - [0x201F70, .data, launcher/GUIElementInput]
       - [0x201F78, .data, launcher/GUIElementCaption]
       - [0x2029E0, .data, launcher/GUIVariable]
@@ -534,7 +536,7 @@ segments:
       - [0x2322E8, .data, engine/pr_cmds]
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
-      - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x236C80, .rodata, launcher/HalfLife] # .rodata
       - [0x236D28, .rodata, launcher/GUIElementDependency]
       - [0x236DB8, .rodata, launcher/GUIElementState]
       - [0x236E70, .rodata, launcher/GUIElementInput]

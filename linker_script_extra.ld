@@ -843,6 +843,9 @@ D_00338990 = 0x00338990;
 D_003389B8 = 0x003389B8;
 D_003389C0 = 0x003389C0;
 D_00338A18 = 0x00338A18;
+/* launcher/HalfLife: funções do motor sem símbolo no asm e o tamanho da pilha */
+D_00399008 = 0x00399008;
+D_0039900C = 0x0039900C;
 /* engine/sv_main: início */
 D_0038E8F8 = 0x0038E8F8;
 /* engine/sv_main: fim */
