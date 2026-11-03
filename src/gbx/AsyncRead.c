@@ -116,16 +116,16 @@ int func_002388A0(int lba, int sectors, int size, void *buf) {
 INCLUDE_ASM("asm/nonmatchings/gbx/AsyncRead", func_002388A0);
 #endif
 
-#ifdef NON_MATCHING /* o laço não é girado nem reduzido como no alvo */
 int func_00238A48(int id) {
     int done;
     int i;
+    int found;
 
     done = 0;
     func_002EF6A0(D_003A9370);
     i = 0;
     while (i < 8) {
-        if (D_003A9290[i].id == id) {
+        if (found = D_003A9290[i].id == id) {
             done = D_003A9290[i].state == 3;
             break;
         }
@@ -134,9 +134,6 @@ int func_00238A48(int id) {
     func_002EF680(D_003A9370);
     return done;
 }
-#else
-INCLUDE_ASM("asm/nonmatchings/gbx/AsyncRead", func_00238A48);
-#endif
 
 #ifdef NON_MATCHING /* o laço não é girado nem reduzido como no alvo */
 int func_00238AD8(int id) {

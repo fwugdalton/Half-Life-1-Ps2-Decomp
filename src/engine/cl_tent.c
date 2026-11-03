@@ -624,7 +624,6 @@ void func_002556A8(vec3_t origin, vec3_t velocity, int modelIndex, int life, int
 INCLUDE_ASM("asm/nonmatchings/engine/cl_tent", func_002556A8);
 #endif
 
-#ifdef NON_MATCHING
 void func_002558C0(int type, vec3_t start, vec3_t end, int modelIndex, int count, float life, float size, float amp, int renderamt, float speed, int clientId)
 {
     TEMPENTITY *pTemp;
@@ -664,12 +663,9 @@ void func_002558C0(int type, vec3_t start, vec3_t end, int modelIndex, int count
         pTemp->frameMax = frameCount;
         pTemp->entity.rendercolor.r = 255;
         pTemp->entity.rendercolor.g = 255;
-        pTemp->entity.rendercolor.b = 255;
+        (*&pTemp)->entity.rendercolor.b = 255;
     }
 }
-#else
-INCLUDE_ASM("asm/nonmatchings/engine/cl_tent", func_002558C0);
-#endif
 
 void func_00255B70(vec3_t pos, float speed, float life, int count, int modelIndex, int clientId)
 {

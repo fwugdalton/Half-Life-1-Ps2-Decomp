@@ -98,21 +98,22 @@ void func_00247998(int x, int y, int clientId)
 INCLUDE_RODATA("asm/nonmatchings/engine/cl_draw", D_00389218);
 
 /* SPR_Load */
-#ifdef NON_MATCHING
 int func_00247A80(char *pTextureName)
 {
     int i;
+    char *file;
 
     if (!pTextureName || !D_0033169C || D_003316A0 <= 0)
         return 0;
 
     for (i = 0; i < D_003316A0; i++)
     {
+        file = D_00389218;
         if (!D_0033169C[i].pSprite)
         {
             Mem_PushTag();
             Mem_SetTag(1);
-            D_0033169C[i].pName = Mem_DbgMalloc(strlen(pTextureName) + 1, D_00389218, 116);
+            D_0033169C[i].pName = Mem_DbgMalloc(strlen(pTextureName) + 1, file, 116);
             Mem_PopTag();
             strcpy(D_0033169C[i].pName, pTextureName);
         }
@@ -132,9 +133,6 @@ int func_00247A80(char *pTextureName)
     Sys_Error("cannot allocate more than %d HUD sprites\n", 128);
     return 0;
 }
-#else
-INCLUDE_ASM("asm/nonmatchings/engine/cl_draw", func_00247A80);
-#endif
 
 /* SPR_Shutdown */
 void func_00247C00(void)
