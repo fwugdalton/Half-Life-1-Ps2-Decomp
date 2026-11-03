@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x001450, cpp, launcher/GUIImage]
       - [0x0014C0, cpp, launcher/GUIElementDependency]
       - [0x002090, cpp, launcher/GUIElementState]
       - [0x002608, cpp, launcher/GUIElementInput]
