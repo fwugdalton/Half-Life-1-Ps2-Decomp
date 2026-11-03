@@ -453,14 +453,14 @@ void func_00227F58(int poolSize) {
     h = (MemoryTrack *)func_002281F8(poolSize);
     D_003A6430.state = 2;
     D_003A6430.end = (char *)h + poolSize;
-    D_003A6430.start = h;
     h->flags = 0xFF;
+    D_003A6430.start = h;
     h->prev = 0;
     h->next = 0;
     h->flags = all;
-    h->tagSize = 0;
     h->size = D_003A6430.poolSize - 0x20;
     h->nextFree = 0;
+    h->tagSize = 0;
     h->prevFree = 0;
     D_00328148 = 0;
     D_0032814C = 0;

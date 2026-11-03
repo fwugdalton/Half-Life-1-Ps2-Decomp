@@ -564,8 +564,8 @@ void func_002B2598(vec3_t org, int clientId)
                 D_00399660 = p;
 
                 p->die = cl[clientId].time + RandomFloat(0.2f, 0.34f);
-                p->color = RandomLong(7, 14);
                 p->packedColor = 0;
+                p->color = RandomLong(7, 14);
                 p->type = pt_slowgrav;
 
                 dir[0] = (float)j * 8;
@@ -1555,8 +1555,8 @@ void func_002B5228(int deadEntity, int clientId)
             }
         }
 
-        pbeam->next = pnewlist;
         pnewlist = pbeam;
+        pbeam->next = pnewlist;
         pbeam = pnext;
     }
 
@@ -1708,8 +1708,8 @@ void func_002B57C8(vec3_t source, vec3_t delta, float width, float scale, float 
         brightness = 0;
 
     glBegin(5);
-    D_00399534++;
     D_00399598 += 2;
+    D_00399534++;
     count = 2;
     tri_Brightness(brightness);
     glTexCoord2f(0, vLast);
