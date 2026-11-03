@@ -201,7 +201,7 @@ uIntf *v;               /* working area: values in order of bit length */
         /* allocate new table */
         if (*hn + z > MANY)     /* (note: doesn't matter for fixed) */
           return Z_MEM_ERROR;   /* not enough memory */
-        u[h] = q = hp + *hn;
+        q = u[h] = hp + *hn;
         *hn += z;
 
         /* connect to last table, if there is one */

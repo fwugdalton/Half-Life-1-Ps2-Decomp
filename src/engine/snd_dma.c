@@ -667,7 +667,7 @@ void func_002CC510(channel_t *ch, int clientId)
         lscale = (1.0f - dist) * lscale;
         rscale = (1.0f - dist) * rscale;
         scale = (lscale + rscale) * 0.5f;
-        ch->rightvol = ch->leftvol = (int)(ch->master_vol * scale);
+        ch->leftvol = ch->rightvol = (int)(ch->master_vol * scale);
     }
 
     func_002CA320(ch);
@@ -754,7 +754,7 @@ void func_002CC7A8(channel_t *ch)
 
     if (D_00334D88.value == 0.0f)
     {
-        ch->rightvol = ch->leftvol = (int)(ch->master_vol * ((left + right) * 0.5f));
+        ch->leftvol = ch->rightvol = (int)(ch->master_vol * ((left + right) * 0.5f));
     }
     else
     {

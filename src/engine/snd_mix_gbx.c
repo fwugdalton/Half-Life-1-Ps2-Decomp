@@ -363,7 +363,7 @@ int func_002C7788(channel_t *ch, sfxcache_t **psc, int ltime, int ichan, int cli
                 return 1;
             }
 
-            *psc = sc = S_LoadSound(sfx, ch);
+            sc = *psc = S_LoadSound(sfx, ch);
             if (sc && sfx)
             {
                 ch->pos = 0;
@@ -1160,8 +1160,8 @@ void func_002C8F28(void)
         }
     }
 
-    D_00544DA8[1].lp = D_00544DA8[2].lp = (int)D_00334838.value;
-    D_00544DA8[1].delayfeed = D_00544DA8[2].delayfeed = (int)(D_00334820.value * 255);
+    D_00544DA8[2].lp = D_00544DA8[1].lp = (int)D_00334838.value;
+    D_00544DA8[2].delayfeed = D_00544DA8[1].delayfeed = (int)(D_00334820.value * 255);
 }
 #else
 INCLUDE_ASM("asm/nonmatchings/engine/snd_mix_gbx", func_002C8F28);
