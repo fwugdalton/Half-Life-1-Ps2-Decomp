@@ -1526,7 +1526,6 @@ void func_002C9C68(int ichan)
     memset(&D_00553DE8[ichan], 0, sizeof(stream_t));
 }
 
-#ifdef NON_MATCHING
 void func_002C9C98(channel_t *ch, sfx_t *sfx)
 {
     int i;
@@ -1551,7 +1550,7 @@ void func_002C9C98(channel_t *ch, sfx_t *sfx)
     {
         size = D_00553DE8[i].unk_30 - D_00553DE8[i].unk_38;
         if (size > 0)
-            bytes = D_00553DE8[i].unk_34 % 2048 - 2048 + size * 2048;
+            bytes = size * 2048 + (D_00553DE8[i].unk_34 % 2048 - 2048);
         else
             bytes = 0;
     }
@@ -1572,9 +1571,6 @@ void func_002C9C98(channel_t *ch, sfx_t *sfx)
 
     sc->length = D_00553DE8[i].len;
 }
-#else
-INCLUDE_ASM("asm/nonmatchings/engine/snd_mix_gbx", func_002C9C98);
-#endif
 
 void func_002C9E48(int entnum, int entchannel, int clientId)
 {
