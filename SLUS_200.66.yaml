@@ -70,6 +70,7 @@ segments:
     subalign: null
     subsegments:
       - [0x000000, asm, cod/000000] # .text
+      - [0x002090, cpp, launcher/GUIElementState]
       - [0x002608, cpp, launcher/GUIElementInput]
       - [0x003778, cpp, launcher/GUIElementCaption]
       - [0x0048C0, cpp, launcher/GUIElement]
@@ -532,6 +533,7 @@ segments:
       - [0x232374, .data, engine/pr_edict]
       - [0x232388, data, cod/232388]
       - [0x236C80, rodata, cod/236C80] # .rodata
+      - [0x236DB8, .rodata, launcher/GUIElementState]
       - [0x236E70, .rodata, launcher/GUIElementInput]
       - [0x237168, .rodata, launcher/GUIElementCaption]
       - [0x2371E0, .rodata, launcher/GUIElement]
