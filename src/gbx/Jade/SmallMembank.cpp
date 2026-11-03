@@ -314,8 +314,8 @@ void *func_00227B70(void *p, int size, const char *file, int line) {
     int start;
 
     func_00228FA0(line, num, 10);
-    i = 0;
     start = 0;
+    i = 0;
     if (file) {
         while (file[i]) {
             tag[i - start] = file[i];

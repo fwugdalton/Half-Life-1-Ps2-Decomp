@@ -401,8 +401,8 @@ void CWarpBall::MakeMonster(void)
     pevCreate->spawnflags = m_iMonsterSpawnFlags;
     SetBits(pevCreate->spawnflags, SF_MONSTER_FALL_TO_GROUND);
 
-    DispatchSpawn(ENT(pevCreate));
     pevCreate->owner = edict();
+    DispatchSpawn(ENT(pevCreate));
 
     if (!FStringNull(pev->netname))
         pevCreate->targetname = pev->netname;

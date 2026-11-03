@@ -259,8 +259,8 @@ void CWeaponISlave::StartZap(void)
         WRITE_BYTE(180);
         WRITE_BYTE(96);
         WRITE_BYTE(flTime * 10);
-        WRITE_BYTE(0);
         MESSAGE_END();
+        WRITE_BYTE(0);
     }
 
     m_iHudState = 2;

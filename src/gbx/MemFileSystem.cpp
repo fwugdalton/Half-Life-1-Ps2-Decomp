@@ -365,8 +365,8 @@ extern "C" int func_0022B590(const char *srcName, const char *dstName)
         dst = func_0022BFD8(dstName);
         zs->avail_in = src->size - src->pos;
         zs->next_in = (Bytef *)(src->data + src->pos);
-        zs->next_out = (Bytef *)dst->data;
         zs->avail_out = size;
+        zs->next_out = (Bytef *)dst->data;
         inflate(zs, Z_SYNC_FLUSH);
         dst->size = size;
     }

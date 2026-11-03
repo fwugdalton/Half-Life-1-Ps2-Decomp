@@ -241,8 +241,8 @@ void func_00232540(FileHandle_t f) {
     int accounted;
     int nodes;
 
-    leaks = 0;
     freeNodes = 0;
+    leaks = 0;
     leakBytes = 0;
     freeBytes = 0;
     nodes = 0;

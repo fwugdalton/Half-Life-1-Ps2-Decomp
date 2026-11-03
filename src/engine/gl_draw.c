@@ -1166,8 +1166,8 @@ void GL_BuildDecal(psidecal_t *d)
     memcpy(d->name, d->hdr.name, 16);
     hdr = &d->hdr;
     d->name[15] = 0;
-    d->header = hdr;
     d->width = hdr->width;
+    d->header = hdr;
     d->height = hdr->height;
     d->width2 = hdr->width2;
     d->height2 = hdr->height2;

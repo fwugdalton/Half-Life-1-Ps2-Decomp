@@ -872,8 +872,8 @@ void NET_Init(void)
     Cmd_AddCommand("maxplayers", func_002C7168);
     Cmd_AddCommand("numclients", func_002C7268);
 
-    net_message.data = D_0053DE38;
     net_message.maxsize = 0x3714;
+    net_message.data = D_0053DE38;
 
     D_00334738 = 1;
     D_0033473C = 1;

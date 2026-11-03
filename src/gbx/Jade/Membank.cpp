@@ -341,8 +341,8 @@ void *func_002260D0(void *p, int size, const char *file, int line) {
     int start;
 
     func_00228FA0(line, num, 10);
-    i = 0;
     start = 0;
+    i = 0;
     if (file) {
         while (file[i]) {
             tag[i - start] = file[i];
@@ -423,26 +423,27 @@ void func_00226300(void) {
 
 INCLUDE_RODATA("asm/nonmatchings/gbx/Jade/Membank", D_00386258);
 
-#ifdef NON_MATCHING /* ordem dos blocos */
+extern "C" const char D_00386258[];
+
 int func_00226318(const char *name) {
     char buf[256];
     int f;
     int r;
 
-    f = FS_Open(name, "w");
+    f = FS_Open(name, D_00386258);
     if (f) {
         if (D_0032809C) {
             func_00226FC0(f);
             func_00226E98(f);
         }
-        r = 0x81030001;
         FS_Close(f);
+        r = 0x81030001;
     } else {
         r = 0x41030003;
     }
     if (r == 0x81030001) {
         sprintf(buf, "raw_%s", name);
-        f = FS_Open(buf, "w");
+        f = FS_Open(buf, D_00386258);
         if (f) {
             if (D_0032809C) {
                 func_00227300(f);
@@ -454,9 +455,6 @@ int func_00226318(const char *name) {
     }
     return r;
 }
-#else
-INCLUDE_ASM("asm/nonmatchings/gbx/Jade/Membank", func_00226318);
-#endif
 
 int func_00226410(void) {
     return sizeof(MemoryTrack);
