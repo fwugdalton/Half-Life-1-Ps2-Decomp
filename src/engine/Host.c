@@ -68,7 +68,7 @@ void Mod_Init(void);
 void CM_FreePAS(void);
 void MSG_WriteString(sizebuf_t *sb, char *s);
 void FS_FPrintf(FileHandle_t f, char *fmt, ...);
-void func_00222500(FileHandle_t f, char *fmt, ...);
+int func_00222500(FileHandle_t f, char *fmt, ...); /* FS_FPrintf */
 FileHandle_t FS_Open(char *name, char *mode);
 void FS_Close(FileHandle_t f);
 int setjmp(void *env);

@@ -83,7 +83,7 @@ void *memcpy(void *, const void *, unsigned int);
 void qsort(void *base, int num, int width, int (*compare)(const void *, const void *));
 FileHandle_t FS_Open(const char *path, const char *mode);
 void FS_Close(FileHandle_t file);
-void func_00222500(FileHandle_t file, const char *fmt, ...);
+int func_00222500(FileHandle_t file, const char *fmt, ...); /* FS_FPrintf */
 void Q_strncpy(char *dest, const char *src, int count);
 int COM_CheckParm(char *parm);
 int Q_atoi(const char *str);
@@ -683,7 +683,6 @@ int CacheSystemCompare(const void *ppcs1, const void *ppcs2)
     return strcasecmp(pcs1->name, pcs2->name);
 }
 
-#ifdef NON_MATCHING
 void Cache_Print(void)
 {
     cache_system_t *cd;
@@ -712,9 +711,6 @@ void Cache_Print(void)
 
     FS_Close(file);
 }
-#else
-INCLUDE_ASM("asm/nonmatchings/engine/zone", Cache_Print);
-#endif
 
 qboolean ComparePath1(char *path1, char *path2)
 {
@@ -858,7 +854,6 @@ void *Cache_Alloc(cache_user_t *c, int size, char *name)
     return Cache_Check(c);
 }
 
-#ifdef NON_MATCHING
 void Hunk_PrintDetails(void)
 {
     hunk_t *h, *endlow, *starthigh, *endhigh;
@@ -924,9 +919,6 @@ void Hunk_PrintDetails(void)
 
     FS_Close(file);
 }
-#else
-INCLUDE_ASM("asm/nonmatchings/engine/zone", Hunk_PrintDetails);
-#endif
 
 void Cache_Print_Details(void)
 {
@@ -1083,7 +1075,6 @@ INCLUDE_RODATA("asm/nonmatchings/engine/zone", D_00391048);
 
 INCLUDE_RODATA("asm/nonmatchings/engine/zone", D_00391058);
 
-#ifdef NON_MATCHING
 void Cache_Print_Sounds_And_Totals(void)
 {
     char buf[64];
@@ -1131,6 +1122,3 @@ void Cache_Print_Sounds_And_Totals(void)
     func_00222500(file, "Total bytes in cache used by sound:  %s\r\n", CommaPrint(totalsndbytes, buf));
     FS_Close(file);
 }
-#else
-INCLUDE_ASM("asm/nonmatchings/engine/zone", Cache_Print_Sounds_And_Totals);
-#endif

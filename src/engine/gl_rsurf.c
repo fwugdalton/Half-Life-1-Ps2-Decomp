@@ -2281,11 +2281,11 @@ void DrawTextureChains(int clientId)
     }
 }
 
-#ifdef NON_MATCHING
 void R_BlendLightmaps(void)
 {
     int i;
     glpoly_t *p;
+    int tex;
     qboolean *pmod;
     byte *base;
 
@@ -2298,8 +2298,9 @@ void R_BlendLightmaps(void)
             continue;
 
         pmod = &lightmap_modified[i];
+        tex = lightmap_textures;
         base = lightmaps + i * BLOCK_WIDTH * BLOCK_HEIGHT * 4;
-        GL_Bind(lightmap_textures + i);
+        GL_Bind(tex + i);
         if (*pmod)
         {
             *pmod = false;
@@ -2316,9 +2317,6 @@ void R_BlendLightmaps(void)
     }
     D_0033102C = 0;
 }
-#else
-INCLUDE_ASM("asm/nonmatchings/engine/gl_rsurf", R_BlendLightmaps);
-#endif
 
 #ifdef NON_MATCHING
 void func_002A6BE0(byte *p)

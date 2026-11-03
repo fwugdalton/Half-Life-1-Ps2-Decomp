@@ -647,7 +647,7 @@ int sprintf(char *buf, const char *fmt, ...);
 int strlen(const char *s);
 void *memset(void *, int, unsigned int);
 void *memcpy(void *, const void *, unsigned int);
-void func_00222500(void *f, char *fmt, ...);
+int func_00222500(void *f, char *fmt, ...); /* FS_FPrintf */
 void Log_Printf(const char *fmt, ...);
 int COM_CheckParm(char *parm);
 int Q_atoi(char *str);

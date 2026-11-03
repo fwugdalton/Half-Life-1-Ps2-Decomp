@@ -18,7 +18,7 @@ void *Cache_Check(cache_user_t *c);
 void Cache_Free(cache_user_t *c);
 FileHandle_t FS_Open(char *name, char *mode);
 void FS_Close(FileHandle_t f);
-void func_00222500(FileHandle_t f, char *fmt, ...);
+int func_00222500(FileHandle_t f, char *fmt, ...); /* FS_FPrintf */
 int func_00228C48(sfx_t *sfx, char *name);
 int func_002CE270(void);
 
@@ -235,7 +235,6 @@ void func_002CB768(void)
     D_00465884 = MAX_SFX - (D_0046588C + D_00465888);
 }
 
-#ifdef NON_MATCHING
 void func_002CB7B0(void)
 {
     FileHandle_t f;
@@ -264,9 +263,6 @@ void func_002CB7B0(void)
 
     FS_Close(f);
 }
-#else
-INCLUDE_ASM("asm/nonmatchings/engine/snd_dma", func_002CB7B0);
-#endif
 
 sfx_t *func_002CB9A0(char *name)
 {

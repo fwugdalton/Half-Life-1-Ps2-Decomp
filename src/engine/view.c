@@ -474,7 +474,6 @@ void func_0028CA58(void)
     cshift_color[3] = cshift_color[2] = cshift_color[1] = cshift_color[0] = 0;
 }
 
-#ifdef NON_MATCHING
 void V_UpdatePalette(void)
 {
     int i, ir, ig, ib;
@@ -487,11 +486,12 @@ void V_UpdatePalette(void)
 
     func_0028CA58();
 
-    a = cshift_color[3] * 255.0f;
+    frac = cshift_color[3];
+    a = frac * 255.0f;
     r = cshift_color[0] * a;
     g = cshift_color[1] * a;
     b = cshift_color[2] * a;
-    frac = 1.0f - cshift_color[3];
+    frac = 1.0f - frac;
 
     for (i = 0; i < 256; i++)
     {
@@ -509,9 +509,6 @@ void V_UpdatePalette(void)
         ramps[2][i] = texgammatable[ib];
     }
 }
-#else
-INCLUDE_ASM("asm/nonmatchings/engine/view", V_UpdatePalette);
-#endif
 
 float angledelta(float a)
 {

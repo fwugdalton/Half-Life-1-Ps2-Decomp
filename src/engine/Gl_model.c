@@ -165,7 +165,7 @@ void *Cache_Check(cache_user_t *c);
 void Cache_Free(cache_user_t *c);
 FileHandle_t FS_Open(char *name, char *mode);
 void FS_Close(FileHandle_t f);
-void func_00222500(FileHandle_t f, char *fmt, ...);
+int func_00222500(FileHandle_t f, char *fmt, ...); /* FS_FPrintf */
 model_t *Mod_LoadModel(model_t *mod, qboolean crash);
 model_t *Mod_FindName(char *name);
 void Mod_LoadBrushModel(model_t *mod);
@@ -268,7 +268,6 @@ void Mod_EndGameModels(void)
     mod_level = &mod_game[mod_numgame];
 }
 
-#ifdef NON_MATCHING
 void Mod_Report_f(void)
 {
     FileHandle_t f;
@@ -294,9 +293,6 @@ void Mod_Report_f(void)
 
     FS_Close(f);
 }
-#else
-INCLUDE_ASM("asm/nonmatchings/engine/Gl_model", Mod_Report_f);
-#endif
 
 void *Mod_Extradata(model_t *mod)
 {

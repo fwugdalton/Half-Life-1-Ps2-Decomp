@@ -36,7 +36,7 @@ struct SpuBlock {
 
 FileHandle_t FS_Open(char *name, char *mode);
 void FS_Close(FileHandle_t f);
-void func_00222500(FileHandle_t f, char *fmt, ...);
+int func_00222500(FileHandle_t f, char *fmt, ...); /* FS_FPrintf */
 SpuBlock func_00232210(unsigned int size);
 int func_00232188(SpuBlock *b);
 void func_002321D0(char *name);

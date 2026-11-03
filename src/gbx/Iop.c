@@ -23,14 +23,14 @@ typedef struct {
 
 /* desliga as interrupções e espera a CPU confirmar */
 #define DI()                                                     \
-    do {                                                         \
+    {                                                            \
         int stat_;                                               \
         do {                                                     \
             __asm__ volatile("di");                              \
             __asm__ volatile("sync.p");                          \
             __asm__ volatile("mfc0 %0, $12" : "=r"(stat_));      \
         } while (stat_ & 0x10000);                               \
-    } while (0)
+    }
 #define EI() __asm__ volatile("ei")
 
 int func_002EF460(ThreadParam *t);
@@ -84,16 +84,12 @@ void func_00238F50(void) {
 INCLUDE_ASM("asm/nonmatchings/gbx/Iop", func_00238F50);
 #endif
 
-#ifdef NON_MATCHING /* o lui 0x10000 do DI() fica depois dos sq */
 void func_00238FC8(int cmd, void *handler, void *arg) {
     DI();
     func_002F1A60(cmd, handler, arg);
     EI();
     D_003A93F8[cmd] = 1;
 }
-#else
-INCLUDE_ASM("asm/nonmatchings/gbx/Iop", func_00238FC8);
-#endif
 
 void func_00239030(void) {
     ThreadParam t;
