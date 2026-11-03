@@ -1190,9 +1190,9 @@ void func_0024AD40(int clientId)
     if (flags & D_00399384)
     {
         info->unk_E8 = MSG_ReadBits(12);
-        x = info->unk_EA = MSG_ReadByteBits(6);
+        info->unk_EA = x = MSG_ReadByteBits(6);
         if (x > 100)
-            info->unk_EA = 100;
+            info->unk_EA = x = 100;
         else
             info->unk_EA = x;
     }
