@@ -95,7 +95,7 @@ extern float host_frametime;
 extern sfx_t *D_00553DD8[NUM_AMBIENTS]; /* ambient_sfx */
 extern char D_00395F80[];       /* "Warning: pitch shift ignored on stream sound %s\n" */
 extern float D_00334D38;        /* sound_nominal_clip_dist */
-void func_002CA7E8(channel_t *ch, char *name, int clientId);
+sfxcache_t *func_002CA7E8(channel_t *ch, char *name, int clientId);
 void func_002CA700(channel_t *ch, int pitch);
 void func_002CB290(channel_t *ch, sfxcache_t *sc);
 void func_002C9E48(int entnum, int entchannel, int clientId);
@@ -109,7 +109,7 @@ int strcasecmp(const char *, const char *);
 void func_002CA018(void);
 void func_002C8218(void);
 void func_002C84C0(void);
-void func_002C9C10(void);
+int func_002C9C10(void);
 void func_002CD340(int, int);
 void func_002CECC0(void);
 void func_00231D68(float);
@@ -936,7 +936,6 @@ void S_StartDynamicSound(int entnum, int entchannel, sfx_t *sfx, vec3_t origin, 
     }
 }
 
-#ifdef NON_MATCHING
 void S_StartStaticSound(int entnum, int entchannel, sfx_t *sfx, vec3_t origin, float fvol, float attenuation, int flags, int pitch, int clientId)
 {
     channel_t *ss;
@@ -1023,9 +1022,6 @@ void S_StartStaticSound(int entnum, int entchannel, sfx_t *sfx, vec3_t origin, f
     else
         func_002CC510(ss, clientId);
 }
-#else
-INCLUDE_ASM("asm/nonmatchings/engine/snd_dma", S_StartStaticSound);
-#endif
 
 void func_002CD280(int entnum, int entchannel, int clientId)
 {

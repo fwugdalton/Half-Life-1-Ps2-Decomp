@@ -9,7 +9,7 @@ char *strcat(char *dst, const char *src);
 void *memset(void *dst, int c, unsigned int n);
 void *FS_Open(const char *name, const char *mode);
 void FS_Close(void *f);
-void func_00222500(void *f, const char *fmt, ...);
+int func_00222500(void *f, const char *fmt, ...); /* FS_FPrintf */
 unsigned long func_00229B88(void);
 
 void func_0022ACE0(const char *fmt, ...);
@@ -46,8 +46,6 @@ extern "C" void func_0022AC18(const char *fmt, ...)
     func_0022ACE0(line);
 }
 
-#ifdef NON_MATCHING
-/* só a ordem de a1/a2 antes do primeiro func_00222500 e v0/v1 no laço */
 extern "C" void func_0022ACE0(const char *fmt, ...)
 {
     char msg[0x800];
@@ -71,9 +69,6 @@ extern "C" void func_0022ACE0(const char *fmt, ...)
     func_00222500(D_0032820C, msg);
     func_00222500(D_0032820C, "\n");
 }
-#else
-INCLUDE_ASM("asm/nonmatchings/gbx/Logger", func_0022ACE0);
-#endif
 
 extern "C" void func_0022AE18(void)
 {

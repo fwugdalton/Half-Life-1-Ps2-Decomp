@@ -48,7 +48,7 @@ int func_002296E0(HashTable *t, int len, const char *s);
 float func_00229708(HashTable *t);
 int FS_Open(const char *name, const char *mode);
 void FS_Close(int f);
-void func_00222500(int f, const char *fmt, ...);
+int func_00222500(int f, const char *fmt, ...); /* FS_FPrintf */
 
 extern HashTableVtbl D_00386C38;
 
@@ -138,7 +138,6 @@ const char *func_00229570(HashTable *t, long value) {
 INCLUDE_ASM("asm/nonmatchings/gbx/Jade/HashTable", func_00229570);
 #endif
 
-#ifdef NON_MATCHING /* registrador do limite do laço */
 void func_002295C8(HashTable *t, const char *name) {
     int f;
     int i;
@@ -154,9 +153,6 @@ void func_002295C8(HashTable *t, const char *name) {
     }
     FS_Close(f);
 }
-#else
-INCLUDE_ASM("asm/nonmatchings/gbx/Jade/HashTable", func_002295C8);
-#endif
 
 unsigned int func_002296C0(HashTable *t, unsigned int key) {
     return key % t->numSlots;

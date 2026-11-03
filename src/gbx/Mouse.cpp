@@ -31,11 +31,11 @@ void Mem_SetTag(int tag);
 void Mem_PopTag(void);
 unsigned long func_00229B88(void);
 void Key_Event(int key, int down);
-void func_00234D18(void);
-void func_00234DA0(UsbMouseInfo *info);
+int func_00234D18(void);
+int func_00234DA0(UsbMouseInfo *info);
 int func_00234DE8(int port, UsbMouse *m);
 int func_00234E30(int port, unsigned char *info);
-void func_00234E78(int mode);
+int func_00234E78(int mode);
 void func_00231848(int port, unsigned char *info, UsbMouse *m);
 void func_00231898(MouseStateManager *mgr);
 
@@ -46,7 +46,6 @@ extern int D_00334FC4;
 extern UsbMouseInfo D_003A7740;
 extern unsigned char D_003A77C0[];
 
-#ifdef NON_MATCHING
 /* só o registrador do %hi de D_00328380 (v0 em vez de v1) */
 void func_002312D0(void) {
     int i;
@@ -62,9 +61,6 @@ void func_002312D0(void) {
     D_00328340 = 1;
     Cvar_RegisterVariable(&D_00328348);
 }
-#else
-INCLUDE_ASM("asm/nonmatchings/gbx/Mouse", func_002312D0);
-#endif
 
 #ifdef NON_MATCHING
 /* fluxo equivalente; agendamento e endereços de D_00328380[i] diferentes */

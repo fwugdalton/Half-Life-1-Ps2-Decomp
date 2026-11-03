@@ -58,7 +58,7 @@ void func_00228FA0(int n, char *buf, int radix);
 bool func_00225958(char c);
 int FS_Open(const char *name, const char *mode);
 void FS_Close(int f);
-void func_00222500(int f, const char *fmt, ...);
+int func_00222500(int f, const char *fmt, ...); /* FS_FPrintf */
 int sprintf(char *buf, const char *fmt, ...);
 
 extern int D_00328140;              /* semente da soma de verificação */
@@ -737,19 +737,19 @@ INCLUDE_RODATA("asm/nonmatchings/gbx/Jade/SmallMembank", D_00386AE8);
 
 INCLUDE_ASM("asm/nonmatchings/gbx/Jade/SmallMembank", func_00228A18);
 
-#ifdef NON_MATCHING /* registradores da soma */
 int func_00228B20(MemoryTrack *h) {
     int c;
 
-    c = D_00328140 - 0x20; c -= (int)h; c -= h->flags; c -= h->size; c -= h->tagSize;
+    c = D_00328140;
+    c -= 0x20 + (int)h;
+    c -= h->flags;
+    c -= h->size;
+    c -= h->tagSize;
     if (h->tagSize > 0) {
         c -= ((char *)h)[h->size + 0x20];
     }
     return c;
 }
-#else
-INCLUDE_ASM("asm/nonmatchings/gbx/Jade/SmallMembank", func_00228B20);
-#endif
 
 int func_00228B68(int size) {
     if (size > 0) {
