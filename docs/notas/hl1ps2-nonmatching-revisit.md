@@ -13,4 +13,7 @@ Desde 2026-11-03 o código do jogo está todo em C/C++ (sobram em asm só o crt0
 - Lição: V_UpdatePalette casou com `frac = cshift_color[3]; a = frac * 255; ... frac = 1 - frac;`.
 - Lição: func_002C9C98 casou com `size * 2048 + (x % 2048 - 2048)`, e R_BlendLightmaps com `tex = lightmap_textures;` lido antes do base.
 - Cuidado: `pkill -f permuter.py` mata o próprio shell se a linha de comando contiver o texto.
-Commits 2e732cf e 9214e38. Ver [[hl1ps2-dlls-aiplayer]].
+- Lição: func_002CB290 casou com `length = ...; skiplen = length;`, e Draw_GetAlphaFontChar com `code = (short)code >> 8; ft = code * ...`.
+- Scripts no repo: tools/handoff/scan.sh, runq.sh (PERMUTER/PERMDIR) e unwrap2.py. Filas q1 (até 12 dif.), q2 (13 a 40) e q3 (41 a 100, nenhuma casou) já rodadas; o que sobrou nelas não casa com o permuter em 10 min.
+- Tentadas à mão sem sucesso (não repetir as mesmas variantes): Membank func_00225BD8 (ordem e forma do if), util EntityFromIndex (formas de indexar), SaveInfo func_00230E38 (ordem das locais, forma do laço e do ret), SystemSave func_0022DB88 (forma do argumento pak.data+filepos), apache TraceAttack (trunc+mfc1+sw: int temporário, cast, *0.2f).
+Commits 2e732cf, 9214e38 e 61a1c87. Ver [[hl1ps2-dlls-aiplayer]].
