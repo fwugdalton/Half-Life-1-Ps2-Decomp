@@ -938,7 +938,7 @@ void func_00256668(vec3_t pos, vec3_t dir, int modelIndex, int count, int speed,
             return;
 
         pTemp->entity.rendermode = kRenderTransAlpha;
-        pTemp->entity.baseline.renderamt = pTemp->entity.renderamt = 255;
+        pTemp->entity.renderamt = pTemp->entity.baseline.renderamt = 255;
         pTemp->entity.renderfx = kRenderFxNoDissipation;
         pTemp->entity.scale = 0.5f;
         pTemp->flags |= FTENT_FADEOUT | FTENT_SLOWGRAVITY;
@@ -1127,13 +1127,13 @@ void func_00256F20(vec3_t org, int radius, int modelIndex, int count, int flags,
         {
             pTemp->entity.renderfx = kRenderFxNoDissipation;
             pTemp->entity.rendermode = kRenderTransAlpha;
-            pTemp->entity.renderamt = pTemp->entity.baseline.renderamt = 128;
+            pTemp->entity.baseline.renderamt = pTemp->entity.renderamt = 128;
         }
         else
         {
             pTemp->entity.rendermode = kRenderNormal;
             pTemp->entity.renderfx = kRenderFxNoDissipation;
-            pTemp->entity.renderamt = pTemp->entity.baseline.renderamt = 255;
+            pTemp->entity.baseline.renderamt = pTemp->entity.renderamt = 255;
         }
 
         pTemp->entity.scale = RandomFloat(0.75f, 1.25f);
@@ -3231,7 +3231,7 @@ void func_0025CA10(vec3_t org, int modelIndex, int reverse, int density, vec3_t 
             pTemp->entity.framerate = 10;
             pTemp->entity.rendermode = kRenderTransAdd;
             pTemp->entity.renderfx = kRenderFxNoDissipation;
-            pTemp->entity.renderamt = pTemp->entity.baseline.renderamt = 200;
+            pTemp->entity.baseline.renderamt = pTemp->entity.renderamt = 200;
             pTemp->entity.framerate = RandomFloat(0.1f, 0.4f);
             pTemp->flags = FTENT_ROTATE | FTENT_FADEOUT;
 
