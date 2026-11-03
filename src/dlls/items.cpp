@@ -335,7 +335,7 @@ class CItemBattery : public CItem
 #endif
 		if ((pPlayer->pev->armorvalue < MAX_NORMAL_BATTERY) &&
 			(pPlayer->pev->weapons & (1<<WEAPON_SUIT)) &&
-			!(pPlayer->m_afPhysicsFlags & PFLAG_PS2_NOPICKUP))
+			!(pPlayer->m_iHideHUD & HIDEHUD_PS2_NOPICKUP))
 		{
 			int pct;
 			char szcharge[64];

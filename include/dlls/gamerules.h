@@ -19,6 +19,14 @@ enum
     GR_AMMO_RESPAWN_NO,
     GR_ITEM_RESPAWN_YES,
     GR_ITEM_RESPAWN_NO,
+
+    GR_PLR_DROP_GUN_ALL,
+    GR_PLR_DROP_GUN_ACTIVE,
+    GR_PLR_DROP_GUN_NO,
+
+    GR_PLR_DROP_AMMO_ALL,
+    GR_PLR_DROP_AMMO_ACTIVE,
+    GR_PLR_DROP_AMMO_NO,
 };
 
 /* no gamerules.cpp (onde sai a vtable do CGameRules) as virtuais que a vtable do PS2
@@ -102,7 +110,7 @@ public:
     virtual BOOL PlayFootstepSounds(CBasePlayer *pl, float fvol) GR_BODY({ return TRUE; })
     virtual BOOL FAllowMonsters(void) GR_PURE;
     virtual void EndMultiplayerGame(void) GR_BODY({})                             /* slot 62 */
-    virtual void Ps2Virt63(int iPlayerIndex, int a2, int a3); /* slot 63 (0x1F8): chama func_001D0E60 no jogador */
+    virtual void Ps2Virt63(int iPlayerIndex, int a2, int a3); /* slot 63 (0x1F8): chama CBasePlayer::Ps2TrackTarget */
     virtual CBaseEntity *Ps2Virt64(int iPlayerIndex) GR_BODY({ return NULL; }) /* slot 64 (0x200): jogador pelo player_index */
     virtual void Ps2Virt65(BOOL bOn) GR_BODY({ m_ps2Unk00 = bOn; }) /* slot 65 (0x208): FALSE/TRUE em volta do GiveNamedItem do game_player_equip */
     virtual BOOL Ps2Virt66(void) GR_BODY({ return m_ps2Unk00; }) /* slot 66: devolve o m_ps2Unk00 */

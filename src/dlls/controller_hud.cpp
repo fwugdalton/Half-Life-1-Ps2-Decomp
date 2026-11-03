@@ -10,7 +10,7 @@
 #include "dlls/saverestore.h"
 #include "include_asm.h"
 
-extern "C" int D_00317D20;			/* mensagem do HUD do controle */
+extern int gmsgButtonHud;		/* player.cpp */
 extern "C" void func_00151A48( void );
 extern "C" void func_00239810( const char *name, USEPTR pfn );
 
@@ -74,7 +74,7 @@ void CControllerHud :: HudUse( CBaseEntity *pActivator, CBaseEntity *pCaller, US
 
 	if ( pPlayer )
 	{
-		MESSAGE_BEGIN( MSG_ONE, D_00317D20, NULL, pPlayer->edict() );
+		MESSAGE_BEGIN( MSG_ONE, gmsgButtonHud, NULL, pPlayer->edict() );
 			WRITE_SHORT( pev->spawnflags );
 			WRITE_SHORT( m_iHoldTime );
 		MESSAGE_END();

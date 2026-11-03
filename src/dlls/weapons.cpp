@@ -445,7 +445,7 @@ void CBasePlayerItem::DefaultTouch(CBaseEntity *pOther)
 
     CBasePlayer *pPlayer = (CBasePlayer *)pOther;
 
-    if (!gEvilImpulse101 && (pPlayer->m_afPhysicsFlags & PFLAG_PS2_NOPICKUP))
+    if (!gEvilImpulse101 && (pPlayer->m_iHideHUD & HIDEHUD_PS2_NOPICKUP))
         return;
 
     if (!g_pGameRules->CanHavePlayerItem(pPlayer, this))
@@ -473,7 +473,7 @@ void CBasePlayerWeapon::ItemPostFrame(void)
     {
         int j = min(iMaxClip() - m_iClip, m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]);
 
-        if (!m_pPlayer->m_ps2InfiniteAmmo)
+        if (!m_pPlayer->m_fInfiniteAmmo)
         {
             m_iClip += j;
             m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] -= j;
@@ -777,7 +777,7 @@ BOOL CBasePlayerWeapon::DefaultDeploy(char *szViewModel, char *szWeaponModel, in
 
 int CBasePlayerWeapon::DefaultReload(int iClipSize, int iAnim, float fDelay)
 {
-    if (!m_pPlayer->m_ps2InfiniteAmmo && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
+    if (!m_pPlayer->m_fInfiniteAmmo && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
         return FALSE;
 
     int j = min(iClipSize - m_iClip, m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]);
@@ -872,7 +872,7 @@ void CBasePlayerAmmo::DefaultTouch(CBaseEntity *pOther)
         return;
     }
 
-    if (!gEvilImpulse101 && (((CBasePlayer *)pOther)->m_afPhysicsFlags & PFLAG_PS2_NOPICKUP))
+    if (!gEvilImpulse101 && (((CBasePlayer *)pOther)->m_iHideHUD & HIDEHUD_PS2_NOPICKUP))
         return;
 
     if (AddAmmo(pOther))
@@ -1033,7 +1033,7 @@ void CWeaponBox::Touch(CBaseEntity *pOther)
 
     CBasePlayer *pPlayer = (CBasePlayer *)pOther;
 
-    if (pPlayer->m_afPhysicsFlags & PFLAG_PS2_NOPICKUP)
+    if (pPlayer->m_iHideHUD & HIDEHUD_PS2_NOPICKUP)
         return;
 
     if (g_pGameRules->IsMultiplayer() && m_nPlayerIdx && g_pGameRules->Ps2Virt64(m_nPlayerIdx) != pOther)

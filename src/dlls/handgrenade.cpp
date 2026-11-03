@@ -192,7 +192,7 @@ void CHandGrenade::WeaponIdle( void )
 		m_flNextPrimaryAttack = gpGlobals->time + 0.5f;
 		m_flTimeWeaponIdle = gpGlobals->time + 0.5f;
 
-		if ( !m_pPlayer->m_ps2InfiniteAmmo )
+		if ( !m_pPlayer->m_fInfiniteAmmo )
 			m_pPlayer->m_rgAmmo[ m_iPrimaryAmmoType ]--;
 
 		if ( !m_pPlayer->m_rgAmmo[ m_iPrimaryAmmoType ] )

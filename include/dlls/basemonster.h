@@ -15,7 +15,7 @@ class CCineMonster;
 
 class CBaseMonster : public CBaseToggle
 {
-private:
+public:     /* privado no HLSDK; o player.cpp do PS2 zera direto */
     int m_afConditions;                     /* 0xD0 */
 
 public:

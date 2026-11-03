@@ -2052,14 +2052,14 @@ void CBaseTrigger :: TeleportTouch( CBaseEntity *pOther )
 	{
 		CBasePlayer *pPlayer = (CBasePlayer *)pOther;
 
-		if ( (CBaseEntity *)pPlayer->m_ps2hUnk77C )
+		if ( (CBaseEntity *)pPlayer->m_hTargetedEnemy )
 		{
-			entvars_t *pevUnk = ((CBaseEntity *)pPlayer->m_ps2hUnk77C)->pev;
+			entvars_t *pevUnk = ((CBaseEntity *)pPlayer->m_hTargetedEnemy)->pev;
 			int effects = pevUnk->effects;
 
 			pevUnk->effects = ( ENTINDEX( pPlayer->edict() ) == 1 ) ? ( effects & ~0x100 ) : ( effects & ~0x200 );
 
-			pPlayer->m_ps2hUnk77C = NULL;
+			pPlayer->m_hTargetedEnemy = NULL;
 			UTIL_Remove( pPlayer->m_ps2hUnk79C );
 			pPlayer->m_ps2hUnk79C = NULL;
 			g_engfuncs.pfnPs2Unk1E0( 1, 0 );
@@ -2229,7 +2229,7 @@ void CTriggerGravity::GravityTouch( CBaseEntity *pOther )
 	{
 		pOther->pev->gravity = pev->gravity;
 		if ( pOther->IsPlayer() )
-			((CBasePlayer *)pOther)->m_ps2Gravity = pev->gravity;
+			((CBasePlayer *)pOther)->m_flDefaultGravity = pev->gravity;
 	}
 }
 
@@ -3173,7 +3173,7 @@ void CTriggerEndDecay::EndDecayUse( CBaseEntity *pActivator, CBaseEntity *pCalle
 		if ( pPlayer )
 		{
 			if ( D_00310060.value > 0 )
-				pPlayer->m_afPhysicsFlags &= ~0x40;
+				pPlayer->m_iHideHUD &= ~0x40;
 			pPlayer->RemoveAllItems( FALSE );
 			pPlayer->EnableControl( FALSE );
 		}
@@ -3213,7 +3213,7 @@ void CTriggerEndDecay::EndDecayTouch( CBaseEntity *pOther )
 		if ( pPlayer )
 		{
 			if ( D_00310060.value > 0 )
-				pPlayer->m_afPhysicsFlags &= ~0x40;
+				pPlayer->m_iHideHUD &= ~0x40;
 			pPlayer->RemoveAllItems( FALSE );
 			pPlayer->EnableControl( FALSE );
 		}

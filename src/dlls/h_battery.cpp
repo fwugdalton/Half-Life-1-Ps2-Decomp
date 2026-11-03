@@ -117,8 +117,8 @@ void CRecharge::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE use
 	if (!FClassnameIs(pActivator->pev, "player"))
 		return;
 
-	// PS2: com a flag 0x40 do m_afPhysicsFlags o carregador não funciona
-	if ( pActivator && pActivator->IsPlayer() && ( ((CBasePlayer *)pActivator)->m_afPhysicsFlags & 0x40 ) )
+	// PS2: com a flag 0x40 do m_iHideHUD o carregador não funciona
+	if ( pActivator && pActivator->IsPlayer() && ( ((CBasePlayer *)pActivator)->m_iHideHUD & 0x40 ) )
 		return;
 
 	// if there is no juice left, turn it off
@@ -443,7 +443,7 @@ void CRechargeNew::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE 
 	if ( (pActivator->pev->origin - pev->origin).Length2D() > 48 )
 		return;
 
-	if ( ((CBasePlayer *)pActivator)->m_afPhysicsFlags & 0x40 )
+	if ( ((CBasePlayer *)pActivator)->m_iHideHUD & 0x40 )
 		return;
 
 	// if the player doesn't have the suit, or there is no juice left, make the deny noise

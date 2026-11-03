@@ -200,7 +200,7 @@ void CGauss::PrimaryAttack()
 	m_pPlayer->m_iWeaponVolume = GAUSS_PRIMARY_FIRE_VOLUME;
 	m_fPrimaryFire = TRUE;
 
-	if ( !m_pPlayer->m_ps2InfiniteAmmo )
+	if ( !m_pPlayer->m_fInfiniteAmmo )
 		m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] -= 2;
 
 	func_002071C8( m_pPlayer, 1, RANDOM_LONG( 50, 200 ), 50 );
@@ -246,7 +246,7 @@ void CGauss::SecondaryAttack()
 
 		m_fPrimaryFire = FALSE;
 
-		if ( !m_pPlayer->m_ps2InfiniteAmmo )
+		if ( !m_pPlayer->m_fInfiniteAmmo )
 			m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]--;// take one ammo just to start the spin
 		m_flNextAmmoBurn = gpGlobals->time;
 
@@ -289,13 +289,13 @@ void CGauss::SecondaryAttack()
 
 			if ( g_pGameRules->Ps2Virt07() )
 			{
-				if ( !m_pPlayer->m_ps2InfiniteAmmo )
+				if ( !m_pPlayer->m_fInfiniteAmmo )
 					m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]--;
 				m_flNextAmmoBurn = gpGlobals->time + 0.1f;
 			}
 			else
 			{
-				if ( !m_pPlayer->m_ps2InfiniteAmmo )
+				if ( !m_pPlayer->m_fInfiniteAmmo )
 					m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]--;
 				m_flNextAmmoBurn = gpGlobals->time + 0.3f;
 			}
@@ -770,7 +770,7 @@ void CGauss::Fire( Vector vecOrigSrc, Vector vecDir, float flDamage )
 		if ( g_pGameRules->IsMultiplayer() && cl_numlocal == 1 )
 		{
 			MESSAGE_BEGIN( MSG_ALL, gmsgScoreInfo );
-				WRITE_BYTE( m_pPlayer->m_ps2ClientIndex );
+				WRITE_BYTE( m_pPlayer->m_iTeamNum );
 				WRITE_SHORT( m_pPlayer->pev->frags );
 				WRITE_SHORT( m_pPlayer->m_iDeaths );
 				WRITE_SHORT( m_pPlayer->m_ps2Stat5F8 );

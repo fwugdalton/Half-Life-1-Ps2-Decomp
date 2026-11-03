@@ -90,7 +90,7 @@ public:
 
 	void UseAmmo( int count )
 	{
-		if ( !m_pPlayer->m_ps2InfiniteAmmo )
+		if ( !m_pPlayer->m_fInfiniteAmmo )
 		{
 			if ( m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] >= count )
 				m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] -= count;

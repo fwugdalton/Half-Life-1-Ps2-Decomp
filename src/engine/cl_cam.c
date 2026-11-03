@@ -18,7 +18,7 @@ extern int cl_updatemask[2];
 
 
 double func_002D7788(double y, double x); /* atan2 */
-double func_002D7DF0(double x);           /* sqrt */
+double sqrt(double x);
 int func_002542F8(int mode);
 void MSG_WriteString(sizebuf_t *sb, const char *s);
 void MSG_WriteCoord(sizebuf_t *sb, float f);
@@ -60,7 +60,7 @@ void func_00252868(vec3_t vec, vec3_t ang)
         if (yaw < 0)
             yaw += 360;
 
-        forward = func_002D7DF0(vec[0] * vec[0] + vec[1] * vec[1]);
+        forward = sqrt(vec[0] * vec[0] + vec[1] * vec[1]);
         pitch = (int)(func_002D7788(vec[2], forward) * 180 / M_PI);
         if (pitch < 0)
             pitch += 360;

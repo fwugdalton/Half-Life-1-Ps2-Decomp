@@ -60,8 +60,7 @@ extern "C" ps2cvar_t D_003325F0;	/* cheat_infammo */
 #define cheat_slowmo D_003325D8
 #define cheat_infammo D_003325F0
 
-extern "C" int D_00317D28;			/* mensagem do InitHUD (cor do HUD?) */
-extern "C" void func_001CDE70(CBasePlayer *pPlayer);
+extern int gmsgHudColor;		/* player.cpp: mensagem da cor do HUD */
 
 void FireTargets( const char *targetName, CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value );
 extern DLL_GLOBAL CGameRules	*g_pGameRules;
@@ -432,7 +431,7 @@ void CHalfLifeMultiplay :: InitHUD( CBasePlayer *pl )
 
 	if ( ENTINDEX( pl->edict() ) == 1 )
 	{
-		MESSAGE_BEGIN( MSG_ONE, D_00317D28, NULL, pl->edict() );
+		MESSAGE_BEGIN( MSG_ONE, gmsgHudColor, NULL, pl->edict() );
 			WRITE_BYTE( 160 );
 			WRITE_BYTE( 160 );
 			WRITE_BYTE( 192 );
@@ -440,7 +439,7 @@ void CHalfLifeMultiplay :: InitHUD( CBasePlayer *pl )
 	}
 	else
 	{
-		MESSAGE_BEGIN( MSG_ONE, D_00317D28, NULL, pl->edict() );
+		MESSAGE_BEGIN( MSG_ONE, gmsgHudColor, NULL, pl->edict() );
 			WRITE_BYTE( 255 );
 			WRITE_BYTE( 160 );
 			WRITE_BYTE( 0 );
@@ -448,7 +447,7 @@ void CHalfLifeMultiplay :: InitHUD( CBasePlayer *pl )
 	}
 
 	if ( m_fInfiniteAmmo )
-		func_001CDE70( pl );
+		pl->SendAmmoUpdate();
 }
 #else
 INCLUDE_ASM("asm/nonmatchings/dlls/multiplay_gamerules", InitHUD__18CHalfLifeMultiplayP11CBasePlayer);
@@ -586,7 +585,7 @@ void CHalfLifeMultiplay :: PlayerSpawn( CBasePlayer *pPlayer )
 	}
 
 	m_fInfiniteAmmo = cheat_infammo.value > 0;
-	pPlayer->m_ps2InfiniteAmmo = m_fInfiniteAmmo;
+	pPlayer->m_fInfiniteAmmo = m_fInfiniteAmmo;
 
 	if ( m_fInfiniteAmmo )
 	{

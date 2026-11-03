@@ -204,7 +204,7 @@ void CShotgun::PrimaryAttack()
 		m_pPlayer->FireBullets( 6, vecSrc, vecAiming, VECTOR_CONE_10DEGREES, 2048, BULLET_PLAYER_BUCKSHOT, 0 );
 	}
 
-	if (!m_iClip && !m_pPlayer->m_ps2InfiniteAmmo && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
+	if (!m_iClip && !m_pPlayer->m_fInfiniteAmmo && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
 		// HEV suit - indicate out of ammo condition
 		m_pPlayer->SetSuitUpdate("!HEV_AMO0", FALSE, 0);
 
@@ -285,7 +285,7 @@ void CShotgun::SecondaryAttack( void )
 		m_pPlayer->FireBullets( 12, vecSrc, vecAiming, VECTOR_CONE_10DEGREES, 2048, BULLET_PLAYER_BUCKSHOT, 0 );
 	}
 
-	if (!m_iClip && !m_pPlayer->m_ps2InfiniteAmmo && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
+	if (!m_iClip && !m_pPlayer->m_fInfiniteAmmo && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
 		// HEV suit - indicate out of ammo condition
 		m_pPlayer->SetSuitUpdate("!HEV_AMO0", FALSE, 0);
 
@@ -307,7 +307,7 @@ void CShotgun::SecondaryAttack( void )
 
 void CShotgun::Reload( void )
 {
-	if ((!m_pPlayer->m_ps2InfiniteAmmo && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0) || m_iClip == SHOTGUN_MAX_CLIP)
+	if ((!m_pPlayer->m_fInfiniteAmmo && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0) || m_iClip == SHOTGUN_MAX_CLIP)
 		return;
 
 	if (m_flNextReload > gpGlobals->time)
@@ -351,7 +351,7 @@ void CShotgun::Reload( void )
 	{
 		// Add them to the clip
 		m_iClip += 1;
-		if (!m_pPlayer->m_ps2InfiniteAmmo)
+		if (!m_pPlayer->m_fInfiniteAmmo)
 			m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] -= 1;
 		m_fInReload = 1;
 	}
@@ -373,13 +373,13 @@ void CShotgun::WeaponIdle( void )
 
 	if (m_flTimeWeaponIdle < gpGlobals->time)
 	{
-		if (m_iClip == 0 && m_fInReload == 0 && (m_pPlayer->m_ps2InfiniteAmmo || m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]))
+		if (m_iClip == 0 && m_fInReload == 0 && (m_pPlayer->m_fInfiniteAmmo || m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]))
 		{
 			Reload( );
 		}
 		else if (m_fInReload != 0)
 		{
-			if (m_iClip != 8 && (m_pPlayer->m_ps2InfiniteAmmo || m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]))
+			if (m_iClip != 8 && (m_pPlayer->m_fInfiniteAmmo || m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType]))
 			{
 				Reload( );
 			}

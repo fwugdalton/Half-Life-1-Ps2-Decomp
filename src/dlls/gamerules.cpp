@@ -35,9 +35,7 @@ extern ps2cvar_t teamplay;
 extern int g_iSkillLevel;
 
 float GetSkillCvar( char *pName );
-extern "C" edict_t *func_001CA720( CBaseEntity *pPlayer );			/* EntSelectSpawnPoint */
-extern "C" int func_001CDDD0( CBasePlayer *pPlayer, int iAmmoIndex );	/* CBasePlayer::AmmoInventory */
-extern "C" void func_001D0E60( CBaseEntity *pPlayer, int iPlayerIndex, int a2, int a3 );
+extern edict_t *EntSelectSpawnPoint( CBaseEntity *pPlayer );
 extern "C" CGameRules *func_00152E20( void *pMem );					/* construtor das regras do coop (0x5C bytes) */
 
 class CItem : public CBaseEntity
@@ -104,7 +102,7 @@ BOOL CGameRules::CanHaveAmmo( CBasePlayer *pPlayer, const char *pszAmmoName, int
 
 		if ( iAmmoIndex > -1 )
 		{
-			if ( func_001CDDD0( pPlayer, iAmmoIndex ) < iMaxCarry )
+			if ( pPlayer->AmmoInventory( iAmmoIndex ) < iMaxCarry )
 			{
 				// player has room for more of this type of ammo
 				return TRUE;
@@ -119,7 +117,7 @@ BOOL CGameRules::CanHaveAmmo( CBasePlayer *pPlayer, const char *pszAmmoName, int
 //=========================================================
 edict_t *CGameRules :: GetPlayerSpawnSpot( CBasePlayer *pPlayer )
 {
-	edict_t *pentSpawnSpot = func_001CA720( pPlayer );
+	edict_t *pentSpawnSpot = EntSelectSpawnPoint( pPlayer );
 
 	pPlayer->pev->origin = VARS(pentSpawnSpot)->origin + Vector(0,0,1);
 	pPlayer->pev->v_angle  = g_vecZero;
@@ -322,5 +320,5 @@ void CGameRules::Ps2Virt63( int iPlayerIndex, int a2, int a3 )
 	CBaseEntity *pPlayer = UTIL_PlayerByIndex( iPlayerIndex );
 
 	if ( pPlayer )
-		func_001D0E60( pPlayer, iPlayerIndex, a2, a3 );
+		((CBasePlayer *)pPlayer)->Ps2TrackTarget( iPlayerIndex, *(Vector *)a2, *(Vector *)a3 );
 }

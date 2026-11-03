@@ -283,7 +283,7 @@ int CGenericMonster::TakeDamage( entvars_t* pevInflictor, entvars_t* pevAttacker
 
 	if ( m_iszTargetTrigger && pAttacker->IsPlayer() )
 	{
-		if ( ((CBasePlayer *)pAttacker)->m_ps2hUnk77C == this )
+		if ( ((CBasePlayer *)pAttacker)->m_hTargetedEnemy == this )
 		{
 			m_nNumNoHits = 0;
 			m_nNumHits++;
@@ -318,10 +318,10 @@ void CGenericMonster::Killed( entvars_t *pevAttacker, int iGib )
 
 	CBaseEntity *pAttacker = CBaseEntity::Instance( pevAttacker );
 
-	if ( m_iszTargetTrigger && pAttacker->IsPlayer() && ((CBasePlayer *)pAttacker)->m_ps2hUnk77C == this )
+	if ( m_iszTargetTrigger && pAttacker->IsPlayer() && ((CBasePlayer *)pAttacker)->m_hTargetedEnemy == this )
 		FireTargets( STRING( m_iszTargetTrigger ), this, this, USE_TOGGLE, 0 );
 
-	if ( m_iszNoTargetTrigger && pAttacker->IsPlayer() && ((CBasePlayer *)pAttacker)->m_ps2hUnk77C != this )
+	if ( m_iszNoTargetTrigger && pAttacker->IsPlayer() && ((CBasePlayer *)pAttacker)->m_hTargetedEnemy != this )
 		FireTargets( STRING( m_iszNoTargetTrigger ), this, this, USE_TOGGLE, 0 );
 
 	CBaseMonster::Killed( pevAttacker, iGib );
@@ -367,10 +367,10 @@ void CResetGeneric::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE
 
 	CBasePlayer *pPlayer = (CBasePlayer *)UTIL_PlayerByIndex( 1 );
 
-	if ( pPlayer && (CBaseEntity *)pPlayer->m_ps2hUnk77C )
+	if ( pPlayer && (CBaseEntity *)pPlayer->m_hTargetedEnemy )
 	{
-		((CBaseEntity *)pPlayer->m_ps2hUnk77C)->pev->effects &= ~0x100;
-		pPlayer->m_ps2hUnk77C = NULL;
+		((CBaseEntity *)pPlayer->m_hTargetedEnemy)->pev->effects &= ~0x100;
+		pPlayer->m_hTargetedEnemy = NULL;
 		UTIL_Remove( pPlayer->m_ps2hUnk79C );
 		pPlayer->m_ps2hUnk79C = NULL;
 		(*g_engfuncs.pfnPs2Unk1E0)( 1, 0 );

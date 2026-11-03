@@ -206,7 +206,7 @@ void CCrossbowBolt::BoltTouch( CBaseEntity *pOther )
 		if ( g_pGameRules->IsMultiplayer() && cl_numlocal == 1 )
 		{
 			MESSAGE_BEGIN( MSG_ALL, gmsgScoreInfo );
-				WRITE_BYTE( pPlayer->m_ps2ClientIndex );
+				WRITE_BYTE( pPlayer->m_iTeamNum );
 				WRITE_SHORT( pPlayer->pev->frags );
 				WRITE_SHORT( pPlayer->m_iDeaths );
 				WRITE_SHORT( pPlayer->m_ps2Stat5F8 );
@@ -440,7 +440,7 @@ void CCrossbow::FireSniperBolt()
 		EMIT_SOUND_DYN(ENT(m_pPlayer->pev), CHAN_ITEM, "weapons/xbow_reload1.wav", RANDOM_FLOAT(0.95f, 1.0f), ATTN_NORM, 0, 93 + RANDOM_LONG(0,0xF));
 		SendWeaponAnim( CROSSBOW_FIRE1 );
 	}
-	else if ( !m_pPlayer->m_ps2InfiniteAmmo && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] == 0 )
+	else if ( !m_pPlayer->m_fInfiniteAmmo && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] == 0 )
 	{
 		SendWeaponAnim( CROSSBOW_FIRE3 );
 	}
@@ -506,7 +506,7 @@ void CCrossbow::FireSniperBolt()
 		if ( g_pGameRules->IsMultiplayer() && cl_numlocal == 1 )
 		{
 			MESSAGE_BEGIN( MSG_ALL, gmsgScoreInfo );
-				WRITE_BYTE( m_pPlayer->m_ps2ClientIndex );
+				WRITE_BYTE( m_pPlayer->m_iTeamNum );
 				WRITE_SHORT( m_pPlayer->pev->frags );
 				WRITE_SHORT( m_pPlayer->m_iDeaths );
 				WRITE_SHORT( m_pPlayer->m_ps2Stat5F8 );
@@ -551,7 +551,7 @@ void CCrossbow::FireBolt()
 		EMIT_SOUND_DYN(ENT(m_pPlayer->pev), CHAN_ITEM, "weapons/xbow_reload1.wav", RANDOM_FLOAT(0.95f, 1.0f), ATTN_NORM, 0, 93 + RANDOM_LONG(0,0xF));
 		SendWeaponAnim( CROSSBOW_FIRE1 );
 	}
-	else if ( !m_pPlayer->m_ps2InfiniteAmmo && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] == 0 )
+	else if ( !m_pPlayer->m_fInfiniteAmmo && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] == 0 )
 	{
 		SendWeaponAnim( CROSSBOW_FIRE3 );
 	}
@@ -583,7 +583,7 @@ void CCrossbow::FireBolt()
 	}
 	pBolt->pev->avelocity.z = 10;
 
-	if (!m_iClip && !m_pPlayer->m_ps2InfiniteAmmo && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
+	if (!m_iClip && !m_pPlayer->m_fInfiniteAmmo && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
 		// HEV suit - indicate out of ammo condition
 		m_pPlayer->SetSuitUpdate("!HEV_AMO0", FALSE, 0);
 

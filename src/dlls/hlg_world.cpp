@@ -56,13 +56,11 @@ extern CGraph WorldGraph;
 extern CSoundEnt *pSoundEnt;
 
 /* globais do PS2 ainda sem nome */
-extern "C" CBaseEntity *D_00317D84;
-#define g_pLastSpawn D_00317D84
+extern CBaseEntity *g_pLastSpawn;	/* player.cpp */
 extern "C" int D_003241F0;
 extern "C" int D_00312C48;
 #define gDisplayTitle D_00312C48
-extern "C" int D_00317958;
-#define gInitHUD D_00317958
+extern BOOL gInitHUD;			/* player.cpp */
 
 extern void W_Precache( int *piszWeapons, int *piszAmmo, int iCount );
 extern void ClientPrecache( void );

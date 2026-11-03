@@ -218,6 +218,7 @@ inline BOOL FStringNull(int iString) { return iString == iStringNull; }
 #define FL_PARTIALGROUND    (1 << 10)
 #define FL_WATERJUMP        (1 << 11)
 #define FL_FROZEN           (1 << 12)
+#define FL_ONTRAIN          (1 << 24)
 #define FL_FAKECLIENT       (1 << 13)
 #define FL_DUCKING          (1 << 14)
 #define FL_FLOAT            (1 << 15)
@@ -409,6 +410,9 @@ inline BOOL FClassnameIs(entvars_t *pev, const char *szClassname)
 }
 
 void EMIT_SOUND_DYN(edict_t *entity, int channel, const char *sample, float volume, float attenuation, int flags, int pitch);
+void EMIT_SOUND_SUIT(edict_t *entity, const char *sample);
+void EMIT_GROUPID_SUIT(edict_t *entity, int isentenceg);
+void EMIT_GROUPNAME_SUIT(edict_t *entity, const char *groupname);
 
 inline void EMIT_SOUND(edict_t *entity, int channel, const char *sample, float volume, float attenuation)
 {

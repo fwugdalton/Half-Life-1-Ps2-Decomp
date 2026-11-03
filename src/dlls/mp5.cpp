@@ -202,7 +202,7 @@ void CMP5::PrimaryAttack()
 		m_pPlayer->FireBullets( 1, vecSrc, vecAiming, VECTOR_CONE_3DEGREES, 8192, BULLET_PLAYER_MP5, 2 );
 	}
 
-	if (!m_iClip && !m_pPlayer->m_ps2InfiniteAmmo && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
+	if (!m_iClip && !m_pPlayer->m_fInfiniteAmmo && m_pPlayer->m_rgAmmo[m_iPrimaryAmmoType] <= 0)
 		// HEV suit - indicate out of ammo condition
 		m_pPlayer->SetSuitUpdate("!HEV_AMO0", FALSE, 0);
 
@@ -241,7 +241,7 @@ void CMP5::SecondaryAttack( void )
 	m_pPlayer->m_iExtraSoundTypes = bits_SOUND_DANGER;
 	m_pPlayer->m_flStopExtraSoundTime = gpGlobals->time + 0.2f;
 
-	if ( !m_pPlayer->m_ps2InfiniteAmmo )
+	if ( !m_pPlayer->m_fInfiniteAmmo )
 		m_pPlayer->m_rgAmmo[m_iSecondaryAmmoType]--;
 
 	SendWeaponAnim( MP5_LAUNCH );

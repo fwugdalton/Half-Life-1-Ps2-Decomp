@@ -3,7 +3,7 @@
    jogo: classe, métodos e campos são inventados. É uma cópia do
    CHalfLifeCoopplay (coopplay_gamerules.cpp) com as duas personagens
    (Gina e Colette, ou X-8973 e R-4913 com mp_coopslave): cada jogador ganha
-   um índice 1/2 (m_ps2ClientIndex), o parceiro controlado pela IA é um
+   um índice 1/2 (m_iTeamNum), o parceiro controlado pela IA é um
    cliente falso criado no Think ou pelo "coopsidekick", e o "coopswitch" com
    um controle só troca o jogador de corpo com o parceiro (SwapPlayers). */
 
@@ -49,16 +49,12 @@ extern "C" ps2cvar_t D_003325F0;	/* cheat_infammo */
 #define cheat_infammo D_003325F0
 
 extern "C" int cl_numlocal;
-extern "C" int D_00317D28;			/* mensagem do InitHUD (cor do HUD) */
-extern "C" void func_001CDE70( CBasePlayer *pPlayer );
+extern int gmsgHudColor;		/* player.cpp: mensagem da cor do HUD */
 /* client.cpp: ClientConnect */
 BOOL ClientConnect( edict_t *pEntity, const char *pszName, const char *pszAddress, char szRejectReason[ 128 ] );
 /* inicialização do jogador da IA (arquivo ainda em asm) */
 extern "C" void func_00126F80( CBasePlayer *pPlayer );
 /* lanterna do CBasePlayer (player.cpp) */
-extern "C" BOOL func_001CC800( CBasePlayer *pPlayer );	/* FlashlightIsOn */
-extern "C" void func_001CC810( CBasePlayer *pPlayer );	/* FlashlightTurnOn */
-extern "C" void func_001CC928( CBasePlayer *pPlayer );	/* FlashlightTurnOff */
 extern "C" void func_00154318( void );
 extern "C" void func_002397D0( const char *name, BASEPTR pfn );
 extern "C" void func_002397F0( const char *name, ENTITYFUNCPTR pfn );
@@ -185,7 +181,7 @@ CBaseEntity *CHalfLifeDecay :: Ps2Virt64( int iPlayerIndex )
 			continue;
 
 		pPlayer = (CBasePlayer *)CBaseEntity::Instance( pEdict );
-		if ( pPlayer && pPlayer->m_ps2ClientIndex == iPlayerIndex )
+		if ( pPlayer && pPlayer->m_iTeamNum == iPlayerIndex )
 			break;
 	}
 
@@ -396,16 +392,16 @@ void CHalfLifeDecay :: SwapPlayers( CBasePlayer *pA, CBasePlayer *pB )
 	pB->m_iFlashBattery = pA->m_iFlashBattery;
 	pA->m_iFlashBattery = iTemp;
 
-	iTemp = func_001CC800( pB );
-	if ( func_001CC800( pA ) )
-		func_001CC810( pB );
+	iTemp = pB->FlashlightIsOn();
+	if ( pA->FlashlightIsOn() )
+		pB->FlashlightTurnOn();
 	else
-		func_001CC928( pB );
+		pB->FlashlightTurnOff();
 
 	if ( iTemp )
-		func_001CC810( pA );
+		pA->FlashlightTurnOn();
 	else
-		func_001CC928( pA );
+		pA->FlashlightTurnOff();
 
 	iTemp = pB->pev->sequence;
 	pB->pev->sequence = pA->pev->sequence;
@@ -422,9 +418,9 @@ void CHalfLifeDecay :: SwapPlayers( CBasePlayer *pA, CBasePlayer *pB )
 	pB->m_hEnemy = NULL;
 	pA->m_hEnemy = NULL;
 
-	iTemp = pB->m_ps2ClientIndex;
-	pB->m_ps2ClientIndex = pA->m_ps2ClientIndex;
-	pA->m_ps2ClientIndex = iTemp;
+	iTemp = pB->m_iTeamNum;
+	pB->m_iTeamNum = pA->m_iTeamNum;
+	pA->m_iTeamNum = iTemp;
 
 	flTemp = pB->pev->frags;
 	pB->pev->frags = pA->pev->frags;
@@ -450,7 +446,7 @@ void CHalfLifeDecay :: SwapPlayers( CBasePlayer *pA, CBasePlayer *pB )
 	{
 		if ( pB->pev->modelindex > 0 )
 		{
-			if ( pB->m_ps2ClientIndex == 1 )
+			if ( pB->m_iTeamNum == 1 )
 			{
 				pB->SetBodygroup( 1, 1 );
 				pB->pev->skin = 1;
@@ -464,7 +460,7 @@ void CHalfLifeDecay :: SwapPlayers( CBasePlayer *pA, CBasePlayer *pB )
 
 		if ( pA->pev->modelindex > 0 )
 		{
-			if ( pA->m_ps2ClientIndex == 1 )
+			if ( pA->m_iTeamNum == 1 )
 			{
 				pA->SetBodygroup( 1, 1 );
 				pA->pev->skin = 1;
@@ -492,10 +488,10 @@ void CHalfLifeDecay :: CoopSwitch( void )
 	SwapPlayers( pOther, pPlayer );
 
 	pPlayer->pev->flags &= ~FL_FAKECLIENT;
-	if ( (CBaseEntity *)pPlayer->m_ps2hUnk77C )
+	if ( (CBaseEntity *)pPlayer->m_hTargetedEnemy )
 	{
-		((CBaseEntity *)pPlayer->m_ps2hUnk77C)->pev->effects &= ~256;
-		pPlayer->m_ps2hUnk77C = NULL;
+		((CBaseEntity *)pPlayer->m_hTargetedEnemy)->pev->effects &= ~256;
+		pPlayer->m_hTargetedEnemy = NULL;
 		UTIL_Remove( pPlayer->m_ps2hUnk79C );
 		pPlayer->m_ps2hUnk79C = NULL;
 		(*g_engfuncs.pfnPs2Unk1E0)( 1, 0 );
@@ -503,9 +499,9 @@ void CHalfLifeDecay :: CoopSwitch( void )
 
 	if ( coopslave.value <= 0 )
 	{
-		if ( pPlayer->m_ps2ClientIndex == 1 )
+		if ( pPlayer->m_iTeamNum == 1 )
 		{
-			MESSAGE_BEGIN( MSG_ONE, D_00317D28, NULL, pPlayer->edict() );
+			MESSAGE_BEGIN( MSG_ONE, gmsgHudColor, NULL, pPlayer->edict() );
 				WRITE_BYTE( 160 );
 				WRITE_BYTE( 160 );
 				WRITE_BYTE( 192 );
@@ -513,7 +509,7 @@ void CHalfLifeDecay :: CoopSwitch( void )
 		}
 		else
 		{
-			MESSAGE_BEGIN( MSG_ONE, D_00317D28, NULL, pPlayer->edict() );
+			MESSAGE_BEGIN( MSG_ONE, gmsgHudColor, NULL, pPlayer->edict() );
 				WRITE_BYTE( 255 );
 				WRITE_BYTE( 128 );
 				WRITE_BYTE( 64 );
@@ -526,10 +522,10 @@ void CHalfLifeDecay :: CoopSwitch( void )
 		pOther->pev->flags |= FL_FAKECLIENT;
 		PLAYER_AI_6D4( pOther ) = NULL;
 		PLAYER_AI_6CC( pOther ) = 0;
-		if ( (CBaseEntity *)pOther->m_ps2hUnk77C )
+		if ( (CBaseEntity *)pOther->m_hTargetedEnemy )
 		{
-			((CBaseEntity *)pOther->m_ps2hUnk77C)->pev->effects &= ~256;
-			pOther->m_ps2hUnk77C = NULL;
+			((CBaseEntity *)pOther->m_hTargetedEnemy)->pev->effects &= ~256;
+			pOther->m_hTargetedEnemy = NULL;
 			UTIL_Remove( pOther->m_ps2hUnk79C );
 			pOther->m_ps2hUnk79C = NULL;
 			(*g_engfuncs.pfnPs2Unk1E0)( 1, 0 );
@@ -628,7 +624,7 @@ void CHalfLifeDecay :: Think ( void )
 
 			if ( pPlayer )
 			{
-				if ( pPlayer->m_ps2ClientIndex == 1 )
+				if ( pPlayer->m_iTeamNum == 1 )
 				{
 					pPlayer->SetBodygroup( 1, 1 );
 					pPlayer->pev->skin = 1;
@@ -738,12 +734,12 @@ void CHalfLifeDecay :: PlayerSpawn( CBasePlayer *pPlayer )
 	if ( m_iNumAIPlayers > 0 && m_iNumPlayers == 2 )
 		ReplaceAIPlayer( m_vecSpawnOrigin, m_vecSpawnAngles, pPlayer );
 
-	pPlayer->m_ps2ClientIndex = AddPlayer( pPlayer );
+	pPlayer->m_iTeamNum = AddPlayer( pPlayer );
 	GetPlayerSpawnSpot( pPlayer );
 	m_flAIPlayerTime = gpGlobals->time + 1;
 
 	m_fInfiniteAmmo = cheat_infammo.value > 0;
-	pPlayer->m_ps2InfiniteAmmo = m_fInfiniteAmmo;
+	pPlayer->m_fInfiniteAmmo = m_fInfiniteAmmo;
 
 	if ( m_fInfiniteAmmo )
 	{
@@ -766,7 +762,7 @@ void CHalfLifeDecay :: InitHUD( CBasePlayer *pl )
 	if ( coopslave.value > 0 )
 	{
 		(*g_engfuncs.pfnSetClientKeyValue)( ENTINDEX( pl->edict() ), (*g_engfuncs.pfnGetInfoKeyBuffer)( pl->edict() ), "model", "dm_slave" );
-		if ( pl->m_ps2ClientIndex == 1 )
+		if ( pl->m_iTeamNum == 1 )
 			(*g_engfuncs.pfnSetClientKeyValue)( ENTINDEX( pl->edict() ), (*g_engfuncs.pfnGetInfoKeyBuffer)( pl->edict() ), "name", "X-8973" );
 		else
 			(*g_engfuncs.pfnSetClientKeyValue)( ENTINDEX( pl->edict() ), (*g_engfuncs.pfnGetInfoKeyBuffer)( pl->edict() ), "name", "R-4913" );
@@ -774,15 +770,15 @@ void CHalfLifeDecay :: InitHUD( CBasePlayer *pl )
 	else
 	{
 		(*g_engfuncs.pfnSetClientKeyValue)( ENTINDEX( pl->edict() ), (*g_engfuncs.pfnGetInfoKeyBuffer)( pl->edict() ), "model", "ginacol" );
-		if ( pl->m_ps2ClientIndex == 1 )
+		if ( pl->m_iTeamNum == 1 )
 			(*g_engfuncs.pfnSetClientKeyValue)( ENTINDEX( pl->edict() ), (*g_engfuncs.pfnGetInfoKeyBuffer)( pl->edict() ), "name", "Gina" );
 		else
 			(*g_engfuncs.pfnSetClientKeyValue)( ENTINDEX( pl->edict() ), (*g_engfuncs.pfnGetInfoKeyBuffer)( pl->edict() ), "name", "Colette" );
 	}
 
-	if ( pl->m_ps2ClientIndex == 1 )
+	if ( pl->m_iTeamNum == 1 )
 	{
-		MESSAGE_BEGIN( MSG_ONE, D_00317D28, NULL, pl->edict() );
+		MESSAGE_BEGIN( MSG_ONE, gmsgHudColor, NULL, pl->edict() );
 			WRITE_BYTE( 160 );
 			WRITE_BYTE( 160 );
 			WRITE_BYTE( 192 );
@@ -790,7 +786,7 @@ void CHalfLifeDecay :: InitHUD( CBasePlayer *pl )
 	}
 	else
 	{
-		MESSAGE_BEGIN( MSG_ONE, D_00317D28, NULL, pl->edict() );
+		MESSAGE_BEGIN( MSG_ONE, gmsgHudColor, NULL, pl->edict() );
 			WRITE_BYTE( 255 );
 			WRITE_BYTE( 128 );
 			WRITE_BYTE( 64 );
@@ -798,7 +794,7 @@ void CHalfLifeDecay :: InitHUD( CBasePlayer *pl )
 	}
 
 	if ( m_fInfiniteAmmo )
-		func_001CDE70( pl );
+		pl->SendAmmoUpdate();
 
 	m_fUpdateBodies = TRUE;
 }
@@ -827,7 +823,7 @@ void CHalfLifeDecay :: PlayerKilled( CBasePlayer *pVictim, entvars_t *pKiller, e
 {
 	edict_t *pent;
 
-	if ( pVictim->m_ps2ClientIndex == 1 )
+	if ( pVictim->m_iTeamNum == 1 )
 		pent = FIND_ENTITY_BY_TARGETNAME( NULL, "decay_player1_dead" );
 	else
 		pent = FIND_ENTITY_BY_TARGETNAME( NULL, "decay_player2_dead" );
@@ -856,7 +852,7 @@ void CHalfLifeDecay :: Ps2Virt31( CBaseEntity *pVictim, entvars_t *pKiller, entv
 		if ( cl_numlocal == 1 )
 		{
 			MESSAGE_BEGIN( MSG_ALL, gmsgScoreInfo );
-				WRITE_BYTE( pPlayer->m_ps2ClientIndex );
+				WRITE_BYTE( pPlayer->m_iTeamNum );
 				WRITE_SHORT( (short)pPlayer->pev->frags );
 				WRITE_SHORT( pPlayer->m_iDeaths );
 				WRITE_SHORT( pPlayer->m_ps2Stat5F8 );

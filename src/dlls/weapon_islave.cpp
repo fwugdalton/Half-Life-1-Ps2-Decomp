@@ -169,7 +169,7 @@ BOOL ISlave_EmitSound(edict_t *entity, int channel, const char *sample, float vo
     if (!pPlayer->IsPlayer())
         return FALSE;
 
-    if (!(((CBasePlayer *)pPlayer)->m_afPhysicsFlags & PFLAG_PS2_NOPICKUP))
+    if (!(((CBasePlayer *)pPlayer)->m_iHideHUD & HIDEHUD_PS2_NOPICKUP))
         return FALSE;
 
     if (!strstr(sample, "scientist") && !strstr(sample, "!SC") && !strstr(sample, "barney") && !strstr(sample, "!BA"))
@@ -203,8 +203,8 @@ int CWeaponISlave::GetItemInfo(ItemInfo *p)
 BOOL CWeaponISlave::Deploy(void)
 {
     m_pPlayer->m_iFOV = 120;
-    m_pPlayer->m_afPhysicsFlags |= PFLAG_PS2_NOPICKUP;
-    m_pPlayer->m_afPhysicsFlags |= PFLAG_DUCKING;
+    m_pPlayer->m_iHideHUD |= HIDEHUD_PS2_NOPICKUP;
+    m_pPlayer->m_iHideHUD |= HIDEHUD_HEALTH;
     m_iHudState = 0;
 
     MESSAGE_BEGIN(MSG_ONE, gmsgSlaveHud, NULL, ENT(m_pPlayer->pev));
@@ -218,8 +218,8 @@ void CWeaponISlave::Holster(void)
 {
     if (gEvilImpulse101)
     {
-        m_pPlayer->m_afPhysicsFlags &= ~PFLAG_PS2_NOPICKUP;
-        m_pPlayer->m_afPhysicsFlags &= ~PFLAG_DUCKING;
+        m_pPlayer->m_iHideHUD &= ~HIDEHUD_PS2_NOPICKUP;
+        m_pPlayer->m_iHideHUD &= ~HIDEHUD_HEALTH;
         m_pPlayer->m_iFOV = 90;
     }
 
@@ -496,7 +496,7 @@ void CWeaponISlave::ZapBeam(int side)
         if (g_pGameRules->IsMultiplayer() && cl_numlocal == 1)
         {
             MESSAGE_BEGIN(MSG_ALL, gmsgScoreInfo);
-            WRITE_BYTE(m_pPlayer->m_ps2ClientIndex);
+            WRITE_BYTE(m_pPlayer->m_iTeamNum);
             WRITE_SHORT(m_pPlayer->pev->frags);
             WRITE_SHORT(m_pPlayer->m_iDeaths);
             WRITE_SHORT(m_pPlayer->m_ps2Stat5F8);
@@ -841,7 +841,7 @@ void CTriggerPlayerISlave::PlayerISlaveThink(void)
 
     if (pPlayer && pPlayer->IsPlayer())
     {
-        if (((CBasePlayer *)pPlayer)->m_afPhysicsFlags & PFLAG_PS2_NOPICKUP)
+        if (((CBasePlayer *)pPlayer)->m_iHideHUD & HIDEHUD_PS2_NOPICKUP)
             SUB_UseTargets(this, USE_ON, 0);
         return;
     }

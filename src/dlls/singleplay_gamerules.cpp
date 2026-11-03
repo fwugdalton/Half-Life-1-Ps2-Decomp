@@ -35,8 +35,7 @@ extern "C" ps2cvar_t D_00332650;	/* cheat_slavemode */
 extern "C" int D_00312C44;
 #define g_iSkillLevel D_00312C44
 
-extern "C" int D_00317D28;			/* mensagem do InitHUD (cor do HUD?) */
-extern "C" void func_001CDE70(CBasePlayer *pPlayer);
+extern int gmsgHudColor;		/* player.cpp: mensagem da cor do HUD */
 
 class CItem : public CBaseEntity
 {
@@ -176,14 +175,14 @@ BOOL CHalfLifeRules :: ClientConnected( edict_t *pEntity, const char *pszName, c
 
 void CHalfLifeRules :: InitHUD( CBasePlayer *pl )
 {
-	MESSAGE_BEGIN( MSG_ONE, D_00317D28, NULL, pl->edict() );
+	MESSAGE_BEGIN( MSG_ONE, gmsgHudColor, NULL, pl->edict() );
 		WRITE_BYTE( 255 );
 		WRITE_BYTE( 160 );
 		WRITE_BYTE( 0 );
 	MESSAGE_END();
 
 	if ( m_fInfiniteAmmo )
-		func_001CDE70( pl );
+		pl->SendAmmoUpdate();
 }
 
 //=========================================================
@@ -241,7 +240,7 @@ BOOL CHalfLifeRules :: ClientCommand( CBasePlayer *pPlayer, const char *pcmd )
 void CHalfLifeRules :: PlayerSpawn( CBasePlayer *pPlayer )
 {
 	m_fInfiniteAmmo = cheat_infammo.value > 0;
-	pPlayer->m_ps2InfiniteAmmo = m_fInfiniteAmmo;
+	pPlayer->m_fInfiniteAmmo = m_fInfiniteAmmo;
 
 	if ( m_fInfiniteAmmo )
 	{

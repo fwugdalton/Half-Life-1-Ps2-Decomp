@@ -89,8 +89,8 @@ void CHealthKit::Precache( void )
 
 BOOL CHealthKit::MyTouch( CBasePlayer *pPlayer )
 {
-	// PS2: flag 0x40 do m_afPhysicsFlags impede pegar (exceto com impulse 101)
-	if ( !gEvilImpulse101 && ( pPlayer->m_afPhysicsFlags & 0x40 ) )
+	// PS2: flag 0x40 do m_iHideHUD impede pegar (exceto com impulse 101)
+	if ( !gEvilImpulse101 && ( pPlayer->m_iHideHUD & 0x40 ) )
 	{
 		return FALSE;
 	}
@@ -252,7 +252,7 @@ void CWallHealth::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE u
 
 	// charge the player
 	// PS2: com a flag 0x40 o carregador tira vida em vez de dar
-	if ( pActivator && pActivator->IsPlayer() && ( ((CBasePlayer *)pActivator)->m_afPhysicsFlags & 0x40 ) )
+	if ( pActivator && pActivator->IsPlayer() && ( ((CBasePlayer *)pActivator)->m_iHideHUD & 0x40 ) )
 	{
 		pActivator->TakeDamage( pActivator->pev, pActivator->pev, 1, DMG_GENERIC );
 		m_iJuice--;
@@ -624,7 +624,7 @@ void CWallHealthNew::Use( CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYP
 	}
 
 	// charge the player
-	if ( pActivator && pActivator->IsPlayer() && ( ((CBasePlayer *)pActivator)->m_afPhysicsFlags & 0x40 ) )
+	if ( pActivator && pActivator->IsPlayer() && ( ((CBasePlayer *)pActivator)->m_iHideHUD & 0x40 ) )
 	{
 		pActivator->TakeDamage( pActivator->pev, pActivator->pev, 1, DMG_GENERIC );
 		m_iJuice--;
