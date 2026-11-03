@@ -846,6 +846,13 @@ D_00338A18 = 0x00338A18;
 /* launcher/HalfLife: funções do motor sem símbolo no asm e o tamanho da pilha */
 D_00399008 = 0x00399008;
 D_0039900C = 0x0039900C;
+/* dlls/aiplayer.cpp: dados e strings citados pelas funções NON_MATCHING */
+D_0030D98C = 0x0030D98C;
+D_0030D9A0 = 0x0030D9A0;
+D_0030D9C8 = 0x0030D9C8;
+D_0033B490 = 0x0033B490;
+D_0033B5D0 = 0x0033B5D0;
+D_0033B5E0 = 0x0033B5E0;
 /* engine/sv_main: início */
 D_0038E8F8 = 0x0038E8F8;
 /* engine/sv_main: fim */

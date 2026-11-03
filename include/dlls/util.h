@@ -372,9 +372,11 @@ void UTIL_MakeAimVectors(const Vector &vecAngles);
 void UTIL_Sparks(const Vector &position);
 void UTIL_Ricochet(const Vector &position, float scale);
 void UTIL_TraceLine(const Vector &vecStart, const Vector &vecEnd, int igmon, edict_t *pentIgnore, TraceResult *ptr);
+void UTIL_TraceLine(const Vector &vecStart, const Vector &vecEnd, int igmon, int ignoreGlass, edict_t *pentIgnore, TraceResult *ptr);
 void UTIL_TraceHull(const Vector &vecStart, const Vector &vecEnd, int igmon, int hullNumber, edict_t *pentIgnore, TraceResult *ptr);
 
 enum { ignore_monsters = 1, dont_ignore_monsters = 0, missile = 2 };
+enum { ignore_glass = 1, dont_ignore_glass = 0 };
 enum { point_hull = 0, human_hull = 1, large_hull = 2, head_hull = 3 };
 class CBaseEntity;
 void UTIL_Remove(CBaseEntity *pEntity);

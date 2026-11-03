@@ -31,7 +31,7 @@
 #define WEAPON_SUIT			31
 #define TE_ELIGHT			28
 
-enum { ignore_glass = 1, dont_ignore_glass = 0 };
+/* ignore_glass vem do util.h */
 void UTIL_TraceLine( const Vector &vecStart, const Vector &vecEnd, int igmon, int ignoreGlass, edict_t *pentIgnore, TraceResult *ptr );
 
 class CRecharge : public CBaseToggle

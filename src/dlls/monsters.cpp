@@ -105,7 +105,7 @@ float UTIL_AngleDiff( float destAngle, float srcAngle );
 void UTIL_MoveToOrigin( edict_t *pent, const Vector &vecGoal, float flDist, int iMoveType );
 int SENTENCEG_PlayRndSz(edict_t *entity, const char *szrootname, float volume, float attenuation, int flags, int pitch);
 void UTIL_TraceLine(const Vector &vecStart, const Vector &vecEnd, int igmon, int ignoreGlass, edict_t *pentIgnore, TraceResult *ptr);
-enum { ignore_glass = 1, dont_ignore_glass = 0 };
+/* ignore_glass vem do util.h */
 void GetEyePosition( void *pmodel, float *vecEyePosition );
 void DispatchBlocked( edict_t *pentBlocked, edict_t *pentOther );
 typedef struct ps2cvar_s

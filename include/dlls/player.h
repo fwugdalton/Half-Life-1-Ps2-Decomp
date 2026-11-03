@@ -137,23 +137,50 @@ public:
     int m_iTeamNum;                       /* 0x620: m_iTeamNum na tabela de save; vai no ScoreInfo */
     int m_piSwarmNodeHistory[11];               /* 0x624 */
     int m_iSwarmHistoryIdx;                     /* 0x650 */
-    Vector m_ps2Unk654[6];                      /* o construtor do PS2 tem um laço de 6 Vector (posição exata desconhecida) */
-    /* Vector soltos (posição desconhecida): sem eles o g++ inlinaria o construtor do CBasePlayer,
-       que no PS2 sai fora de linha (__11CBasePlayer) */
-    Vector m_ps2Vec69C;
-    Vector m_ps2Vec6A8;
-    Vector m_ps2Vec6B4;
+    Vector m_vecAITrail[6];                     /* 0x654: últimas posições do dono da IA (rastro que o parceiro segue) */
+    int m_iAITrailTail;                         /* 0x69C */
+    int m_iAITrailHead;                         /* 0x6A0 */
+    Vector m_ps2Vec6A4;                         /* 0x6A4: sem uso conhecido (sem os Vector soltos o g++ inlinaria o construtor) */
+    int m_iAITrailIndex;                        /* 0x6B0: ponto do rastro que o parceiro está seguindo */
+    Vector m_vecAITrailPos;                     /* 0x6B4 */
     float m_flPs2JumpTime;                      /* 0x6C0: hora do último pulo (pulo duplo) */
     BOOL m_fPs2DoubleJump;                      /* 0x6C4 */
     float m_ps2Unk6C8;
-    Vector m_ps2Vec6CC;
-    Vector m_ps2Vec6D8;
-    Vector m_ps2Vec6E4;
-    Vector m_ps2Vec6F0;
-    Vector m_ps2Vec6FC;
-    byte m_ps2Unk708[0x74C - 0x708];
+    /* parceiro da IA (aiplayer.cpp, baseado no HPB bot) */
+    unsigned int m_iAIState;                    /* 0x6CC */
+    unsigned int m_iAIFlags;                    /* 0x6D0 */
+    EHANDLE m_hAIUser;                          /* 0x6D4: jogador seguido (pBotUser) */
+    Vector m_vecAIPrevOrigin;                   /* 0x6DC */
+    float m_flAIMoveSpeed;                      /* 0x6E8: forwardmove do RunPlayerMove */
+    float m_flAIMaxSpeed;                       /* 0x6EC: sv_maxspeed */
+    float m_flAILadderDir;                      /* 0x6F0: 0 desconhecida, 1 sobe, 2 desce */
+    float m_flAIWanderDir;                      /* 0x6F4: 1 ou 2 */
+    float m_flAIEndUseLadderTime;                         /* 0x6F8 */
+    int m_iAIUnk6FC;                            /* 0x6FC */
+    float m_flAIUnk700;                         /* 0x700 */
+    int m_iAIUnk704;                            /* 0x704 */
+    int m_iAIUnk708;                            /* 0x708 */
+    EHANDLE m_hAIPickupItem;                        /* 0x70C */
+    float m_flAIUseHealthTime;                         /* 0x714 */
+    float m_flAIUseHEVTime;                         /* 0x718 */
+    float m_flAIWallOnRight;                     /* 0x71C */
+    float m_flAIWallOnLeft;                      /* 0x720 */
+    float m_flAIDontAvoidWallTime;                         /* 0x724 */
+    int m_iAIUnk728;                            /* 0x728 */
+    int m_iAIUnk72C;                            /* 0x72C */
+    byte m_bAISkill;                            /* 0x730: mp_aiskill */
+    float m_flAIUseTime;                        /* 0x734: última vez que viu o jogador seguido */
+    int m_iAIUnk738;                            /* 0x738 */
+    int m_iAIUnk73C;                            /* 0x73C */
+    float m_flAIUnk740;                         /* 0x740 */
+    float m_flAILadderYaw;                      /* 0x744 */
+    float m_flAINavigateTime;                         /* 0x748 */
     byte m_ps2AIType;                           /* 0x74C: com 8 o Ps2Look ignora alvos com max_health <= 100 */
-    byte m_ps2Unk74D[0x76C - 0x74D];
+    float m_flAIUnk750;                         /* 0x750 */
+    float m_flAIUnk754;                         /* 0x754 */
+    float m_flAIStuckTime;                      /* 0x758 */
+    float m_flAINextAttackSentence;             /* 0x75C */
+    Vector m_vecAITarget;                       /* 0x760: ponto do inimigo onde mira */
     float m_flPs2NextLook;                      /* 0x76C: próximo Ps2Look do parceiro da IA */
     BOOL m_fInfiniteAmmo;                     /* 0x770: m_fInfiniteAmmo, recarrega sem gastar munição */
     float m_flDefaultGravity;                         /* 0x774: m_flDefaultGravity, gravidade do trigger_gravity */
@@ -263,7 +290,38 @@ public:
     /* DeathMessage do HLSDK não existe no PS2 */
     void SetCustomDecalFrames(int nFrames);
     int GetCustomDecalFrames(void);
+    void Ps2AISpawnInit(void);                  /* 0x126F80: BotSpawnInit do HPB bot */
     void Ps2AIThink(void);                      /* 0x1270E0: think do parceiro da IA (registro "068") */
+    void Ps2AIUse(CBaseEntity *pActivator, CBaseEntity *pCaller, USE_TYPE useType, float value); /* 0x127500: vazia */
+    float Ps2AIChangeYaw(float speed);          /* 0x127508: BotChangeYaw */
+    void Ps2AIOnLadder(void);                   /* 0x127700: BotOnLadder */
+    BOOL Ps2AIShootAtEnemy(float flMoved);      /* 0x1278F8: BotShootAtEnemy */
+    Vector Ps2AIBodyTarget(CBaseEntity *pEnemy); /* 0x127F18: BotBodyTarget */
+    BOOL Ps2AIFVisible(const Vector &vecOrigin); /* 0x1284C8: FVisible do HPB bot */
+    BOOL Ps2AIFollowUser(float flMoved, float flUnk); /* 0x128568: BotFollowUser */
+    BOOL Ps2AICheckWallOnLeft(); /* 0x128998 */
+    BOOL Ps2AICheckWallOnRight(); /* 0x128AC0 */
+    void Ps2AIFindItem(void); /* 0x128BE8: BotFindItem */
+    int Ps2AIInFieldOfView(Vector vecDest); /* 0x12B340: BotInFieldOfView */
+    BOOL Ps2AIEntityIsVisible(Vector vecDest); /* 0x12B3E0: BotEntityIsVisible */
+    CBasePlayerItem *Ps2AIFindWeapon(int iId); /* 0x12B468 (sem chamadas) */
+    void Ps2AIFollowRoute(float flExpected, float flMoved, float flTurn); /* 0x12B5D8 (sem chamadas) */
+    void Ps2AIFollowTrail(float flMoved, float flTurn); /* 0x12BAB0: segue o rastro do dono (sem chamadas) */
+    BOOL Ps2AIGetTrailPoint(Vector &vecPos);   /* 0x12C2C0 */
+    void Ps2AIBackOff(float flMoved);         /* 0x12BD50: anda 100 unidades para trás (sem chamadas) */
+    void Ps2AIRecordTrail(void);               /* 0x12C0C8: guarda a posição atual no rastro */
+    BOOL Ps2AIFindTrailPoint(Vector &vecPos);  /* 0x12C1D8: primeiro ponto visível do rastro do dono */
+    BOOL Ps2AIDodge(Vector vecFrom, float flMoved, float flDist); /* 0x12C358: foge para trás ou para os lados */
+    void Ps2AIUseLift(void); /* 0x129618: começo do BotUseLift (sem chamadas) */
+    void Ps2AIJumpOutOfWater(void); /* 0x1296C8: sem chamadas */
+    BOOL Ps2AICantMoveForward(TraceResult *tr); /* 0x1298E8: BotCantMoveForward (sem chamadas) */
+    void Ps2AITurnAtWall(TraceResult *tr); /* 0x12A2D0: BotTurnAtWall (sem chamadas) */
+    BOOL Ps2AICanJumpUp(void);                  /* 0x129AF8: BotCanJumpUp */
+    BOOL Ps2AICanDuckUnder(void);               /* 0x12A170: BotCanDuckUnder */
+    void Ps2AINavigate(float flMoved, Vector vecDest); /* 0x12B4B0 */
+    BOOL Ps2AIChangeWeapon(void);               /* 0x12B000: escolhe a melhor arma (BotSelectWeapon) */
+    void Ps2AITakeCover(void);                     /* 0x12BE68 */
+    BOOL Ps2AIFireWeapon(Vector vecTarget, Vector vecDir, int iType, BOOL fUnk); /* 0x12A5A8: BotFireWeapon */
     void Ps2AITouch(CBaseEntity *pOther);       /* 0x12BFB8: touch do parceiro da IA (registro "069") */
     void PlaySentence(const char *pszSentence, float duration, float volume, float attenuation);   /* 0x12CE30 (arquivo da IA) */
     int ISoundMask(void);                       /* 0x1270D8 (arquivo da IA) */
@@ -273,7 +331,7 @@ public:
     void Ps2TrackTarget(int iPlayerIndex, Vector &vecAngles, Vector &vecTargetPos); /* 0x1D0E60: chamado pelo CGameRules::Ps2Virt63 */
     void Ps2AISwitchWeapon(CBasePlayerItem *pWeapon); /* 0x12CDE0 (arquivo da IA) */
     void Ps2AIKilled(void);                     /* 0x12CCD0 (arquivo da IA) */
-    void Ps2AITakeDamage(entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, int bitsDamageType); /* 0x12C878 (arquivo da IA) */
+    int Ps2AITakeDamage(entvars_t *pevInflictor, entvars_t *pevAttacker, float flDamage, int bitsDamageType); /* 0x12C878 (arquivo da IA) */
 };
 
 extern BOOL gEvilImpulse101;

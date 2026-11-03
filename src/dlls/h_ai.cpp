@@ -32,7 +32,7 @@ typedef struct ps2cvar_s
 extern "C" ps2cvar_t *D_00312984;
 #define g_psv_gravity D_00312984
 
-enum { ignore_glass = 1, dont_ignore_glass = 0 };
+/* ignore_glass vem do util.h */
 void UTIL_TraceLine( const Vector &vecStart, const Vector &vecEnd, int igmon, int ignoreGlass, edict_t *pentIgnore, TraceResult *ptr );
 void UTIL_TraceLineNoEnts( const Vector &vecStart, const Vector &vecEnd, int igmon, edict_t *pentIgnore, TraceResult *ptr );
 

@@ -22,7 +22,7 @@ typedef struct _FILE FILE;
 #define bits_MEMORY_KILLED	( 1 << 7 )
 #define TE_TRACER			6
 
-enum { ignore_glass = 1, dont_ignore_glass = 0 };
+/* ignore_glass vem do util.h */
 void UTIL_TraceLine( const Vector &vecStart, const Vector &vecEnd, int igmon, int ignoreGlass, edict_t *pentIgnore, TraceResult *ptr );
 void UTIL_BloodDecalTrace( TraceResult *pTrace, int bloodColor );
 int UTIL_PointContents( const Vector &vec );

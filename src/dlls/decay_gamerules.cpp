@@ -53,7 +53,7 @@ extern int gmsgHudColor;		/* player.cpp: mensagem da cor do HUD */
 /* client.cpp: ClientConnect */
 BOOL ClientConnect( edict_t *pEntity, const char *pszName, const char *pszAddress, char szRejectReason[ 128 ] );
 /* inicialização do jogador da IA (arquivo ainda em asm) */
-extern "C" void func_00126F80( CBasePlayer *pPlayer );
+/* Ps2AISpawnInit fica no aiplayer.cpp */
 /* lanterna do CBasePlayer (player.cpp) */
 extern "C" void func_00154318( void );
 extern "C" void func_002397D0( const char *name, BASEPTR pfn );
@@ -236,7 +236,7 @@ void CHalfLifeDecay :: CreateAIPlayer( void )
 		ClientConnect( pPlayer->edict(), "Colette", "127.0.0.1", szRejectReason );
 
 	DispatchSpawn( pPlayer->edict() );
-	func_00126F80( pPlayer );
+	pPlayer->Ps2AISpawnInit();
 	m_iNumAIPlayers++;
 }
 

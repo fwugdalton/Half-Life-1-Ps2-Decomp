@@ -51,7 +51,7 @@ typedef struct _FILE FILE;
 #define TE_BOUNCE_SHOTSHELL		2
 #define BEAM_FSOLID				0x20
 #define VECTOR_CONE_10DEGREES	Vector( 0.08716f, 0.08716f, 0.08716f )
-enum { ignore_glass = 1, dont_ignore_glass = 0 };
+/* ignore_glass vem do util.h */
 
 void UTIL_TraceLine( const Vector &vecStart, const Vector &vecEnd, int igmon, int ignoreGlass, edict_t *pentIgnore, TraceResult *ptr );
 int SENTENCEG_PlayRndSz( edict_t *entity, const char *szrootname, float volume, float attenuation, int flags, int pitch );
